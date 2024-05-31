@@ -31,10 +31,10 @@ Add GamingCouch game object to your main game scene alongside your main game scr
 ### Define player store in your main game script
 
 ```C#
-    # Use GamingCouch:
+    // Use GamingCouch:
     using DSB.GC;
 
-    # Add new field for playerStore. Replace the "Player" with your palyer script name, if it differs:
+    // Add new field for playerStore. Replace the "Player" with your palyer script name, if it differs:
     private PlayerStore<Player> playerStore = new PlayerStore<Player>();
 ```
 
