@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public struct GamingCouchPlayerSetupOptions
+    public struct GCPlayerSetupOptions
     {
         public int playerId;
         public string name;

@@ -11,13 +11,13 @@ namespace DSB.GC
     }
 
     [System.Serializable]
-    public class GamingCouchPlayOptions
+    public class GCPlayOptions
     {
         public PlayerOptions[] players;
 
-        public static GamingCouchPlayOptions CreateFromJSON(string optionsJson)
+        public static GCPlayOptions CreateFromJSON(string optionsJson)
         {
-            return JsonUtility.FromJson<GamingCouchPlayOptions>(optionsJson);
+            return JsonUtility.FromJson<GCPlayOptions>(optionsJson);
         }
     }
 }

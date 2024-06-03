@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public class PlayerStore<T> : IPlayerStoreOutput<T>, IPlayerStoreInput<T> where T : IGamingCouchPlayer
+    public class GCPlayerStore<T> : IGCPlayerStoreOutput<T>, IGCPlayerStoreInput<T> where T : IGCPlayer
     {
         private List<T> players = new List<T>();
         private Dictionary<int, T> playerById = new Dictionary<int, T>();
 
-        public PlayerStore() { }
+        public GCPlayerStore() { }
 
         public T GetPlayerById(int playerId)
         {

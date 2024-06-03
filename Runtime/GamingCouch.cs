@@ -6,30 +6,24 @@ using System.Collections;
 
 namespace DSB.GC
 {
-    public enum Status { PendingSetup, SetupDone, Playing, GameOver }
+    public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
-    public enum PlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
-
-    public struct PlayerInputs
-    {
-        public int playerId;
-        public GamingCouchControllerInputs inputs;
-    }
+    public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
     [Serializable]
-    public struct HudPlayersConfig
+    public struct GCHudPlayersConfig
     {
         public string valueType;
     }
 
     [Serializable]
-    public struct HudConfig
+    public struct GCHudConfig
     {
-        public HudPlayersConfig players;
+        public GCHudPlayersConfig players;
     }
 
     [Serializable]
-    public struct PlayersHudDataPlayer
+    public struct GCPlayersHudDataPlayer
     {
         public int playerId;
         public bool eliminated;
@@ -38,9 +32,9 @@ namespace DSB.GC
     }
 
     [Serializable]
-    public struct PlayersHudData
+    public struct GCPlayersHudData
     {
-        public PlayersHudDataPlayer[] players;
+        public GCPlayersHudDataPlayer[] players;
     }
 
     public class GamingCouch : MonoBehaviour
@@ -65,12 +59,12 @@ namespace DSB.GC
         [SerializeField]
         private GameObject listener;
         [SerializeField]
-        [Tooltip("Make sure your player prefab inherits IGamingCouchPlayer or extends GamingCouchPlayer.")]
+        [Tooltip("Make sure your player prefab inherits IGCPLayer or extends GCPLayer.")]
         private GameObject playerPrefab;
-        private GamingCouchSetupOptions setupOptions; // this is assigned in GamingCouchSetup
-        private Status status = Status.PendingSetup;
-        public Status Status => status;
-        private IPlayerStoreOutput<IGamingCouchPlayer> playerStoreOutput;
+        private GCSetupOptions setupOptions; // this is assigned in GCSetup
+        private GCStatus status = GCStatus.PendingSetup;
+        public GCStatus Status => status;
+        private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
 
         private void Awake()
         {
@@ -99,14 +93,16 @@ namespace DSB.GC
             setupOptions = GetEditorSetupOptions();
 #endif
 
-            GamingCouchStart();
+            GCStart();
         }
 
-        private void GamingCouchStart()
+        private void GCStart()
         {
+            status = GCStatus.PendingSetup;
+
             if (setupOptions == null)
             {
-                throw new Exception("GamingCouch setup options not set. Make sure to call GamingCouchSetup method with setup options.");
+                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
             }
 
             Debug.Log("GamingCouch setup options: " + setupOptions.gameModeId);
@@ -128,39 +124,39 @@ namespace DSB.GC
         #region Methods called by the GamingCouch platform
         /**
         * Called by the platform when the game is ready for setup, but players are not yet all ready.
-        * See GamingCouchPlay to start the game when all the players are ready.
+        * See GCPLay to start the game when all the players are ready.
         */
         private void GamingCouchSetup(string optionsJson)
         {
-            Debug.Log("GamingCouchSetup: " + optionsJson);
+            Debug.Log("GCSetup: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
-            setupOptions = GamingCouchSetupOptions.CreateFromJSON(optionsJson);
+            setupOptions = GCSetupOptions.CreateFromJSON(optionsJson);
         }
 
         /**
         * Called by the platform when all players are loaded and the game is ready to play.
-        * This will be called after GamingCouchSetup.
+        * This will be called after GCSetup.
         */
         private void GamingCouchPlay(string optionsJson)
         {
             Debug.Log("GamingCouchPlay: " + optionsJson);
 
-            GamingCouchPlayOptions options = GamingCouchPlayOptions.CreateFromJSON(optionsJson);
+            GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
         }
 
         private IEnumerator _EditorPlay()
         {
-            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GamingCouchPlay by the platform
+            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPLay by the platform
             Play(GetEditorPlayOptions());
         }
 
-        private void Play(GamingCouchPlayOptions options)
+        private void Play(GCPlayOptions options)
         {
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
-            status = Status.Playing;
+            status = GCStatus.Playing;
         }
 
         /**
@@ -170,7 +166,7 @@ namespace DSB.GC
         {
             string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
 
-            GamingCouchControllerInputs inputs = GamingCouchControllerInputs.CreateFromJSON(playerIdAndInputsArray[1]);
+            GCControllerInputs inputs = GCControllerInputs.CreateFromJSON(playerIdAndInputsArray[1]);
 
             var playerId = int.Parse(playerIdAndInputsArray[0]);
             inputsByPlayerId[playerId] = inputs;
@@ -181,11 +177,11 @@ namespace DSB.GC
         public void SetupDone()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            GamingCouchSetupDone();
+            GCSetupDone();
 #else
             StartCoroutine(_EditorPlay());
 #endif
-            status = Status.SetupDone;
+            status = GCStatus.SetupDone;
         }
 
         public void GameEnd(int[] placementsByPlayerId)
@@ -196,33 +192,33 @@ namespace DSB.GC
                 result[i] = (byte)placementsByPlayerId[i];
             }
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchGameEnd(result, result.Length);
+        GCGameEnd(result, result.Length);
 #endif
 
-            status = Status.GameOver;
+            status = GCStatus.GameOver;
         }
         #endregion
 
         #region HUD
-        public void SetupHud(HudConfig playersHudData)
+        public void SetupHud(GCHudConfig playersHudData)
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchSetupHud(playersHudDataJson);
+        GCSetupHud(playersHudDataJson);
 #endif
         }
 
-        public void UpdatePlayersHud(PlayersHudData playersHudData)
+        public void UpdatePlayersHud(GCPlayersHudData playersHudData)
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdatePlayersHud(playersHudDataJson);
+        GCUpdatePlayersHud(playersHudDataJson);
 #endif
         }
         #endregion
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : IGamingCouchPlayer
+        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : IGCPlayer
         {
             var gameObject = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             var targetType = gameObject.GetComponent<T>();
@@ -231,10 +227,10 @@ namespace DSB.GC
                 throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
             }
 
-            var player = gameObject.GetComponent<IGamingCouchPlayer>();
+            var player = gameObject.GetComponent<IGCPlayer>();
             if (player == null)
             {
-                throw new Exception("Player prefab does not have a component that inherits IGamingCouchPlayer or extends GamingCouchPlayer.");
+                throw new Exception("Player prefab does not have a component that inherits IGCPLayer or extends GCPLayer.");
             }
 
             gameObject.name = "Player - " + name;
@@ -248,7 +244,7 @@ namespace DSB.GC
 
             ColorUtility.TryParseHtmlString(htmlColor, out Color unityColor);
 
-            player.GamingCouchSetup(new GamingCouchPlayerSetupOptions
+            player.GamingCouchSetup(new GCPlayerSetupOptions
             {
                 playerId = playerId,
                 name = name,
@@ -258,11 +254,11 @@ namespace DSB.GC
             return targetType;
         }
 
-        public void InstantiatePlayers<T>(PlayerStore<T> playerStore, PlayerOptions[] playerOptions) where T : class, IGamingCouchPlayer
+        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, PlayerOptions[] playerOptions) where T : class, IGCPlayer
         {
-            if (typeof(T) == typeof(IGamingCouchPlayer))
+            if (typeof(T) == typeof(IGCPlayer))
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGamingCouchPlayer or extend GamingCouchPlayer. Eg. do not call InstantiatePlayers<IGamingCouchPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGamingCouchPlayer or extends GamingCouchPlayer.");
+                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPLayer or extend GCPLayer. Eg. do not call InstantiatePlayers<IGCPLayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPLayer or extends GCPLayer.");
             }
 
             if (playerStore.GetPlayerCount() > 0)
@@ -281,8 +277,8 @@ namespace DSB.GC
         #endregion
 
         #region Player inputs
-        private Dictionary<int, GamingCouchControllerInputs> inputsByPlayerId = new Dictionary<int, GamingCouchControllerInputs>();
-        public GamingCouchControllerInputs GetInputsByPlayerId(int playerId)
+        private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        public GCControllerInputs GetInputsByPlayerId(int playerId)
         {
             if (inputsByPlayerId.ContainsKey(playerId))
             {
@@ -308,7 +304,7 @@ namespace DSB.GC
 
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
-                    playerData[i].color = (PlayerColor)i;
+                    playerData[i].color = (GCPlayerColor)i;
                 }
             }
 
@@ -343,7 +339,7 @@ namespace DSB.GC
         public struct PlayerEditorData
         {
             public string name;
-            public PlayerColor color;
+            public GCPlayerColor color;
         }
 
         [Header("Editor player settings")]
@@ -358,17 +354,17 @@ namespace DSB.GC
         [Tooltip("Randomize player ID's to better replicate real use case where ID's comes from the platform. If false, player ID's will be assigned in order starting from 1. (RECOMMENDED TO KEEP THIS ENABLED)")]
         private bool randomizePlayerIds = true;
 
-        public GamingCouchSetupOptions GetEditorSetupOptions()
+        public GCSetupOptions GetEditorSetupOptions()
         {
-            return new GamingCouchSetupOptions
+            return new GCSetupOptions
             {
                 gameModeId = gameModeId,
             };
         }
 
-        public GamingCouchPlayOptions GetEditorPlayOptions()
+        public GCPlayOptions GetEditorPlayOptions()
         {
-            GamingCouchPlayOptions options = new GamingCouchPlayOptions
+            GCPlayOptions options = new GCPlayOptions
             {
                 players = new PlayerOptions[numberOfPlayers]
             };
@@ -419,6 +415,8 @@ namespace DSB.GC
 
             if (playerStoreOutput == null) return;
 
+            if (playerStoreOutput.GetPlayerCount() == 0) return;
+
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (Input.GetKeyDown((i + 1).ToString()))
@@ -431,7 +429,7 @@ namespace DSB.GC
 
             if (player == null) return;
 
-            var inputs = new GamingCouchControllerInputs
+            var inputs = new GCControllerInputs
             {
                 lx = Input.GetAxis(lx),
                 ly = Input.GetAxis(ly),
@@ -458,12 +456,12 @@ namespace DSB.GC
 
         /**
         * Can be called for dev purposes to quickly restart the game instead of editor play mode restart.
-        * GC methods such as GamingCouchSetup and GamingCouchPlay will be called again.
+        * GC methods such as GCSetup and GCPLay will be called again.
         */
         public void Restart()
         {
             Clear();
-            GamingCouchStart();
+            Start();
         }
         #endregion
     }

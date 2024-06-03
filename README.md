@@ -22,7 +22,7 @@ Add GamingCouch game object to your main game scene alongside your main game scr
 
 ## 2) Create and link player prefab
 
-- create Player.cs script extend GamingCouchPlayer, or modify your existing player script
+- create Player.cs script extend GCPLayer, or modify your existing player script
 - create player prefab and assign the script to it
 - link the player prefab to the "player prefab" field in GamingCouch game object (via inspector)
 
@@ -34,16 +34,16 @@ Add GamingCouch game object to your main game scene alongside your main game scr
     // Use GamingCouch:
     using DSB.GC;
 
-    // Add new field for playerStore. Replace the "Player" with your palyer script name, if it differs:
+    // Add new field for playerStore. Replace the "Player" with your player script name, if it differs:
     private PlayerStore<Player> playerStore = new PlayerStore<Player>();
 ```
 
 ### Listen for GamingCouchSetup message
 
-This is the place where you can choose to load levels and what not based on the GamingCouchSetupOptions:
+This is the place where you can choose to load levels and what not based on the GCSetupOptions:
 
 ```C#
-    private void GamingCouchSetup(GamingCouchSetupOptions options)
+    private void GamingCouchSetup(GCSetupOptions options)
     {
         // do stuff based on the options. Eg. load level based on game mode etc.
 
@@ -55,7 +55,7 @@ This is the place where you can choose to load levels and what not based on the 
 Next we need to listen when GC and all the players are ready to play:
 
 ```C#
-    private void GamingCouchPlay(GamingCouchPlayOptions options)
+    private void GamingCouchPlay(GCPLayOptions options)
     {
         // we now have all the successfully loaded players so we can instantiate them.
         // This will instantiate and config the players by using the player prefab linked to GamingCouch game object

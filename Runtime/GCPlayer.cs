@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public class GamingCouchPlayer : MonoBehaviour, IGamingCouchPlayer
+    public class GCPlayer : MonoBehaviour, IGCPlayer
     {
         private Color color;
         private int playerId;
 
-        public virtual void GamingCouchSetup(GamingCouchPlayerSetupOptions options)
+        public virtual void GamingCouchSetup(GCPlayerSetupOptions options)
         {
             playerId = options.playerId;
             name = options.name;

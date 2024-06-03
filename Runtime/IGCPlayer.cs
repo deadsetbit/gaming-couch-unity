@@ -1,9 +1,9 @@
 using DSB.GC;
 using UnityEngine;
 
-public interface IGamingCouchPlayer
+public interface IGCPlayer
 {
-    void GamingCouchSetup(GamingCouchPlayerSetupOptions options);
+    void GamingCouchSetup(GCPlayerSetupOptions options);
     int GetId();
     string GetName();
     Color GetColor();

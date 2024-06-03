@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-public interface IPlayerStoreOutput<out T> where T : IGamingCouchPlayer
+public interface IGCPlayerStoreOutput<out T> where T : IGCPlayer
 {
     T GetPlayerById(int playerId);
     IEnumerable<T> GetPlayersEnumerable();
@@ -9,7 +9,7 @@ public interface IPlayerStoreOutput<out T> where T : IGamingCouchPlayer
     void Clear();
 }
 
-public interface IPlayerStoreInput<in T> where T : IGamingCouchPlayer
+public interface IGCPlayerStoreInput<in T> where T : IGCPlayer
 {
     void AddPlayer(T player);
 }

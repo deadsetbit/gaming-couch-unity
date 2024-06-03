@@ -3,7 +3,7 @@ using UnityEngine;
 namespace DSB.GC
 {
     [System.Serializable]
-    public class GamingCouchControllerInputs
+    public class GCControllerInputs
     {
         public float lx; // Left stick X-axis
         public float ly; // Left stick Y-axis
@@ -14,9 +14,9 @@ namespace DSB.GC
         public int b3; // X
         public int b4; // Y
 
-        public static GamingCouchControllerInputs CreateFromJSON(string inputsJson)
+        public static GCControllerInputs CreateFromJSON(string inputsJson)
         {
-            return JsonUtility.FromJson<GamingCouchControllerInputs>(inputsJson);
+            return JsonUtility.FromJson<GCControllerInputs>(inputsJson);
         }
     }
 }
