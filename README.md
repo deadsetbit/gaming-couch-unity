@@ -34,7 +34,7 @@ Add GamingCouch game object to your main game scene alongside your main game scr
     // Use GamingCouch:
     using DSB.GC;
 
-    // Add new field for playerStore. Replace the "Player" with your palyer script name, if it differs:
+    // Add new field for playerStore. Replace the "Player" with your player script name, if it differs:
     private PlayerStore<Player> playerStore = new PlayerStore<Player>();
 ```
 
