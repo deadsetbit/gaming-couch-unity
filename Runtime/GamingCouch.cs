@@ -10,43 +10,10 @@ namespace DSB.GC
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
-    [Serializable]
-    public struct GCHudPlayersConfig
-    {
-        public string valueType;
-    }
-
-    [Serializable]
-    public struct GCHudConfig
-    {
-        public GCHudPlayersConfig players;
-    }
-
-    [Serializable]
-    public struct GCPlayersHudDataPlayer
-    {
-        public int playerId;
-        public bool eliminated;
-        public int placement;
-        public string value;
-    }
-
-    [Serializable]
-    public struct GCPlayersHudData
-    {
-        public GCPlayersHudDataPlayer[] players;
-    }
-
     public class GamingCouch : MonoBehaviour
     {
         [DllImport("__Internal")]
         private static extern void GamingCouchSetupDone();
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchSetupHud(string hudConfigJson);
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchUpdatePlayersHud(string playersHudDataJson);
 
         [DllImport("__Internal")]
         private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
@@ -65,6 +32,9 @@ namespace DSB.GC
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
+
+        private GCHud hud = new GCHud();
+        public GCHud Hud => hud;
 
         private void Awake()
         {
@@ -196,24 +166,6 @@ namespace DSB.GC
 #endif
 
             status = GCStatus.GameOver;
-        }
-        #endregion
-
-        #region HUD
-        public void SetupHud(GCHudConfig playersHudData)
-        {
-            string playersHudDataJson = JsonUtility.ToJson(playersHudData);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchSetupHud(playersHudDataJson);
-#endif
-        }
-
-        public void UpdatePlayersHud(GCPlayersHudData playersHudData)
-        {
-            string playersHudDataJson = JsonUtility.ToJson(playersHudData);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdatePlayersHud(playersHudDataJson);
-#endif
         }
         #endregion
 
