@@ -177,7 +177,7 @@ namespace DSB.GC
         public void SetupDone()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            GCSetupDone();
+            GamingCouchSetupDone();
 #else
             StartCoroutine(_EditorPlay());
 #endif
@@ -192,7 +192,7 @@ namespace DSB.GC
                 result[i] = (byte)placementsByPlayerId[i];
             }
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GCGameEnd(result, result.Length);
+        GamingCouchGameEnd(result, result.Length);
 #endif
 
             status = GCStatus.GameOver;
@@ -204,7 +204,7 @@ namespace DSB.GC
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GCSetupHud(playersHudDataJson);
+        GamingCouchSetupHud(playersHudDataJson);
 #endif
         }
 
@@ -212,7 +212,7 @@ namespace DSB.GC
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
 #if UNITY_WEBGL && !UNITY_EDITOR
-        GCUpdatePlayersHud(playersHudDataJson);
+        GamingCouchUpdatePlayersHud(playersHudDataJson);
 #endif
         }
         #endregion
