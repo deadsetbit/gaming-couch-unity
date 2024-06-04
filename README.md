@@ -4,14 +4,19 @@ Unity integration for Gaming Couch platform.
 
 # Installation
 
-Import this package to your Unity project and follow the integration instructions.
+You can import this package by using Unity's _Package manager's_ import from git URL.
 
-# Integration
+Follow the integration steps below to get started.
+
+// TODO: Create simple example project to demonstrate the integration.
+
+# Basic integration
 
 ## 1) Add GamingCouch game object
 
 Add GamingCouch game object to your main game scene alongside your main game script object.
-(TODO: Need to make editor menu script to create the GamingCouch game object!)
+
+// TODO: Need to make editor menu script to create the GamingCouch game object!
 
 ## 2) Create and link game script
 
@@ -72,3 +77,39 @@ When the game ends, simply call:
 // you need to pass the player id's in placement order:
 GamingCouch.Instance.GameEnd(placementsByPlayerId);
 ```
+
+# HUD integration
+
+## Setup the HUD
+
+If the game has multiple game modes you can setup the hud differently for each game mode,
+but here is the most basic setup that will just display the avatars and names:
+
+```
+    GamingCouch.Instance.Hud.Setup(new GCHudConfig
+    {
+        players = new GCHudPlayersConfig()
+    });
+```
+
+To display score or status text, see the API documentation.
+
+// TODO: API documentation for more configuration options
+
+## Update the players HUD
+
+```
+    GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
+    {
+        players = Game.Instance.Players.Select(player => new GCPlayersHudDataPlayer
+        {
+            playerId = player.GetId(),
+            eliminated = !player.IsAlive,
+            placement = 0,
+        }).ToArray()
+    });
+```
+
+If your HUD displays score or status text, you can pass value for it, see the API documentation.
+
+// TODO: API documentation for more configuration options
