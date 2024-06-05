@@ -16,12 +16,11 @@ jobs:
       - name: Use Repo README.md as index.md
         run: cp README.md Documentation/DocFx/index.md
 
-      - name: Install DocFX
-        run: |
-          $docfx_version = "2.76.0"  # replace with the version you need
-          Invoke-WebRequest -Uri "https://github.com/dotnet/docfx/releases/download/v$docfx_version/docfx.zip" -OutFile "docfx.zip"
-          Expand-Archive -Path "docfx.zip" -DestinationPath "docfx"
-          $env:PATH += ";$PWD\docfx"
+      - name: dotnet --version
+        run: dotnet --version
+
+      - name: Update DocFX
+        run: dotnet tool update -g docfx
 
       - name: Build Documentation
         run: docfx Documentation/DocFx/docfx.json -t modern
