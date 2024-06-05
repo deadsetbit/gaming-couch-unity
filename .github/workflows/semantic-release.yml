@@ -20,7 +20,7 @@ jobs:
         run: dotnet --version
 
       - name: Update DocFX
-        run: dotnet tool update -g docfx
+        run: dotnet tool update -g docfx --version 2.76.0
 
       - name: Build Documentation
         run: docfx Documentation/DocFx/docfx.json -t modern
