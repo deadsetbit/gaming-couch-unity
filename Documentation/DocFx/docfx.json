@@ -47,7 +47,7 @@
       }
     ],
     "sitemap": {
-      "baseUrl": "https://deadsetbit.github.io/Gaming-Couch-Unity",
+      "baseUrl": "https://deadsetbit.github.io/gaming-couch-unity",
       "changefreq": "weekly",
       "fileOptions": {
         "api/*": {
