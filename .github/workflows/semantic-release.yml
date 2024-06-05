@@ -19,6 +19,9 @@ jobs:
       - name: Use Repo README.md as index.md
         run: cp README.md Documentation/DocFx/index.md
 
+      - name: DocFx restore
+        run: docfx restore
+
       - name: Build Documentation
         run: docfx Documentation/DocFx/docfx.json -t modern
 
