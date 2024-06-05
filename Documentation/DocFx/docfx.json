@@ -11,7 +11,8 @@
       "force": true,
       "globalNamespaceId": "Global",
       "filter": "filterConfig.yml",
-      "dest": "api"
+      "dest": "api",
+      "allowCompilationErrors": true
     }
   ],
   "build": {
