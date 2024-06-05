@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Installation | Gaming Couch Title </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Installation | Gaming Couch Title ">
+    <meta name="generator" content="docfx 2.59.4.0">
+    
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <meta property="docfx:navrel" content="toc">
+    <meta property="docfx:tocrel" content="toc">
+    
+    <meta property="docfx:rel" content="">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="index.html">
+                <img id="logo" class="svg" src="logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+                
+                <ul class="nav level1 navbar-nav">
+                      <li>
+                          <a href="api/DSB.GC.html" title="Scripting API">Scripting API</a>
+                      </li>
+                </ul>    </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list">Search Results for <span></span></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+
+<p>Unity integration for Gaming Couch platform.</p>
+<hr>
+<h1 id="installation">Installation</h1>
+<p>You can import this package by using Unity&#39;s <em>Package manager&#39;s</em> import from git URL.</p>
+<p>Follow the integration steps below to get started.</p>
+<p>// TODO: Create simple example project to demonstrate the integration.
+// TODO: Document whole Unity project basic setup.</p>
+<h1 id="basic-integration">Basic integration</h1>
+<h2 id="1-add-gamingcouch-game-object">1) Add GamingCouch game object</h2>
+<p>Add GamingCouch game object to your main game scene alongside your main game script object.</p>
+<p>// TODO: Need to make editor menu script to create the GamingCouch game object!</p>
+<h2 id="2-create-and-link-game-script">2) Create and link game script</h2>
+<ul>
+<li>create main game script eg Game.cs or use your existing main game script</li>
+<li>create game object to the main game scene and assign the script to it</li>
+<li>link the game script to the &quot;listener&quot; field in GamingCouch game object (via inspector)<ul>
+<li>now the game script will be able hook up to GamingCouch specific messages, we will get back to this</li>
+</ul>
+</li>
+</ul>
+<h2 id="2-create-and-link-player-prefab">2) Create and link player prefab</h2>
+<ul>
+<li>create Player.cs script extend GCPLayer, or modify your existing player script</li>
+<li>create player prefab and assign the script to it</li>
+<li>link the player prefab to the &quot;player prefab&quot; field in GamingCouch game object (via inspector)</li>
+</ul>
+<h2 id="3-hook-up-your-main-game-script">3) Hook up your main game script</h2>
+<h3 id="define-player-store-in-your-main-game-script">Define player store in your main game script</h3>
+<pre><code class="lang-C#">    // Use GamingCouch:
+    using DSB.GC;
+
+    // Add new field for playerStore. Replace the &quot;Player&quot; with your player script name, if it differs:
+    private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt;();
+</code></pre><h3 id="listen-for-gamingcouchsetup-message">Listen for GamingCouchSetup message</h3>
+<p>This is the place where you can choose to load levels and what not based on the GCSetupOptions:</p>
+<pre><code class="lang-C#">    private void GamingCouchSetup(GCSetupOptions options)
+    {
+        // do stuff based on the options. Eg. load level based on game mode etc.
+
+        // after setup is done call:
+        GamingCouch.Instance.SetupDone();
+    }
+</code></pre><p>Next we need to listen when GC and all the players are ready to play:</p>
+<pre><code class="lang-C#">    private void GamingCouchPlay(GCPLayOptions options)
+    {
+        // we now have all the successfully loaded players so we can instantiate them.
+        // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
+        GamingCouch.Instance.InstantiatePlayers(playerStore, options.players);
+
+        // next we can set the game to play mode and or play intro
+        StartMyGameNow();
+    }
+</code></pre><p>When the game ends, simply call:</p>
+<pre><code class="lang-C#">// you need to pass the player id&#39;s in placement order:
+GamingCouch.Instance.GameEnd(placementsByPlayerId);
+</code></pre><h1 id="hud-integration">HUD integration</h1>
+<h2 id="setup-the-hud">Setup the HUD</h2>
+<p>If the game has multiple game modes you can setup the hud differently for each game mode,
+but here is the most basic setup that will just display the avatars and names:</p>
+<pre><code>    GamingCouch.Instance.Hud.Setup(new GCHudConfig
+    {
+        players = new GCHudPlayersConfig()
+    });
+</code></pre><p>To display score or status text, see the API documentation.</p>
+<p>// TODO: API documentation for more configuration options</p>
+<h2 id="update-the-players-hud">Update the players HUD</h2>
+<pre><code>    GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
+    {
+        players = Game.Instance.Players.Select(player =&gt; new GCPlayersHudDataPlayer
+        {
+            playerId = player.GetId(),
+            eliminated = !player.IsAlive,
+            placement = 0,
+        }).ToArray()
+    });
+</code></pre><p>If your HUD displays score or status text, you can pass value for it, see the API documentation.</p>
+<p>// TODO: API documentation for more configuration options</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Documentation/DocFx/index.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Gaming Couch Footer
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+  </body>
+</html>

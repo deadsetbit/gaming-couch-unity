@@ -1,0 +1,291 @@
+{
+  "sitemap": {
+    "fileOptions": {
+      "api/*": {
+        "baseUrl": "https://deadsetbit.github.io/gaming-couch-unity/",
+        "changefreq": "daily"
+      }
+    },
+    "baseUrl": "https://deadsetbit.github.io/gaming-couch-unity/",
+    "changefreq": "weekly"
+  },
+  "homepages": [],
+  "source_base_path": "D:/a/gaming-couch-unity/gaming-couch-unity/Documentation/DocFx",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Resource",
+      "output": {
+        "resource": {
+          "relative_path": "index.json"
+        }
+      },
+      "is_incremental": false
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCControllerInputs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCControllerInputs.html",
+          "hash": "ron8OURWlLMIPsEinaVMv9EeAjLkL7diAWZDmIqOPmY="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCHud.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCHud.html",
+          "hash": "AZwKNrpN7PODyq62Y+NkUzhuwwLWiMybv9Uk5A6u64g="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCHudConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCHudConfig.html",
+          "hash": "lh/He2UhxCQmJUIliZY048fhBzYDf/oK9FyzjPBM7/U="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCHudPlayersConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCHudPlayersConfig.html",
+          "hash": "v/Zvuv4gU6euI62ANJL+L/JoiSvh4aLFsouRO28pIOY="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayOptions.html",
+          "hash": "u6GnEcfhNnai0JDBZsIWA6V/Az9rh/G/FEL2TgPClTc="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayer.html",
+          "hash": "MOG7PdOB6W4g+OW2vqNsX4+ggTBFQT7uYEQNPZZ2KKo="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerColor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerColor.html",
+          "hash": "F4E91MzdXT4hnX/MpA/8wq9Lxun7Ae9Tu1HiXvM2UlE="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerSetupOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerSetupOptions.html",
+          "hash": "zvK2N9yujopOQ5M0TyuUDm/lXDzlPLOJlyyHehGFtoo="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerStore-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerStore-1.html",
+          "hash": "9kw3FrGXIrD5CoM1Q4q3k5CK1YsSBTZPwpxERUS5/wY="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayersHudData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayersHudData.html",
+          "hash": "/pBIB7BPSM6kKNV2StaMn8np2uF6SsgMeu2ZUIknsNE="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayersHudDataPlayer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayersHudDataPlayer.html",
+          "hash": "iSHFykX6yoz0n/NqxexSaQD7DtpqsTvO6u8le3wVV/c="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCSetupOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCSetupOptions.html",
+          "hash": "JNRxsYeVqWRGrlaOeoGGbN3TgsfBvsDcPrz1fWVbviw="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCStatus.html",
+          "hash": "TmOTJFktF1/qlSjvWOvUVAodQ6xTpeNPmfo62bcOjFI="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GamingCouch.PlayerEditorData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GamingCouch.PlayerEditorData.html",
+          "hash": "pF4aSxBvIThxCUIOnXMCLX5CJgb9ZPluhz++aaibk1o="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GamingCouch.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GamingCouch.html",
+          "hash": "ZMI2AaRvyWOGMhJMNuSctlAjTSWAB6fd+F9DjuxnTMs="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.PlayerOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.PlayerOptions.html",
+          "hash": "MCDaoZyjmbdIAZiFO3OnAOBWIF6/8cB8TsHSlBCPh5Y="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.html",
+          "hash": "YLO0BEqVQmPojjO51goNnwQIkLWfPCIZ+6Kp5ejXEnE="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html",
+          "hash": "fXjeTtiDqBGJSo4xlnqP0mJ4HSJWH8Dr8XSaUcI3L4Q="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot build incrementally because last build info is missing.",
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0,
+        "full_build_reason_code": "NoAvailableBuildCache"
+      },
+      "processors": {
+        "ConceptualDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 1,
+          "skipped_file_count": 0
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 17,
+          "skipped_file_count": 0
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: should not trace intermediate info.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}
