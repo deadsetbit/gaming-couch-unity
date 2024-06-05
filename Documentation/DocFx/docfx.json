@@ -16,8 +16,8 @@
   ],
   "build": {
     "globalMetadata": {
-      "_appTitle": "Gaming Couch Title",
-      "_appFooter": "Gaming Couch Footer",
+      "_appTitle": "Gaming Couch - Unity integration docs",
+      "_appFooter": "Thanks for reading the whole documentation!",
       "_enableSearch": true
     },
     "content": [
