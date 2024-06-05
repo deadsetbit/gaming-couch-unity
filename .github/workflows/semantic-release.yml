@@ -18,10 +18,10 @@ jobs:
 
       - name: Install DocFX
         run: |
-          DOCFX_VERSION=2.76.0
-          curl -L https://github.com/dotnet/docfx/releases/download/v${DOCFX_VERSION}/docfx.zip --output docfx.zip
-          unzip docfx.zip -d docfx
-          export PATH=$PATH:$PWD/docfx
+          $docfx_version = "2.76.0"  # replace with the version you need
+          Invoke-WebRequest -Uri "https://github.com/dotnet/docfx/releases/download/v$docfx_version/docfx.zip" -OutFile "docfx.zip"
+          Expand-Archive -Path "docfx.zip" -DestinationPath "docfx"
+          $env:PATH += ";$PWD\docfx"
 
       - name: Build Documentation
         run: docfx Documentation/DocFx/docfx.json -t modern
