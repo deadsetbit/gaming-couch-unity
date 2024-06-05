@@ -13,14 +13,20 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v2
 
-      - name: Install DocFX
-        run: choco install -y docfx
+      - name: Set DocFX Version
+        run: echo "DOCFX_VERSION=2.76.0" >> $GITHUB_ENV
+
+      - name: Download Specific DocFX Version
+        run: |
+          DOCFX_VERSION=$(echo ${{ env.DOCFX_VERSION }})
+          wget https://github.com/dotnet/docfx/releases/download/v${DOCFX_VERSION}/docfx.zip
+          unzip docfx.zip -d docfx
+
+      - name: Add DocFX to PATH
+        run: echo "::add-path::$(pwd)/docfx"
 
       - name: Use Repo README.md as index.md
         run: cp README.md Documentation/DocFx/index.md
-
-      - name: docfx --version
-        run: docfx --version
 
       - name: Build Documentation
         run: docfx Documentation/DocFx/docfx.json -t modern
