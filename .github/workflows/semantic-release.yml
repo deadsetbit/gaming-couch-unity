@@ -20,7 +20,7 @@ jobs:
         run: cp README.md Documentation/DocFx/index.md
 
       - name: Build Documentation
-        run: docfx Documentation/DocFx/docfx.json -t modern
+        run: docfx Documentation/DocFx/docfx.json -t default
 
       - name: Upload Documentation Site
         uses: actions/upload-artifact@v1
