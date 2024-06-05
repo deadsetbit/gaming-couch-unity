@@ -28,12 +28,12 @@
       {
         "src": "api",
         "files": ["*.yml"],
-        "output": "api"
+        "dest": "api"
       },
       {
         "src": "manual",
         "files": ["toc.yml", "*.md"],
-        "output": "manual"
+        "dest": "manual"
       }
     ],
     "overwrite": [
