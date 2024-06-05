@@ -9,6 +9,7 @@ You can import this package by using Unity's _Package manager's_ import from git
 Follow the integration steps below to get started.
 
 // TODO: Create simple example project to demonstrate the integration.
+// TODO: Document whole Unity project basic setup.
 
 # Basic integration
 
@@ -40,7 +41,7 @@ Add GamingCouch game object to your main game scene alongside your main game scr
     using DSB.GC;
 
     // Add new field for playerStore. Replace the "Player" with your player script name, if it differs:
-    private PlayerStore<Player> playerStore = new PlayerStore<Player>();
+    private GCPlayerStore<Player> playerStore = new GCPlayerStore<Player>();
 ```
 
 ### Listen for GamingCouchSetup message
