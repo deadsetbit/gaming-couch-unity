@@ -3,7 +3,7 @@ using UnityEngine;
 namespace DSB.GC
 {
     [System.Serializable]
-    public struct PlayerOptions
+    public struct GCPlayerOptions
     {
         public int playerId;
         public string name;
@@ -13,7 +13,7 @@ namespace DSB.GC
     [System.Serializable]
     public class GCPlayOptions
     {
-        public PlayerOptions[] players;
+        public GCPlayerOptions[] players;
 
         public static GCPlayOptions CreateFromJSON(string optionsJson)
         {
