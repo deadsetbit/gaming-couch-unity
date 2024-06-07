@@ -144,6 +144,10 @@ namespace DSB.GC
         #endregion
 
         #region Methods to be called by the game
+
+        /// <summary>
+        /// Call this method to setup the game.
+        /// </summary>
         public void SetupDone()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
