@@ -11,8 +11,50 @@ namespace DSB.GC
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
+    public enum LogLevel { None, Warning, Info, Debug }
+
     public class GamingCouch : MonoBehaviour
     {
+        public LogLevel logLevel = LogLevel.Debug;
+
+        private void Log(LogLevel level, string message)
+        {
+            if (logLevel == LogLevel.None) return;
+
+            var logLevelIndex = (int)logLevel;
+
+            switch (level)
+            {
+                case LogLevel.Warning:
+                    if (logLevelIndex < (int)LogLevel.Warning) return;
+                    Debug.LogWarning($"[GC] ({level}) {message}");
+                    break;
+                case LogLevel.Info:
+                    if (logLevelIndex < (int)LogLevel.Info) return;
+                    Debug.Log($"[GC] ({level}) {message}");
+                    break;
+                case LogLevel.Debug:
+                    if (logLevelIndex < (int)LogLevel.Debug) return;
+                    Debug.Log($"[GC] ({level}) {message}");
+                    break;
+            }
+        }
+
+        private void LogWarning(string message)
+        {
+            Log(LogLevel.Warning, message);
+        }
+
+        private void LogInfo(string message)
+        {
+            Log(LogLevel.Info, message);
+        }
+
+        private void LogDebug(string message)
+        {
+            Log(LogLevel.Debug, message);
+        }
+
         [DllImport("__Internal")]
         private static extern void GamingCouchSetupDone();
 
@@ -39,6 +81,8 @@ namespace DSB.GC
 
         private void Awake()
         {
+            LogDebug("Awake");
+
             if (instance == null)
             {
                 instance = this;
@@ -59,6 +103,8 @@ namespace DSB.GC
 
         private void Start()
         {
+            LogDebug("Start");
+
 #if UNITY_EDITOR
             // When integrated, platform will define the setup options on Unity boot up.
             setupOptions = GetEditorSetupOptions();
@@ -69,6 +115,8 @@ namespace DSB.GC
 
         private void GCStart()
         {
+            LogDebug("GCStart");
+
             status = GCStatus.PendingSetup;
 
             if (setupOptions == null)
@@ -99,7 +147,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchSetup(string optionsJson)
         {
-            Debug.Log("GamingCouchSetup: " + optionsJson);
+            LogInfo("GamingCouchSetup: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
@@ -113,7 +161,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchPlay(string optionsJson)
         {
-            Debug.Log("GamingCouchPlay: " + optionsJson);
+            LogInfo("GamingCouchPlay: " + optionsJson);
 
             GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
@@ -121,6 +169,7 @@ namespace DSB.GC
 
         private IEnumerator _EditorPlay()
         {
+            LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPLay by the platform
             Play(GetEditorPlayOptions());
         }
@@ -156,6 +205,8 @@ namespace DSB.GC
         /// </summary>
         public void SetupDone()
         {
+            LogDebug("SetupDone");
+
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
 #else
@@ -170,6 +221,8 @@ namespace DSB.GC
         /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
         public void GameEnd(int[] placementsByPlayerId)
         {
+            LogDebug($"GameEnd: {string.Join(",", placementsByPlayerId)}");
+
             byte[] result = new byte[placementsByPlayerId.Length];
             for (int i = 0; i < placementsByPlayerId.Length; i++)
             {
@@ -186,6 +239,8 @@ namespace DSB.GC
         #region Player
         private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : IGCPlayer
         {
+            LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
+
             var gameObject = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             var targetType = gameObject.GetComponent<T>();
             if (targetType == null)
@@ -228,6 +283,8 @@ namespace DSB.GC
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
         public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : class, IGCPlayer
         {
+            LogInfo("InstantiatePlayers");
+
             if (typeof(T) == typeof(IGCPlayer))
             {
                 throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPLayer or extend GCPLayer. Eg. do not call InstantiatePlayers<IGCPLayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPLayer or extends GCPLayer.");
@@ -270,6 +327,7 @@ namespace DSB.GC
         /// </summary>
         public void ClearInputs()
         {
+            LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
         }
         #endregion
@@ -445,6 +503,8 @@ namespace DSB.GC
         /// </summary>
         public void Restart()
         {
+            LogDebug("Restart");
+
             if (Application.isEditor && !Application.isPlaying)
             {
                 throw new Exception("Restart can only be called in play mode.");
