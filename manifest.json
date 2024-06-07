@@ -25,36 +25,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GCHud.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GCHud.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GCHudConfig.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GCHudConfig.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GCHudPlayersConfig.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GCHudPlayersConfig.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCPlayOptions.yml",
       "output": {
         ".html": {
@@ -105,26 +75,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GCPlayersHudData.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GCPlayersHudData.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GCPlayersHudDataPlayer.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GCPlayersHudDataPlayer.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCSetupOptions.yml",
       "output": {
         ".html": {
@@ -159,6 +109,66 @@
       "output": {
         ".html": {
           "relative_path": "api/DSB.GC.GamingCouch.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCHud.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCHud.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCHudConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCHudConfig.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCHudPlayersConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCHudPlayersConfig.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCPlayersHudData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCPlayersHudData.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCPlayersHudDataPlayer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.html"
         }
       },
       "version": ""

@@ -4,21 +4,6 @@
     "title": "Class GCControllerInputs | Gaming Couch | 0.0.1",
     "keywords": "Class GCControllerInputs Namespace DSB.GC [Serializable] public class GCControllerInputs Inheritance object GCControllerInputs Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Fields b1 public int b1 Field Value int b2 public int b2 Field Value int b3 public int b3 Field Value int b4 public int b4 Field Value int lx public float lx Field Value float ly public float ly Field Value float rx public float rx Field Value float ry public float ry Field Value float Methods CreateFromJSON(string) public static GCControllerInputs CreateFromJSON(string inputsJson) Parameters inputsJson string Returns GCControllerInputs"
   },
-  "api/DSB.GC.GCHud.html": {
-    "href": "api/DSB.GC.GCHud.html",
-    "title": "Class GCHud | Gaming Couch | 0.0.1",
-    "keywords": "Class GCHud Namespace DSB.GC public class GCHud Inheritance object GCHud Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Methods Setup(GCHudConfig) public void Setup(GCHudConfig playersHudData) Parameters playersHudData GCHudConfig UpdatePlayers(GCPlayersHudData) public void UpdatePlayers(GCPlayersHudData playersHudData) Parameters playersHudData GCPlayersHudData"
-  },
-  "api/DSB.GC.GCHudConfig.html": {
-    "href": "api/DSB.GC.GCHudConfig.html",
-    "title": "Struct GCHudConfig | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCHudConfig Namespace DSB.GC [Serializable] public struct GCHudConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players public GCHudPlayersConfig players Field Value GCHudPlayersConfig"
-  },
-  "api/DSB.GC.GCHudPlayersConfig.html": {
-    "href": "api/DSB.GC.GCHudPlayersConfig.html",
-    "title": "Struct GCHudPlayersConfig | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCHudPlayersConfig Namespace DSB.GC [Serializable] public struct GCHudPlayersConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields valueType public string valueType Field Value string"
-  },
   "api/DSB.GC.GCPlayOptions.html": {
     "href": "api/DSB.GC.GCPlayOptions.html",
     "title": "Class GCPlayOptions | Gaming Couch | 0.0.1",
@@ -44,16 +29,6 @@
     "title": "Class GCPlayerStore<T> | Gaming Couch | 0.0.1",
     "keywords": "Class GCPlayerStore<T> Namespace DSB.GC public class GCPlayerStore<T> : IGCPlayerStoreOutput<T>, IGCPlayerStoreInput<T> where T : IGCPlayer Type Parameters T Inheritance object GCPlayerStore<T> Implements IGCPlayerStoreOutput<T> IGCPlayerStoreInput<T> Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Constructors GCPlayerStore() public GCPlayerStore() Methods AddPlayer(T) public void AddPlayer(T player) Parameters player T Clear() public void Clear() GetPlayerById(int) public T GetPlayerById(int playerId) Parameters playerId int Returns T GetPlayerByIndex(int) public T GetPlayerByIndex(int index) Parameters index int Returns T GetPlayerCount() public int GetPlayerCount() Returns int GetPlayers() public List<T> GetPlayers() Returns List<T> GetPlayersEnumerable() public IEnumerable<T> GetPlayersEnumerable() Returns IEnumerable<T>"
   },
-  "api/DSB.GC.GCPlayersHudData.html": {
-    "href": "api/DSB.GC.GCPlayersHudData.html",
-    "title": "Struct GCPlayersHudData | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCPlayersHudData Namespace DSB.GC [Serializable] public struct GCPlayersHudData Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players public GCPlayersHudDataPlayer[] players Field Value GCPlayersHudDataPlayer[]"
-  },
-  "api/DSB.GC.GCPlayersHudDataPlayer.html": {
-    "href": "api/DSB.GC.GCPlayersHudDataPlayer.html",
-    "title": "Struct GCPlayersHudDataPlayer | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCPlayersHudDataPlayer Namespace DSB.GC [Serializable] public struct GCPlayersHudDataPlayer Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields eliminated public bool eliminated Field Value bool placement public int placement Field Value int playerId public int playerId Field Value int value public string value Field Value string"
-  },
   "api/DSB.GC.GCSetupOptions.html": {
     "href": "api/DSB.GC.GCSetupOptions.html",
     "title": "Class GCSetupOptions | Gaming Couch | 0.0.1",
@@ -74,6 +49,36 @@
     "title": "Class GamingCouch | Gaming Couch | 0.0.1",
     "keywords": "Class GamingCouch Namespace DSB.GC public class GamingCouch : MonoBehaviour Inheritance object GamingCouch Properties Hud public GCHud Hud { get; } Property Value GCHud Instance public static GamingCouch Instance { get; } Property Value GamingCouch Status public GCStatus Status { get; } Property Value GCStatus Methods Clear() public void Clear() ClearInputs() public void ClearInputs() GameEnd(int[]) public void GameEnd(int[] placementsByPlayerId) Parameters placementsByPlayerId int[] GetEditorPlayOptions() public GCPlayOptions GetEditorPlayOptions() Returns GCPlayOptions GetEditorSetupOptions() public GCSetupOptions GetEditorSetupOptions() Returns GCSetupOptions GetInputsByPlayerId(int) public GCControllerInputs GetInputsByPlayerId(int playerId) Parameters playerId int Returns GCControllerInputs InstantiatePlayers<T>(GCPlayerStore<T>, PlayerOptions[]) public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, PlayerOptions[] playerOptions) where T : class, IGCPlayer Parameters playerStore GCPlayerStore<T> playerOptions PlayerOptions[] Type Parameters T Restart() public void Restart() SetupDone() Call this method to setup the game. public void SetupDone()"
   },
+  "api/DSB.GC.Hud.GCHud.html": {
+    "href": "api/DSB.GC.Hud.GCHud.html",
+    "title": "Class GCHud | Gaming Couch | 0.0.1",
+    "keywords": "Class GCHud Namespace DSB.GC.Hud public class GCHud Inheritance object GCHud Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Methods Setup(GCHudConfig) public void Setup(GCHudConfig playersHudData) Parameters playersHudData GCHudConfig UpdatePlayers(GCPlayersHudData) public void UpdatePlayers(GCPlayersHudData playersHudData) Parameters playersHudData GCPlayersHudData"
+  },
+  "api/DSB.GC.Hud.GCHudConfig.html": {
+    "href": "api/DSB.GC.Hud.GCHudConfig.html",
+    "title": "Struct GCHudConfig | Gaming Couch | 0.0.1",
+    "keywords": "Struct GCHudConfig Namespace DSB.GC.Hud [Serializable] public struct GCHudConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players public GCHudPlayersConfig players Field Value GCHudPlayersConfig"
+  },
+  "api/DSB.GC.Hud.GCHudPlayersConfig.html": {
+    "href": "api/DSB.GC.Hud.GCHudPlayersConfig.html",
+    "title": "Struct GCHudPlayersConfig | Gaming Couch | 0.0.1",
+    "keywords": "Struct GCHudPlayersConfig Namespace DSB.GC.Hud [Serializable] public struct GCHudPlayersConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields valueType public string valueType Field Value string"
+  },
+  "api/DSB.GC.Hud.GCPlayersHudData.html": {
+    "href": "api/DSB.GC.Hud.GCPlayersHudData.html",
+    "title": "Struct GCPlayersHudData | Gaming Couch | 0.0.1",
+    "keywords": "Struct GCPlayersHudData Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudData Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players public GCPlayersHudDataPlayer[] players Field Value GCPlayersHudDataPlayer[]"
+  },
+  "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html": {
+    "href": "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html",
+    "title": "Struct GCPlayersHudDataPlayer | Gaming Couch | 0.0.1",
+    "keywords": "Struct GCPlayersHudDataPlayer Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudDataPlayer Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields eliminated public bool eliminated Field Value bool placement public int placement Field Value int playerId public int playerId Field Value int value public string value Field Value string"
+  },
+  "api/DSB.GC.Hud.html": {
+    "href": "api/DSB.GC.Hud.html",
+    "title": "Namespace DSB.GC.Hud | Gaming Couch | 0.0.1",
+    "keywords": "Namespace DSB.GC.Hud Classes GCHud Structs GCHudConfig GCHudPlayersConfig GCPlayersHudData GCPlayersHudDataPlayer"
+  },
   "api/DSB.GC.PlayerOptions.html": {
     "href": "api/DSB.GC.PlayerOptions.html",
     "title": "Struct PlayerOptions | Gaming Couch | 0.0.1",
@@ -82,7 +87,7 @@
   "api/DSB.GC.html": {
     "href": "api/DSB.GC.html",
     "title": "Namespace DSB.GC | Gaming Couch | 0.0.1",
-    "keywords": "Namespace DSB.GC Classes GCControllerInputs GCHud GCPlayOptions GCPlayer GCPlayerStore<T> GCSetupOptions GamingCouch Structs GCHudConfig GCHudPlayersConfig GCPlayerSetupOptions GCPlayersHudData GCPlayersHudDataPlayer GamingCouch.PlayerEditorData PlayerOptions Enums GCPlayerColor GCStatus"
+    "keywords": "Namespace DSB.GC Classes GCControllerInputs GCPlayOptions GCPlayer GCPlayerStore<T> GCSetupOptions GamingCouch Structs GCPlayerSetupOptions GamingCouch.PlayerEditorData PlayerOptions Enums GCPlayerColor GCStatus"
   },
   "api/Global.IGCPlayer.html": {
     "href": "api/Global.IGCPlayer.html",
