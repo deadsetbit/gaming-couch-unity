@@ -105,16 +105,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.GamingCouch.PlayerEditorData.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.GamingCouch.PlayerEditorData.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GamingCouch.yml",
       "output": {
         ".html": {

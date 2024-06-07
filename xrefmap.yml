@@ -569,33 +569,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.InstantiatePlayers
   nameWithType: GamingCouch.InstantiatePlayers
-- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},PlayerOptions[])
-  name: InstantiatePlayers<T>(GCPlayerStore<T>, PlayerOptions[])
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__PlayerOptions___
-  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},PlayerOptions[])
-  name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), PlayerOptions())
-  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, PlayerOptions[])
-  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), PlayerOptions())
-  nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, PlayerOptions[])
-  nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), PlayerOptions())
-- uid: DSB.GC.GamingCouch.PlayerEditorData
-  name: GamingCouch.PlayerEditorData
-  href: api/DSB.GC.GamingCouch.PlayerEditorData.html
-  commentId: T:DSB.GC.GamingCouch.PlayerEditorData
-  fullName: DSB.GC.GamingCouch.PlayerEditorData
-  nameWithType: GamingCouch.PlayerEditorData
-- uid: DSB.GC.GamingCouch.PlayerEditorData.color
-  name: color
-  href: api/DSB.GC.GamingCouch.PlayerEditorData.html#DSB_GC_GamingCouch_PlayerEditorData_color
-  commentId: F:DSB.GC.GamingCouch.PlayerEditorData.color
-  fullName: DSB.GC.GamingCouch.PlayerEditorData.color
-  nameWithType: GamingCouch.PlayerEditorData.color
-- uid: DSB.GC.GamingCouch.PlayerEditorData.name
-  name: name
-  href: api/DSB.GC.GamingCouch.PlayerEditorData.html#DSB_GC_GamingCouch_PlayerEditorData_name
-  commentId: F:DSB.GC.GamingCouch.PlayerEditorData.name
-  fullName: DSB.GC.GamingCouch.PlayerEditorData.name
-  nameWithType: GamingCouch.PlayerEditorData.name
+- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[])
+  name: InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[])
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__DSB_GC_GCPlayerOptions___
+  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[])
+  name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions())
+  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, DSB.GC.GCPlayerOptions[])
+  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.GCPlayerOptions())
+  nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[])
+  nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions())
 - uid: DSB.GC.GamingCouch.Restart
   name: Restart()
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Restart
