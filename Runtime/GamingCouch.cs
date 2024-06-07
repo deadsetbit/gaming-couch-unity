@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using DSB.GC.Hud;
 
 namespace DSB.GC
 {

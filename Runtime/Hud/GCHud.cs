@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace DSB.GC
+namespace DSB.GC.Hud
 {
     [Serializable]
     public struct GCHudPlayersConfig
