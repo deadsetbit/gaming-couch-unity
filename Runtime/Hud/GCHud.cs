@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace DSB.GC.Hud
 {
+    /// <summary>
+    /// Configuration for the players hud.
+    /// </summary>
+    /// <param name="valueType">This can be "pointsSmall", "text" or "lives". TODO: Document the valueType elsewhere and reference to it, as it's shared with the platform?</param>
     [Serializable]
     public struct GCHudPlayersConfig
     {
