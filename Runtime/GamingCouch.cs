@@ -216,6 +216,12 @@ namespace DSB.GC
             return targetType;
         }
 
+        /// <summary>
+        /// Instantiate players by using the prefab defined in GamingCouch game object's inspector.
+        /// </summary>
+        /// <typeparam name="T">Your game specific player class that inherits IGCPlayer or extends GCPlayer.</typeparam>
+        /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
+        /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
         public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, PlayerOptions[] playerOptions) where T : class, IGCPlayer
         {
             if (typeof(T) == typeof(IGCPlayer))
@@ -244,7 +250,7 @@ namespace DSB.GC
         /// Get player inputs by player ID.
         /// </summary>
         /// <param name="playerId">Player ID</param>
-        /// <returns>GCControllerInputs or null if not available</returns>
+        /// <returns>null if not available</returns>
         public GCControllerInputs GetInputsByPlayerId(int playerId)
         {
             if (inputsByPlayerId.ContainsKey(playerId))
