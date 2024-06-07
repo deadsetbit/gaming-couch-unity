@@ -62,7 +62,7 @@
   "api/DSB.GC.Hud.GCHudPlayersConfig.html": {
     "href": "api/DSB.GC.Hud.GCHudPlayersConfig.html",
     "title": "Struct GCHudPlayersConfig | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCHudPlayersConfig Namespace DSB.GC.Hud [Serializable] public struct GCHudPlayersConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields valueType public string valueType Field Value string"
+    "keywords": "Struct GCHudPlayersConfig Namespace DSB.GC.Hud Configuration for the players hud. [Serializable] public struct GCHudPlayersConfig Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields valueType public string valueType Field Value string"
   },
   "api/DSB.GC.Hud.GCPlayersHudData.html": {
     "href": "api/DSB.GC.Hud.GCPlayersHudData.html",
@@ -77,7 +77,7 @@
   "api/DSB.GC.Hud.html": {
     "href": "api/DSB.GC.Hud.html",
     "title": "Namespace DSB.GC.Hud | Gaming Couch | 0.0.1",
-    "keywords": "Namespace DSB.GC.Hud Classes GCHud Structs GCHudConfig GCHudPlayersConfig GCPlayersHudData GCPlayersHudDataPlayer"
+    "keywords": "Namespace DSB.GC.Hud Classes GCHud Structs GCHudConfig GCHudPlayersConfig Configuration for the players hud. GCPlayersHudData GCPlayersHudDataPlayer"
   },
   "api/DSB.GC.LogLevel.html": {
     "href": "api/DSB.GC.LogLevel.html",
