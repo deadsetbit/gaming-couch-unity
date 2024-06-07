@@ -13,15 +13,40 @@ namespace DSB.GC
 
     public enum LogLevel { None, Warning, Info, Debug }
 
+    [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
     {
-        public LogLevel logLevel = LogLevel.Debug;
+        [DllImport("__Internal")]
+        private static extern void GamingCouchSetupDone();
+
+        [DllImport("__Internal")]
+        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
+
+        private static int MAX_PLAYERS = 8;
+        private static int MAX_NAME_LENGTH = 8;
+        private static GamingCouch instance = null;
+        public static GamingCouch Instance => instance;
+        [Header("Integration configuration")]
+        [SerializeField]
+        private GameObject listener;
+        [SerializeField]
+        [Tooltip("Make sure your player prefab inherits IGCPLayer or extends GCPLayer.")]
+        private GameObject playerPrefab;
+        private GCSetupOptions setupOptions; // this is assigned in GCSetup
+        private GCStatus status = GCStatus.PendingSetup;
+        public GCStatus Status => status;
+        private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
+
+        private GCHud hud = new GCHud();
+        public GCHud Hud => hud;
+
+        public LogLevel LogLevel = LogLevel.Debug;
 
         private void Log(LogLevel level, string message)
         {
-            if (logLevel == LogLevel.None) return;
+            if (LogLevel == LogLevel.None) return;
 
-            var logLevelIndex = (int)logLevel;
+            var logLevelIndex = (int)LogLevel;
 
             switch (level)
             {
@@ -55,45 +80,30 @@ namespace DSB.GC
             Log(LogLevel.Debug, message);
         }
 
-        [DllImport("__Internal")]
-        private static extern void GamingCouchSetupDone();
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
-
-        private static int MAX_PLAYERS = 8;
-        private static int MAX_NAME_LENGTH = 8;
-        private static GamingCouch instance = null;
-        public static GamingCouch Instance => instance;
-        [Header("Integration configuration")]
-        [SerializeField]
-        private GameObject listener;
-        [SerializeField]
-        [Tooltip("Make sure your player prefab inherits IGCPLayer or extends GCPLayer.")]
-        private GameObject playerPrefab;
-        private GCSetupOptions setupOptions; // this is assigned in GCSetup
-        private GCStatus status = GCStatus.PendingSetup;
-        public GCStatus Status => status;
-        private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
-
-        private GCHud hud = new GCHud();
-        public GCHud Hud => hud;
-
         private void Awake()
         {
             LogDebug("Awake");
+            if (FindObjectsOfType<GamingCouch>().Length > 1)
+            {
+                if (Application.isEditor && !Application.isPlaying)
+                {
+                    throw new Exception("You have multiple GamingCouch instances in the scene. Make sure to have only one.");
+                }
 
-            if (instance == null)
-            {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Debug.LogWarning("GamingCouch instance already exists. Destroying new instance.");
+                LogWarning("GamingCouch instance already exists. Destroying new instance.");
+
                 Destroy(gameObject);
                 return;
             }
+
+            GamingCouch.instance = this;
+
+            if (Application.isEditor && !Application.isPlaying)
+            {
+                return;
+            }
+
+            DontDestroyOnLoad(gameObject);
 
             if (!listener)
             {
@@ -103,6 +113,11 @@ namespace DSB.GC
 
         private void Start()
         {
+            if (Application.isEditor && !Application.isPlaying)
+            {
+                return;
+            }
+
             LogDebug("Start");
 
 #if UNITY_EDITOR
@@ -137,6 +152,11 @@ namespace DSB.GC
 
         private void Update()
         {
+            if (Application.isEditor && !Application.isPlaying)
+            {
+                return;
+            }
+
             UpdateEditorInputs();
         }
 
@@ -381,7 +401,6 @@ namespace DSB.GC
         }
 
         [Header("Editor player settings")]
-        [SerializeField]
         private PlayerEditorData[] playerData = new PlayerEditorData[0];
 
         [SerializeField]
