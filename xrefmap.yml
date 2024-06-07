@@ -217,6 +217,30 @@ references:
   commentId: F:DSB.GC.GCPlayerColor.yellow
   fullName: DSB.GC.GCPlayerColor.yellow
   nameWithType: GCPlayerColor.yellow
+- uid: DSB.GC.GCPlayerOptions
+  name: GCPlayerOptions
+  href: api/DSB.GC.GCPlayerOptions.html
+  commentId: T:DSB.GC.GCPlayerOptions
+  fullName: DSB.GC.GCPlayerOptions
+  nameWithType: GCPlayerOptions
+- uid: DSB.GC.GCPlayerOptions.color
+  name: color
+  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_color
+  commentId: F:DSB.GC.GCPlayerOptions.color
+  fullName: DSB.GC.GCPlayerOptions.color
+  nameWithType: GCPlayerOptions.color
+- uid: DSB.GC.GCPlayerOptions.name
+  name: name
+  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_name
+  commentId: F:DSB.GC.GCPlayerOptions.name
+  fullName: DSB.GC.GCPlayerOptions.name
+  nameWithType: GCPlayerOptions.name
+- uid: DSB.GC.GCPlayerOptions.playerId
+  name: playerId
+  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_playerId
+  commentId: F:DSB.GC.GCPlayerOptions.playerId
+  fullName: DSB.GC.GCPlayerOptions.playerId
+  nameWithType: GCPlayerOptions.playerId
 - uid: DSB.GC.GCPlayerSetupOptions
   name: GCPlayerSetupOptions
   href: api/DSB.GC.GCPlayerSetupOptions.html
@@ -545,13 +569,13 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.InstantiatePlayers
   nameWithType: GamingCouch.InstantiatePlayers
-- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.PlayerOptions[])
+- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},PlayerOptions[])
   name: InstantiatePlayers<T>(GCPlayerStore<T>, PlayerOptions[])
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__DSB_GC_PlayerOptions___
-  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.PlayerOptions[])
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__PlayerOptions___
+  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},PlayerOptions[])
   name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), PlayerOptions())
-  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, DSB.GC.PlayerOptions[])
-  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.PlayerOptions())
+  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, PlayerOptions[])
+  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), PlayerOptions())
   nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, PlayerOptions[])
   nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), PlayerOptions())
 - uid: DSB.GC.GamingCouch.PlayerEditorData
@@ -715,30 +739,6 @@ references:
   commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.value
   fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.value
   nameWithType: GCPlayersHudDataPlayer.value
-- uid: DSB.GC.PlayerOptions
-  name: PlayerOptions
-  href: api/DSB.GC.PlayerOptions.html
-  commentId: T:DSB.GC.PlayerOptions
-  fullName: DSB.GC.PlayerOptions
-  nameWithType: PlayerOptions
-- uid: DSB.GC.PlayerOptions.color
-  name: color
-  href: api/DSB.GC.PlayerOptions.html#DSB_GC_PlayerOptions_color
-  commentId: F:DSB.GC.PlayerOptions.color
-  fullName: DSB.GC.PlayerOptions.color
-  nameWithType: PlayerOptions.color
-- uid: DSB.GC.PlayerOptions.name
-  name: name
-  href: api/DSB.GC.PlayerOptions.html#DSB_GC_PlayerOptions_name
-  commentId: F:DSB.GC.PlayerOptions.name
-  fullName: DSB.GC.PlayerOptions.name
-  nameWithType: PlayerOptions.name
-- uid: DSB.GC.PlayerOptions.playerId
-  name: playerId
-  href: api/DSB.GC.PlayerOptions.html#DSB_GC_PlayerOptions_playerId
-  commentId: F:DSB.GC.PlayerOptions.playerId
-  fullName: DSB.GC.PlayerOptions.playerId
-  nameWithType: PlayerOptions.playerId
 - uid: Global
   name: ''
   href: api/Global.html

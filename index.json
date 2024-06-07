@@ -7,7 +7,7 @@
   "api/DSB.GC.GCPlayOptions.html": {
     "href": "api/DSB.GC.GCPlayOptions.html",
     "title": "Class GCPlayOptions | Gaming Couch | 0.0.1",
-    "keywords": "Class GCPlayOptions Namespace DSB.GC [Serializable] public class GCPlayOptions Inheritance object GCPlayOptions Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Fields players public PlayerOptions[] players Field Value PlayerOptions[] Methods CreateFromJSON(string) public static GCPlayOptions CreateFromJSON(string optionsJson) Parameters optionsJson string Returns GCPlayOptions"
+    "keywords": "Class GCPlayOptions Namespace DSB.GC [Serializable] public class GCPlayOptions Inheritance object GCPlayOptions Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Fields players public GCPlayerOptions[] players Field Value GCPlayerOptions[] Methods CreateFromJSON(string) public static GCPlayOptions CreateFromJSON(string optionsJson) Parameters optionsJson string Returns GCPlayOptions"
   },
   "api/DSB.GC.GCPlayer.html": {
     "href": "api/DSB.GC.GCPlayer.html",
@@ -18,6 +18,11 @@
     "href": "api/DSB.GC.GCPlayerColor.html",
     "title": "Enum GCPlayerColor | Gaming Couch | 0.0.1",
     "keywords": "Enum GCPlayerColor Namespace DSB.GC public enum GCPlayerColor Fields blue = 0 brown = 7 cyan = 6 green = 2 pink = 5 purple = 4 red = 1 yellow = 3"
+  },
+  "api/DSB.GC.GCPlayerOptions.html": {
+    "href": "api/DSB.GC.GCPlayerOptions.html",
+    "title": "Struct GCPlayerOptions | Gaming Couch | 0.0.1",
+    "keywords": "Struct GCPlayerOptions Namespace DSB.GC [Serializable] public struct GCPlayerOptions Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields color public string color Field Value string name public string name Field Value string playerId public int playerId Field Value int"
   },
   "api/DSB.GC.GCPlayerSetupOptions.html": {
     "href": "api/DSB.GC.GCPlayerSetupOptions.html",
@@ -79,15 +84,10 @@
     "title": "Namespace DSB.GC.Hud | Gaming Couch | 0.0.1",
     "keywords": "Namespace DSB.GC.Hud Classes GCHud Structs GCHudConfig GCHudPlayersConfig GCPlayersHudData GCPlayersHudDataPlayer"
   },
-  "api/DSB.GC.PlayerOptions.html": {
-    "href": "api/DSB.GC.PlayerOptions.html",
-    "title": "Struct PlayerOptions | Gaming Couch | 0.0.1",
-    "keywords": "Struct PlayerOptions Namespace DSB.GC [Serializable] public struct PlayerOptions Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields color public string color Field Value string name public string name Field Value string playerId public int playerId Field Value int"
-  },
   "api/DSB.GC.html": {
     "href": "api/DSB.GC.html",
     "title": "Namespace DSB.GC | Gaming Couch | 0.0.1",
-    "keywords": "Namespace DSB.GC Classes GCControllerInputs GCPlayOptions GCPlayer GCPlayerStore<T> GCSetupOptions GamingCouch Structs GCPlayerSetupOptions GamingCouch.PlayerEditorData PlayerOptions Enums GCPlayerColor GCStatus"
+    "keywords": "Namespace DSB.GC Classes GCControllerInputs GCPlayOptions GCPlayer GCPlayerStore<T> GCSetupOptions GamingCouch Structs GCPlayerOptions GCPlayerSetupOptions GamingCouch.PlayerEditorData Enums GCPlayerColor GCStatus"
   },
   "api/Global.IGCPlayer.html": {
     "href": "api/Global.IGCPlayer.html",

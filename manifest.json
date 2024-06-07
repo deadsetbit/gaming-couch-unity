@@ -55,6 +55,16 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerOptions.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCPlayerSetupOptions.yml",
       "output": {
         ".html": {
@@ -169,16 +179,6 @@
       "output": {
         ".html": {
           "relative_path": "api/DSB.GC.Hud.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.PlayerOptions.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DSB.GC.PlayerOptions.html"
         }
       },
       "version": ""
