@@ -15,9 +15,8 @@ Follow the integration steps below to get started.
 
 ## 1) Add GamingCouch game object
 
-Add GamingCouch game object to your main game scene alongside your main game script object.
-
-// TODO: Need to make editor menu script to create the GamingCouch game object!
+Add GamingCouch game object to your main game scene alongside your main game script object,
+by clicking the scene hierarchy right mouse button and selecting "GamingCouch" from the menu.
 
 ## 2) Create and link game script
 
