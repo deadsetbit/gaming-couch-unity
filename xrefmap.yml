@@ -496,32 +496,6 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.GameEnd
   nameWithType: GamingCouch.GameEnd
-- uid: DSB.GC.GamingCouch.GetEditorPlayOptions
-  name: GetEditorPlayOptions()
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetEditorPlayOptions
-  commentId: M:DSB.GC.GamingCouch.GetEditorPlayOptions
-  fullName: DSB.GC.GamingCouch.GetEditorPlayOptions()
-  nameWithType: GamingCouch.GetEditorPlayOptions()
-- uid: DSB.GC.GamingCouch.GetEditorPlayOptions*
-  name: GetEditorPlayOptions
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetEditorPlayOptions_
-  commentId: Overload:DSB.GC.GamingCouch.GetEditorPlayOptions
-  isSpec: "True"
-  fullName: DSB.GC.GamingCouch.GetEditorPlayOptions
-  nameWithType: GamingCouch.GetEditorPlayOptions
-- uid: DSB.GC.GamingCouch.GetEditorSetupOptions
-  name: GetEditorSetupOptions()
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetEditorSetupOptions
-  commentId: M:DSB.GC.GamingCouch.GetEditorSetupOptions
-  fullName: DSB.GC.GamingCouch.GetEditorSetupOptions()
-  nameWithType: GamingCouch.GetEditorSetupOptions()
-- uid: DSB.GC.GamingCouch.GetEditorSetupOptions*
-  name: GetEditorSetupOptions
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetEditorSetupOptions_
-  commentId: Overload:DSB.GC.GamingCouch.GetEditorSetupOptions
-  isSpec: "True"
-  fullName: DSB.GC.GamingCouch.GetEditorSetupOptions
-  nameWithType: GamingCouch.GetEditorSetupOptions
 - uid: DSB.GC.GamingCouch.GetInputsByPlayerId(System.Int32)
   name: GetInputsByPlayerId(int)
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetInputsByPlayerId_System_Int32_
