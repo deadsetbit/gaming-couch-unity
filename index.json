@@ -12,7 +12,7 @@
   "api/DSB.GC.GCPlayer.html": {
     "href": "api/DSB.GC.GCPlayer.html",
     "title": "Class GCPlayer | Gaming Couch | 0.0.1",
-    "keywords": "Class GCPlayer Namespace DSB.GC public class GCPlayer : MonoBehaviour, IGCPlayer Inheritance object GCPlayer Implements IGCPlayer Methods GamingCouchSetup(GCPlayerSetupOptions) public virtual void GamingCouchSetup(GCPlayerSetupOptions options) Parameters options GCPlayerSetupOptions GetColor() public virtual Color GetColor() Returns Color GetId() public virtual int GetId() Returns int GetName() public virtual string GetName() Returns string"
+    "keywords": "Class GCPlayer Namespace DSB.GC public class GCPlayer : MonoBehaviour, IGCPlayer Inheritance object GCPlayer Implements IGCPlayer Methods GamingCouchSetup(GCPlayerSetupOptions) Do not call this in your game script. This is called by the GamingCouch script. If you want to do something custom with the options on player setup, override this method. NOTE: Don't forget to call base.GamingCouchSetup(options) when overriding. public virtual void GamingCouchSetup(GCPlayerSetupOptions options) Parameters options GCPlayerSetupOptions Options provided by the platform GetColor() Get the player color provided by GamingCouch in GCPlayer.GamingCouchSetup. public virtual Color GetColor() Returns Color GetId() Get the player id provided by GamingCouch in GCPlayer.GamingCouchSetup. public virtual int GetId() Returns int GetName() Get the player name provided by GamingCouch in GCPlayer.GamingCouchSetup. public virtual string GetName() Returns string"
   },
   "api/DSB.GC.GCPlayerColor.html": {
     "href": "api/DSB.GC.GCPlayerColor.html",
