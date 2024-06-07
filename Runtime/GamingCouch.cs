@@ -226,7 +226,7 @@ namespace DSB.GC
         /// <typeparam name="T">Your game specific player class that inherits IGCPlayer or extends GCPlayer.</typeparam>
         /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, PlayerOptions[] playerOptions) where T : class, IGCPlayer
+        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : class, IGCPlayer
         {
             if (typeof(T) == typeof(IGCPlayer))
             {
@@ -346,12 +346,12 @@ namespace DSB.GC
         {
             GCPlayOptions options = new GCPlayOptions
             {
-                players = new PlayerOptions[numberOfPlayers]
+                players = new GCPlayerOptions[numberOfPlayers]
             };
 
             for (int i = 0; i < numberOfPlayers; i++)
             {
-                options.players[i] = new PlayerOptions
+                options.players[i] = new GCPlayerOptions
                 {
                     playerId = randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
                     name = playerData[i].name,
