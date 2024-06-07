@@ -164,6 +164,10 @@ namespace DSB.GC
             status = GCStatus.SetupDone;
         }
 
+        /// <summary>
+        /// Inform the platform that the game has ended.
+        /// </summary>
+        /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
         public void GameEnd(int[] placementsByPlayerId)
         {
             byte[] result = new byte[placementsByPlayerId.Length];
