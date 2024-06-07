@@ -88,6 +88,8 @@ If the game has multiple game modes you can setup the hud differently for each g
 but here is the most basic setup that will just display the avatars and names:
 
 ```C#
+using DSB.GC.Hud;
+
 GamingCouch.Instance.Hud.Setup(new GCHudConfig
 {
     players = new GCHudPlayersConfig()
@@ -99,6 +101,8 @@ To display score or status text, see the [API documentation for GCHudPlayersConf
 ## Update the players HUD
 
 ```C#
+using DSB.GC.Hud;
+
 GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
     players = Game.Instance.Players.Select(player => new GCPlayersHudDataPlayer
