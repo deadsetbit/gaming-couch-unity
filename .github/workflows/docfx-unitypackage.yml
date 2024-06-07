@@ -19,7 +19,7 @@ jobs:
           submodules: true
 
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1
+        uses: deadsetbit/docfx-unitypackage@v1.0.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
