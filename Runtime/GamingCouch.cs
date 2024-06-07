@@ -316,7 +316,7 @@ namespace DSB.GC
         private string gameModeId;
 
         [Serializable]
-        public struct PlayerEditorData
+        private struct PlayerEditorData
         {
             public string name;
             public GCPlayerColor color;
