@@ -93,23 +93,24 @@ namespace DSB.GC
         }
 
         #region Methods called by the GamingCouch platform
-        /**
-        * Called by the platform when the game is ready for setup, but players are not yet all ready.
-        * See GCPLay to start the game when all the players are ready.
-        */
+        /// <summary>
+        /// Called by the platform when the game is ready for setup.
+        /// In setup, the game should load levels, assets etc. but not yet instantiate any players.
+        /// </summary>
         private void GamingCouchSetup(string optionsJson)
         {
-            Debug.Log("GCSetup: " + optionsJson);
+            Debug.Log("GamingCouchSetup: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
             setupOptions = GCSetupOptions.CreateFromJSON(optionsJson);
         }
 
-        /**
-        * Called by the platform when all players are loaded and the game is ready to play.
-        * This will be called after GCSetup.
-        */
+
+        /// <summary>
+        /// Called by the platform when all players are loaded and ready to be instantiated in the game.
+        /// After play is called, players can be instantiated and game or intro can be started.
+        /// </summary>
         private void GamingCouchPlay(string optionsJson)
         {
             Debug.Log("GamingCouchPlay: " + optionsJson);
@@ -124,15 +125,18 @@ namespace DSB.GC
             Play(GetEditorPlayOptions());
         }
 
+        /// <summary>
+        /// Triggers GamingCouchPlay and sets the status to Playing.
+        /// </summary>
         private void Play(GCPlayOptions options)
         {
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
         }
 
-        /**
-        * Called by the platform.
-        **/
+        /// <summary>
+        /// Called by the platform to update player inputs.
+        /// </summary>
         private void GamingCouchInputs(string playerIdAndInputs)
         {
             string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
@@ -147,7 +151,8 @@ namespace DSB.GC
         #region Methods to be called by the game
 
         /// <summary>
-        /// Call this method to setup the game.
+        /// Call after game setup is done eg. level and other assets are loaded and the game is ready to play intro and spawn players.
+        /// GamingCouchPlay will be called next by the platform. You should not start the game before GamingCouchPlay is called.
         /// </summary>
         public void SetupDone()
         {
@@ -235,6 +240,11 @@ namespace DSB.GC
 
         #region Player inputs
         private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        /// <summary>
+        /// Get player inputs by player ID.
+        /// </summary>
+        /// <param name="playerId">Player ID</param>
+        /// <returns>GCControllerInputs or null if not available</returns>
         public GCControllerInputs GetInputsByPlayerId(int playerId)
         {
             if (inputsByPlayerId.ContainsKey(playerId))
@@ -245,6 +255,9 @@ namespace DSB.GC
             return null;
         }
 
+        /// <summary>
+        /// Clear all player inputs.
+        /// </summary>
         public void ClearInputs()
         {
             inputsByPlayerId.Clear();
@@ -311,7 +324,7 @@ namespace DSB.GC
         [Tooltip("Randomize player ID's to better replicate real use case where ID's comes from the platform. If false, player ID's will be assigned in order starting from 1. (RECOMMENDED TO KEEP THIS ENABLED)")]
         private bool randomizePlayerIds = true;
 
-        public GCSetupOptions GetEditorSetupOptions()
+        private GCSetupOptions GetEditorSetupOptions()
         {
             return new GCSetupOptions
             {
@@ -319,7 +332,7 @@ namespace DSB.GC
             };
         }
 
-        public GCPlayOptions GetEditorPlayOptions()
+        private GCPlayOptions GetEditorPlayOptions()
         {
             GCPlayOptions options = new GCPlayOptions
             {
@@ -401,10 +414,11 @@ namespace DSB.GC
         #endregion
 
         #region Other public methods
-        /**
-        * 1) Clears players from the player store and destroys the game objects.
-        * 2) Clears player inputs.
-        */
+
+        /// <summary>
+        /// 1) Clears players from the player store and destroys the game objects.
+        /// 2) Clears player inputs.
+        /// </summary>
         public void Clear()
         {
             playerStoreOutput.Clear();
@@ -415,8 +429,17 @@ namespace DSB.GC
         * Can be called for dev purposes to quickly restart the game instead of editor play mode restart.
         * GC methods such as GCSetup and GCPLay will be called again.
         */
+
+        /// <summary>
+        /// Can be called for dev purposes to quickly restart the game in editor play mode.
+        /// </summary>
         public void Restart()
         {
+            if (Application.isEditor && !Application.isPlaying)
+            {
+                throw new Exception("Restart can only be called in play mode.");
+            }
+
             Clear();
             Start();
         }
