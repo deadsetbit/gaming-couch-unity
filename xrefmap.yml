@@ -617,6 +617,12 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.Status
   nameWithType: GamingCouch.Status
+- uid: DSB.GC.GamingCouch.logLevel
+  name: logLevel
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_logLevel
+  commentId: F:DSB.GC.GamingCouch.logLevel
+  fullName: DSB.GC.GamingCouch.logLevel
+  nameWithType: GamingCouch.logLevel
 - uid: DSB.GC.Hud
   name: DSB.GC.Hud
   href: api/DSB.GC.Hud.html
@@ -721,6 +727,36 @@ references:
   commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.value
   fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.value
   nameWithType: GCPlayersHudDataPlayer.value
+- uid: DSB.GC.LogLevel
+  name: LogLevel
+  href: api/DSB.GC.LogLevel.html
+  commentId: T:DSB.GC.LogLevel
+  fullName: DSB.GC.LogLevel
+  nameWithType: LogLevel
+- uid: DSB.GC.LogLevel.Debug
+  name: Debug
+  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Debug
+  commentId: F:DSB.GC.LogLevel.Debug
+  fullName: DSB.GC.LogLevel.Debug
+  nameWithType: LogLevel.Debug
+- uid: DSB.GC.LogLevel.Info
+  name: Info
+  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Info
+  commentId: F:DSB.GC.LogLevel.Info
+  fullName: DSB.GC.LogLevel.Info
+  nameWithType: LogLevel.Info
+- uid: DSB.GC.LogLevel.None
+  name: None
+  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_None
+  commentId: F:DSB.GC.LogLevel.None
+  fullName: DSB.GC.LogLevel.None
+  nameWithType: LogLevel.None
+- uid: DSB.GC.LogLevel.Warning
+  name: Warning
+  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Warning
+  commentId: F:DSB.GC.LogLevel.Warning
+  fullName: DSB.GC.LogLevel.Warning
+  nameWithType: LogLevel.Warning
 - uid: Global
   name: ''
   href: api/Global.html
