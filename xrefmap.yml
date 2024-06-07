@@ -578,6 +578,12 @@ references:
   fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.GCPlayerOptions())
   nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[])
   nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions())
+- uid: DSB.GC.GamingCouch.LogLevel
+  name: LogLevel
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_LogLevel
+  commentId: F:DSB.GC.GamingCouch.LogLevel
+  fullName: DSB.GC.GamingCouch.LogLevel
+  nameWithType: GamingCouch.LogLevel
 - uid: DSB.GC.GamingCouch.Restart
   name: Restart()
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Restart
@@ -617,12 +623,6 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.Status
   nameWithType: GamingCouch.Status
-- uid: DSB.GC.GamingCouch.logLevel
-  name: logLevel
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_logLevel
-  commentId: F:DSB.GC.GamingCouch.logLevel
-  fullName: DSB.GC.GamingCouch.logLevel
-  nameWithType: GamingCouch.logLevel
 - uid: DSB.GC.Hud
   name: DSB.GC.Hud
   href: api/DSB.GC.Hud.html
@@ -760,6 +760,12 @@ references:
 - uid: Global
   name: ''
   href: api/Global.html
+- uid: Global.GamingCouchEditor
+  name: GamingCouchEditor
+  href: api/Global.GamingCouchEditor.html
+  commentId: T:Global.GamingCouchEditor
+  fullName: GamingCouchEditor
+  nameWithType: GamingCouchEditor
 - uid: Global.IGCPlayer
   name: IGCPlayer
   href: api/Global.IGCPlayer.html
