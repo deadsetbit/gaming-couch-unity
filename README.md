@@ -114,4 +114,4 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 });
 ```
 
-If your HUD displays score or status text, you can pass value for it, see the [API documentation for GCPlayersHudDataPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_value).
+If your HUD is setup to display score or status text, you can pass value for it, see the [API documentation for GCPlayersHudDataPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_value).
