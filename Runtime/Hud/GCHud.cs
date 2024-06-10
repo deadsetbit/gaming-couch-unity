@@ -23,15 +23,31 @@ namespace DSB.GC.Hud
     [Serializable]
     public struct GCPlayersHudDataPlayer
     {
+        /// <summary>
+        /// Gaming Couch player ID.
+        /// </summary>
         public int playerId;
+        /// <summary>
+        /// If the player is out of the game, the HUD can be set to display this player as eliminated.
+        /// </summary>
         public bool eliminated;
+        /// <summary>
+        /// The placement of the player. 0 is first place, 1 is second place, etc.
+        /// Players in the HUD will be sorted based on this value to indicate placements at given time. (HUD sorting not yet implemented)
+        /// </summary>
         public int placement;
+        /// <summary>
+        /// The value to display for the player. This can be points, lives, etc. based on the valueType in the GCHudPlayersConfig.
+        /// </summary>
         public string value;
     }
 
     [Serializable]
     public struct GCPlayersHudData
     {
+        /// <summary>
+        /// The players to display in the HUD.
+        /// </summary>
         public GCPlayersHudDataPlayer[] players;
     }
 
@@ -43,6 +59,9 @@ namespace DSB.GC.Hud
         [DllImport("__Internal")]
         private static extern void GamingCouchUpdatePlayersHud(string playersHudDataJson);
 
+        /// <summary>
+        /// Setup the HUD. Should be called once at the start of the game and before UpdatePlayers.
+        /// </summary>
         public void Setup(GCHudConfig playersHudData)
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
@@ -51,6 +70,9 @@ namespace DSB.GC.Hud
 #endif
         }
 
+        /// <summary>
+        /// Update the players in the HUD. Call Setup first.
+        /// </summary>
         public void UpdatePlayers(GCPlayersHudData playersHudData)
         {
             string playersHudDataJson = JsonUtility.ToJson(playersHudData);
