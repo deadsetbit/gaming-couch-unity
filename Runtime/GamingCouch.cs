@@ -30,7 +30,7 @@ namespace DSB.GC
         [SerializeField]
         private GameObject listener;
         [SerializeField]
-        [Tooltip("Make sure your player prefab inherits IGCPLayer or extends GCPLayer.")]
+        [Tooltip("Make sure your player prefab inherits IGCPlayer or extends GCPlayer.")]
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions; // this is assigned in GCSetup
         private GCStatus status = GCStatus.PendingSetup;
@@ -190,7 +190,7 @@ namespace DSB.GC
         private IEnumerator _EditorPlay()
         {
             LogInfo("_EditorPlay");
-            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPLay by the platform
+            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPlay by the platform
             Play(GetEditorPlayOptions());
         }
 
@@ -241,7 +241,14 @@ namespace DSB.GC
         /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
         public void GameEnd(int[] placementsByPlayerId)
         {
-            LogDebug($"GameEnd: {string.Join(",", placementsByPlayerId)}");
+            LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
+
+            for (var i = 0; i < placementsByPlayerId.Length; i++)
+            {
+                var playerId = placementsByPlayerId[i];
+                var player = playerStoreOutput.GetPlayerById(playerId);
+                LogInfo($"Player {player.GetName()} (id:{playerId}) placed {i + 1}");
+            }
 
             byte[] result = new byte[placementsByPlayerId.Length];
             for (int i = 0; i < placementsByPlayerId.Length; i++)
@@ -271,7 +278,7 @@ namespace DSB.GC
             var player = gameObject.GetComponent<IGCPlayer>();
             if (player == null)
             {
-                throw new Exception("Player prefab does not have a component that inherits IGCPLayer or extends GCPLayer.");
+                throw new Exception("Player prefab does not have a component that inherits IGCPlayer or extends GCPlayer.");
             }
 
             gameObject.name = "Player - " + name;
@@ -307,7 +314,7 @@ namespace DSB.GC
 
             if (typeof(T) == typeof(IGCPlayer))
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPLayer or extend GCPLayer. Eg. do not call InstantiatePlayers<IGCPLayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPLayer or extends GCPLayer.");
+                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<IGCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPlayer or extends GCPlayer.");
             }
 
             if (playerStore.GetPlayerCount() > 0)
@@ -514,7 +521,7 @@ namespace DSB.GC
 
         /**
         * Can be called for dev purposes to quickly restart the game instead of editor play mode restart.
-        * GC methods such as GCSetup and GCPLay will be called again.
+        * GC methods such as GCSetup and GCPlay will be called again.
         */
 
         /// <summary>
