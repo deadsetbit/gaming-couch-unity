@@ -95,23 +95,21 @@
 <p>Follow the integration steps below to get started.</p>
 <h1 id="basic-integration">Basic integration</h1>
 <h2 id="1-add-gamingcouch-game-object">1) Add GamingCouch game object</h2>
-<p>Add GamingCouch game object to your main game scene alongside your main game script object,
-by clicking the scene hierarchy right mouse button and selecting &quot;GamingCouch&quot; from the menu.</p>
+<p>Add GamingCouch game object to your main scene by right clicking the scene hierarchy and selecting &quot;GamingCouch&quot; from the menu.</p>
 <h2 id="2-create-and-link-game-script">2) Create and link game script</h2>
 <ul>
-<li>create main game script eg Game.cs or use your existing main game script</li>
-<li>create game object to the main game scene and assign the script to it</li>
-<li>link the game script to the &quot;listener&quot; field in GamingCouch game object (via inspector)
+<li>(for new game project) create &quot;Game&quot; game object to the main scene and create and add &quot;Game.cs&quot; main game script to it</li>
+<li>link your main game script to the &quot;Listener&quot; field in GamingCouch game object (via inspector)
 <ul>
-<li>now the game script will be able hook up to GamingCouch specific messages, we will get back to this</li>
+<li>now the game script will be able hook up to GamingCouch specific messages (we will get back to this)</li>
 </ul>
 </li>
 </ul>
 <h2 id="2-create-and-link-player-prefab">2) Create and link player prefab</h2>
 <ul>
-<li>create Player.cs script extend GCPLayer, or modify your existing player script</li>
-<li>create player prefab and assign the script to it</li>
-<li>link the player prefab to the &quot;player prefab&quot; field in GamingCouch game object (via inspector)</li>
+<li>(for new game project) create &quot;Player&quot; prefab and create and add &quot;Player.cs&quot; script to it</li>
+<li>make your player script extends DSB.GC.GCPlayer (instead of MonoBehaviour)</li>
+<li>link the player prefab to the &quot;Player Prefab&quot; field in GamingCouch game object (via inspector)</li>
 </ul>
 <h2 id="3-hook-up-your-main-game-script">3) Hook up your main game script</h2>
 <h3 id="define-player-store-in-your-main-game-script">Define player store in your main game script</h3>
@@ -122,7 +120,7 @@ using DSB.GC;
 private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt;();
 </code></pre>
 <h3 id="listen-for-gamingcouchsetup-message">Listen for GamingCouchSetup message</h3>
-<p>This is the place where you can choose to load levels and what not based on the GCSetupOptions:</p>
+<p>This is the place where you can start to load levels and what not based on the GCSetupOptions:</p>
 <pre><code class="lang-C#">private void GamingCouchSetup(GCSetupOptions options)
 {
     // do stuff based on the options. Eg. load level based on game mode etc.
@@ -132,7 +130,7 @@ private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt
 }
 </code></pre>
 <p>Next we need to listen when GC and all the players are ready to play:</p>
-<pre><code class="lang-C#">private void GamingCouchPlay(GCPLayOptions options)
+<pre><code class="lang-C#">private void GamingCouchPlay(GCPlayOptions options)
 {
     // we now have all the successfully loaded players so we can instantiate them.
     // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
@@ -160,15 +158,16 @@ GamingCouch.Instance.Hud.Setup(new GCHudConfig
 </code></pre>
 <p>To display score or status text, see the <a href="https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueType">API documentation for GCHudPlayersConfig</a>.</p>
 <h2 id="update-the-players-hud">Update the players HUD</h2>
-<pre><code class="lang-C#">using DSB.GC.Hud;
+<pre><code class="lang-C#">using System.Linq;
+using DSB.GC.Hud;
 
 GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
-    players = Game.Instance.Players.Select(player =&gt; new GCPlayersHudDataPlayer
+    players = playerStore.GetPlayers().Select(player =&gt; new GCPlayersHudDataPlayer
     {
-        playerId = player.GetId(),
-        eliminated = !player.IsAlive,
-        placement = 0,
+        playerId = player.GetId(), // The GamingCouch player id
+        eliminated = !player.IsAlive, // IsAlive is not provided by GCPlayer
+        placement = 0, // The placement of the player to sort the players HUD by
     }).ToArray()
 });
 </code></pre>
