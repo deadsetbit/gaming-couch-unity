@@ -52,7 +52,7 @@
   "api/DSB.GC.Hud.GCHud.html": {
     "href": "api/DSB.GC.Hud.GCHud.html",
     "title": "Class GCHud | Gaming Couch | 0.0.1",
-    "keywords": "Class GCHud Namespace DSB.GC.Hud public class GCHud Inheritance object GCHud Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Methods Setup(GCHudConfig) public void Setup(GCHudConfig playersHudData) Parameters playersHudData GCHudConfig UpdatePlayers(GCPlayersHudData) public void UpdatePlayers(GCPlayersHudData playersHudData) Parameters playersHudData GCPlayersHudData"
+    "keywords": "Class GCHud Namespace DSB.GC.Hud public class GCHud Inheritance object GCHud Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Methods Setup(GCHudConfig) Setup the HUD. Should be called once at the start of the game and before UpdatePlayers. public void Setup(GCHudConfig playersHudData) Parameters playersHudData GCHudConfig UpdatePlayers(GCPlayersHudData) Update the players in the HUD. Call Setup first. public void UpdatePlayers(GCPlayersHudData playersHudData) Parameters playersHudData GCPlayersHudData"
   },
   "api/DSB.GC.Hud.GCHudConfig.html": {
     "href": "api/DSB.GC.Hud.GCHudConfig.html",
@@ -67,12 +67,12 @@
   "api/DSB.GC.Hud.GCPlayersHudData.html": {
     "href": "api/DSB.GC.Hud.GCPlayersHudData.html",
     "title": "Struct GCPlayersHudData | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCPlayersHudData Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudData Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players public GCPlayersHudDataPlayer[] players Field Value GCPlayersHudDataPlayer[]"
+    "keywords": "Struct GCPlayersHudData Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudData Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields players The players to display in the HUD. public GCPlayersHudDataPlayer[] players Field Value GCPlayersHudDataPlayer[]"
   },
   "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html": {
     "href": "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html",
     "title": "Struct GCPlayersHudDataPlayer | Gaming Couch | 0.0.1",
-    "keywords": "Struct GCPlayersHudDataPlayer Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudDataPlayer Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields eliminated public bool eliminated Field Value bool placement public int placement Field Value int playerId public int playerId Field Value int value public string value Field Value string"
+    "keywords": "Struct GCPlayersHudDataPlayer Namespace DSB.GC.Hud [Serializable] public struct GCPlayersHudDataPlayer Inherited Members ValueType.Equals(object) ValueType.GetHashCode() ValueType.ToString() object.Equals(object, object) object.GetType() object.ReferenceEquals(object, object) Fields eliminated If the player is out of the game, the HUD can be set to display this player as eliminated. public bool eliminated Field Value bool placement The placement of the player. 0 is first place, 1 is second place, etc. Players in the HUD will be sorted based on this value to indicate placements at given time. (HUD sorting not yet implemented) public int placement Field Value int playerId Gaming Couch player ID. public int playerId Field Value int value The value to display for the player. This can be points, lives, etc. based on the valueType in the GCHudPlayersConfig. public string value Field Value string"
   },
   "api/DSB.GC.Hud.html": {
     "href": "api/DSB.GC.Hud.html",
