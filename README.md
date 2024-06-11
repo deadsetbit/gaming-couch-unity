@@ -2,9 +2,6 @@ Unity integration for Gaming Couch platform.
 
 ---
 
-// TODO: Create simple example project to demonstrate the integration.
-// TODO: Document whole Unity project basic setup.
-
 # Installation
 
 You can import this package by using Unity's _Package manager's_ import from git URL.
@@ -114,3 +111,64 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 ```
 
 If your HUD is setup to display score or status text, you can pass value for it, see the [API documentation for GCPlayersHudDataPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_value).
+
+# Integrate players
+
+## Configure player
+
+When the player is instantiated by GamingCouch some properties are available, such as Gaming Couch player id, color and name.
+
+For all available properties, see the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_value).
+
+The values are available on your player script instance on Start (note that they are not yet available on Awake!):
+
+```C#
+public class Player : GCPlayer
+{
+    ...
+
+    private void Start()
+    {
+        GetComponent<SpriteRenderer>().color = GetColor();
+    }
+
+    ...
+}
+```
+
+## Player inputs
+
+Read and apply the player inputs in your main game script Update method:
+
+```C#
+private void Update()
+{
+    foreach (var player in playerStore.GetPlayers())
+    {
+        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.GetId());
+        if (inputs == null) continue;
+
+        player.PlayerController.Move(inputs.lx);
+        player.PlayerController.Jump(inputs.b1 == 1);
+    }
+}
+```
+
+# Build your project for Gaming Couch
+
+When you are ready to build your project for Gaming Couch, you need to build it as WebGL.
+
+// TODO: Further instructions on how to build the project for Gaming Couch and integrate it to the platform.
+
+# What next?
+
+- Explore our example template game project: [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template)
+- Dive into the [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api)
+
+# Creating Unity project from scratch
+
+If you do not want to use our [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template),
+you can create project from scratch by following these steps:
+
+- create new unity project with the "Universal 3D" template (URP) or optionally "Universal 2D" (URP)
+- follow the [integration steps](#basic-integration)
