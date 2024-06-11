@@ -112,7 +112,7 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 
 If your HUD is setup to display score or status text, you can pass value for it, see the [API documentation for GCPlayersHudDataPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_value).
 
-# Integrate players
+# Player integration
 
 ## Configure player
 
@@ -171,4 +171,4 @@ If you do not want to use our [Gaming Couch Unity Template](https://github.com/d
 you can create project from scratch by following these steps:
 
 - create new unity project with the "Universal 3D" template (URP) or optionally "Universal 2D" (URP)
-- follow the [integration steps](#basic-integration)
+- follow the [installation and integration steps](#installation)
