@@ -8,6 +8,10 @@ You can import this package by using Unity's _Package manager's_ import from git
 
 Follow the integration steps below to get started.
 
+# Configure the Editor
+
+- fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
+
 # Basic integration
 
 ## 1) Add GamingCouch game object
@@ -79,8 +83,7 @@ Next you should integrate the HUD, see the next section.
 
 ## Setup the HUD
 
-If the game has multiple game modes you can setup the hud differently for each game mode,
-but here is the most basic setup that will just display the avatars and names:
+The most basic setup that will just display the avatars and names of the players:
 
 ```C#
 using DSB.GC.Hud;
@@ -92,6 +95,8 @@ GamingCouch.Instance.Hud.Setup(new GCHudConfig
 ```
 
 To display score or status text, see the [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueType).
+
+If the game has multiple game modes you can setup the HUD differently for each game mode.
 
 ## Update the players HUD
 
@@ -156,7 +161,10 @@ private void Update()
 
 # Build your project for Gaming Couch
 
-When you are ready to build your project for Gaming Couch, you need to build it as WebGL.
+When you are ready to build your project for Gaming Couch, you need to build it as WebGL. You can change this by selecting the WebGL tab from
+"Project Settings > Player".
+
+Under "Project Settings > Player > WebGL" tab's "Publish settings", set the compression format to "Disabled".
 
 // TODO: Further instructions on how to build the project for Gaming Couch and integrate it to the platform.
 
