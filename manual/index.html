@@ -91,6 +91,10 @@
 <h1 id="installation">Installation</h1>
 <p>You can import this package by using Unity's <em>Package manager's</em> import from git URL.</p>
 <p>Follow the integration steps below to get started.</p>
+<h1 id="configure-the-editor">Configure the Editor</h1>
+<ul>
+<li>fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio</li>
+</ul>
 <h1 id="basic-integration">Basic integration</h1>
 <h2 id="1-add-gamingcouch-game-object">1) Add GamingCouch game object</h2>
 <p>Add GamingCouch game object to your main scene by right clicking the scene hierarchy and selecting &quot;GamingCouch&quot; from the menu.</p>
@@ -145,8 +149,7 @@ GamingCouch.Instance.GameEnd(placementsByPlayerId);
 <p>Next you should integrate the HUD, see the next section.</p>
 <h1 id="hud-integration">HUD integration</h1>
 <h2 id="setup-the-hud">Setup the HUD</h2>
-<p>If the game has multiple game modes you can setup the hud differently for each game mode,
-but here is the most basic setup that will just display the avatars and names:</p>
+<p>The most basic setup that will just display the avatars and names of the players:</p>
 <pre><code class="lang-C#">using DSB.GC.Hud;
 
 GamingCouch.Instance.Hud.Setup(new GCHudConfig
@@ -155,6 +158,7 @@ GamingCouch.Instance.Hud.Setup(new GCHudConfig
 });
 </code></pre>
 <p>To display score or status text, see the <a href="https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueType">API documentation for GCHudPlayersConfig</a>.</p>
+<p>If the game has multiple game modes you can setup the HUD differently for each game mode.</p>
 <h2 id="update-the-players-hud">Update the players HUD</h2>
 <pre><code class="lang-C#">using System.Linq;
 using DSB.GC.Hud;
@@ -202,7 +206,9 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 }
 </code></pre>
 <h1 id="build-your-project-for-gaming-couch">Build your project for Gaming Couch</h1>
-<p>When you are ready to build your project for Gaming Couch, you need to build it as WebGL.</p>
+<p>When you are ready to build your project for Gaming Couch, you need to build it as WebGL. You can change this by selecting the WebGL tab from
+&quot;Project Settings &gt; Player&quot;.</p>
+<p>Under &quot;Project Settings &gt; Player &gt; WebGL&quot; tab's &quot;Publish settings&quot;, set the compression format to &quot;Disabled&quot;.</p>
 <p>// TODO: Further instructions on how to build the project for Gaming Couch and integrate it to the platform.</p>
 <h1 id="what-next">What next?</h1>
 <ul>
