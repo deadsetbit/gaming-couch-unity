@@ -6,14 +6,6 @@ namespace DSB.GC.Hud
     {
         private int playerId = -1;
 
-        [SerializeField]
-        [Tooltip("Offset X from the player position in screen space. Percentage 0-1.")]
-        private float offsetX = 0;
-
-        [SerializeField]
-        [Tooltip("Offset Y from the player position in screen space. Percentage 0-1.")]
-        private float offsetY = 0;
-
         private IGCPlayer FindPlayerComponent()
         {
             var player = GetComponent<IGCPlayer>();
@@ -59,7 +51,6 @@ namespace DSB.GC.Hud
             if (playerId == -1) return;
 
             var screenPosition = GamingCouch.Instance.Hud.Camera.WorldToScreenPoint(transform.position);
-            screenPosition += new Vector3(offsetX * Screen.width, offsetY * Screen.height, 0);
 
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
