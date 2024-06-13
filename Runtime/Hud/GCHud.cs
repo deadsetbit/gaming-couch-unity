@@ -130,15 +130,6 @@ namespace DSB.GC.Hud
 
         public void UpdateScreenPointHud(GCScreenPointData testPointData)
         {
-            // var testPointData = new GCPointData();
-
-            // testPointData.data = new PointData[1];
-            // testPointData.data[0] = new PointData();
-            // testPointData.data[0].type = "name";
-            // testPointData.data[0].playerId = 1;
-            // testPointData.data[0].x = 0.5f;
-            // testPointData.data[0].y = 0.5f;
-
             string screenPointHudDataJson = JsonUtility.ToJson(testPointData);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
