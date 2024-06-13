@@ -22,7 +22,7 @@ namespace DSB.GC.Hud
                 return player;
             }
 
-            player = GetComponentInParent<IGCPlayer>();
+            player = GetComponentInParent<IGCPlayer>(true);
             if (player != null)
             {
                 return player;
