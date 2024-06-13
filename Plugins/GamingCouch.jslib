@@ -27,6 +27,18 @@ mergeInto(LibraryManager.library, {
     window.gamingCouchUpdatePlayersHud(playersHudData);
   },
 
+  GamingCouchUpdateScreenPointHud: function (screenPointHudDataJsonString) {
+    if (!window.gamingCouchUpdateScreenPointHud) {
+      console.error("gamingCouchUpdateScreenPointHud is not defined");
+      return;
+    }
+
+    var screenPointHudData = JSON.parse(
+      UTF8ToString(screenPointHudDataJsonString)
+    );
+    window.gamingCouchUpdateScreenPointHud(screenPointHudData);
+  },
+
   GamingCouchGameEnd: function (
     placementsByPlayerId,
     placementsByPlayerIdLength

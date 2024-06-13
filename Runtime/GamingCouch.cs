@@ -160,6 +160,11 @@ namespace DSB.GC
             UpdateEditorInputs();
         }
 
+        private void LateUpdate()
+        {
+            hud.HandleQueue();
+        }
+
         #region Methods called by the GamingCouch platform
         /// <summary>
         /// Called by the platform when the game is ready for setup.

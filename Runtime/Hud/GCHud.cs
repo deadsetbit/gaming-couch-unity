@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -53,6 +54,33 @@ namespace DSB.GC.Hud
         public GCPlayersHudDataPlayer[] players;
     }
 
+    [Serializable]
+    public struct GCScreenPointDataPoint
+    {
+        public string type;
+        /// <summary>
+        /// The player ID.
+        /// </summary>
+        public int playerId;
+        /// <summary>
+        /// The x position of the point in percentages 0-1.
+        /// </summary>
+        public float x;
+        /// <summary>
+        /// The y position of the point in percentages 0-1.
+        /// </summary>
+        public float y;
+    }
+
+    [Serializable]
+    public struct GCScreenPointData
+    {
+        /// <summary>
+        /// List of points to display in the HUD.
+        /// </summary>
+        public GCScreenPointDataPoint[] points;
+    }
+
     public class GCHud
     {
         [DllImport("__Internal")]
@@ -60,6 +88,23 @@ namespace DSB.GC.Hud
 
         [DllImport("__Internal")]
         private static extern void GamingCouchUpdatePlayersHud(string playersHudDataJson);
+
+        [DllImport("__Internal")]
+        private static extern void GamingCouchUpdateScreenPointHud(string playersHudDataJson);
+
+        private Camera camera = null;
+        public Camera Camera
+        {
+            get
+            {
+                if (camera == null)
+                {
+                    camera = Camera.main;
+                }
+
+                return camera;
+            }
+        }
 
         /// <summary>
         /// Setup the HUD. Should be called once at the start of the game and before UpdatePlayers.
@@ -81,6 +126,40 @@ namespace DSB.GC.Hud
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchUpdatePlayersHud(playersHudDataJson);
 #endif
+        }
+
+        public void UpdateScreenPointHud(GCScreenPointData testPointData)
+        {
+            string screenPointHudDataJson = JsonUtility.ToJson(testPointData);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        GamingCouchUpdateScreenPointHud(screenPointHudDataJson);
+#endif
+        }
+
+        private List<GCScreenPointDataPoint> pointDataQueue = new List<GCScreenPointDataPoint>();
+
+        public void QueuePointData(GCScreenPointDataPoint pointData)
+        {
+            pointDataQueue.Add(pointData);
+        }
+
+        public void HandleQueue()
+        {
+            if (pointDataQueue.Count > 0)
+            {
+                var pointData = new GCScreenPointData
+                {
+                    points = pointDataQueue.ToArray()
+                };
+                UpdateScreenPointHud(pointData);
+                pointDataQueue.Clear();
+            }
+        }
+
+        public void SetCamera(Camera camera)
+        {
+            this.camera = camera;
         }
     }
 }
