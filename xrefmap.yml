@@ -635,6 +635,58 @@ references:
   commentId: T:DSB.GC.Hud.GCHud
   fullName: DSB.GC.Hud.GCHud
   nameWithType: GCHud
+- uid: DSB.GC.Hud.GCHud.Camera
+  name: Camera
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_Camera
+  commentId: P:DSB.GC.Hud.GCHud.Camera
+  fullName: DSB.GC.Hud.GCHud.Camera
+  nameWithType: GCHud.Camera
+- uid: DSB.GC.Hud.GCHud.Camera*
+  name: Camera
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_Camera_
+  commentId: Overload:DSB.GC.Hud.GCHud.Camera
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHud.Camera
+  nameWithType: GCHud.Camera
+- uid: DSB.GC.Hud.GCHud.HandleQueue
+  name: HandleQueue()
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_HandleQueue
+  commentId: M:DSB.GC.Hud.GCHud.HandleQueue
+  fullName: DSB.GC.Hud.GCHud.HandleQueue()
+  nameWithType: GCHud.HandleQueue()
+- uid: DSB.GC.Hud.GCHud.HandleQueue*
+  name: HandleQueue
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_HandleQueue_
+  commentId: Overload:DSB.GC.Hud.GCHud.HandleQueue
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHud.HandleQueue
+  nameWithType: GCHud.HandleQueue
+- uid: DSB.GC.Hud.GCHud.QueuePointData(DSB.GC.Hud.GCScreenPointDataPoint)
+  name: QueuePointData(GCScreenPointDataPoint)
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_QueuePointData_DSB_GC_Hud_GCScreenPointDataPoint_
+  commentId: M:DSB.GC.Hud.GCHud.QueuePointData(DSB.GC.Hud.GCScreenPointDataPoint)
+  fullName: DSB.GC.Hud.GCHud.QueuePointData(DSB.GC.Hud.GCScreenPointDataPoint)
+  nameWithType: GCHud.QueuePointData(GCScreenPointDataPoint)
+- uid: DSB.GC.Hud.GCHud.QueuePointData*
+  name: QueuePointData
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_QueuePointData_
+  commentId: Overload:DSB.GC.Hud.GCHud.QueuePointData
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHud.QueuePointData
+  nameWithType: GCHud.QueuePointData
+- uid: DSB.GC.Hud.GCHud.SetCamera(Camera)
+  name: SetCamera(Camera)
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_SetCamera_Camera_
+  commentId: M:DSB.GC.Hud.GCHud.SetCamera(Camera)
+  fullName: DSB.GC.Hud.GCHud.SetCamera(Camera)
+  nameWithType: GCHud.SetCamera(Camera)
+- uid: DSB.GC.Hud.GCHud.SetCamera*
+  name: SetCamera
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_SetCamera_
+  commentId: Overload:DSB.GC.Hud.GCHud.SetCamera
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHud.SetCamera
+  nameWithType: GCHud.SetCamera
 - uid: DSB.GC.Hud.GCHud.Setup(DSB.GC.Hud.GCHudConfig)
   name: Setup(GCHudConfig)
   href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_Setup_DSB_GC_Hud_GCHudConfig_
@@ -661,6 +713,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.Hud.GCHud.UpdatePlayers
   nameWithType: GCHud.UpdatePlayers
+- uid: DSB.GC.Hud.GCHud.UpdateScreenPointHud(DSB.GC.Hud.GCScreenPointData)
+  name: UpdateScreenPointHud(GCScreenPointData)
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_UpdateScreenPointHud_DSB_GC_Hud_GCScreenPointData_
+  commentId: M:DSB.GC.Hud.GCHud.UpdateScreenPointHud(DSB.GC.Hud.GCScreenPointData)
+  fullName: DSB.GC.Hud.GCHud.UpdateScreenPointHud(DSB.GC.Hud.GCScreenPointData)
+  nameWithType: GCHud.UpdateScreenPointHud(GCScreenPointData)
+- uid: DSB.GC.Hud.GCHud.UpdateScreenPointHud*
+  name: UpdateScreenPointHud
+  href: api/DSB.GC.Hud.GCHud.html#DSB_GC_Hud_GCHud_UpdateScreenPointHud_
+  commentId: Overload:DSB.GC.Hud.GCHud.UpdateScreenPointHud
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHud.UpdateScreenPointHud
+  nameWithType: GCHud.UpdateScreenPointHud
 - uid: DSB.GC.Hud.GCHudConfig
   name: GCHudConfig
   href: api/DSB.GC.Hud.GCHudConfig.html
@@ -685,6 +750,28 @@ references:
   commentId: F:DSB.GC.Hud.GCHudPlayersConfig.valueType
   fullName: DSB.GC.Hud.GCHudPlayersConfig.valueType
   nameWithType: GCHudPlayersConfig.valueType
+- uid: DSB.GC.Hud.GCNameTag
+  name: GCNameTag
+  href: api/DSB.GC.Hud.GCNameTag.html
+  commentId: T:DSB.GC.Hud.GCNameTag
+  fullName: DSB.GC.Hud.GCNameTag
+  nameWithType: GCNameTag
+- uid: DSB.GC.Hud.GCNameTag.SetPlayerId(System.Int32)
+  name: SetPlayerId(int)
+  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayerId_System_Int32_
+  commentId: M:DSB.GC.Hud.GCNameTag.SetPlayerId(System.Int32)
+  name.vb: SetPlayerId(Integer)
+  fullName: DSB.GC.Hud.GCNameTag.SetPlayerId(int)
+  fullName.vb: DSB.GC.Hud.GCNameTag.SetPlayerId(Integer)
+  nameWithType: GCNameTag.SetPlayerId(int)
+  nameWithType.vb: GCNameTag.SetPlayerId(Integer)
+- uid: DSB.GC.Hud.GCNameTag.SetPlayerId*
+  name: SetPlayerId
+  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayerId_
+  commentId: Overload:DSB.GC.Hud.GCNameTag.SetPlayerId
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCNameTag.SetPlayerId
+  nameWithType: GCNameTag.SetPlayerId
 - uid: DSB.GC.Hud.GCPlayersHudData
   name: GCPlayersHudData
   href: api/DSB.GC.Hud.GCPlayersHudData.html
@@ -727,6 +814,48 @@ references:
   commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.value
   fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.value
   nameWithType: GCPlayersHudDataPlayer.value
+- uid: DSB.GC.Hud.GCScreenPointData
+  name: GCScreenPointData
+  href: api/DSB.GC.Hud.GCScreenPointData.html
+  commentId: T:DSB.GC.Hud.GCScreenPointData
+  fullName: DSB.GC.Hud.GCScreenPointData
+  nameWithType: GCScreenPointData
+- uid: DSB.GC.Hud.GCScreenPointData.points
+  name: points
+  href: api/DSB.GC.Hud.GCScreenPointData.html#DSB_GC_Hud_GCScreenPointData_points
+  commentId: F:DSB.GC.Hud.GCScreenPointData.points
+  fullName: DSB.GC.Hud.GCScreenPointData.points
+  nameWithType: GCScreenPointData.points
+- uid: DSB.GC.Hud.GCScreenPointDataPoint
+  name: GCScreenPointDataPoint
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html
+  commentId: T:DSB.GC.Hud.GCScreenPointDataPoint
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint
+  nameWithType: GCScreenPointDataPoint
+- uid: DSB.GC.Hud.GCScreenPointDataPoint.playerId
+  name: playerId
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_playerId
+  commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.playerId
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint.playerId
+  nameWithType: GCScreenPointDataPoint.playerId
+- uid: DSB.GC.Hud.GCScreenPointDataPoint.type
+  name: type
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_type
+  commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.type
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint.type
+  nameWithType: GCScreenPointDataPoint.type
+- uid: DSB.GC.Hud.GCScreenPointDataPoint.x
+  name: x
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_x
+  commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.x
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint.x
+  nameWithType: GCScreenPointDataPoint.x
+- uid: DSB.GC.Hud.GCScreenPointDataPoint.y
+  name: y
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_y
+  commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.y
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint.y
+  nameWithType: GCScreenPointDataPoint.y
 - uid: DSB.GC.LogLevel
   name: LogLevel
   href: api/DSB.GC.LogLevel.html

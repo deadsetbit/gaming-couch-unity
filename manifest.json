@@ -145,6 +145,16 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCNameTag.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCNameTag.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.Hud.GCPlayersHudData.yml",
       "output": {
         ".html": {
@@ -159,6 +169,26 @@
       "output": {
         ".html": {
           "relative_path": "api/DSB.GC.Hud.GCPlayersHudDataPlayer.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCScreenPointData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCScreenPointData.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCScreenPointDataPoint.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCScreenPointDataPoint.html"
         }
       },
       "version": ""
