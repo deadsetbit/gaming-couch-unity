@@ -152,12 +152,10 @@ namespace DSB.GC
 
         private void Update()
         {
-            if (Application.isEditor && !Application.isPlaying)
+            if (Application.isEditor && Application.isPlaying)
             {
-                return;
+                UpdateEditorInputs();
             }
-
-            UpdateEditorInputs();
         }
 
         private void LateUpdate()
