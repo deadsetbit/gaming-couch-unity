@@ -52,6 +52,9 @@ namespace DSB.GC.Hud
 
             var screenPosition = GamingCouch.Instance.Hud.Camera.WorldToScreenPoint(transform.position);
 
+            var inScreen = screenPosition.z > 0 && screenPosition.x >= 0 && screenPosition.x <= Screen.width && screenPosition.y >= 0 && screenPosition.y <= Screen.height;
+            if (!inScreen) return;
+
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
                 type = "name",
