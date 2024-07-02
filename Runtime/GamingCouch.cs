@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using DSB.GC.Hud;
+using DSB.GC.Game;
+using System.Linq;
 
 namespace DSB.GC
 {
@@ -238,10 +240,61 @@ namespace DSB.GC
             status = GCStatus.SetupDone;
         }
 
+        private GCGame game;
+
+        public void SetupGame(GCGame game)
+        {
+            if (this.game != null)
+            {
+                throw new InvalidOperationException("Game already set. You should call SetupGame only once.");
+            }
+
+            this.game = game;
+        }
+
+        public void GameOver()
+        {
+            if (game == null)
+            {
+                throw new InvalidOperationException("Game not set. You should call SetupGame before calling GameOver.");
+            }
+
+            var players = playerStoreOutput.GetPlayersEnumerable().ToList();
+            var playersSorted = game.GetPlayersInPlacementOrder(players);
+
+            var placementsByPlayerId = new int[playersSorted.Count];
+            for (int i = 0; i < playersSorted.Count; i++)
+            {
+                placementsByPlayerId[i] = playersSorted[i].GetId();
+            }
+
+            LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
+
+            for (var i = 0; i < placementsByPlayerId.Length; i++)
+            {
+                var playerId = placementsByPlayerId[i];
+                var player = playerStoreOutput.GetPlayerById(playerId);
+                LogInfo($"Player {player.GetName()} placed {i + 1} - (id:{playerId})");
+            }
+
+            byte[] result = new byte[placementsByPlayerId.Length];
+            for (int i = 0; i < placementsByPlayerId.Length; i++)
+            {
+                result[i] = (byte)placementsByPlayerId[i];
+            }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        GamingCouchGameEnd(result, result.Length);
+#endif
+
+            status = GCStatus.GameOver;
+        }
+
         /// <summary>
         /// Inform the platform that the game has ended.
         /// </summary>
         /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
+        [Obsolete("Use GameOver() instead. This will require you to setup the game with GamingCouch.Instance.SetupGame()")]
         public void GameEnd(int[] placementsByPlayerId)
         {
             LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
