@@ -7,11 +7,6 @@ namespace DSB.GC.Game
 
     public class GCGameVersus : GCGame
     {
-        private GCGameVersusSetupOptions options;
-
-        public GCGameVersus(GCGameVersusSetupOptions options) : base(options)
-        {
-            options = options;
-        }
+        public GCGameVersus(GCGameVersusSetupOptions options) : base(options) { }
     }
 }
