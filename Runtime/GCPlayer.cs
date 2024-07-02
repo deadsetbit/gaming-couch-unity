@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,12 +7,15 @@ namespace DSB.GC
 {
     public class GCPlayer : MonoBehaviour
     {
+        public Action OnEliminated;
+        public Action OnUneliminated;
+
         private int playerId = -1;
         private string playerName;
         private Color color;
         private bool isEliminated = false;
-        private float lastEliminationTime = -1;
-        private float lastUneliminatedTime = -1;
+        private float lastSetEliminatedTime = -1;
+        private float lastSetUneliminatedTime = -1;
         private float score = 0;
         private float finishedTime = -1;
         public float FinishedTime => finishedTime;
@@ -64,38 +68,41 @@ namespace DSB.GC
         public void SetEliminated()
         {
             isEliminated = true;
-            lastEliminationTime = Time.time;
+            lastSetEliminatedTime = Time.time;
+            Debug.Log("Player " + playerName + " eliminated");
+            OnEliminated?.Invoke();
         }
 
         /// <summary>
-        /// Get the time the player was last eliminated. Note: This will not reset when player is set uneliminated.
+        /// Get the time the player was last eliminated.
         /// </summary>
-        public float GetLastEliminationTime()
+        public float GetLastEliminatedTime()
         {
-            return lastEliminationTime;
+            return lastSetEliminatedTime;
         }
 
         /// <summary>
-        /// Clear the player's eliminated status. Note: This will not reset the last elimination time.
+        /// Clear the player's eliminated status.
         /// </summary>
         public void SetUneliminated()
         {
             isEliminated = false;
-            lastUneliminatedTime = Time.time;
+            lastSetUneliminatedTime = Time.time;
+            OnUneliminated?.Invoke();
         }
 
         /// <summary>
-        /// Get the time the player was last set uneliminated. Note: This will not reset when player is set eliminated.
+        /// Get the time the player was last set uneliminated.
         /// </summary>
         public float GetUneliminatedTime()
         {
-            return lastUneliminatedTime;
+            return lastSetUneliminatedTime;
         }
 
         /// <summary>
         /// Get the player's eliminated status.
         /// </summary>
-        public bool GetIsEliminated()
+        public bool IsEliminated()
         {
             return isEliminated;
         }
@@ -119,7 +126,7 @@ namespace DSB.GC
         /// <summary>
         /// Set the player as finished. Depending on the GC placement pattern used, this can be used to determine the player's placement.
         /// </summary>
-        public void SetIsFinished()
+        public void SetFinished()
         {
             finishedTime = Time.time;
         }
@@ -127,13 +134,13 @@ namespace DSB.GC
         /// <summary>
         /// Get the player's finished status.
         /// </summary>
-        public bool GetIsFinished()
+        public bool IsFinished()
         {
             return finishedTime != -1;
         }
 
         /// <summary>
-        /// Get the time the player finished. Note: This will not reset when the player finished status is cleared.
+        /// Get the time the player finished.
         /// </summary>
         public float GetFinishedTime()
         {
