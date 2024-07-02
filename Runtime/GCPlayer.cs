@@ -10,13 +10,9 @@ namespace DSB.GC
         private string playerName;
         private Color color;
         private bool isEliminated = false;
-        public bool IsEliminated => isEliminated;
         private float lastEliminationTime = -1;
-        public float LastEliminationTime => lastEliminationTime;
-        private float lastClearEliminationTime = -1;
-        public float LastClearEliminationTime => lastClearEliminationTime;
+        private float lastUneliminatedTime = -1;
         private float score = 0;
-        public float Score => score;
         private float finishedTime = -1;
         public float FinishedTime => finishedTime;
 
@@ -62,21 +58,86 @@ namespace DSB.GC
             return color;
         }
 
-        public void SetFinished()
-        {
-            finishedTime = Time.time;
-        }
-
+        /// <summary>
+        /// Mark the player as eliminated. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// </summary>
         public void SetEliminated()
         {
             isEliminated = true;
             lastEliminationTime = Time.time;
         }
 
-        public void ClearEliminated()
+        /// <summary>
+        /// Get the time the player was last eliminated. Note: This will not reset when player is set uneliminated.
+        /// </summary>
+        public float GetLastEliminationTime()
+        {
+            return lastEliminationTime;
+        }
+
+        /// <summary>
+        /// Clear the player's eliminated status. Note: This will not reset the last elimination time.
+        /// </summary>
+        public void SetUneliminated()
         {
             isEliminated = false;
-            lastClearEliminationTime = Time.time;
+            lastUneliminatedTime = Time.time;
+        }
+
+        /// <summary>
+        /// Get the time the player was last set uneliminated. Note: This will not reset when player is set eliminated.
+        /// </summary>
+        public float GetUneliminatedTime()
+        {
+            return lastUneliminatedTime;
+        }
+
+        /// <summary>
+        /// Get the player's eliminated status.
+        /// </summary>
+        public bool GetIsEliminated()
+        {
+            return isEliminated;
+        }
+
+        /// <summary>
+        /// Set the player's score. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// </summary>
+        public void SetScore(float score)
+        {
+            this.score = score;
+        }
+
+        /// <summary>
+        /// Get the player's score.
+        /// </summary>
+        public float GetScore()
+        {
+            return score;
+        }
+
+        /// <summary>
+        /// Set the player as finished. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// </summary>
+        public void SetIsFinished()
+        {
+            finishedTime = Time.time;
+        }
+
+        /// <summary>
+        /// Get the player's finished status.
+        /// </summary>
+        public bool GetIsFinished()
+        {
+            return finishedTime != -1;
+        }
+
+        /// <summary>
+        /// Get the time the player finished. Note: This will not reset when the player finished status is cleared.
+        /// </summary>
+        public float GetFinishedTime()
+        {
+            return finishedTime;
         }
     }
 }
