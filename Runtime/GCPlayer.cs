@@ -4,11 +4,21 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public class GCPlayer : MonoBehaviour, IGCPlayer
+    public class GCPlayer : MonoBehaviour
     {
         private int playerId = -1;
         private string playerName;
         private Color color;
+        private bool isEliminated = false;
+        public bool IsEliminated => isEliminated;
+        private float lastEliminationTime = -1;
+        public float LastEliminationTime => lastEliminationTime;
+        private float lastClearEliminationTime = -1;
+        public float LastClearEliminationTime => lastClearEliminationTime;
+        private float score = 0;
+        public float Score => score;
+        private float finishedTime = -1;
+        public float FinishedTime => finishedTime;
 
         /// <summary>
         /// Do not call this in your game script. This is called by the GamingCouch script.
@@ -50,6 +60,23 @@ namespace DSB.GC
         public virtual Color GetColor()
         {
             return color;
+        }
+
+        public void SetFinished()
+        {
+            finishedTime = Time.time;
+        }
+
+        public void SetEliminated()
+        {
+            isEliminated = true;
+            lastEliminationTime = Time.time;
+        }
+
+        public void ClearEliminated()
+        {
+            isEliminated = false;
+            lastClearEliminationTime = Time.time;
         }
     }
 }

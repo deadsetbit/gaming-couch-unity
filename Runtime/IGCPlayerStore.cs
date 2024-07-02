@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using DSB.GC;
 
-public interface IGCPlayerStoreOutput<out T> where T : IGCPlayer
+public interface GCPlayerStoreOutput<out T> where T : GCPlayer
 {
     T GetPlayerById(int playerId);
     IEnumerable<T> GetPlayersEnumerable();
@@ -9,7 +10,7 @@ public interface IGCPlayerStoreOutput<out T> where T : IGCPlayer
     void Clear();
 }
 
-public interface IGCPlayerStoreInput<in T> where T : IGCPlayer
+public interface GCPlayerStoreInput<in T> where T : GCPlayer
 {
     void AddPlayer(T player);
 }

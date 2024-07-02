@@ -30,12 +30,12 @@ namespace DSB.GC
         [SerializeField]
         private GameObject listener;
         [SerializeField]
-        [Tooltip("Make sure your player prefab inherits IGCPlayer or extends GCPlayer.")]
+        [Tooltip("Make sure your player prefab extends GCPlayer.")]
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions; // this is assigned in GCSetup
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
-        private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
+        private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
 
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
@@ -267,7 +267,7 @@ namespace DSB.GC
         #endregion
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : IGCPlayer
+        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : GCPlayer
         {
             LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
 
@@ -278,10 +278,10 @@ namespace DSB.GC
                 throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
             }
 
-            var player = gameObject.GetComponent<IGCPlayer>();
+            var player = gameObject.GetComponent<GCPlayer>();
             if (player == null)
             {
-                throw new Exception("Player prefab does not have a component that inherits IGCPlayer or extends GCPlayer.");
+                throw new Exception("Player prefab does not have a component that extends GCPlayer.");
             }
 
             gameObject.name = "Player - " + name;
@@ -308,16 +308,16 @@ namespace DSB.GC
         /// <summary>
         /// Instantiate players by using the prefab defined in GamingCouch game object's inspector.
         /// </summary>
-        /// <typeparam name="T">Your game specific player class that inherits IGCPlayer or extends GCPlayer.</typeparam>
+        /// <typeparam name="T">Your game specific player class that extends GCPlayer.</typeparam>
         /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : class, IGCPlayer
+        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : GCPlayer
         {
             LogInfo("InstantiatePlayers");
 
-            if (typeof(T) == typeof(IGCPlayer))
+            if (typeof(T) == typeof(GCPlayer))
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<IGCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPlayer or extends GCPlayer.");
+                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit GCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<GCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that extends GCPlayer.");
             }
 
             if (playerStore.GetPlayerCount() > 0)

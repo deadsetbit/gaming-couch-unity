@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public class GCPlayerStore<T> : IGCPlayerStoreOutput<T>, IGCPlayerStoreInput<T> where T : IGCPlayer
+    public class GCPlayerStore<T> : GCPlayerStoreOutput<T>, GCPlayerStoreInput<T> where T : GCPlayer
     {
         private List<T> players = new List<T>();
         private Dictionary<int, T> playerById = new Dictionary<int, T>();
