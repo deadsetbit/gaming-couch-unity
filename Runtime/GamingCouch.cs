@@ -7,6 +7,9 @@ using DSB.GC.Hud;
 using DSB.GC.Game;
 using System.Linq;
 
+// TODO: Add invisible GCLogger component that is singleton.
+// TODO: In GCGame, use the logger for debug logging
+
 namespace DSB.GC
 {
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
@@ -161,11 +164,10 @@ namespace DSB.GC
 
         private void LateUpdate()
         {
-            hud.HandleQueue();
-
             if (game != null)
             {
                 game.HandlePlayersHudAutoUpdate();
+                hud.HandleQueue();
             }
         }
 
