@@ -561,6 +561,8 @@ namespace DSB.GC
                 throw new Exception("Restart can only be called in play mode.");
             }
 
+            game = null;
+
             Clear();
             Start();
         }

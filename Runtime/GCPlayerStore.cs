@@ -25,7 +25,7 @@ namespace DSB.GC
             uneliminatedPlayers.Remove(player);
             eliminatedPlayers.Add(player);
 
-            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count);
+            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
         }
 
         private void HandlePlayerUneliminated(T player)
@@ -33,7 +33,7 @@ namespace DSB.GC
             eliminatedPlayers.Remove(player);
             uneliminatedPlayers.Add(player);
 
-            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count);
+            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
         }
 
         public T GetPlayerById(int playerId)
@@ -98,6 +98,8 @@ namespace DSB.GC
             }
 
             players.Clear();
+            uneliminatedPlayers.Clear();
+            eliminatedPlayers.Clear();
             playerById.Clear();
         }
     }
