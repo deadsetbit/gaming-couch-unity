@@ -268,7 +268,7 @@ namespace DSB.GC
                 throw new InvalidOperationException("Game not set. You should call SetupGame before calling GameOver.");
             }
 
-            var players = playerStoreOutput.GetPlayersEnumerable().ToList();
+            var players = playerStoreOutput.PlayersEnumerable.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
             var placementsByPlayerId = new int[playersSorted.Count];
@@ -382,7 +382,7 @@ namespace DSB.GC
                 throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit GCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<GCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that extends GCPlayer.");
             }
 
-            if (playerStore.GetPlayerCount() > 0)
+            if (playerStore.PlayerCount > 0)
             {
                 throw new InvalidOperationException("Players already instantiated. Call ClearPlayers before calling InstantiatePlayers.");
             }
@@ -544,7 +544,7 @@ namespace DSB.GC
 
             if (playerStoreOutput == null) return;
 
-            if (playerStoreOutput.GetPlayerCount() == 0) return;
+            if (playerStoreOutput.PlayerCount == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {

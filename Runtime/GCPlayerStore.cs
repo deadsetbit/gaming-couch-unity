@@ -7,8 +7,15 @@ namespace DSB.GC
     public class GCPlayerStore<T> : GCPlayerStoreOutput<T>, GCPlayerStoreInput<T> where T : GCPlayer
     {
         private List<T> players = new List<T>();
+        public List<T> Players => players;
+        public IEnumerable<T> PlayersEnumerable => players;
+        public int PlayerCount => players.Count;
         private List<T> uneliminatedPlayers = new List<T>();
+        public List<T> UneliminatedPlayers => uneliminatedPlayers;
+        public IEnumerable<T> UneliminatedPlayersEnumerable => uneliminatedPlayers;
         private List<T> eliminatedPlayers = new List<T>();
+        public List<T> EliminatedPlayers => eliminatedPlayers;
+        public IEnumerable<T> EliminatedPlayersEnumerable => eliminatedPlayers;
         private Dictionary<int, T> playerById = new Dictionary<int, T>();
 
         public GCPlayerStore() { }
@@ -32,26 +39,6 @@ namespace DSB.GC
         public T GetPlayerById(int playerId)
         {
             return playerById[playerId];
-        }
-
-        public IEnumerable<T> GetPlayersEnumerable()
-        {
-            return players;
-        }
-
-        public List<T> GetPlayers()
-        {
-            return players;
-        }
-
-        public int GetPlayerCount()
-        {
-            return players.Count;
-        }
-
-        public IEnumerable<T> GetUneliminatedPlayersEnumerable()
-        {
-            return uneliminatedPlayers;
         }
 
         public List<T> GetUneliminatedPlayers()

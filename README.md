@@ -106,7 +106,7 @@ using DSB.GC.Hud;
 
 GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
-    players = playerStore.GetPlayers().Select(player => new GCPlayersHudDataPlayer
+    players = playerStore.Players.Select(player => new GCPlayersHudDataPlayer
     {
         playerId = player.Id, // The GamingCouch player id
         eliminated = player.IsEliminated,
@@ -148,7 +148,7 @@ Read and apply the player inputs in your main game script Update method:
 ```C#
 private void Update()
 {
-    foreach (var player in playerStore.GetPlayers())
+    foreach (var player in playerStore.Players)
     {
         var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
         if (inputs == null) continue;

@@ -3,11 +3,11 @@ using DSB.GC;
 
 public interface GCPlayerStoreOutput<out T> where T : GCPlayer
 {
+    int PlayerCount { get; }
+    IEnumerable<T> PlayersEnumerable { get; }
+    IEnumerable<T> UneliminatedPlayersEnumerable { get; }
+    IEnumerable<T> EliminatedPlayersEnumerable { get; }
     T GetPlayerById(int playerId);
-    IEnumerable<T> GetPlayersEnumerable();
-    IEnumerable<T> GetUneliminatedPlayersEnumerable();
-    IEnumerable<T> GetEliminatedPlayersEnumerable();
-    int GetPlayerCount();
     T GetPlayerByIndex(int index);
     void Clear();
 }

@@ -54,7 +54,7 @@ namespace DSB.GC.Game
                 );
                 AutoUpdatePlayersHud();
 
-                foreach (var player in playerStore.GetPlayersEnumerable())
+                foreach (var player in playerStore.PlayersEnumerable)
                 {
                     player.OnEliminated += () =>
                     {
@@ -147,7 +147,7 @@ namespace DSB.GC.Game
 
         public void AutoUpdatePlayersHud()
         {
-            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.GetPlayersEnumerable());
+            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
 
             gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData
             {
