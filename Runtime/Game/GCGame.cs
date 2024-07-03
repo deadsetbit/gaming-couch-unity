@@ -84,6 +84,11 @@ namespace DSB.GC.Game
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
+
+                    player.OnStatusChanged += (PlayerStatus status, string statusText) =>
+                    {
+                        isPlayersHudAutoUpdatePending = true;
+                    };
                 }
             }
         }
@@ -179,6 +184,8 @@ namespace DSB.GC.Game
             {
                 case PlayersHudValueType.PointsSmall:
                     return player.Score.ToString() + "/" + options.maxScore;
+                case PlayersHudValueType.Status:
+                    return player.GetHudStatusText();
                 case PlayersHudValueType.Text:
                     return player.GetHudValueText();
                 case PlayersHudValueType.Lives:

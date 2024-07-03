@@ -6,6 +6,14 @@ using UnityEngine;
 
 namespace DSB.GC
 {
+    public enum PlayerStatus
+    {
+        Neutral,
+        Pending,
+        Success,
+        Failure
+    }
+
     public class GCPlayer : MonoBehaviour
     {
         public Action OnEliminated;
@@ -13,6 +21,7 @@ namespace DSB.GC
         public Action OnFinished;
         public Action<int, int> OnScoreChanged;
         public Action<int, int> OnLivesChanged;
+        public Action<PlayerStatus, string> OnStatusChanged;
         private int id = -1;
         /// <summary>
         /// Get the player id provided by GamingCouch in GCPlayer.GamingCouchSetup.
@@ -24,6 +33,20 @@ namespace DSB.GC
         /// </summary>
         public string PlayerName => playerName;
         private Color color;
+        private PlayerStatus status = PlayerStatus.Neutral;
+        /// <summary>
+        /// Player status.
+        /// This can be utilized in different ways to indicate the player's status in the game.
+        /// If Players HUD is set to display status text, this will be reflected there as well.
+        /// </summary>
+        public PlayerStatus Status => status;
+        private string statusText = "";
+        /// <summary>
+        /// Players status text.
+        /// This can be utilized in different ways to indicate the player's status in the game.
+        /// If Players HUD is set to display status text, this will be reflected there as well.
+        /// </summary>
+        public string StatusText => statusText;
         /// <summary>
         /// Get the player color provided by GamingCouch in GCPlayer.GamingCouchSetup.
         /// </summary>
@@ -174,6 +197,32 @@ namespace DSB.GC
         public void SubtractLives(int lives)
         {
             SetLives(this.lives - lives);
+        }
+
+        /// <summary>
+        /// Set the player's status and status text.
+        /// This status is displayed in the Players HUD if the HUD is configured to display the status.
+        /// </summary>
+        public void SetStatus(PlayerStatus status, string statusText)
+        {
+            if (this.status == status && this.statusText == statusText) return;
+
+            GCLog.LogInfo($"Player {id} status set to {status} with text {statusText}.");
+
+            this.status = status;
+            this.statusText = statusText;
+
+            OnStatusChanged?.Invoke(status, statusText);
+        }
+
+        /// <summary>
+        /// Get the player's HUD status text to be displayed in the HUD.
+        /// This will include the status text and status.
+        /// </summary>
+        public string GetHudStatusText()
+        {
+            var str = status.ToString();
+            return statusText + "/" + char.ToLower(str[0]) + str[1..]; // set first letter to lowercase
         }
 
         /// <summary>

@@ -9,6 +9,7 @@ namespace DSB.GC.Hud
     {
         None,
         PointsSmall,
+        Status,
         Text,
         Lives
     }
