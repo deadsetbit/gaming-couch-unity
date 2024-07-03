@@ -134,7 +134,7 @@ public class Player : GCPlayer
 
     private void Start()
     {
-        GetComponent<SpriteRenderer>().color = GetColor();
+        GetComponent<SpriteRenderer>().color = Color;
     }
 
     ...
