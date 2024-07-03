@@ -8,9 +8,6 @@ using DSB.GC.Game;
 using DSB.GC.Log;
 using System.Linq;
 
-// TODO: Add invisible GCLogger component that is singleton.
-// TODO: In GCGame, use the logger for debug logging
-
 namespace DSB.GC
 {
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }

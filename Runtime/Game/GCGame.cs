@@ -195,7 +195,7 @@ namespace DSB.GC.Game
             }
         }
 
-        public void AutoUpdatePlayersHud()
+        private void AutoUpdatePlayersHud()
         {
             var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
 
