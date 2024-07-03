@@ -6,12 +6,14 @@ using UnityEngine;
 
 namespace DSB.GC.Game
 {
-    public enum GCGamePlacementOrder
+    public enum GCPlacementSortCriteria
     {
         Eliminated,
-        EliminatedScore,
-        EliminatedScoreFinished,
-        EliminatedFinished,
+        EliminatedDescending,
+        Score,
+        ScoreDescending,
+        Finished,
+        FinishedDescending,
     }
 
     public class GCGameHudOptions
@@ -23,7 +25,7 @@ namespace DSB.GC.Game
     public class GCGameSetupOptions
     {
         public int maxScore = -1;
-        public GCGamePlacementOrder placementOrder;
+        public GCPlacementSortCriteria[] placementCriteria = new GCPlacementSortCriteria[] { GCPlacementSortCriteria.EliminatedDescending, GCPlacementSortCriteria.ScoreDescending, GCPlacementSortCriteria.Finished };
         public GCGameHudOptions hud;
     }
 
@@ -109,30 +111,54 @@ namespace DSB.GC.Game
             }
         }
 
+        private Func<GCPlayer, IComparable> GetPlacementCriteriaKeySelector(GCPlacementSortCriteria criteria)
+        {
+            switch (criteria)
+            {
+                case GCPlacementSortCriteria.Eliminated:
+                case GCPlacementSortCriteria.EliminatedDescending:
+                    return p => p.LastSetEliminatedTime > 0.0f ? p.LastSetEliminatedTime : float.MaxValue;
+                case GCPlacementSortCriteria.Score:
+                case GCPlacementSortCriteria.ScoreDescending:
+                    return p => p.Score;
+                case GCPlacementSortCriteria.Finished:
+                case GCPlacementSortCriteria.FinishedDescending:
+                    return p => p.FinishedTime > 0.0f ? p.FinishedTime : float.MaxValue;
+                default:
+                    throw new Exception($"Unhandled placement sort criteria '{criteria}'");
+            }
+        }
+
         public IEnumerable<GCPlayer> GetPlayersInPlacementOrder(IEnumerable<GCPlayer> players)
         {
-            // TODO: Do the sorting by using components
-            switch (options.placementOrder)
+            if (options.placementCriteria.Length == 0)
             {
-                case GCGamePlacementOrder.Eliminated:
-                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
-                        .ToList();
-                case GCGamePlacementOrder.EliminatedScore:
-                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
-                        .ThenByDescending(x => x.Score)
-                        .ToList();
-                case GCGamePlacementOrder.EliminatedScoreFinished:
-                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
-                        .ThenByDescending(x => x.Score)
-                        .ThenBy(x => x.GetFinishedTime() > 0.0f ? x.GetFinishedTime() : Time.time)
-                        .ToList();
-                case GCGamePlacementOrder.EliminatedFinished:
-                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
-                        .ThenBy(x => x.GetFinishedTime() > 0.0f ? x.GetFinishedTime() : Time.time)
-                        .ToList();
-                default:
-                    return players;
+                throw new Exception("GCGameSetupOptions.placementCriteria not defined");
             }
+
+            IOrderedEnumerable<GCPlayer> sortedPlayers = null;
+
+            foreach (var criteria in options.placementCriteria)
+            {
+                var keySelector = GetPlacementCriteriaKeySelector(criteria);
+                switch (criteria)
+                {
+                    case GCPlacementSortCriteria.Eliminated:
+                    case GCPlacementSortCriteria.Score:
+                    case GCPlacementSortCriteria.Finished:
+                        sortedPlayers = sortedPlayers == null ? players.OrderBy(keySelector) : sortedPlayers.ThenBy(keySelector);
+                        break;
+                    case GCPlacementSortCriteria.EliminatedDescending:
+                    case GCPlacementSortCriteria.ScoreDescending:
+                    case GCPlacementSortCriteria.FinishedDescending:
+                        sortedPlayers = sortedPlayers == null ? players.OrderByDescending(keySelector) : sortedPlayers.ThenByDescending(keySelector);
+                        break;
+                    default:
+                        throw new Exception($"Unhandled placement sort criteria '{criteria}'");
+                }
+            }
+
+            return sortedPlayers;
         }
 
         public bool IsPlayersAutoUpdateEnabled()
