@@ -22,6 +22,7 @@ namespace DSB.GC.Game
 
     public class GCGameSetupOptions
     {
+        public int maxScore = -1;
         public GCGamePlacementOrder placementOrder;
         public GCGameHudOptions hud;
     }
@@ -38,13 +39,14 @@ namespace DSB.GC.Game
         {
             Debug.Log("Setting up game");
 
+            ValidateOptions(options);
+
             this.gamingCouch = gamingCouch;
             this.playerStore = playerStore;
             this.options = options;
 
             if (options.hud != null)
             {
-                Debug.Log("Setting up game HUD");
                 this.isPlayersHudAutoUpdateEnabled = options.hud.isPlayersAutoUpdateEnabled;
                 this.gamingCouch.Hud.Setup(
                     new GCHudConfig
@@ -84,6 +86,20 @@ namespace DSB.GC.Game
             }
         }
 
+        private void ValidateOptions(GCGameSetupOptions options)
+        {
+            if (options.hud != null)
+            {
+                if (options.hud.players.valueTypeEnum == PlayersHudValueType.PointsSmall)
+                {
+                    if (options.maxScore < 0)
+                    {
+                        throw new Exception("Game options maxScore must be defined when using 'PlayersHudValueType.PointsSmall'");
+                    }
+                }
+            }
+        }
+
         public void HandlePlayersHudAutoUpdate()
         {
             if (isPlayersHudAutoUpdateEnabled && isPlayersHudAutoUpdatePending)
@@ -95,6 +111,7 @@ namespace DSB.GC.Game
 
         public IEnumerable<GCPlayer> GetPlayersInPlacementOrder(IEnumerable<GCPlayer> players)
         {
+            // TODO: Do the sorting by using components
             switch (options.placementOrder)
             {
                 case GCGamePlacementOrder.Eliminated:
@@ -125,23 +142,23 @@ namespace DSB.GC.Game
 
         private string GetPlayerHudValue(GCPlayer player)
         {
-            var valueType = options.hud.players.valueType;
+            var valueType = options.hud.players.valueTypeEnum;
 
-            if (valueType == null)
+            if (valueType == PlayersHudValueType.None)
             {
                 return null;
             }
 
             switch (valueType)
             {
-                case "pointsSmall": // TODO: these needs to be enums etc.
-                    return player.Score.ToString();
-                case "text":
+                case PlayersHudValueType.PointsSmall:
+                    return player.Score.ToString() + "/" + options.maxScore;
+                case PlayersHudValueType.Text:
                     return player.GetHudValueText();
-                case "lives":
+                case PlayersHudValueType.Lives:
                     return player.Lives.ToString();
                 default:
-                    throw new Exception($"Invalid player hud value type '{valueType}'");
+                    throw new Exception($"Unhandled player hud value type '{valueType}'");
             }
         }
 

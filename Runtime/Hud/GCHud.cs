@@ -5,16 +5,36 @@ using UnityEngine;
 
 namespace DSB.GC.Hud
 {
+    public enum PlayersHudValueType
+    {
+        None,
+        PointsSmall,
+        Text,
+        Lives
+    }
+
     /// <summary>
     /// Configuration for the players hud.
     /// </summary>
     [Serializable]
-    public struct GCHudPlayersConfig
+    public struct GCHudPlayersConfig : ISerializationCallbackReceiver
     {
-        /// <summary>
-        /// pointsSmall, text, lives
-        /// </summary>
-        public string valueType;
+        [NonSerialized]
+        public PlayersHudValueType valueTypeEnum;
+
+        [SerializeField]
+        private string valueType;
+
+        public void OnBeforeSerialize()
+        {
+            var str = valueTypeEnum.ToString();
+            valueType = char.ToLower(str[0]) + str[1..]; // set first letter to lowercase
+        }
+
+        public void OnAfterDeserialize()
+        {
+            valueTypeEnum = (PlayersHudValueType)Enum.Parse(typeof(PlayersHudValueType), valueType);
+        }
     }
 
     [Serializable]
@@ -144,13 +164,13 @@ namespace DSB.GC.Hud
             pointDataQueue.Add(pointData);
         }
 
-        private bool pointDataSet = false;
+        private bool pointDataPendingUpdate = false;
 
         public void HandleQueue()
         {
-            if (pointDataQueue.Count > 0 || pointDataSet)
+            if (pointDataQueue.Count > 0 || pointDataPendingUpdate)
             {
-                pointDataSet = pointDataQueue.Count > 0;
+                pointDataPendingUpdate = pointDataQueue.Count > 0;
 
                 var pointData = new GCScreenPointData
                 {
