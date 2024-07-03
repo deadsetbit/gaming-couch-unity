@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections;
 using DSB.GC.Hud;
 using DSB.GC.Game;
+using DSB.GC.Log;
 using System.Linq;
 
 // TODO: Add invisible GCLogger component that is singleton.
@@ -15,8 +16,6 @@ namespace DSB.GC
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
-
-    public enum LogLevel { None, Warning, Info, Debug }
 
     [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
@@ -46,47 +45,11 @@ namespace DSB.GC
         public GCHud Hud => hud;
         public LogLevel LogLevel = LogLevel.Debug;
 
-        private void Log(LogLevel level, string message)
-        {
-            if (LogLevel == LogLevel.None) return;
-
-            var logLevelIndex = (int)LogLevel;
-
-            switch (level)
-            {
-                case LogLevel.Warning:
-                    if (logLevelIndex < (int)LogLevel.Warning) return;
-                    Debug.LogWarning($"[GC] ({level}) {message}");
-                    break;
-                case LogLevel.Info:
-                    if (logLevelIndex < (int)LogLevel.Info) return;
-                    Debug.Log($"[GC] ({level}) {message}");
-                    break;
-                case LogLevel.Debug:
-                    if (logLevelIndex < (int)LogLevel.Debug) return;
-                    Debug.Log($"[GC] ({level}) {message}");
-                    break;
-            }
-        }
-
-        private void LogWarning(string message)
-        {
-            Log(LogLevel.Warning, message);
-        }
-
-        private void LogInfo(string message)
-        {
-            Log(LogLevel.Info, message);
-        }
-
-        private void LogDebug(string message)
-        {
-            Log(LogLevel.Debug, message);
-        }
-
         private void Awake()
         {
-            LogDebug("Awake");
+            GCLog.logLevel = LogLevel;
+
+            GCLog.LogDebug("Awake");
             if (FindObjectsOfType<GamingCouch>().Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
@@ -94,7 +57,7 @@ namespace DSB.GC
                     throw new Exception("You have multiple GamingCouch instances in the scene. Make sure to have only one.");
                 }
 
-                LogWarning("GamingCouch instance already exists. Destroying new instance.");
+                GCLog.LogWarning("GamingCouch instance already exists. Destroying new instance.");
 
                 Destroy(gameObject);
                 return;
@@ -122,7 +85,7 @@ namespace DSB.GC
                 return;
             }
 
-            LogDebug("Start");
+            GCLog.LogDebug("Start");
 
 #if UNITY_EDITOR
             // When integrated, platform will define the setup options on Unity boot up.
@@ -134,7 +97,7 @@ namespace DSB.GC
 
         private void GCStart()
         {
-            LogDebug("GCStart");
+            GCLog.LogDebug("GCStart");
 
             status = GCStatus.PendingSetup;
 
@@ -178,7 +141,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchSetup(string optionsJson)
         {
-            LogInfo("GamingCouchSetup: " + optionsJson);
+            GCLog.LogInfo("GamingCouchSetup: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
@@ -192,7 +155,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchPlay(string optionsJson)
         {
-            LogInfo("GamingCouchPlay: " + optionsJson);
+            GCLog.LogInfo("GamingCouchPlay: " + optionsJson);
 
             GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
@@ -200,7 +163,7 @@ namespace DSB.GC
 
         private IEnumerator _EditorPlay()
         {
-            LogInfo("_EditorPlay");
+            GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPlay by the platform
             Play(GetEditorPlayOptions());
         }
@@ -236,7 +199,7 @@ namespace DSB.GC
         /// </summary>
         public void SetupDone()
         {
-            LogDebug("SetupDone");
+            GCLog.LogDebug("SetupDone");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
@@ -277,13 +240,13 @@ namespace DSB.GC
                 placementsByPlayerId[i] = playersSorted[i].Id;
             }
 
-            LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
+            GCLog.LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
 
             for (var i = 0; i < placementsByPlayerId.Length; i++)
             {
                 var playerId = placementsByPlayerId[i];
                 var player = playerStoreOutput.GetPlayerById(playerId);
-                LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
+                GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
             }
 
             byte[] result = new byte[placementsByPlayerId.Length];
@@ -306,13 +269,13 @@ namespace DSB.GC
         [Obsolete("Use GameOver() instead. This will require you to setup the game with GamingCouch.Instance.SetupGame()")]
         public void GameEnd(int[] placementsByPlayerId)
         {
-            LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
+            GCLog.LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
 
             for (var i = 0; i < placementsByPlayerId.Length; i++)
             {
                 var playerId = placementsByPlayerId[i];
                 var player = playerStoreOutput.GetPlayerById(playerId);
-                LogInfo($"Player {player.PlayerName} (id:{playerId}) placed {i + 1}");
+                GCLog.LogInfo($"Player {player.PlayerName} (id:{playerId}) placed {i + 1}");
             }
 
             byte[] result = new byte[placementsByPlayerId.Length];
@@ -331,7 +294,7 @@ namespace DSB.GC
         #region Player
         private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : GCPlayer
         {
-            LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
+            GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
 
             var gameObject = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             var targetType = gameObject.GetComponent<T>();
@@ -375,7 +338,7 @@ namespace DSB.GC
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
         public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : GCPlayer
         {
-            LogInfo("InstantiatePlayers");
+            GCLog.LogInfo("InstantiatePlayers");
 
             if (typeof(T) == typeof(GCPlayer))
             {
@@ -419,7 +382,7 @@ namespace DSB.GC
         /// </summary>
         public void ClearInputs()
         {
-            LogDebug("ClearInputs");
+            GCLog.LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
         }
         #endregion
@@ -594,7 +557,7 @@ namespace DSB.GC
         /// </summary>
         public void Restart()
         {
-            LogDebug("Restart");
+            GCLog.LogDebug("Restart");
 
             if (Application.isEditor && !Application.isPlaying)
             {
