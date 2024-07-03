@@ -30,7 +30,7 @@ namespace DSB.GC.Hud
                 var player = FindPlayerComponent();
                 if (player != null)
                 {
-                    playerId = player.GetId();
+                    playerId = player.Id;
                 }
             }
 

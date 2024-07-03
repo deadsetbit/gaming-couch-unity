@@ -12,16 +12,46 @@ namespace DSB.GC
         public Action OnFinished;
         public Action<int, int> OnScoreChanged;
         public Action<int, int> OnLivesChanged;
-
-        private int playerId = -1;
+        private int id = -1;
+        /// <summary>
+        /// Get the player id provided by GamingCouch in GCPlayer.GamingCouchSetup.
+        /// </summary>
+        public int Id => id;
         private string playerName;
+        /// <summary>
+        /// Get the player name provided by GamingCouch in GCPlayer.GamingCouchSetup.
+        /// </summary>
+        public string PlayerName => playerName;
         private Color color;
+        /// <summary>
+        /// Get the player color provided by GamingCouch in GCPlayer.GamingCouchSetup.
+        /// </summary>
+        public Color Color => color;
         private bool isEliminated = false;
-        private float lastSetEliminatedTime = -1; // can be used for placement order
-        private float lastSetUneliminatedTime = -1; // can be used for respawn cooldown etc.
+        public bool IsEliminated => isEliminated;
+        private float lastSetEliminatedTime = -1;
+        /// <summary>
+        /// Get the time the player was last eliminated.
+        /// </summary>
+        public float LastSetEliminatedTime => lastSetEliminatedTime;
+        private float lastSetUneliminatedTime = -1;
+        /// <summary>
+        /// Get the time the player was last set uneliminated.
+        /// </summary>
+        public float LastSetUneliminatedTime => lastSetUneliminatedTime;
         private int score = 0;
+        /// <summary>
+        /// Get the player's score.
+        /// </summary>
+        public int Score => score;
         private int lives = 0;
+        /// <summary>
+        /// Set the player's lives. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
+        /// </summary>
+        public int Lives => lives;
         private float finishedTime = -1;
+        public bool IsFinished => finishedTime != -1;
 
         /// <summary>
         /// Do not call this in your game script. This is called by the GamingCouch script.
@@ -31,38 +61,9 @@ namespace DSB.GC
         /// <param name="options">Options provided by the platform </param>
         public virtual void GamingCouchSetup(GCPlayerSetupOptions options)
         {
-            playerId = options.playerId;
+            id = options.playerId;
             playerName = options.name;
             color = options.color;
-        }
-
-        /// <summary>
-        /// Get the player id provided by GamingCouch in GCPlayer.GamingCouchSetup.
-        /// </summary>
-        public virtual int GetId()
-        {
-            if (playerId == -1)
-            {
-                throw new System.Exception("Player id is not set. Wait for GamingCouchSetup to be called first. If you are overriding GamingCouchSetup, make sure to call base.GamingCouchSetup(options) in your override.");
-            }
-
-            return playerId;
-        }
-
-        /// <summary>
-        /// Get the player name provided by GamingCouch in GCPlayer.GamingCouchSetup.
-        /// </summary>
-        public virtual string GetName()
-        {
-            return playerName;
-        }
-
-        /// <summary>
-        /// Get the player color provided by GamingCouch in GCPlayer.GamingCouchSetup.
-        /// </summary>
-        public virtual Color GetColor()
-        {
-            return color;
         }
 
         /// <summary>
@@ -76,14 +77,6 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Get the time the player was last eliminated.
-        /// </summary>
-        public float GetLastEliminatedTime()
-        {
-            return lastSetEliminatedTime;
-        }
-
-        /// <summary>
         /// Clear the player's eliminated status.
         /// </summary>
         public void SetUneliminated()
@@ -91,22 +84,6 @@ namespace DSB.GC
             isEliminated = false;
             lastSetUneliminatedTime = Time.time;
             OnUneliminated?.Invoke();
-        }
-
-        /// <summary>
-        /// Get the time the player was last set uneliminated.
-        /// </summary>
-        public float GetUneliminatedTime()
-        {
-            return lastSetUneliminatedTime;
-        }
-
-        /// <summary>
-        /// Get the player's eliminated status.
-        /// </summary>
-        public bool IsEliminated()
-        {
-            return isEliminated;
         }
 
         /// <summary>
@@ -142,14 +119,6 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Get the player's score.
-        /// </summary>
-        public float GetScore()
-        {
-            return score;
-        }
-
-        /// <summary>
         /// Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// </summary>
         public void SetFinished()
@@ -157,14 +126,6 @@ namespace DSB.GC
             finishedTime = Time.time;
 
             OnFinished?.Invoke();
-        }
-
-        /// <summary>
-        /// Get the player's finished status.
-        /// </summary>
-        public bool IsFinished()
-        {
-            return finishedTime != -1;
         }
 
         /// <summary>
@@ -209,15 +170,6 @@ namespace DSB.GC
         public void SubtractLives(int lives)
         {
             SetLives(this.lives - lives);
-        }
-
-        /// <summary>
-        /// Set the player's lives. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
-        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
-        /// </summary>
-        public int GetLives()
-        {
-            return lives;
         }
 
         /// <summary>

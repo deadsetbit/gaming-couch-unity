@@ -98,19 +98,19 @@ namespace DSB.GC.Game
             switch (options.placementOrder)
             {
                 case GCGamePlacementOrder.Eliminated:
-                    return players.OrderByDescending(x => x.GetLastEliminatedTime() > 0.0f ? x.GetLastEliminatedTime() : Time.time)
+                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
                         .ToList();
                 case GCGamePlacementOrder.EliminatedScore:
-                    return players.OrderByDescending(x => x.GetLastEliminatedTime() > 0.0f ? x.GetLastEliminatedTime() : Time.time)
-                        .ThenByDescending(x => x.GetScore())
+                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
+                        .ThenByDescending(x => x.Score)
                         .ToList();
                 case GCGamePlacementOrder.EliminatedScoreFinished:
-                    return players.OrderByDescending(x => x.GetLastEliminatedTime() > 0.0f ? x.GetLastEliminatedTime() : Time.time)
-                        .ThenByDescending(x => x.GetScore())
+                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
+                        .ThenByDescending(x => x.Score)
                         .ThenBy(x => x.GetFinishedTime() > 0.0f ? x.GetFinishedTime() : Time.time)
                         .ToList();
                 case GCGamePlacementOrder.EliminatedFinished:
-                    return players.OrderByDescending(x => x.GetLastEliminatedTime() > 0.0f ? x.GetLastEliminatedTime() : Time.time)
+                    return players.OrderByDescending(x => x.LastSetEliminatedTime > 0.0f ? x.LastSetEliminatedTime : Time.time)
                         .ThenBy(x => x.GetFinishedTime() > 0.0f ? x.GetFinishedTime() : Time.time)
                         .ToList();
                 default:
@@ -135,11 +135,11 @@ namespace DSB.GC.Game
             switch (valueType)
             {
                 case "pointsSmall": // TODO: these needs to be enums etc.
-                    return player.GetScore().ToString();
+                    return player.Score.ToString();
                 case "text":
                     return player.GetHudValueText();
                 case "lives":
-                    return player.GetLives().ToString();
+                    return player.Lives.ToString();
                 default:
                     throw new Exception($"Invalid player hud value type '{valueType}'");
             }
@@ -153,8 +153,8 @@ namespace DSB.GC.Game
             {
                 players = playersByPlacement.Select((player, index) => new GCPlayersHudDataPlayer
                 {
-                    playerId = player.GetId(),
-                    eliminated = player.IsEliminated(),
+                    playerId = player.Id,
+                    eliminated = player.IsEliminated,
                     placement = index,
                     value = GetPlayerHudValue(player)
                 }).ToArray()

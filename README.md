@@ -108,8 +108,8 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
     players = playerStore.GetPlayers().Select(player => new GCPlayersHudDataPlayer
     {
-        playerId = player.GetId(), // The GamingCouch player id
-        eliminated = player.IsEliminated(),
+        playerId = player.Id, // The GamingCouch player id
+        eliminated = player.IsEliminated,
         placement = 0, // The placement of the player to sort the players HUD by
     }).ToArray()
 });
@@ -150,7 +150,7 @@ private void Update()
 {
     foreach (var player in playerStore.GetPlayers())
     {
-        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.GetId());
+        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
         if (inputs == null) continue;
 
         player.PlayerController.Move(inputs.lx);

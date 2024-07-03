@@ -274,7 +274,7 @@ namespace DSB.GC
             var placementsByPlayerId = new int[playersSorted.Count];
             for (int i = 0; i < playersSorted.Count; i++)
             {
-                placementsByPlayerId[i] = playersSorted[i].GetId();
+                placementsByPlayerId[i] = playersSorted[i].Id;
             }
 
             LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
@@ -283,7 +283,7 @@ namespace DSB.GC
             {
                 var playerId = placementsByPlayerId[i];
                 var player = playerStoreOutput.GetPlayerById(playerId);
-                LogInfo($"Player {player.GetName()} placed {i + 1} - (id:{playerId})");
+                LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
             }
 
             byte[] result = new byte[placementsByPlayerId.Length];
@@ -312,7 +312,7 @@ namespace DSB.GC
             {
                 var playerId = placementsByPlayerId[i];
                 var player = playerStoreOutput.GetPlayerById(playerId);
-                LogInfo($"Player {player.GetName()} (id:{playerId}) placed {i + 1}");
+                LogInfo($"Player {player.PlayerName} (id:{playerId}) placed {i + 1}");
             }
 
             byte[] result = new byte[placementsByPlayerId.Length];
@@ -568,7 +568,7 @@ namespace DSB.GC
                 b4 = Input.GetButton(b4) ? 1 : 0
             };
 
-            inputsByPlayerId[player.GetId()] = inputs;
+            inputsByPlayerId[player.Id] = inputs;
         }
         #endregion
 

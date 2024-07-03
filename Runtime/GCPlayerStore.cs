@@ -88,7 +88,7 @@ namespace DSB.GC
         {
             players.Add(player);
 
-            if (!player.IsEliminated())
+            if (!player.IsEliminated)
             {
                 uneliminatedPlayers.Add(player);
             }
@@ -97,7 +97,7 @@ namespace DSB.GC
                 eliminatedPlayers.Add(player);
             }
 
-            playerById[player.GetId()] = player;
+            playerById[player.Id] = player;
 
             player.OnEliminated += () => HandlePlayerEliminated(player);
             player.OnUneliminated += () => HandlePlayerUneliminated(player);
