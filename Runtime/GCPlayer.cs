@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DSB.GC.Log;
 using UnityEngine;
 
 namespace DSB.GC
@@ -59,11 +60,10 @@ namespace DSB.GC
 
         /// <summary>
         /// Do not call this in your game script. This is called by the GamingCouch script.
-        /// If you want to do something custom with the options on player setup, override this method.
-        /// NOTE: Don't forget to call base.GamingCouchSetup(options) when overriding.
+        /// You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().
         /// </summary>
-        /// <param name="options">Options provided by the platform </param>
-        public virtual void GamingCouchSetup(GCPlayerSetupOptions options)
+        /// <param name="options">Options provided by the platform</param>
+        public void GamingCouchSetup(GCPlayerSetupOptions options)
         {
             id = options.playerId;
             playerName = options.name;
@@ -75,6 +75,8 @@ namespace DSB.GC
         /// </summary>
         public void SetEliminated()
         {
+            GCLog.LogInfo($"Player {id} eliminated.");
+
             isEliminated = true;
             lastSetEliminatedTime = Time.time;
             OnEliminated?.Invoke();
@@ -96,6 +98,8 @@ namespace DSB.GC
         /// </summary>
         public void SetScore(int newScore)
         {
+            GCLog.LogInfo($"Player {id} score set to {newScore}.");
+
             if (this.score == newScore) return;
 
             var oldScore = this.score;
@@ -127,6 +131,8 @@ namespace DSB.GC
         /// </summary>
         public void SetFinished()
         {
+            GCLog.LogInfo($"Player {id} finished.");
+
             finishedTime = Time.time;
 
             OnFinished?.Invoke();
@@ -137,6 +143,8 @@ namespace DSB.GC
         /// </summary>
         public void SetLives(int newLives)
         {
+            GCLog.LogInfo($"Player {id} lives set to {newLives}.");
+
             if (newLives < 0)
             {
                 newLives = 0;
