@@ -9,6 +9,9 @@ namespace DSB.GC
     {
         public Action OnEliminated;
         public Action OnUneliminated;
+        public Action OnFinished;
+        public Action<int, int> OnScoreChanged;
+        public Action<int, int> OnLivesChanged;
 
         private int playerId = -1;
         private string playerName;
@@ -16,7 +19,8 @@ namespace DSB.GC
         private bool isEliminated = false;
         private float lastSetEliminatedTime = -1;
         private float lastSetUneliminatedTime = -1;
-        private float score = 0;
+        private int score = 0;
+        private int lives = 0;
         private float finishedTime = -1;
         public float FinishedTime => finishedTime;
 
@@ -63,13 +67,12 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Mark the player as eliminated. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// Mark the player as eliminated. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// </summary>
         public void SetEliminated()
         {
             isEliminated = true;
             lastSetEliminatedTime = Time.time;
-            Debug.Log("Player " + playerName + " eliminated");
             OnEliminated?.Invoke();
         }
 
@@ -108,11 +111,35 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Set the player's score. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// Set the player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
-        public void SetScore(float score)
+        public void SetScore(int newScore)
         {
-            this.score = score;
+            if (this.score == newScore) return;
+
+            var oldScore = this.score;
+            score = newScore;
+
+            OnScoreChanged?.Invoke(oldScore, newScore);
+        }
+
+        /// <summary>
+        /// Add to player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
+        /// </summary>
+        public void AddScore(int score)
+        {
+            SetScore(this.score + score);
+        }
+
+        /// <summary>
+        /// Subtract from player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
+        /// </summary>
+        public void SubtractScore(int score)
+        {
+            SetScore(this.score - score);
         }
 
         /// <summary>
@@ -124,11 +151,13 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Set the player as finished. Depending on the GC placement pattern used, this can be used to determine the player's placement.
+        /// Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// </summary>
         public void SetFinished()
         {
             finishedTime = Time.time;
+
+            OnFinished?.Invoke();
         }
 
         /// <summary>
@@ -145,6 +174,40 @@ namespace DSB.GC
         public float GetFinishedTime()
         {
             return finishedTime;
+        }
+
+        public void SetLives(int newLives)
+        {
+            if (this.lives == newLives) return;
+
+            var oldLives = this.lives;
+            lives = newLives;
+
+            OnLivesChanged?.Invoke(oldLives, newLives);
+        }
+
+        public void AddLives(int lives)
+        {
+            SetLives(this.lives + lives);
+        }
+
+        public void SubtractLives(int lives)
+        {
+            SetLives(this.lives - lives);
+        }
+
+        /// <summary>
+        /// Set the player's lives. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
+        /// </summary>
+        public int GetLives()
+        {
+            return lives;
+        }
+
+        public string GetHudValueText()
+        {
+            throw new Exception("GetHudValueText not implemented. Implement this in your GCPlayer subclass to display a custom value in the HUD.");
         }
     }
 }

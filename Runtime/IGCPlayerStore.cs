@@ -5,6 +5,8 @@ public interface GCPlayerStoreOutput<out T> where T : GCPlayer
 {
     T GetPlayerById(int playerId);
     IEnumerable<T> GetPlayersEnumerable();
+    IEnumerable<T> GetUneliminatedPlayersEnumerable();
+    IEnumerable<T> GetEliminatedPlayersEnumerable();
     int GetPlayerCount();
     T GetPlayerByIndex(int index);
     void Clear();

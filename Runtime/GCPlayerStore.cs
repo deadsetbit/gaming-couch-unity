@@ -49,6 +49,11 @@ namespace DSB.GC
             return players.Count;
         }
 
+        public IEnumerable<T> GetUneliminatedPlayersEnumerable()
+        {
+            return uneliminatedPlayers;
+        }
+
         public List<T> GetUneliminatedPlayers()
         {
             return uneliminatedPlayers;
@@ -57,6 +62,11 @@ namespace DSB.GC
         public int GetUneliminatedPlayerCount()
         {
             return GetUneliminatedPlayers().Count;
+        }
+
+        public IEnumerable<T> GetEliminatedPlayersEnumerable()
+        {
+            return eliminatedPlayers;
         }
 
         public List<T> GetEliminatedPlayers()

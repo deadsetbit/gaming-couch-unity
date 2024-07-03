@@ -7,6 +7,6 @@ namespace DSB.GC.Game
 
     public class GCGameVersus : GCGame
     {
-        public GCGameVersus(GCGameVersusSetupOptions options) : base(options) { }
+        public GCGameVersus(GamingCouch gamingCouch, GCPlayerStoreOutput<GCPlayer> playerStore, GCGameVersusSetupOptions options) : base(gamingCouch, playerStore, options) { }
     }
 }

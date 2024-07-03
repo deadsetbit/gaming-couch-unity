@@ -109,9 +109,9 @@ namespace DSB.GC.Hud
         /// <summary>
         /// Setup the HUD. Should be called once at the start of the game and before UpdatePlayers.
         /// </summary>
-        public void Setup(GCHudConfig playersHudData)
+        public void Setup(GCHudConfig config)
         {
-            string playersHudDataJson = JsonUtility.ToJson(playersHudData);
+            string playersHudDataJson = JsonUtility.ToJson(config);
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchSetupHud(playersHudDataJson);
 #endif

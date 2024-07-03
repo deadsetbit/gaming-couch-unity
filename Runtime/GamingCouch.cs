@@ -38,10 +38,9 @@ namespace DSB.GC
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
-
+        private GCGame game;
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
-
         public LogLevel LogLevel = LogLevel.Debug;
 
         private void Log(LogLevel level, string message)
@@ -98,7 +97,7 @@ namespace DSB.GC
                 return;
             }
 
-            GamingCouch.instance = this;
+            instance = this;
 
             if (Application.isEditor && !Application.isPlaying)
             {
@@ -163,6 +162,11 @@ namespace DSB.GC
         private void LateUpdate()
         {
             hud.HandleQueue();
+
+            if (game != null)
+            {
+                game.HandlePlayersHudAutoUpdate();
+            }
         }
 
         #region Methods called by the GamingCouch platform
@@ -240,9 +244,12 @@ namespace DSB.GC
             status = GCStatus.SetupDone;
         }
 
-        private GCGame game;
+        public void SetupGameVersus(GCGameVersusSetupOptions options)
+        {
+            SetupGame(new GCGameVersus(this, playerStoreOutput, options));
+        }
 
-        public void SetupGame(GCGame game)
+        private void SetupGame(GCGame game)
         {
             if (this.game != null)
             {
@@ -260,7 +267,7 @@ namespace DSB.GC
             }
 
             var players = playerStoreOutput.GetPlayersEnumerable().ToList();
-            var playersSorted = game.GetPlayersInPlacementOrder(players);
+            var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
             var placementsByPlayerId = new int[playersSorted.Count];
             for (int i = 0; i < playersSorted.Count; i++)
