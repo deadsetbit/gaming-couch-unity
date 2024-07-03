@@ -51,6 +51,10 @@ namespace DSB.GC
         /// </summary>
         public int Lives => lives;
         private float finishedTime = -1;
+        /// <summary>
+        /// The time player was set as finished. eg. when they reach the finish line.
+        /// </summary>
+        public float FinishedTime => finishedTime;
         public bool IsFinished => finishedTime != -1;
 
         /// <summary>
@@ -126,14 +130,6 @@ namespace DSB.GC
             finishedTime = Time.time;
 
             OnFinished?.Invoke();
-        }
-
-        /// <summary>
-        /// Get the time the player finished.
-        /// </summary>
-        public float GetFinishedTime()
-        {
-            return finishedTime;
         }
 
         /// <summary>
