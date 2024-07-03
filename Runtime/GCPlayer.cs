@@ -17,12 +17,11 @@ namespace DSB.GC
         private string playerName;
         private Color color;
         private bool isEliminated = false;
-        private float lastSetEliminatedTime = -1;
-        private float lastSetUneliminatedTime = -1;
+        private float lastSetEliminatedTime = -1; // can be used for placement order
+        private float lastSetUneliminatedTime = -1; // can be used for respawn cooldown etc.
         private int score = 0;
         private int lives = 0;
         private float finishedTime = -1;
-        public float FinishedTime => finishedTime;
 
         /// <summary>
         /// Do not call this in your game script. This is called by the GamingCouch script.
@@ -176,8 +175,17 @@ namespace DSB.GC
             return finishedTime;
         }
 
+        /// <summary>
+        /// Set the player's lives.
+        /// </summary>
         public void SetLives(int newLives)
         {
+            if (newLives < 0)
+            {
+                newLives = 0;
+                Debug.LogWarning("Player lives cannot be less than 0. Setting to 0.");
+            }
+
             if (this.lives == newLives) return;
 
             var oldLives = this.lives;
@@ -186,11 +194,18 @@ namespace DSB.GC
             OnLivesChanged?.Invoke(oldLives, newLives);
         }
 
+        /// <summary>
+        /// Add to player's lives.
+        /// </summary>
+        /// <param name="lives"></param>
         public void AddLives(int lives)
         {
             SetLives(this.lives + lives);
         }
 
+        /// <summary>
+        /// Subtract from player's lives.
+        /// </summary>
         public void SubtractLives(int lives)
         {
             SetLives(this.lives - lives);
@@ -205,7 +220,10 @@ namespace DSB.GC
             return lives;
         }
 
-        public string GetHudValueText()
+        /// <summary>
+        /// Get the player's HUD value to be displayed in the HUD.
+        /// </summary>
+        virtual public string GetHudValueText()
         {
             throw new Exception("GetHudValueText not implemented. Implement this in your GCPlayer subclass to display a custom value in the HUD.");
         }
