@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DSB.GC.Hud;
+using DSB.GC.Log;
 using UnityEngine;
 
 namespace DSB.GC.Game
@@ -39,7 +40,7 @@ namespace DSB.GC.Game
 
         public GCGame(GamingCouch gamingCouch, GCPlayerStoreOutput<GCPlayer> playerStore, GCGameSetupOptions options)
         {
-            Debug.Log("Setting up game");
+            GCLog.LogInfo("GCGame constructor");
 
             ValidateOptions(options);
 
@@ -164,11 +165,6 @@ namespace DSB.GC.Game
             }
 
             return sortedPlayers;
-        }
-
-        public bool IsPlayersAutoUpdateEnabled()
-        {
-            return isPlayersHudAutoUpdateEnabled;
         }
 
         private string GetPlayerHudValue(GCPlayer player)
