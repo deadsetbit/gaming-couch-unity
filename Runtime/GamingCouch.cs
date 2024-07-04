@@ -4,14 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using DSB.GC.Hud;
+using DSB.GC.Game;
+using DSB.GC.Log;
+using System.Linq;
 
 namespace DSB.GC
 {
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
-
-    public enum LogLevel { None, Warning, Info, Debug }
 
     [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
@@ -30,59 +31,22 @@ namespace DSB.GC
         [SerializeField]
         private GameObject listener;
         [SerializeField]
-        [Tooltip("Make sure your player prefab inherits IGCPlayer or extends GCPlayer.")]
+        [Tooltip("Make sure your player prefab extends GCPlayer.")]
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions; // this is assigned in GCSetup
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
-        private IGCPlayerStoreOutput<IGCPlayer> playerStoreOutput;
-
+        private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
+        private GCGame game;
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
-
         public LogLevel LogLevel = LogLevel.Debug;
-
-        private void Log(LogLevel level, string message)
-        {
-            if (LogLevel == LogLevel.None) return;
-
-            var logLevelIndex = (int)LogLevel;
-
-            switch (level)
-            {
-                case LogLevel.Warning:
-                    if (logLevelIndex < (int)LogLevel.Warning) return;
-                    Debug.LogWarning($"[GC] ({level}) {message}");
-                    break;
-                case LogLevel.Info:
-                    if (logLevelIndex < (int)LogLevel.Info) return;
-                    Debug.Log($"[GC] ({level}) {message}");
-                    break;
-                case LogLevel.Debug:
-                    if (logLevelIndex < (int)LogLevel.Debug) return;
-                    Debug.Log($"[GC] ({level}) {message}");
-                    break;
-            }
-        }
-
-        private void LogWarning(string message)
-        {
-            Log(LogLevel.Warning, message);
-        }
-
-        private void LogInfo(string message)
-        {
-            Log(LogLevel.Info, message);
-        }
-
-        private void LogDebug(string message)
-        {
-            Log(LogLevel.Debug, message);
-        }
 
         private void Awake()
         {
-            LogDebug("Awake");
+            GCLog.logLevel = LogLevel;
+
+            GCLog.LogDebug("Awake");
             if (FindObjectsOfType<GamingCouch>().Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
@@ -90,13 +54,13 @@ namespace DSB.GC
                     throw new Exception("You have multiple GamingCouch instances in the scene. Make sure to have only one.");
                 }
 
-                LogWarning("GamingCouch instance already exists. Destroying new instance.");
+                GCLog.LogWarning("GamingCouch instance already exists. Destroying new instance.");
 
                 Destroy(gameObject);
                 return;
             }
 
-            GamingCouch.instance = this;
+            instance = this;
 
             if (Application.isEditor && !Application.isPlaying)
             {
@@ -118,7 +82,7 @@ namespace DSB.GC
                 return;
             }
 
-            LogDebug("Start");
+            GCLog.LogDebug("Start");
 
 #if UNITY_EDITOR
             // When integrated, platform will define the setup options on Unity boot up.
@@ -130,7 +94,7 @@ namespace DSB.GC
 
         private void GCStart()
         {
-            LogDebug("GCStart");
+            GCLog.LogDebug("GCStart");
 
             status = GCStatus.PendingSetup;
 
@@ -160,7 +124,11 @@ namespace DSB.GC
 
         private void LateUpdate()
         {
-            hud.HandleQueue();
+            if (game != null)
+            {
+                game.HandlePlayersHudAutoUpdate();
+                hud.HandleQueue();
+            }
         }
 
         #region Methods called by the GamingCouch platform
@@ -170,7 +138,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchSetup(string optionsJson)
         {
-            LogInfo("GamingCouchSetup: " + optionsJson);
+            GCLog.LogInfo("GamingCouchSetup: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
@@ -184,7 +152,7 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchPlay(string optionsJson)
         {
-            LogInfo("GamingCouchPlay: " + optionsJson);
+            GCLog.LogInfo("GamingCouchPlay: " + optionsJson);
 
             GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
@@ -192,7 +160,7 @@ namespace DSB.GC
 
         private IEnumerator _EditorPlay()
         {
-            LogInfo("_EditorPlay");
+            GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPlay by the platform
             Play(GetEditorPlayOptions());
         }
@@ -228,7 +196,7 @@ namespace DSB.GC
         /// </summary>
         public void SetupDone()
         {
-            LogDebug("SetupDone");
+            GCLog.LogDebug("SetupDone");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
@@ -238,19 +206,50 @@ namespace DSB.GC
             status = GCStatus.SetupDone;
         }
 
-        /// <summary>
-        /// Inform the platform that the game has ended.
-        /// </summary>
-        /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
-        public void GameEnd(int[] placementsByPlayerId)
+        public void SetupGameVersus(GCGameVersusSetupOptions options)
         {
-            LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
+            SetupGame(new GCGameVersus(this, playerStoreOutput, options));
+        }
+
+        private void SetupGame(GCGame game)
+        {
+            if (this.game != null)
+            {
+                throw new InvalidOperationException("Game already set. You should call SetupGame only once.");
+            }
+
+            this.game = game;
+        }
+
+        /// <summary>
+        /// Call when the game is over.
+        /// Note: This will trigger the platform to show the game over screen immediately,
+        /// so make sure to call this after possible outro animations etc. are done.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Throws if SetupGame is not called before.</exception>
+        public void GameOver()
+        {
+            if (game == null)
+            {
+                throw new InvalidOperationException("Game not set. You should call SetupGame before calling GameOver.");
+            }
+
+            var players = playerStoreOutput.PlayersEnumerable.ToList();
+            var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
+
+            var placementsByPlayerId = new int[playersSorted.Count];
+            for (int i = 0; i < playersSorted.Count; i++)
+            {
+                placementsByPlayerId[i] = playersSorted[i].Id;
+            }
+
+            GCLog.LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
 
             for (var i = 0; i < placementsByPlayerId.Length; i++)
             {
                 var playerId = placementsByPlayerId[i];
                 var player = playerStoreOutput.GetPlayerById(playerId);
-                LogInfo($"Player {player.GetName()} (id:{playerId}) placed {i + 1}");
+                GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
             }
 
             byte[] result = new byte[placementsByPlayerId.Length];
@@ -258,6 +257,7 @@ namespace DSB.GC
             {
                 result[i] = (byte)placementsByPlayerId[i];
             }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchGameEnd(result, result.Length);
 #endif
@@ -267,9 +267,9 @@ namespace DSB.GC
         #endregion
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : IGCPlayer
+        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : GCPlayer
         {
-            LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
+            GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
 
             var gameObject = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             var targetType = gameObject.GetComponent<T>();
@@ -278,10 +278,10 @@ namespace DSB.GC
                 throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
             }
 
-            var player = gameObject.GetComponent<IGCPlayer>();
+            var player = gameObject.GetComponent<GCPlayer>();
             if (player == null)
             {
-                throw new Exception("Player prefab does not have a component that inherits IGCPlayer or extends GCPlayer.");
+                throw new Exception("Player prefab does not have a component that extends GCPlayer.");
             }
 
             gameObject.name = "Player - " + name;
@@ -308,19 +308,19 @@ namespace DSB.GC
         /// <summary>
         /// Instantiate players by using the prefab defined in GamingCouch game object's inspector.
         /// </summary>
-        /// <typeparam name="T">Your game specific player class that inherits IGCPlayer or extends GCPlayer.</typeparam>
+        /// <typeparam name="T">Your game specific player class that extends GCPlayer.</typeparam>
         /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : class, IGCPlayer
+        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : GCPlayer
         {
-            LogInfo("InstantiatePlayers");
+            GCLog.LogInfo("InstantiatePlayers");
 
-            if (typeof(T) == typeof(IGCPlayer))
+            if (typeof(T) == typeof(GCPlayer))
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit IGCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<IGCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that inherits IGCPlayer or extends GCPlayer.");
+                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit GCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<GCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that extends GCPlayer.");
             }
 
-            if (playerStore.GetPlayerCount() > 0)
+            if (playerStore.PlayerCount > 0)
             {
                 throw new InvalidOperationException("Players already instantiated. Call ClearPlayers before calling InstantiatePlayers.");
             }
@@ -357,7 +357,7 @@ namespace DSB.GC
         /// </summary>
         public void ClearInputs()
         {
-            LogDebug("ClearInputs");
+            GCLog.LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
         }
         #endregion
@@ -482,7 +482,7 @@ namespace DSB.GC
 
             if (playerStoreOutput == null) return;
 
-            if (playerStoreOutput.GetPlayerCount() == 0) return;
+            if (playerStoreOutput.PlayerCount == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
@@ -506,7 +506,7 @@ namespace DSB.GC
                 b4 = Input.GetButton(b4) ? 1 : 0
             };
 
-            inputsByPlayerId[player.GetId()] = inputs;
+            inputsByPlayerId[player.Id] = inputs;
         }
         #endregion
 
@@ -532,12 +532,14 @@ namespace DSB.GC
         /// </summary>
         public void Restart()
         {
-            LogDebug("Restart");
+            GCLog.LogDebug("Restart");
 
             if (Application.isEditor && !Application.isPlaying)
             {
                 throw new Exception("Restart can only be called in play mode.");
             }
+
+            game = null;
 
             Clear();
             Start();

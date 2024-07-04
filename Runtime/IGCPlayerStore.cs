@@ -1,15 +1,20 @@
 using System.Collections.Generic;
+using DSB.GC;
 
-public interface IGCPlayerStoreOutput<out T> where T : IGCPlayer
+public interface GCPlayerStoreOutput<out T> where T : GCPlayer
 {
+    int PlayerCount { get; }
+    IEnumerable<T> PlayersEnumerable { get; }
+    IEnumerable<T> UneliminatedPlayersEnumerable { get; }
+    int UneliminatedPlayerCount { get; }
+    IEnumerable<T> EliminatedPlayersEnumerable { get; }
+    int EliminatedPlayerCount { get; }
     T GetPlayerById(int playerId);
-    IEnumerable<T> GetPlayersEnumerable();
-    int GetPlayerCount();
     T GetPlayerByIndex(int index);
     void Clear();
 }
 
-public interface IGCPlayerStoreInput<in T> where T : IGCPlayer
+public interface GCPlayerStoreInput<in T> where T : GCPlayer
 {
     void AddPlayer(T player);
 }

@@ -6,15 +6,15 @@ namespace DSB.GC.Hud
     {
         private int playerId = -1;
 
-        private IGCPlayer FindPlayerComponent()
+        private GCPlayer FindPlayerComponent()
         {
-            var player = GetComponent<IGCPlayer>();
+            var player = GetComponent<GCPlayer>();
             if (player != null)
             {
                 return player;
             }
 
-            player = GetComponentInParent<IGCPlayer>(true);
+            player = GetComponentInParent<GCPlayer>(true);
             if (player != null)
             {
                 return player;
@@ -30,13 +30,13 @@ namespace DSB.GC.Hud
                 var player = FindPlayerComponent();
                 if (player != null)
                 {
-                    playerId = player.GetId();
+                    playerId = player.Id;
                 }
             }
 
             if (playerId == -1)
             {
-                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (IGCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayerId before Start.");
+                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayerId before Start.");
                 return;
             }
         }

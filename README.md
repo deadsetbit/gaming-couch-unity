@@ -27,7 +27,7 @@ Add GamingCouch game object to your main scene by right clicking the scene hiera
 ## 2) Create and link player prefab
 
 - (for new game project) create "Player" prefab and create and add "Player.cs" script to it
-- make your player script extend DSB.GC.GCPlayer (instead of MonoBehaviour)
+- make your player script extends DSB.GC.GCPlayer (instead of MonoBehaviour)
 - link the player prefab to the "Player Prefab" field in GamingCouch game object (via inspector)
 
 ## 3) Hook up your main game script
@@ -65,6 +65,30 @@ private void GamingCouchPlay(GCPlayOptions options)
     // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
     GamingCouch.Instance.InstantiatePlayers(playerStore, options.players);
 
+    // Setup the game and HUD based on the game/game mode
+    GamingCouch.Instance.SetupGameVersus(
+        new GCGameVersusSetupOptions()
+        {
+            // Adjust the placement sorting criteria to fit your game.
+            // You can add/remove or change the order of the components.
+            // NOTE: In order for the placement criteria to work, you need
+            // to use the GCPlayer methods, such as SetEliminated, SetScore/AddScore, SetFinished.
+            placementCriteria = new GCPlacementSortCriteria[] {
+                GCPlacementSortCriteria.EliminatedDescending,
+                GCPlacementSortCriteria.ScoreDescending,
+                GCPlacementSortCriteria.Finished
+            },
+
+            // configure the HUD, see more on the HUD section
+            hud = new GCGameHudOptions()
+            {
+                players = new GCHudPlayersConfig(),
+                // this is by default true, but can be set to false if Players HUD needs to be controlled manually
+                isPlayersAutoUpdateEnabled = true,
+            }
+        }
+    );
+
     // next we can set the game to play mode and or play intro
     StartMyGameNow();
 }
@@ -73,32 +97,43 @@ private void GamingCouchPlay(GCPlayOptions options)
 When the game ends, simply call:
 
 ```C#
-// you need to pass the player id's in placement order:
-GamingCouch.Instance.GameEnd(placementsByPlayerId);
+GamingCouch.Instance.GameOver();
 ```
 
-Next you should integrate the HUD, see the next section.
+# Players HUD
 
-# HUD integration
+## Configure Players HUD to display score, lives etc.
 
-## Setup the HUD
-
-The most basic setup that will just display the avatars and names of the players:
+### Display score
 
 ```C#
-using DSB.GC.Hud;
-
-GamingCouch.Instance.Hud.Setup(new GCHudConfig
-{
-    players = new GCHudPlayersConfig()
-});
+GamingCouch.Instance.SetupGameVersus(
+    new GCGameVersusSetupOptions()
+    {
+        maxScore = 10, // required to display the score in HUD
+        hud = new GCGameHudOptions()
+        {
+            players = new GCHudPlayersConfig()
+            {
+                valueTypeEnum = PlayersHudValueType.PointsSmall
+                ...
+            }
+            ...
+        }
+        ...
+    }
+);
 ```
 
-To display score or status text, see the [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueType).
+Now the hud is set to reflect the player score that is set by GCPlayer.SetScore or GCPlayer.AddScore.
 
-If the game has multiple game modes you can setup the HUD differently for each game mode.
+// TODO: Examples for all the value types, and how to update them
 
-## Update the players HUD
+To see other HUD value types, see [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum).
+
+## Manually update the Players HUD
+
+NOTE: You need to disable the auto update in the SetupGame's GCGameHudOptions to manually update the Players HUD!
 
 ```C#
 using System.Linq;
@@ -106,16 +141,15 @@ using DSB.GC.Hud;
 
 GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
-    players = playerStore.GetPlayers().Select(player => new GCPlayersHudDataPlayer
+    players = playerStore.Players.Select(player => new GCPlayersHudDataPlayer
     {
-        playerId = player.GetId(), // The GamingCouch player id
-        eliminated = !player.IsAlive, // IsAlive is not provided by GCPlayer
+        playerId = player.Id, // The GamingCouch player id
+        eliminated = player.IsEliminated,
         placement = 0, // The placement of the player to sort the players HUD by
+        value = ""; // The value to display in the HUD. Set depending on the value type set in the GCGameHudOptions
     }).ToArray()
 });
 ```
-
-If your HUD is setup to display score or status text, you can pass value for it, see the [API documentation for GCPlayersHudDataPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_value).
 
 # Player integration
 
@@ -134,7 +168,7 @@ public class Player : GCPlayer
 
     private void Start()
     {
-        GetComponent<SpriteRenderer>().color = GetColor();
+        GetComponent<SpriteRenderer>().color = Color;
     }
 
     ...
@@ -148,15 +182,35 @@ Read and apply the player inputs in your main game script Update method:
 ```C#
 private void Update()
 {
-    foreach (var player in playerStore.GetPlayers())
+    foreach (var player in playerStore.Players)
     {
-        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.GetId());
+        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
         if (inputs == null) continue;
 
         player.PlayerController.Move(inputs.lx);
         player.PlayerController.Jump(inputs.b1 == 1);
     }
 }
+```
+
+# Player placement
+
+You do not need to sort the players, just define correct placement criteria in the SetupGame call (see above)
+and use the GCPlayer methods to set the player state (eliminated, score, finished):
+
+```C#
+// Set player eliminated
+player.SetEliminated();
+
+// Set player score
+player.SetScore(10);
+// ...or add score
+player.AddScore(1);
+// ...or subtract score
+player.SubtractScore(2);
+
+// Set player finished
+player.SetFinished();
 ```
 
 # Build your project for Gaming Couch
