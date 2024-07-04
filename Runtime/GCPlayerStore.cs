@@ -12,9 +12,11 @@ namespace DSB.GC
         public int PlayerCount => players.Count;
         private List<T> uneliminatedPlayers = new List<T>();
         public List<T> UneliminatedPlayers => uneliminatedPlayers;
+        public int UneliminatedPlayerCount => uneliminatedPlayers.Count;
         public IEnumerable<T> UneliminatedPlayersEnumerable => uneliminatedPlayers;
         private List<T> eliminatedPlayers = new List<T>();
         public List<T> EliminatedPlayers => eliminatedPlayers;
+        public int EliminatedPlayerCount => eliminatedPlayers.Count;
         public IEnumerable<T> EliminatedPlayersEnumerable => eliminatedPlayers;
         private Dictionary<int, T> playerById = new Dictionary<int, T>();
 
@@ -39,31 +41,6 @@ namespace DSB.GC
         public T GetPlayerById(int playerId)
         {
             return playerById[playerId];
-        }
-
-        public List<T> GetUneliminatedPlayers()
-        {
-            return uneliminatedPlayers;
-        }
-
-        public int GetUneliminatedPlayerCount()
-        {
-            return GetUneliminatedPlayers().Count;
-        }
-
-        public IEnumerable<T> GetEliminatedPlayersEnumerable()
-        {
-            return eliminatedPlayers;
-        }
-
-        public List<T> GetEliminatedPlayers()
-        {
-            return eliminatedPlayers;
-        }
-
-        public int GetEliminatedPlayerCount()
-        {
-            return GetEliminatedPlayers().Count;
         }
 
         public T GetPlayerByIndex(int index)

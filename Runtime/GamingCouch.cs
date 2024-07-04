@@ -263,7 +263,7 @@ namespace DSB.GC
         /// Inform the platform that the game has ended.
         /// </summary>
         /// <param name="placementsByPlayerId">Player ID's in placement order.</param>
-        [Obsolete("Use GameOver() instead. This will require you to setup the game with GamingCouch.Instance.SetupGame()")]
+        [Obsolete("Use GameOver() instead. Note: This will require you to setup the game with GamingCouch.Instance.SetupGameX() method.")]
         public void GameEnd(int[] placementsByPlayerId)
         {
             GCLog.LogInfo($"GameEnd: {string.Join(",", placementsByPlayerId)}");
