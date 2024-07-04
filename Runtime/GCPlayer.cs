@@ -24,15 +24,19 @@ namespace DSB.GC
         public Action<PlayerStatus, string> OnStatusChanged;
         private int id = -1;
         /// <summary>
-        /// Get the player id provided by GamingCouch in GCPlayer.GamingCouchSetup.
+        /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
         /// </summary>
         public int Id => id;
         private string playerName;
         /// <summary>
-        /// Get the player name provided by GamingCouch in GCPlayer.GamingCouchSetup.
+        /// GamingCouch player name.
         /// </summary>
         public string PlayerName => playerName;
         private Color color;
+        /// <summary>
+        /// GamingCouch player color.
+        /// </summary>
+        public Color Color => color;
         private PlayerStatus status = PlayerStatus.Neutral;
         /// <summary>
         /// Player status.
@@ -47,11 +51,10 @@ namespace DSB.GC
         /// If Players HUD is set to display status text, this will be reflected there as well.
         /// </summary>
         public string StatusText => statusText;
-        /// <summary>
-        /// Get the player color provided by GamingCouch in GCPlayer.GamingCouchSetup.
-        /// </summary>
-        public Color Color => color;
         private bool isEliminated = false;
+        /// <summary>
+        /// Get the player's eliminated status. Use LastSetEliminatedTime/LastSetUneliminatedTime to get the time the player was last eliminated/uneliminated.
+        /// </summary>
         public bool IsEliminated => isEliminated;
         private float lastSetEliminatedTime = -1;
         /// <summary>
@@ -79,6 +82,9 @@ namespace DSB.GC
         /// The time player was set as finished. eg. when they reach the finish line.
         /// </summary>
         public float FinishedTime => finishedTime;
+        /// <summary>
+        /// Get the player's finished status. Use FinishedTime to get the time the player was set as finished.
+        /// </summary>
         public bool IsFinished => finishedTime != -1;
 
         /// <summary>
@@ -202,6 +208,16 @@ namespace DSB.GC
         /// <summary>
         /// Set the player's status and status text.
         /// This status is displayed in the Players HUD if the HUD is configured to display the status.
+        /// Player status HUD color will be set based on the status and text can be anything game specific.
+        /// Example:
+        /// In parking game, while player is finding a spot:
+        /// SetStatus(PlayerStatus.Pending, "Finding a spot");
+        /// 
+        /// When spot is found:
+        /// SetStatus(PlayerStatus.Success, "Parked!");
+        /// 
+        /// If left without spot:
+        /// SetStatus(PlayerStatus.Failure, "Sadge :(");
         /// </summary>
         public void SetStatus(PlayerStatus status, string statusText)
         {
