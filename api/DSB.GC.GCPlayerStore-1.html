@@ -101,7 +101,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class GCPlayerStore&lt;T&gt; : IGCPlayerStoreOutput&lt;T&gt;, IGCPlayerStoreInput&lt;T&gt; where T : IGCPlayer</code></pre>
+    <pre><code class="lang-csharp hljs">public class GCPlayerStore&lt;T&gt; : GCPlayerStoreOutput&lt;T&gt;, GCPlayerStoreInput&lt;T&gt; where T : GCPlayer</code></pre>
   </div>
 
 
@@ -123,8 +123,8 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
   <dl class="typelist implements">
     <dt>Implements</dt>
     <dd>
-      <div><a class="xref" href="IGCPlayerStoreOutput-1.html">IGCPlayerStoreOutput</a>&lt;T&gt;</div>
-      <div><a class="xref" href="IGCPlayerStoreInput-1.html">IGCPlayerStoreInput</a>&lt;T&gt;</div>
+      <div><a class="xref" href="GCPlayerStoreOutput-1.html">GCPlayerStoreOutput</a>&lt;T&gt;</div>
+      <div><a class="xref" href="GCPlayerStoreInput-1.html">GCPlayerStoreInput</a>&lt;T&gt;</div>
     </dd>
   </dl>
 
@@ -168,7 +168,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="DSB_GC_GCPlayerStore_1__ctor" data-uid="DSB.GC.GCPlayerStore`1.#ctor">
   GCPlayerStore()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L12"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -190,6 +190,289 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="DSB_GC_GCPlayerStore_1_EliminatedPlayerCount_" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayerCount*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_EliminatedPlayerCount" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayerCount">
+  EliminatedPlayerCount
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int EliminatedPlayerCount { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_EliminatedPlayers_" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayers*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_EliminatedPlayers" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayers">
+  EliminatedPlayers
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;T&gt; EliminatedPlayers { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_EliminatedPlayersEnumerable_" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_EliminatedPlayersEnumerable" data-uid="DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable">
+  EliminatedPlayersEnumerable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerable&lt;T&gt; EliminatedPlayersEnumerable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_PlayerCount_" data-uid="DSB.GC.GCPlayerStore`1.PlayerCount*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_PlayerCount" data-uid="DSB.GC.GCPlayerStore`1.PlayerCount">
+  PlayerCount
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L12"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int PlayerCount { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_Players_" data-uid="DSB.GC.GCPlayerStore`1.Players*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_Players" data-uid="DSB.GC.GCPlayerStore`1.Players">
+  Players
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L10"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;T&gt; Players { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_PlayersEnumerable_" data-uid="DSB.GC.GCPlayerStore`1.PlayersEnumerable*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_PlayersEnumerable" data-uid="DSB.GC.GCPlayerStore`1.PlayersEnumerable">
+  PlayersEnumerable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerable&lt;T&gt; PlayersEnumerable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_UneliminatedPlayerCount_" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_UneliminatedPlayerCount" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount">
+  UneliminatedPlayerCount
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int UneliminatedPlayerCount { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_UneliminatedPlayers_" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayers*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_UneliminatedPlayers" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayers">
+  UneliminatedPlayers
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;T&gt; UneliminatedPlayers { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayerStore_1_UneliminatedPlayersEnumerable_" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable*"></a>
+
+  <h3 id="DSB_GC_GCPlayerStore_1_UneliminatedPlayersEnumerable" data-uid="DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable">
+  UneliminatedPlayersEnumerable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerable&lt;T&gt; UneliminatedPlayersEnumerable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -198,7 +481,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="DSB_GC_GCPlayerStore_1_AddPlayer__0_" data-uid="DSB.GC.GCPlayerStore`1.AddPlayer(`0)">
   AddPlayer(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -229,7 +512,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="DSB_GC_GCPlayerStore_1_Clear" data-uid="DSB.GC.GCPlayerStore`1.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -255,7 +538,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="DSB_GC_GCPlayerStore_1_GetPlayerById_System_Int32_" data-uid="DSB.GC.GCPlayerStore`1.GetPlayerById(System.Int32)">
   GetPlayerById(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -291,7 +574,7 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="DSB_GC_GCPlayerStore_1_GetPlayerByIndex_System_Int32_" data-uid="DSB.GC.GCPlayerStore`1.GetPlayerByIndex(System.Int32)">
   GetPlayerByIndex(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -310,99 +593,6 @@ Class GCPlayerStore&lt;T&gt;  <a class="header-action link-secondary" title="Vie
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><span class="xref">T</span></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="DSB_GC_GCPlayerStore_1_GetPlayerCount_" data-uid="DSB.GC.GCPlayerStore`1.GetPlayerCount*"></a>
-
-  <h3 id="DSB_GC_GCPlayerStore_1_GetPlayerCount" data-uid="DSB.GC.GCPlayerStore`1.GetPlayerCount">
-  GetPlayerCount()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L29"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int GetPlayerCount()</code></pre>
-  </div>
-
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="DSB_GC_GCPlayerStore_1_GetPlayers_" data-uid="DSB.GC.GCPlayerStore`1.GetPlayers*"></a>
-
-  <h3 id="DSB_GC_GCPlayerStore_1_GetPlayers" data-uid="DSB.GC.GCPlayerStore`1.GetPlayers">
-  GetPlayers()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L24"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;T&gt; GetPlayers()</code></pre>
-  </div>
-
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;T&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="DSB_GC_GCPlayerStore_1_GetPlayersEnumerable_" data-uid="DSB.GC.GCPlayerStore`1.GetPlayersEnumerable*"></a>
-
-  <h3 id="DSB_GC_GCPlayerStore_1_GetPlayersEnumerable" data-uid="DSB.GC.GCPlayerStore`1.GetPlayersEnumerable">
-  GetPlayersEnumerable()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayerStore.cs/#L19"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IEnumerable&lt;T&gt; GetPlayersEnumerable()</code></pre>
-  </div>
-
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
     <dd></dd>
   </dl>
 

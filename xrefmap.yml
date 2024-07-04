@@ -111,6 +111,64 @@ references:
   commentId: T:DSB.GC.GCPlayer
   fullName: DSB.GC.GCPlayer
   nameWithType: GCPlayer
+- uid: DSB.GC.GCPlayer.AddLives(System.Int32)
+  name: AddLives(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddLives_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.AddLives(System.Int32)
+  name.vb: AddLives(Integer)
+  fullName: DSB.GC.GCPlayer.AddLives(int)
+  fullName.vb: DSB.GC.GCPlayer.AddLives(Integer)
+  nameWithType: GCPlayer.AddLives(int)
+  nameWithType.vb: GCPlayer.AddLives(Integer)
+- uid: DSB.GC.GCPlayer.AddLives*
+  name: AddLives
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddLives_
+  commentId: Overload:DSB.GC.GCPlayer.AddLives
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.AddLives
+  nameWithType: GCPlayer.AddLives
+- uid: DSB.GC.GCPlayer.AddScore(System.Int32)
+  name: AddScore(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddScore_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.AddScore(System.Int32)
+  name.vb: AddScore(Integer)
+  fullName: DSB.GC.GCPlayer.AddScore(int)
+  fullName.vb: DSB.GC.GCPlayer.AddScore(Integer)
+  nameWithType: GCPlayer.AddScore(int)
+  nameWithType.vb: GCPlayer.AddScore(Integer)
+- uid: DSB.GC.GCPlayer.AddScore*
+  name: AddScore
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddScore_
+  commentId: Overload:DSB.GC.GCPlayer.AddScore
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.AddScore
+  nameWithType: GCPlayer.AddScore
+- uid: DSB.GC.GCPlayer.Color
+  name: Color
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Color
+  commentId: P:DSB.GC.GCPlayer.Color
+  fullName: DSB.GC.GCPlayer.Color
+  nameWithType: GCPlayer.Color
+- uid: DSB.GC.GCPlayer.Color*
+  name: Color
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Color_
+  commentId: Overload:DSB.GC.GCPlayer.Color
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.Color
+  nameWithType: GCPlayer.Color
+- uid: DSB.GC.GCPlayer.FinishedTime
+  name: FinishedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_FinishedTime
+  commentId: P:DSB.GC.GCPlayer.FinishedTime
+  fullName: DSB.GC.GCPlayer.FinishedTime
+  nameWithType: GCPlayer.FinishedTime
+- uid: DSB.GC.GCPlayer.FinishedTime*
+  name: FinishedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_FinishedTime_
+  commentId: Overload:DSB.GC.GCPlayer.FinishedTime
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.FinishedTime
+  nameWithType: GCPlayer.FinishedTime
 - uid: DSB.GC.GCPlayer.GamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
   name: GamingCouchSetup(GCPlayerSetupOptions)
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GamingCouchSetup_DSB_GC_GCPlayerSetupOptions_
@@ -124,45 +182,317 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.GamingCouchSetup
   nameWithType: GCPlayer.GamingCouchSetup
-- uid: DSB.GC.GCPlayer.GetColor
-  name: GetColor()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetColor
-  commentId: M:DSB.GC.GCPlayer.GetColor
-  fullName: DSB.GC.GCPlayer.GetColor()
-  nameWithType: GCPlayer.GetColor()
-- uid: DSB.GC.GCPlayer.GetColor*
-  name: GetColor
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetColor_
-  commentId: Overload:DSB.GC.GCPlayer.GetColor
+- uid: DSB.GC.GCPlayer.GetHudStatusText
+  name: GetHudStatusText()
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetHudStatusText
+  commentId: M:DSB.GC.GCPlayer.GetHudStatusText
+  fullName: DSB.GC.GCPlayer.GetHudStatusText()
+  nameWithType: GCPlayer.GetHudStatusText()
+- uid: DSB.GC.GCPlayer.GetHudStatusText*
+  name: GetHudStatusText
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetHudStatusText_
+  commentId: Overload:DSB.GC.GCPlayer.GetHudStatusText
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.GetColor
-  nameWithType: GCPlayer.GetColor
-- uid: DSB.GC.GCPlayer.GetId
-  name: GetId()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetId
-  commentId: M:DSB.GC.GCPlayer.GetId
-  fullName: DSB.GC.GCPlayer.GetId()
-  nameWithType: GCPlayer.GetId()
-- uid: DSB.GC.GCPlayer.GetId*
-  name: GetId
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetId_
-  commentId: Overload:DSB.GC.GCPlayer.GetId
+  fullName: DSB.GC.GCPlayer.GetHudStatusText
+  nameWithType: GCPlayer.GetHudStatusText
+- uid: DSB.GC.GCPlayer.GetHudValueText
+  name: GetHudValueText()
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetHudValueText
+  commentId: M:DSB.GC.GCPlayer.GetHudValueText
+  fullName: DSB.GC.GCPlayer.GetHudValueText()
+  nameWithType: GCPlayer.GetHudValueText()
+- uid: DSB.GC.GCPlayer.GetHudValueText*
+  name: GetHudValueText
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetHudValueText_
+  commentId: Overload:DSB.GC.GCPlayer.GetHudValueText
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.GetId
-  nameWithType: GCPlayer.GetId
-- uid: DSB.GC.GCPlayer.GetName
-  name: GetName()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetName
-  commentId: M:DSB.GC.GCPlayer.GetName
-  fullName: DSB.GC.GCPlayer.GetName()
-  nameWithType: GCPlayer.GetName()
-- uid: DSB.GC.GCPlayer.GetName*
-  name: GetName
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_GetName_
-  commentId: Overload:DSB.GC.GCPlayer.GetName
+  fullName: DSB.GC.GCPlayer.GetHudValueText
+  nameWithType: GCPlayer.GetHudValueText
+- uid: DSB.GC.GCPlayer.Id
+  name: Id
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Id
+  commentId: P:DSB.GC.GCPlayer.Id
+  fullName: DSB.GC.GCPlayer.Id
+  nameWithType: GCPlayer.Id
+- uid: DSB.GC.GCPlayer.Id*
+  name: Id
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Id_
+  commentId: Overload:DSB.GC.GCPlayer.Id
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.GetName
-  nameWithType: GCPlayer.GetName
+  fullName: DSB.GC.GCPlayer.Id
+  nameWithType: GCPlayer.Id
+- uid: DSB.GC.GCPlayer.IsEliminated
+  name: IsEliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsEliminated
+  commentId: P:DSB.GC.GCPlayer.IsEliminated
+  fullName: DSB.GC.GCPlayer.IsEliminated
+  nameWithType: GCPlayer.IsEliminated
+- uid: DSB.GC.GCPlayer.IsEliminated*
+  name: IsEliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsEliminated_
+  commentId: Overload:DSB.GC.GCPlayer.IsEliminated
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.IsEliminated
+  nameWithType: GCPlayer.IsEliminated
+- uid: DSB.GC.GCPlayer.IsFinished
+  name: IsFinished
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsFinished
+  commentId: P:DSB.GC.GCPlayer.IsFinished
+  fullName: DSB.GC.GCPlayer.IsFinished
+  nameWithType: GCPlayer.IsFinished
+- uid: DSB.GC.GCPlayer.IsFinished*
+  name: IsFinished
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsFinished_
+  commentId: Overload:DSB.GC.GCPlayer.IsFinished
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.IsFinished
+  nameWithType: GCPlayer.IsFinished
+- uid: DSB.GC.GCPlayer.LastSetEliminatedTime
+  name: LastSetEliminatedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_LastSetEliminatedTime
+  commentId: P:DSB.GC.GCPlayer.LastSetEliminatedTime
+  fullName: DSB.GC.GCPlayer.LastSetEliminatedTime
+  nameWithType: GCPlayer.LastSetEliminatedTime
+- uid: DSB.GC.GCPlayer.LastSetEliminatedTime*
+  name: LastSetEliminatedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_LastSetEliminatedTime_
+  commentId: Overload:DSB.GC.GCPlayer.LastSetEliminatedTime
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.LastSetEliminatedTime
+  nameWithType: GCPlayer.LastSetEliminatedTime
+- uid: DSB.GC.GCPlayer.LastSetUneliminatedTime
+  name: LastSetUneliminatedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_LastSetUneliminatedTime
+  commentId: P:DSB.GC.GCPlayer.LastSetUneliminatedTime
+  fullName: DSB.GC.GCPlayer.LastSetUneliminatedTime
+  nameWithType: GCPlayer.LastSetUneliminatedTime
+- uid: DSB.GC.GCPlayer.LastSetUneliminatedTime*
+  name: LastSetUneliminatedTime
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_LastSetUneliminatedTime_
+  commentId: Overload:DSB.GC.GCPlayer.LastSetUneliminatedTime
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.LastSetUneliminatedTime
+  nameWithType: GCPlayer.LastSetUneliminatedTime
+- uid: DSB.GC.GCPlayer.Lives
+  name: Lives
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Lives
+  commentId: P:DSB.GC.GCPlayer.Lives
+  fullName: DSB.GC.GCPlayer.Lives
+  nameWithType: GCPlayer.Lives
+- uid: DSB.GC.GCPlayer.Lives*
+  name: Lives
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Lives_
+  commentId: Overload:DSB.GC.GCPlayer.Lives
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.Lives
+  nameWithType: GCPlayer.Lives
+- uid: DSB.GC.GCPlayer.OnEliminated
+  name: OnEliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnEliminated
+  commentId: F:DSB.GC.GCPlayer.OnEliminated
+  fullName: DSB.GC.GCPlayer.OnEliminated
+  nameWithType: GCPlayer.OnEliminated
+- uid: DSB.GC.GCPlayer.OnFinished
+  name: OnFinished
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnFinished
+  commentId: F:DSB.GC.GCPlayer.OnFinished
+  fullName: DSB.GC.GCPlayer.OnFinished
+  nameWithType: GCPlayer.OnFinished
+- uid: DSB.GC.GCPlayer.OnLivesChanged
+  name: OnLivesChanged
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnLivesChanged
+  commentId: F:DSB.GC.GCPlayer.OnLivesChanged
+  fullName: DSB.GC.GCPlayer.OnLivesChanged
+  nameWithType: GCPlayer.OnLivesChanged
+- uid: DSB.GC.GCPlayer.OnScoreChanged
+  name: OnScoreChanged
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnScoreChanged
+  commentId: F:DSB.GC.GCPlayer.OnScoreChanged
+  fullName: DSB.GC.GCPlayer.OnScoreChanged
+  nameWithType: GCPlayer.OnScoreChanged
+- uid: DSB.GC.GCPlayer.OnStatusChanged
+  name: OnStatusChanged
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnStatusChanged
+  commentId: F:DSB.GC.GCPlayer.OnStatusChanged
+  fullName: DSB.GC.GCPlayer.OnStatusChanged
+  nameWithType: GCPlayer.OnStatusChanged
+- uid: DSB.GC.GCPlayer.OnUneliminated
+  name: OnUneliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnUneliminated
+  commentId: F:DSB.GC.GCPlayer.OnUneliminated
+  fullName: DSB.GC.GCPlayer.OnUneliminated
+  nameWithType: GCPlayer.OnUneliminated
+- uid: DSB.GC.GCPlayer.PlayerName
+  name: PlayerName
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_PlayerName
+  commentId: P:DSB.GC.GCPlayer.PlayerName
+  fullName: DSB.GC.GCPlayer.PlayerName
+  nameWithType: GCPlayer.PlayerName
+- uid: DSB.GC.GCPlayer.PlayerName*
+  name: PlayerName
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_PlayerName_
+  commentId: Overload:DSB.GC.GCPlayer.PlayerName
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.PlayerName
+  nameWithType: GCPlayer.PlayerName
+- uid: DSB.GC.GCPlayer.Score
+  name: Score
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Score
+  commentId: P:DSB.GC.GCPlayer.Score
+  fullName: DSB.GC.GCPlayer.Score
+  nameWithType: GCPlayer.Score
+- uid: DSB.GC.GCPlayer.Score*
+  name: Score
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Score_
+  commentId: Overload:DSB.GC.GCPlayer.Score
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.Score
+  nameWithType: GCPlayer.Score
+- uid: DSB.GC.GCPlayer.SetEliminated
+  name: SetEliminated()
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetEliminated
+  commentId: M:DSB.GC.GCPlayer.SetEliminated
+  fullName: DSB.GC.GCPlayer.SetEliminated()
+  nameWithType: GCPlayer.SetEliminated()
+- uid: DSB.GC.GCPlayer.SetEliminated*
+  name: SetEliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetEliminated_
+  commentId: Overload:DSB.GC.GCPlayer.SetEliminated
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetEliminated
+  nameWithType: GCPlayer.SetEliminated
+- uid: DSB.GC.GCPlayer.SetFinished
+  name: SetFinished()
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetFinished
+  commentId: M:DSB.GC.GCPlayer.SetFinished
+  fullName: DSB.GC.GCPlayer.SetFinished()
+  nameWithType: GCPlayer.SetFinished()
+- uid: DSB.GC.GCPlayer.SetFinished*
+  name: SetFinished
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetFinished_
+  commentId: Overload:DSB.GC.GCPlayer.SetFinished
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetFinished
+  nameWithType: GCPlayer.SetFinished
+- uid: DSB.GC.GCPlayer.SetLives(System.Int32)
+  name: SetLives(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetLives_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.SetLives(System.Int32)
+  name.vb: SetLives(Integer)
+  fullName: DSB.GC.GCPlayer.SetLives(int)
+  fullName.vb: DSB.GC.GCPlayer.SetLives(Integer)
+  nameWithType: GCPlayer.SetLives(int)
+  nameWithType.vb: GCPlayer.SetLives(Integer)
+- uid: DSB.GC.GCPlayer.SetLives*
+  name: SetLives
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetLives_
+  commentId: Overload:DSB.GC.GCPlayer.SetLives
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetLives
+  nameWithType: GCPlayer.SetLives
+- uid: DSB.GC.GCPlayer.SetScore(System.Int32)
+  name: SetScore(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.SetScore(System.Int32)
+  name.vb: SetScore(Integer)
+  fullName: DSB.GC.GCPlayer.SetScore(int)
+  fullName.vb: DSB.GC.GCPlayer.SetScore(Integer)
+  nameWithType: GCPlayer.SetScore(int)
+  nameWithType.vb: GCPlayer.SetScore(Integer)
+- uid: DSB.GC.GCPlayer.SetScore*
+  name: SetScore
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_
+  commentId: Overload:DSB.GC.GCPlayer.SetScore
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetScore
+  nameWithType: GCPlayer.SetScore
+- uid: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String)
+  name: SetStatus(PlayerStatus, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String)
+  name.vb: SetStatus(PlayerStatus, String)
+  fullName: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, string)
+  fullName.vb: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, String)
+  nameWithType: GCPlayer.SetStatus(PlayerStatus, string)
+  nameWithType.vb: GCPlayer.SetStatus(PlayerStatus, String)
+- uid: DSB.GC.GCPlayer.SetStatus*
+  name: SetStatus
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_
+  commentId: Overload:DSB.GC.GCPlayer.SetStatus
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetStatus
+  nameWithType: GCPlayer.SetStatus
+- uid: DSB.GC.GCPlayer.SetUneliminated
+  name: SetUneliminated()
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetUneliminated
+  commentId: M:DSB.GC.GCPlayer.SetUneliminated
+  fullName: DSB.GC.GCPlayer.SetUneliminated()
+  nameWithType: GCPlayer.SetUneliminated()
+- uid: DSB.GC.GCPlayer.SetUneliminated*
+  name: SetUneliminated
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetUneliminated_
+  commentId: Overload:DSB.GC.GCPlayer.SetUneliminated
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetUneliminated
+  nameWithType: GCPlayer.SetUneliminated
+- uid: DSB.GC.GCPlayer.Status
+  name: Status
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Status
+  commentId: P:DSB.GC.GCPlayer.Status
+  fullName: DSB.GC.GCPlayer.Status
+  nameWithType: GCPlayer.Status
+- uid: DSB.GC.GCPlayer.Status*
+  name: Status
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Status_
+  commentId: Overload:DSB.GC.GCPlayer.Status
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.Status
+  nameWithType: GCPlayer.Status
+- uid: DSB.GC.GCPlayer.StatusText
+  name: StatusText
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_StatusText
+  commentId: P:DSB.GC.GCPlayer.StatusText
+  fullName: DSB.GC.GCPlayer.StatusText
+  nameWithType: GCPlayer.StatusText
+- uid: DSB.GC.GCPlayer.StatusText*
+  name: StatusText
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_StatusText_
+  commentId: Overload:DSB.GC.GCPlayer.StatusText
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.StatusText
+  nameWithType: GCPlayer.StatusText
+- uid: DSB.GC.GCPlayer.SubtractLives(System.Int32)
+  name: SubtractLives(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractLives_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.SubtractLives(System.Int32)
+  name.vb: SubtractLives(Integer)
+  fullName: DSB.GC.GCPlayer.SubtractLives(int)
+  fullName.vb: DSB.GC.GCPlayer.SubtractLives(Integer)
+  nameWithType: GCPlayer.SubtractLives(int)
+  nameWithType.vb: GCPlayer.SubtractLives(Integer)
+- uid: DSB.GC.GCPlayer.SubtractLives*
+  name: SubtractLives
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractLives_
+  commentId: Overload:DSB.GC.GCPlayer.SubtractLives
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SubtractLives
+  nameWithType: GCPlayer.SubtractLives
+- uid: DSB.GC.GCPlayer.SubtractScore(System.Int32)
+  name: SubtractScore(int)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractScore_System_Int32_
+  commentId: M:DSB.GC.GCPlayer.SubtractScore(System.Int32)
+  name.vb: SubtractScore(Integer)
+  fullName: DSB.GC.GCPlayer.SubtractScore(int)
+  fullName.vb: DSB.GC.GCPlayer.SubtractScore(Integer)
+  nameWithType: GCPlayer.SubtractScore(int)
+  nameWithType.vb: GCPlayer.SubtractScore(Integer)
+- uid: DSB.GC.GCPlayer.SubtractScore*
+  name: SubtractScore
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractScore_
+  commentId: Overload:DSB.GC.GCPlayer.SubtractScore
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SubtractScore
+  nameWithType: GCPlayer.SubtractScore
 - uid: DSB.GC.GCPlayerColor
   name: GCPlayerColor
   href: api/DSB.GC.GCPlayerColor.html
@@ -327,6 +657,57 @@ references:
   fullName.vb: DSB.GC.GCPlayerStore(Of T).Clear
   nameWithType: GCPlayerStore<T>.Clear
   nameWithType.vb: GCPlayerStore(Of T).Clear
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayerCount
+  name: EliminatedPlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayerCount
+  commentId: P:DSB.GC.GCPlayerStore`1.EliminatedPlayerCount
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayerCount
+  nameWithType: GCPlayerStore<T>.EliminatedPlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayerCount
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayerCount*
+  name: EliminatedPlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayerCount_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.EliminatedPlayerCount
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayerCount
+  nameWithType: GCPlayerStore<T>.EliminatedPlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayerCount
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayers
+  name: EliminatedPlayers
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayers
+  commentId: P:DSB.GC.GCPlayerStore`1.EliminatedPlayers
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayers
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayers
+  nameWithType: GCPlayerStore<T>.EliminatedPlayers
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayers
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayers*
+  name: EliminatedPlayers
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayers_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.EliminatedPlayers
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayers
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayers
+  nameWithType: GCPlayerStore<T>.EliminatedPlayers
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayers
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable
+  name: EliminatedPlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayersEnumerable
+  commentId: P:DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayersEnumerable
+  nameWithType: GCPlayerStore<T>.EliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayersEnumerable
+- uid: DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable*
+  name: EliminatedPlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_EliminatedPlayersEnumerable_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.EliminatedPlayersEnumerable
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.EliminatedPlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).EliminatedPlayersEnumerable
+  nameWithType: GCPlayerStore<T>.EliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).EliminatedPlayersEnumerable
 - uid: DSB.GC.GCPlayerStore`1.GetPlayerById(System.Int32)
   name: GetPlayerById(int)
   href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayerById_System_Int32_
@@ -363,57 +744,108 @@ references:
   fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayerByIndex
   nameWithType: GCPlayerStore<T>.GetPlayerByIndex
   nameWithType.vb: GCPlayerStore(Of T).GetPlayerByIndex
-- uid: DSB.GC.GCPlayerStore`1.GetPlayerCount
-  name: GetPlayerCount()
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayerCount
-  commentId: M:DSB.GC.GCPlayerStore`1.GetPlayerCount
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayerCount()
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayerCount()
-  nameWithType: GCPlayerStore<T>.GetPlayerCount()
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayerCount()
-- uid: DSB.GC.GCPlayerStore`1.GetPlayerCount*
-  name: GetPlayerCount
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayerCount_
-  commentId: Overload:DSB.GC.GCPlayerStore`1.GetPlayerCount
+- uid: DSB.GC.GCPlayerStore`1.PlayerCount
+  name: PlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_PlayerCount
+  commentId: P:DSB.GC.GCPlayerStore`1.PlayerCount
+  fullName: DSB.GC.GCPlayerStore<T>.PlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).PlayerCount
+  nameWithType: GCPlayerStore<T>.PlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).PlayerCount
+- uid: DSB.GC.GCPlayerStore`1.PlayerCount*
+  name: PlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_PlayerCount_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.PlayerCount
   isSpec: "True"
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayerCount
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayerCount
-  nameWithType: GCPlayerStore<T>.GetPlayerCount
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayerCount
-- uid: DSB.GC.GCPlayerStore`1.GetPlayers
-  name: GetPlayers()
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayers
-  commentId: M:DSB.GC.GCPlayerStore`1.GetPlayers
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayers()
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayers()
-  nameWithType: GCPlayerStore<T>.GetPlayers()
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayers()
-- uid: DSB.GC.GCPlayerStore`1.GetPlayers*
-  name: GetPlayers
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayers_
-  commentId: Overload:DSB.GC.GCPlayerStore`1.GetPlayers
+  fullName: DSB.GC.GCPlayerStore<T>.PlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).PlayerCount
+  nameWithType: GCPlayerStore<T>.PlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).PlayerCount
+- uid: DSB.GC.GCPlayerStore`1.Players
+  name: Players
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_Players
+  commentId: P:DSB.GC.GCPlayerStore`1.Players
+  fullName: DSB.GC.GCPlayerStore<T>.Players
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).Players
+  nameWithType: GCPlayerStore<T>.Players
+  nameWithType.vb: GCPlayerStore(Of T).Players
+- uid: DSB.GC.GCPlayerStore`1.Players*
+  name: Players
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_Players_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.Players
   isSpec: "True"
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayers
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayers
-  nameWithType: GCPlayerStore<T>.GetPlayers
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayers
-- uid: DSB.GC.GCPlayerStore`1.GetPlayersEnumerable
-  name: GetPlayersEnumerable()
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayersEnumerable
-  commentId: M:DSB.GC.GCPlayerStore`1.GetPlayersEnumerable
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayersEnumerable()
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayersEnumerable()
-  nameWithType: GCPlayerStore<T>.GetPlayersEnumerable()
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayersEnumerable()
-- uid: DSB.GC.GCPlayerStore`1.GetPlayersEnumerable*
-  name: GetPlayersEnumerable
-  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_GetPlayersEnumerable_
-  commentId: Overload:DSB.GC.GCPlayerStore`1.GetPlayersEnumerable
+  fullName: DSB.GC.GCPlayerStore<T>.Players
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).Players
+  nameWithType: GCPlayerStore<T>.Players
+  nameWithType.vb: GCPlayerStore(Of T).Players
+- uid: DSB.GC.GCPlayerStore`1.PlayersEnumerable
+  name: PlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_PlayersEnumerable
+  commentId: P:DSB.GC.GCPlayerStore`1.PlayersEnumerable
+  fullName: DSB.GC.GCPlayerStore<T>.PlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).PlayersEnumerable
+  nameWithType: GCPlayerStore<T>.PlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).PlayersEnumerable
+- uid: DSB.GC.GCPlayerStore`1.PlayersEnumerable*
+  name: PlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_PlayersEnumerable_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.PlayersEnumerable
   isSpec: "True"
-  fullName: DSB.GC.GCPlayerStore<T>.GetPlayersEnumerable
-  fullName.vb: DSB.GC.GCPlayerStore(Of T).GetPlayersEnumerable
-  nameWithType: GCPlayerStore<T>.GetPlayersEnumerable
-  nameWithType.vb: GCPlayerStore(Of T).GetPlayersEnumerable
+  fullName: DSB.GC.GCPlayerStore<T>.PlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).PlayersEnumerable
+  nameWithType: GCPlayerStore<T>.PlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).PlayersEnumerable
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount
+  name: UneliminatedPlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayerCount
+  commentId: P:DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayerCount
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayerCount
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount*
+  name: UneliminatedPlayerCount
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayerCount_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.UneliminatedPlayerCount
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayerCount
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayerCount
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayerCount
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayerCount
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayers
+  name: UneliminatedPlayers
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayers
+  commentId: P:DSB.GC.GCPlayerStore`1.UneliminatedPlayers
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayers
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayers
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayers
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayers
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayers*
+  name: UneliminatedPlayers
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayers_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.UneliminatedPlayers
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayers
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayers
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayers
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayers
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable
+  name: UneliminatedPlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayersEnumerable
+  commentId: P:DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayersEnumerable
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayersEnumerable
+- uid: DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable*
+  name: UneliminatedPlayersEnumerable
+  href: api/DSB.GC.GCPlayerStore-1.html#DSB_GC_GCPlayerStore_1_UneliminatedPlayersEnumerable_
+  commentId: Overload:DSB.GC.GCPlayerStore`1.UneliminatedPlayersEnumerable
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayerStore<T>.UneliminatedPlayersEnumerable
+  fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayersEnumerable
+  nameWithType: GCPlayerStore<T>.UneliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayersEnumerable
 - uid: DSB.GC.GCSetupOptions
   name: GCSetupOptions
   href: api/DSB.GC.GCSetupOptions.html
@@ -472,6 +904,181 @@ references:
   commentId: F:DSB.GC.GCStatus.SetupDone
   fullName: DSB.GC.GCStatus.SetupDone
   nameWithType: GCStatus.SetupDone
+- uid: DSB.GC.Game
+  name: DSB.GC.Game
+  href: api/DSB.GC.Game.html
+  commentId: N:DSB.GC.Game
+  fullName: DSB.GC.Game
+  nameWithType: DSB.GC.Game
+- uid: DSB.GC.Game.GCGame
+  name: GCGame
+  href: api/DSB.GC.Game.GCGame.html
+  commentId: T:DSB.GC.Game.GCGame
+  fullName: DSB.GC.Game.GCGame
+  nameWithType: GCGame
+- uid: DSB.GC.Game.GCGame.#ctor(DSB.GC.GamingCouch,GCPlayerStoreOutput{DSB.GC.GCPlayer},DSB.GC.Game.GCGameSetupOptions)
+  name: GCGame(GamingCouch, GCPlayerStoreOutput<GCPlayer>, GCGameSetupOptions)
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame__ctor_DSB_GC_GamingCouch_GCPlayerStoreOutput_DSB_GC_GCPlayer__DSB_GC_Game_GCGameSetupOptions_
+  commentId: M:DSB.GC.Game.GCGame.#ctor(DSB.GC.GamingCouch,GCPlayerStoreOutput{DSB.GC.GCPlayer},DSB.GC.Game.GCGameSetupOptions)
+  name.vb: New(GamingCouch, GCPlayerStoreOutput(Of GCPlayer), GCGameSetupOptions)
+  fullName: DSB.GC.Game.GCGame.GCGame(DSB.GC.GamingCouch, GCPlayerStoreOutput<DSB.GC.GCPlayer>, DSB.GC.Game.GCGameSetupOptions)
+  fullName.vb: DSB.GC.Game.GCGame.New(DSB.GC.GamingCouch, GCPlayerStoreOutput(Of DSB.GC.GCPlayer), DSB.GC.Game.GCGameSetupOptions)
+  nameWithType: GCGame.GCGame(GamingCouch, GCPlayerStoreOutput<GCPlayer>, GCGameSetupOptions)
+  nameWithType.vb: GCGame.New(GamingCouch, GCPlayerStoreOutput(Of GCPlayer), GCGameSetupOptions)
+- uid: DSB.GC.Game.GCGame.#ctor*
+  name: GCGame
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame__ctor_
+  commentId: Overload:DSB.GC.Game.GCGame.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: DSB.GC.Game.GCGame.GCGame
+  fullName.vb: DSB.GC.Game.GCGame.New
+  nameWithType: GCGame.GCGame
+  nameWithType.vb: GCGame.New
+- uid: DSB.GC.Game.GCGame.GetPlayersInPlacementOrder(System.Collections.Generic.IEnumerable{DSB.GC.GCPlayer})
+  name: GetPlayersInPlacementOrder(IEnumerable<GCPlayer>)
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_GetPlayersInPlacementOrder_System_Collections_Generic_IEnumerable_DSB_GC_GCPlayer__
+  commentId: M:DSB.GC.Game.GCGame.GetPlayersInPlacementOrder(System.Collections.Generic.IEnumerable{DSB.GC.GCPlayer})
+  name.vb: GetPlayersInPlacementOrder(IEnumerable(Of GCPlayer))
+  fullName: DSB.GC.Game.GCGame.GetPlayersInPlacementOrder(System.Collections.Generic.IEnumerable<DSB.GC.GCPlayer>)
+  fullName.vb: DSB.GC.Game.GCGame.GetPlayersInPlacementOrder(System.Collections.Generic.IEnumerable(Of DSB.GC.GCPlayer))
+  nameWithType: GCGame.GetPlayersInPlacementOrder(IEnumerable<GCPlayer>)
+  nameWithType.vb: GCGame.GetPlayersInPlacementOrder(IEnumerable(Of GCPlayer))
+- uid: DSB.GC.Game.GCGame.GetPlayersInPlacementOrder*
+  name: GetPlayersInPlacementOrder
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_GetPlayersInPlacementOrder_
+  commentId: Overload:DSB.GC.Game.GCGame.GetPlayersInPlacementOrder
+  isSpec: "True"
+  fullName: DSB.GC.Game.GCGame.GetPlayersInPlacementOrder
+  nameWithType: GCGame.GetPlayersInPlacementOrder
+- uid: DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate
+  name: HandlePlayersHudAutoUpdate()
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_HandlePlayersHudAutoUpdate
+  commentId: M:DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate
+  fullName: DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate()
+  nameWithType: GCGame.HandlePlayersHudAutoUpdate()
+- uid: DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate*
+  name: HandlePlayersHudAutoUpdate
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_HandlePlayersHudAutoUpdate_
+  commentId: Overload:DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate
+  isSpec: "True"
+  fullName: DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate
+  nameWithType: GCGame.HandlePlayersHudAutoUpdate
+- uid: DSB.GC.Game.GCGameHudOptions
+  name: GCGameHudOptions
+  href: api/DSB.GC.Game.GCGameHudOptions.html
+  commentId: T:DSB.GC.Game.GCGameHudOptions
+  fullName: DSB.GC.Game.GCGameHudOptions
+  nameWithType: GCGameHudOptions
+- uid: DSB.GC.Game.GCGameHudOptions.isPlayersAutoUpdateEnabled
+  name: isPlayersAutoUpdateEnabled
+  href: api/DSB.GC.Game.GCGameHudOptions.html#DSB_GC_Game_GCGameHudOptions_isPlayersAutoUpdateEnabled
+  commentId: F:DSB.GC.Game.GCGameHudOptions.isPlayersAutoUpdateEnabled
+  fullName: DSB.GC.Game.GCGameHudOptions.isPlayersAutoUpdateEnabled
+  nameWithType: GCGameHudOptions.isPlayersAutoUpdateEnabled
+- uid: DSB.GC.Game.GCGameHudOptions.players
+  name: players
+  href: api/DSB.GC.Game.GCGameHudOptions.html#DSB_GC_Game_GCGameHudOptions_players
+  commentId: F:DSB.GC.Game.GCGameHudOptions.players
+  fullName: DSB.GC.Game.GCGameHudOptions.players
+  nameWithType: GCGameHudOptions.players
+- uid: DSB.GC.Game.GCGameSetupOptions
+  name: GCGameSetupOptions
+  href: api/DSB.GC.Game.GCGameSetupOptions.html
+  commentId: T:DSB.GC.Game.GCGameSetupOptions
+  fullName: DSB.GC.Game.GCGameSetupOptions
+  nameWithType: GCGameSetupOptions
+- uid: DSB.GC.Game.GCGameSetupOptions.hud
+  name: hud
+  href: api/DSB.GC.Game.GCGameSetupOptions.html#DSB_GC_Game_GCGameSetupOptions_hud
+  commentId: F:DSB.GC.Game.GCGameSetupOptions.hud
+  fullName: DSB.GC.Game.GCGameSetupOptions.hud
+  nameWithType: GCGameSetupOptions.hud
+- uid: DSB.GC.Game.GCGameSetupOptions.maxScore
+  name: maxScore
+  href: api/DSB.GC.Game.GCGameSetupOptions.html#DSB_GC_Game_GCGameSetupOptions_maxScore
+  commentId: F:DSB.GC.Game.GCGameSetupOptions.maxScore
+  fullName: DSB.GC.Game.GCGameSetupOptions.maxScore
+  nameWithType: GCGameSetupOptions.maxScore
+- uid: DSB.GC.Game.GCGameSetupOptions.placementCriteria
+  name: placementCriteria
+  href: api/DSB.GC.Game.GCGameSetupOptions.html#DSB_GC_Game_GCGameSetupOptions_placementCriteria
+  commentId: F:DSB.GC.Game.GCGameSetupOptions.placementCriteria
+  fullName: DSB.GC.Game.GCGameSetupOptions.placementCriteria
+  nameWithType: GCGameSetupOptions.placementCriteria
+- uid: DSB.GC.Game.GCGameVersus
+  name: GCGameVersus
+  href: api/DSB.GC.Game.GCGameVersus.html
+  commentId: T:DSB.GC.Game.GCGameVersus
+  fullName: DSB.GC.Game.GCGameVersus
+  nameWithType: GCGameVersus
+- uid: DSB.GC.Game.GCGameVersus.#ctor(DSB.GC.GamingCouch,GCPlayerStoreOutput{DSB.GC.GCPlayer},DSB.GC.Game.GCGameVersusSetupOptions)
+  name: GCGameVersus(GamingCouch, GCPlayerStoreOutput<GCPlayer>, GCGameVersusSetupOptions)
+  href: api/DSB.GC.Game.GCGameVersus.html#DSB_GC_Game_GCGameVersus__ctor_DSB_GC_GamingCouch_GCPlayerStoreOutput_DSB_GC_GCPlayer__DSB_GC_Game_GCGameVersusSetupOptions_
+  commentId: M:DSB.GC.Game.GCGameVersus.#ctor(DSB.GC.GamingCouch,GCPlayerStoreOutput{DSB.GC.GCPlayer},DSB.GC.Game.GCGameVersusSetupOptions)
+  name.vb: New(GamingCouch, GCPlayerStoreOutput(Of GCPlayer), GCGameVersusSetupOptions)
+  fullName: DSB.GC.Game.GCGameVersus.GCGameVersus(DSB.GC.GamingCouch, GCPlayerStoreOutput<DSB.GC.GCPlayer>, DSB.GC.Game.GCGameVersusSetupOptions)
+  fullName.vb: DSB.GC.Game.GCGameVersus.New(DSB.GC.GamingCouch, GCPlayerStoreOutput(Of DSB.GC.GCPlayer), DSB.GC.Game.GCGameVersusSetupOptions)
+  nameWithType: GCGameVersus.GCGameVersus(GamingCouch, GCPlayerStoreOutput<GCPlayer>, GCGameVersusSetupOptions)
+  nameWithType.vb: GCGameVersus.New(GamingCouch, GCPlayerStoreOutput(Of GCPlayer), GCGameVersusSetupOptions)
+- uid: DSB.GC.Game.GCGameVersus.#ctor*
+  name: GCGameVersus
+  href: api/DSB.GC.Game.GCGameVersus.html#DSB_GC_Game_GCGameVersus__ctor_
+  commentId: Overload:DSB.GC.Game.GCGameVersus.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: DSB.GC.Game.GCGameVersus.GCGameVersus
+  fullName.vb: DSB.GC.Game.GCGameVersus.New
+  nameWithType: GCGameVersus.GCGameVersus
+  nameWithType.vb: GCGameVersus.New
+- uid: DSB.GC.Game.GCGameVersusSetupOptions
+  name: GCGameVersusSetupOptions
+  href: api/DSB.GC.Game.GCGameVersusSetupOptions.html
+  commentId: T:DSB.GC.Game.GCGameVersusSetupOptions
+  fullName: DSB.GC.Game.GCGameVersusSetupOptions
+  nameWithType: GCGameVersusSetupOptions
+- uid: DSB.GC.Game.GCPlacementSortCriteria
+  name: GCPlacementSortCriteria
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html
+  commentId: T:DSB.GC.Game.GCPlacementSortCriteria
+  fullName: DSB.GC.Game.GCPlacementSortCriteria
+  nameWithType: GCPlacementSortCriteria
+- uid: DSB.GC.Game.GCPlacementSortCriteria.Eliminated
+  name: Eliminated
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_Eliminated
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.Eliminated
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.Eliminated
+  nameWithType: GCPlacementSortCriteria.Eliminated
+- uid: DSB.GC.Game.GCPlacementSortCriteria.EliminatedDescending
+  name: EliminatedDescending
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_EliminatedDescending
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.EliminatedDescending
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.EliminatedDescending
+  nameWithType: GCPlacementSortCriteria.EliminatedDescending
+- uid: DSB.GC.Game.GCPlacementSortCriteria.Finished
+  name: Finished
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_Finished
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.Finished
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.Finished
+  nameWithType: GCPlacementSortCriteria.Finished
+- uid: DSB.GC.Game.GCPlacementSortCriteria.FinishedDescending
+  name: FinishedDescending
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_FinishedDescending
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.FinishedDescending
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.FinishedDescending
+  nameWithType: GCPlacementSortCriteria.FinishedDescending
+- uid: DSB.GC.Game.GCPlacementSortCriteria.Score
+  name: Score
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_Score
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.Score
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.Score
+  nameWithType: GCPlacementSortCriteria.Score
+- uid: DSB.GC.Game.GCPlacementSortCriteria.ScoreDescending
+  name: ScoreDescending
+  href: api/DSB.GC.Game.GCPlacementSortCriteria.html#DSB_GC_Game_GCPlacementSortCriteria_ScoreDescending
+  commentId: F:DSB.GC.Game.GCPlacementSortCriteria.ScoreDescending
+  fullName: DSB.GC.Game.GCPlacementSortCriteria.ScoreDescending
+  nameWithType: GCPlacementSortCriteria.ScoreDescending
 - uid: DSB.GC.GamingCouch
   name: GamingCouch
   href: api/DSB.GC.GamingCouch.html
@@ -504,22 +1111,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.ClearInputs
   nameWithType: GamingCouch.ClearInputs
-- uid: DSB.GC.GamingCouch.GameEnd(System.Int32[])
-  name: GameEnd(int[])
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameEnd_System_Int32___
-  commentId: M:DSB.GC.GamingCouch.GameEnd(System.Int32[])
-  name.vb: GameEnd(Integer())
-  fullName: DSB.GC.GamingCouch.GameEnd(int[])
-  fullName.vb: DSB.GC.GamingCouch.GameEnd(Integer())
-  nameWithType: GamingCouch.GameEnd(int[])
-  nameWithType.vb: GamingCouch.GameEnd(Integer())
-- uid: DSB.GC.GamingCouch.GameEnd*
-  name: GameEnd
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameEnd_
-  commentId: Overload:DSB.GC.GamingCouch.GameEnd
+- uid: DSB.GC.GamingCouch.GameOver
+  name: GameOver()
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameOver
+  commentId: M:DSB.GC.GamingCouch.GameOver
+  fullName: DSB.GC.GamingCouch.GameOver()
+  nameWithType: GamingCouch.GameOver()
+- uid: DSB.GC.GamingCouch.GameOver*
+  name: GameOver
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameOver_
+  commentId: Overload:DSB.GC.GamingCouch.GameOver
   isSpec: "True"
-  fullName: DSB.GC.GamingCouch.GameEnd
-  nameWithType: GamingCouch.GameEnd
+  fullName: DSB.GC.GamingCouch.GameOver
+  nameWithType: GamingCouch.GameOver
 - uid: DSB.GC.GamingCouch.GetInputsByPlayerId(System.Int32)
   name: GetInputsByPlayerId(int)
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetInputsByPlayerId_System_Int32_
@@ -610,6 +1214,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.SetupDone
   nameWithType: GamingCouch.SetupDone
+- uid: DSB.GC.GamingCouch.SetupGameVersus(DSB.GC.Game.GCGameVersusSetupOptions)
+  name: SetupGameVersus(GCGameVersusSetupOptions)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupGameVersus_DSB_GC_Game_GCGameVersusSetupOptions_
+  commentId: M:DSB.GC.GamingCouch.SetupGameVersus(DSB.GC.Game.GCGameVersusSetupOptions)
+  fullName: DSB.GC.GamingCouch.SetupGameVersus(DSB.GC.Game.GCGameVersusSetupOptions)
+  nameWithType: GamingCouch.SetupGameVersus(GCGameVersusSetupOptions)
+- uid: DSB.GC.GamingCouch.SetupGameVersus*
+  name: SetupGameVersus
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupGameVersus_
+  commentId: Overload:DSB.GC.GamingCouch.SetupGameVersus
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.SetupGameVersus
+  nameWithType: GamingCouch.SetupGameVersus
 - uid: DSB.GC.GamingCouch.Status
   name: Status
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Status
@@ -744,12 +1361,38 @@ references:
   commentId: T:DSB.GC.Hud.GCHudPlayersConfig
   fullName: DSB.GC.Hud.GCHudPlayersConfig
   nameWithType: GCHudPlayersConfig
-- uid: DSB.GC.Hud.GCHudPlayersConfig.valueType
-  name: valueType
-  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueType
-  commentId: F:DSB.GC.Hud.GCHudPlayersConfig.valueType
-  fullName: DSB.GC.Hud.GCHudPlayersConfig.valueType
-  nameWithType: GCHudPlayersConfig.valueType
+- uid: DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize
+  name: OnAfterDeserialize()
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_OnAfterDeserialize
+  commentId: M:DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize()
+  nameWithType: GCHudPlayersConfig.OnAfterDeserialize()
+- uid: DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize*
+  name: OnAfterDeserialize
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_OnAfterDeserialize_
+  commentId: Overload:DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize
+  nameWithType: GCHudPlayersConfig.OnAfterDeserialize
+- uid: DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize
+  name: OnBeforeSerialize()
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_OnBeforeSerialize
+  commentId: M:DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize()
+  nameWithType: GCHudPlayersConfig.OnBeforeSerialize()
+- uid: DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize*
+  name: OnBeforeSerialize
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_OnBeforeSerialize_
+  commentId: Overload:DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize
+  nameWithType: GCHudPlayersConfig.OnBeforeSerialize
+- uid: DSB.GC.Hud.GCHudPlayersConfig.valueTypeEnum
+  name: valueTypeEnum
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum
+  commentId: F:DSB.GC.Hud.GCHudPlayersConfig.valueTypeEnum
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.valueTypeEnum
+  nameWithType: GCHudPlayersConfig.valueTypeEnum
 - uid: DSB.GC.Hud.GCNameTag
   name: GCNameTag
   href: api/DSB.GC.Hud.GCNameTag.html
@@ -856,248 +1499,380 @@ references:
   commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.y
   fullName: DSB.GC.Hud.GCScreenPointDataPoint.y
   nameWithType: GCScreenPointDataPoint.y
-- uid: DSB.GC.LogLevel
-  name: LogLevel
-  href: api/DSB.GC.LogLevel.html
-  commentId: T:DSB.GC.LogLevel
-  fullName: DSB.GC.LogLevel
-  nameWithType: LogLevel
-- uid: DSB.GC.LogLevel.Debug
-  name: Debug
-  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Debug
-  commentId: F:DSB.GC.LogLevel.Debug
-  fullName: DSB.GC.LogLevel.Debug
-  nameWithType: LogLevel.Debug
-- uid: DSB.GC.LogLevel.Info
-  name: Info
-  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Info
-  commentId: F:DSB.GC.LogLevel.Info
-  fullName: DSB.GC.LogLevel.Info
-  nameWithType: LogLevel.Info
-- uid: DSB.GC.LogLevel.None
+- uid: DSB.GC.Hud.PlayersHudValueType
+  name: PlayersHudValueType
+  href: api/DSB.GC.Hud.PlayersHudValueType.html
+  commentId: T:DSB.GC.Hud.PlayersHudValueType
+  fullName: DSB.GC.Hud.PlayersHudValueType
+  nameWithType: PlayersHudValueType
+- uid: DSB.GC.Hud.PlayersHudValueType.Lives
+  name: Lives
+  href: api/DSB.GC.Hud.PlayersHudValueType.html#DSB_GC_Hud_PlayersHudValueType_Lives
+  commentId: F:DSB.GC.Hud.PlayersHudValueType.Lives
+  fullName: DSB.GC.Hud.PlayersHudValueType.Lives
+  nameWithType: PlayersHudValueType.Lives
+- uid: DSB.GC.Hud.PlayersHudValueType.None
   name: None
-  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_None
-  commentId: F:DSB.GC.LogLevel.None
-  fullName: DSB.GC.LogLevel.None
+  href: api/DSB.GC.Hud.PlayersHudValueType.html#DSB_GC_Hud_PlayersHudValueType_None
+  commentId: F:DSB.GC.Hud.PlayersHudValueType.None
+  fullName: DSB.GC.Hud.PlayersHudValueType.None
+  nameWithType: PlayersHudValueType.None
+- uid: DSB.GC.Hud.PlayersHudValueType.PointsSmall
+  name: PointsSmall
+  href: api/DSB.GC.Hud.PlayersHudValueType.html#DSB_GC_Hud_PlayersHudValueType_PointsSmall
+  commentId: F:DSB.GC.Hud.PlayersHudValueType.PointsSmall
+  fullName: DSB.GC.Hud.PlayersHudValueType.PointsSmall
+  nameWithType: PlayersHudValueType.PointsSmall
+- uid: DSB.GC.Hud.PlayersHudValueType.Status
+  name: Status
+  href: api/DSB.GC.Hud.PlayersHudValueType.html#DSB_GC_Hud_PlayersHudValueType_Status
+  commentId: F:DSB.GC.Hud.PlayersHudValueType.Status
+  fullName: DSB.GC.Hud.PlayersHudValueType.Status
+  nameWithType: PlayersHudValueType.Status
+- uid: DSB.GC.Hud.PlayersHudValueType.Text
+  name: Text
+  href: api/DSB.GC.Hud.PlayersHudValueType.html#DSB_GC_Hud_PlayersHudValueType_Text
+  commentId: F:DSB.GC.Hud.PlayersHudValueType.Text
+  fullName: DSB.GC.Hud.PlayersHudValueType.Text
+  nameWithType: PlayersHudValueType.Text
+- uid: DSB.GC.Log
+  name: DSB.GC.Log
+  href: api/DSB.GC.Log.html
+  commentId: N:DSB.GC.Log
+  fullName: DSB.GC.Log
+  nameWithType: DSB.GC.Log
+- uid: DSB.GC.Log.GCLog
+  name: GCLog
+  href: api/DSB.GC.Log.GCLog.html
+  commentId: T:DSB.GC.Log.GCLog
+  fullName: DSB.GC.Log.GCLog
+  nameWithType: GCLog
+- uid: DSB.GC.Log.GCLog.Log(DSB.GC.Log.LogLevel,System.String)
+  name: Log(LogLevel, string)
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_Log_DSB_GC_Log_LogLevel_System_String_
+  commentId: M:DSB.GC.Log.GCLog.Log(DSB.GC.Log.LogLevel,System.String)
+  name.vb: Log(LogLevel, String)
+  fullName: DSB.GC.Log.GCLog.Log(DSB.GC.Log.LogLevel, string)
+  fullName.vb: DSB.GC.Log.GCLog.Log(DSB.GC.Log.LogLevel, String)
+  nameWithType: GCLog.Log(LogLevel, string)
+  nameWithType.vb: GCLog.Log(LogLevel, String)
+- uid: DSB.GC.Log.GCLog.Log*
+  name: Log
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_Log_
+  commentId: Overload:DSB.GC.Log.GCLog.Log
+  isSpec: "True"
+  fullName: DSB.GC.Log.GCLog.Log
+  nameWithType: GCLog.Log
+- uid: DSB.GC.Log.GCLog.LogDebug(System.String)
+  name: LogDebug(string)
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogDebug_System_String_
+  commentId: M:DSB.GC.Log.GCLog.LogDebug(System.String)
+  name.vb: LogDebug(String)
+  fullName: DSB.GC.Log.GCLog.LogDebug(string)
+  fullName.vb: DSB.GC.Log.GCLog.LogDebug(String)
+  nameWithType: GCLog.LogDebug(string)
+  nameWithType.vb: GCLog.LogDebug(String)
+- uid: DSB.GC.Log.GCLog.LogDebug*
+  name: LogDebug
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogDebug_
+  commentId: Overload:DSB.GC.Log.GCLog.LogDebug
+  isSpec: "True"
+  fullName: DSB.GC.Log.GCLog.LogDebug
+  nameWithType: GCLog.LogDebug
+- uid: DSB.GC.Log.GCLog.LogInfo(System.String)
+  name: LogInfo(string)
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogInfo_System_String_
+  commentId: M:DSB.GC.Log.GCLog.LogInfo(System.String)
+  name.vb: LogInfo(String)
+  fullName: DSB.GC.Log.GCLog.LogInfo(string)
+  fullName.vb: DSB.GC.Log.GCLog.LogInfo(String)
+  nameWithType: GCLog.LogInfo(string)
+  nameWithType.vb: GCLog.LogInfo(String)
+- uid: DSB.GC.Log.GCLog.LogInfo*
+  name: LogInfo
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogInfo_
+  commentId: Overload:DSB.GC.Log.GCLog.LogInfo
+  isSpec: "True"
+  fullName: DSB.GC.Log.GCLog.LogInfo
+  nameWithType: GCLog.LogInfo
+- uid: DSB.GC.Log.GCLog.LogWarning(System.String)
+  name: LogWarning(string)
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogWarning_System_String_
+  commentId: M:DSB.GC.Log.GCLog.LogWarning(System.String)
+  name.vb: LogWarning(String)
+  fullName: DSB.GC.Log.GCLog.LogWarning(string)
+  fullName.vb: DSB.GC.Log.GCLog.LogWarning(String)
+  nameWithType: GCLog.LogWarning(string)
+  nameWithType.vb: GCLog.LogWarning(String)
+- uid: DSB.GC.Log.GCLog.LogWarning*
+  name: LogWarning
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogWarning_
+  commentId: Overload:DSB.GC.Log.GCLog.LogWarning
+  isSpec: "True"
+  fullName: DSB.GC.Log.GCLog.LogWarning
+  nameWithType: GCLog.LogWarning
+- uid: DSB.GC.Log.GCLog.logLevel
+  name: logLevel
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_logLevel
+  commentId: F:DSB.GC.Log.GCLog.logLevel
+  fullName: DSB.GC.Log.GCLog.logLevel
+  nameWithType: GCLog.logLevel
+- uid: DSB.GC.Log.LogLevel
+  name: LogLevel
+  href: api/DSB.GC.Log.LogLevel.html
+  commentId: T:DSB.GC.Log.LogLevel
+  fullName: DSB.GC.Log.LogLevel
+  nameWithType: LogLevel
+- uid: DSB.GC.Log.LogLevel.Debug
+  name: Debug
+  href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_Debug
+  commentId: F:DSB.GC.Log.LogLevel.Debug
+  fullName: DSB.GC.Log.LogLevel.Debug
+  nameWithType: LogLevel.Debug
+- uid: DSB.GC.Log.LogLevel.Info
+  name: Info
+  href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_Info
+  commentId: F:DSB.GC.Log.LogLevel.Info
+  fullName: DSB.GC.Log.LogLevel.Info
+  nameWithType: LogLevel.Info
+- uid: DSB.GC.Log.LogLevel.None
+  name: None
+  href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_None
+  commentId: F:DSB.GC.Log.LogLevel.None
+  fullName: DSB.GC.Log.LogLevel.None
   nameWithType: LogLevel.None
-- uid: DSB.GC.LogLevel.Warning
+- uid: DSB.GC.Log.LogLevel.Warning
   name: Warning
-  href: api/DSB.GC.LogLevel.html#DSB_GC_LogLevel_Warning
-  commentId: F:DSB.GC.LogLevel.Warning
-  fullName: DSB.GC.LogLevel.Warning
+  href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_Warning
+  commentId: F:DSB.GC.Log.LogLevel.Warning
+  fullName: DSB.GC.Log.LogLevel.Warning
   nameWithType: LogLevel.Warning
+- uid: DSB.GC.PlayerStatus
+  name: PlayerStatus
+  href: api/DSB.GC.PlayerStatus.html
+  commentId: T:DSB.GC.PlayerStatus
+  fullName: DSB.GC.PlayerStatus
+  nameWithType: PlayerStatus
+- uid: DSB.GC.PlayerStatus.Failure
+  name: Failure
+  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Failure
+  commentId: F:DSB.GC.PlayerStatus.Failure
+  fullName: DSB.GC.PlayerStatus.Failure
+  nameWithType: PlayerStatus.Failure
+- uid: DSB.GC.PlayerStatus.Neutral
+  name: Neutral
+  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Neutral
+  commentId: F:DSB.GC.PlayerStatus.Neutral
+  fullName: DSB.GC.PlayerStatus.Neutral
+  nameWithType: PlayerStatus.Neutral
+- uid: DSB.GC.PlayerStatus.Pending
+  name: Pending
+  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Pending
+  commentId: F:DSB.GC.PlayerStatus.Pending
+  fullName: DSB.GC.PlayerStatus.Pending
+  nameWithType: PlayerStatus.Pending
+- uid: DSB.GC.PlayerStatus.Success
+  name: Success
+  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Success
+  commentId: F:DSB.GC.PlayerStatus.Success
+  fullName: DSB.GC.PlayerStatus.Success
+  nameWithType: PlayerStatus.Success
 - uid: Global
   name: ''
   href: api/Global.html
+- uid: Global.GCPlayerStoreInput`1
+  name: GCPlayerStoreInput<T>
+  href: api/Global.GCPlayerStoreInput-1.html
+  commentId: T:Global.GCPlayerStoreInput`1
+  name.vb: GCPlayerStoreInput(Of T)
+  fullName: GCPlayerStoreInput<T>
+  fullName.vb: GCPlayerStoreInput(Of T)
+  nameWithType: GCPlayerStoreInput<T>
+  nameWithType.vb: GCPlayerStoreInput(Of T)
+- uid: Global.GCPlayerStoreInput`1.AddPlayer(`0)
+  name: AddPlayer(T)
+  href: api/Global.GCPlayerStoreInput-1.html#Global_GCPlayerStoreInput_1_AddPlayer__0_
+  commentId: M:Global.GCPlayerStoreInput`1.AddPlayer(`0)
+  fullName: GCPlayerStoreInput<T>.AddPlayer(T)
+  fullName.vb: GCPlayerStoreInput(Of T).AddPlayer(T)
+  nameWithType: GCPlayerStoreInput<T>.AddPlayer(T)
+  nameWithType.vb: GCPlayerStoreInput(Of T).AddPlayer(T)
+- uid: Global.GCPlayerStoreInput`1.AddPlayer*
+  name: AddPlayer
+  href: api/Global.GCPlayerStoreInput-1.html#Global_GCPlayerStoreInput_1_AddPlayer_
+  commentId: Overload:Global.GCPlayerStoreInput`1.AddPlayer
+  isSpec: "True"
+  fullName: GCPlayerStoreInput<T>.AddPlayer
+  fullName.vb: GCPlayerStoreInput(Of T).AddPlayer
+  nameWithType: GCPlayerStoreInput<T>.AddPlayer
+  nameWithType.vb: GCPlayerStoreInput(Of T).AddPlayer
+- uid: Global.GCPlayerStoreOutput`1
+  name: GCPlayerStoreOutput<T>
+  href: api/Global.GCPlayerStoreOutput-1.html
+  commentId: T:Global.GCPlayerStoreOutput`1
+  name.vb: GCPlayerStoreOutput(Of T)
+  fullName: GCPlayerStoreOutput<T>
+  fullName.vb: GCPlayerStoreOutput(Of T)
+  nameWithType: GCPlayerStoreOutput<T>
+  nameWithType.vb: GCPlayerStoreOutput(Of T)
+- uid: Global.GCPlayerStoreOutput`1.Clear
+  name: Clear()
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_Clear
+  commentId: M:Global.GCPlayerStoreOutput`1.Clear
+  fullName: GCPlayerStoreOutput<T>.Clear()
+  fullName.vb: GCPlayerStoreOutput(Of T).Clear()
+  nameWithType: GCPlayerStoreOutput<T>.Clear()
+  nameWithType.vb: GCPlayerStoreOutput(Of T).Clear()
+- uid: Global.GCPlayerStoreOutput`1.Clear*
+  name: Clear
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_Clear_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.Clear
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.Clear
+  fullName.vb: GCPlayerStoreOutput(Of T).Clear
+  nameWithType: GCPlayerStoreOutput<T>.Clear
+  nameWithType.vb: GCPlayerStoreOutput(Of T).Clear
+- uid: Global.GCPlayerStoreOutput`1.EliminatedPlayerCount
+  name: EliminatedPlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_EliminatedPlayerCount
+  commentId: P:Global.GCPlayerStoreOutput`1.EliminatedPlayerCount
+  fullName: GCPlayerStoreOutput<T>.EliminatedPlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).EliminatedPlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.EliminatedPlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).EliminatedPlayerCount
+- uid: Global.GCPlayerStoreOutput`1.EliminatedPlayerCount*
+  name: EliminatedPlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_EliminatedPlayerCount_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.EliminatedPlayerCount
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.EliminatedPlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).EliminatedPlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.EliminatedPlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).EliminatedPlayerCount
+- uid: Global.GCPlayerStoreOutput`1.EliminatedPlayersEnumerable
+  name: EliminatedPlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_EliminatedPlayersEnumerable
+  commentId: P:Global.GCPlayerStoreOutput`1.EliminatedPlayersEnumerable
+  fullName: GCPlayerStoreOutput<T>.EliminatedPlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).EliminatedPlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.EliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).EliminatedPlayersEnumerable
+- uid: Global.GCPlayerStoreOutput`1.EliminatedPlayersEnumerable*
+  name: EliminatedPlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_EliminatedPlayersEnumerable_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.EliminatedPlayersEnumerable
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.EliminatedPlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).EliminatedPlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.EliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).EliminatedPlayersEnumerable
+- uid: Global.GCPlayerStoreOutput`1.GetPlayerById(System.Int32)
+  name: GetPlayerById(int)
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_GetPlayerById_System_Int32_
+  commentId: M:Global.GCPlayerStoreOutput`1.GetPlayerById(System.Int32)
+  name.vb: GetPlayerById(Integer)
+  fullName: GCPlayerStoreOutput<T>.GetPlayerById(int)
+  fullName.vb: GCPlayerStoreOutput(Of T).GetPlayerById(Integer)
+  nameWithType: GCPlayerStoreOutput<T>.GetPlayerById(int)
+  nameWithType.vb: GCPlayerStoreOutput(Of T).GetPlayerById(Integer)
+- uid: Global.GCPlayerStoreOutput`1.GetPlayerById*
+  name: GetPlayerById
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_GetPlayerById_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.GetPlayerById
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.GetPlayerById
+  fullName.vb: GCPlayerStoreOutput(Of T).GetPlayerById
+  nameWithType: GCPlayerStoreOutput<T>.GetPlayerById
+  nameWithType.vb: GCPlayerStoreOutput(Of T).GetPlayerById
+- uid: Global.GCPlayerStoreOutput`1.GetPlayerByIndex(System.Int32)
+  name: GetPlayerByIndex(int)
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_GetPlayerByIndex_System_Int32_
+  commentId: M:Global.GCPlayerStoreOutput`1.GetPlayerByIndex(System.Int32)
+  name.vb: GetPlayerByIndex(Integer)
+  fullName: GCPlayerStoreOutput<T>.GetPlayerByIndex(int)
+  fullName.vb: GCPlayerStoreOutput(Of T).GetPlayerByIndex(Integer)
+  nameWithType: GCPlayerStoreOutput<T>.GetPlayerByIndex(int)
+  nameWithType.vb: GCPlayerStoreOutput(Of T).GetPlayerByIndex(Integer)
+- uid: Global.GCPlayerStoreOutput`1.GetPlayerByIndex*
+  name: GetPlayerByIndex
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_GetPlayerByIndex_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.GetPlayerByIndex
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.GetPlayerByIndex
+  fullName.vb: GCPlayerStoreOutput(Of T).GetPlayerByIndex
+  nameWithType: GCPlayerStoreOutput<T>.GetPlayerByIndex
+  nameWithType.vb: GCPlayerStoreOutput(Of T).GetPlayerByIndex
+- uid: Global.GCPlayerStoreOutput`1.PlayerCount
+  name: PlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_PlayerCount
+  commentId: P:Global.GCPlayerStoreOutput`1.PlayerCount
+  fullName: GCPlayerStoreOutput<T>.PlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).PlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.PlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).PlayerCount
+- uid: Global.GCPlayerStoreOutput`1.PlayerCount*
+  name: PlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_PlayerCount_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.PlayerCount
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.PlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).PlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.PlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).PlayerCount
+- uid: Global.GCPlayerStoreOutput`1.PlayersEnumerable
+  name: PlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_PlayersEnumerable
+  commentId: P:Global.GCPlayerStoreOutput`1.PlayersEnumerable
+  fullName: GCPlayerStoreOutput<T>.PlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).PlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.PlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).PlayersEnumerable
+- uid: Global.GCPlayerStoreOutput`1.PlayersEnumerable*
+  name: PlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_PlayersEnumerable_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.PlayersEnumerable
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.PlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).PlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.PlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).PlayersEnumerable
+- uid: Global.GCPlayerStoreOutput`1.UneliminatedPlayerCount
+  name: UneliminatedPlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_UneliminatedPlayerCount
+  commentId: P:Global.GCPlayerStoreOutput`1.UneliminatedPlayerCount
+  fullName: GCPlayerStoreOutput<T>.UneliminatedPlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.UneliminatedPlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayerCount
+- uid: Global.GCPlayerStoreOutput`1.UneliminatedPlayerCount*
+  name: UneliminatedPlayerCount
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_UneliminatedPlayerCount_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.UneliminatedPlayerCount
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.UneliminatedPlayerCount
+  fullName.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayerCount
+  nameWithType: GCPlayerStoreOutput<T>.UneliminatedPlayerCount
+  nameWithType.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayerCount
+- uid: Global.GCPlayerStoreOutput`1.UneliminatedPlayersEnumerable
+  name: UneliminatedPlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_UneliminatedPlayersEnumerable
+  commentId: P:Global.GCPlayerStoreOutput`1.UneliminatedPlayersEnumerable
+  fullName: GCPlayerStoreOutput<T>.UneliminatedPlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.UneliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayersEnumerable
+- uid: Global.GCPlayerStoreOutput`1.UneliminatedPlayersEnumerable*
+  name: UneliminatedPlayersEnumerable
+  href: api/Global.GCPlayerStoreOutput-1.html#Global_GCPlayerStoreOutput_1_UneliminatedPlayersEnumerable_
+  commentId: Overload:Global.GCPlayerStoreOutput`1.UneliminatedPlayersEnumerable
+  isSpec: "True"
+  fullName: GCPlayerStoreOutput<T>.UneliminatedPlayersEnumerable
+  fullName.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayersEnumerable
+  nameWithType: GCPlayerStoreOutput<T>.UneliminatedPlayersEnumerable
+  nameWithType.vb: GCPlayerStoreOutput(Of T).UneliminatedPlayersEnumerable
 - uid: Global.GamingCouchEditor
   name: GamingCouchEditor
   href: api/Global.GamingCouchEditor.html
   commentId: T:Global.GamingCouchEditor
   fullName: GamingCouchEditor
   nameWithType: GamingCouchEditor
-- uid: Global.IGCPlayer
-  name: IGCPlayer
-  href: api/Global.IGCPlayer.html
-  commentId: T:Global.IGCPlayer
-  fullName: IGCPlayer
-  nameWithType: IGCPlayer
-- uid: Global.IGCPlayer.GamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
-  name: GamingCouchSetup(GCPlayerSetupOptions)
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GamingCouchSetup_DSB_GC_GCPlayerSetupOptions_
-  commentId: M:Global.IGCPlayer.GamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
-  fullName: IGCPlayer.GamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
-  nameWithType: IGCPlayer.GamingCouchSetup(GCPlayerSetupOptions)
-- uid: Global.IGCPlayer.GamingCouchSetup*
-  name: GamingCouchSetup
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GamingCouchSetup_
-  commentId: Overload:Global.IGCPlayer.GamingCouchSetup
-  isSpec: "True"
-  fullName: IGCPlayer.GamingCouchSetup
-  nameWithType: IGCPlayer.GamingCouchSetup
-- uid: Global.IGCPlayer.GetColor
-  name: GetColor()
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetColor
-  commentId: M:Global.IGCPlayer.GetColor
-  fullName: IGCPlayer.GetColor()
-  nameWithType: IGCPlayer.GetColor()
-- uid: Global.IGCPlayer.GetColor*
-  name: GetColor
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetColor_
-  commentId: Overload:Global.IGCPlayer.GetColor
-  isSpec: "True"
-  fullName: IGCPlayer.GetColor
-  nameWithType: IGCPlayer.GetColor
-- uid: Global.IGCPlayer.GetId
-  name: GetId()
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetId
-  commentId: M:Global.IGCPlayer.GetId
-  fullName: IGCPlayer.GetId()
-  nameWithType: IGCPlayer.GetId()
-- uid: Global.IGCPlayer.GetId*
-  name: GetId
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetId_
-  commentId: Overload:Global.IGCPlayer.GetId
-  isSpec: "True"
-  fullName: IGCPlayer.GetId
-  nameWithType: IGCPlayer.GetId
-- uid: Global.IGCPlayer.GetName
-  name: GetName()
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetName
-  commentId: M:Global.IGCPlayer.GetName
-  fullName: IGCPlayer.GetName()
-  nameWithType: IGCPlayer.GetName()
-- uid: Global.IGCPlayer.GetName*
-  name: GetName
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_GetName_
-  commentId: Overload:Global.IGCPlayer.GetName
-  isSpec: "True"
-  fullName: IGCPlayer.GetName
-  nameWithType: IGCPlayer.GetName
-- uid: Global.IGCPlayer.gameObject
-  name: gameObject
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_gameObject
-  commentId: P:Global.IGCPlayer.gameObject
-  fullName: IGCPlayer.gameObject
-  nameWithType: IGCPlayer.gameObject
-- uid: Global.IGCPlayer.gameObject*
-  name: gameObject
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_gameObject_
-  commentId: Overload:Global.IGCPlayer.gameObject
-  isSpec: "True"
-  fullName: IGCPlayer.gameObject
-  nameWithType: IGCPlayer.gameObject
-- uid: Global.IGCPlayer.transform
-  name: transform
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_transform
-  commentId: P:Global.IGCPlayer.transform
-  fullName: IGCPlayer.transform
-  nameWithType: IGCPlayer.transform
-- uid: Global.IGCPlayer.transform*
-  name: transform
-  href: api/Global.IGCPlayer.html#Global_IGCPlayer_transform_
-  commentId: Overload:Global.IGCPlayer.transform
-  isSpec: "True"
-  fullName: IGCPlayer.transform
-  nameWithType: IGCPlayer.transform
-- uid: Global.IGCPlayerStoreInput`1
-  name: IGCPlayerStoreInput<T>
-  href: api/Global.IGCPlayerStoreInput-1.html
-  commentId: T:Global.IGCPlayerStoreInput`1
-  name.vb: IGCPlayerStoreInput(Of T)
-  fullName: IGCPlayerStoreInput<T>
-  fullName.vb: IGCPlayerStoreInput(Of T)
-  nameWithType: IGCPlayerStoreInput<T>
-  nameWithType.vb: IGCPlayerStoreInput(Of T)
-- uid: Global.IGCPlayerStoreInput`1.AddPlayer(`0)
-  name: AddPlayer(T)
-  href: api/Global.IGCPlayerStoreInput-1.html#Global_IGCPlayerStoreInput_1_AddPlayer__0_
-  commentId: M:Global.IGCPlayerStoreInput`1.AddPlayer(`0)
-  fullName: IGCPlayerStoreInput<T>.AddPlayer(T)
-  fullName.vb: IGCPlayerStoreInput(Of T).AddPlayer(T)
-  nameWithType: IGCPlayerStoreInput<T>.AddPlayer(T)
-  nameWithType.vb: IGCPlayerStoreInput(Of T).AddPlayer(T)
-- uid: Global.IGCPlayerStoreInput`1.AddPlayer*
-  name: AddPlayer
-  href: api/Global.IGCPlayerStoreInput-1.html#Global_IGCPlayerStoreInput_1_AddPlayer_
-  commentId: Overload:Global.IGCPlayerStoreInput`1.AddPlayer
-  isSpec: "True"
-  fullName: IGCPlayerStoreInput<T>.AddPlayer
-  fullName.vb: IGCPlayerStoreInput(Of T).AddPlayer
-  nameWithType: IGCPlayerStoreInput<T>.AddPlayer
-  nameWithType.vb: IGCPlayerStoreInput(Of T).AddPlayer
-- uid: Global.IGCPlayerStoreOutput`1
-  name: IGCPlayerStoreOutput<T>
-  href: api/Global.IGCPlayerStoreOutput-1.html
-  commentId: T:Global.IGCPlayerStoreOutput`1
-  name.vb: IGCPlayerStoreOutput(Of T)
-  fullName: IGCPlayerStoreOutput<T>
-  fullName.vb: IGCPlayerStoreOutput(Of T)
-  nameWithType: IGCPlayerStoreOutput<T>
-  nameWithType.vb: IGCPlayerStoreOutput(Of T)
-- uid: Global.IGCPlayerStoreOutput`1.Clear
-  name: Clear()
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_Clear
-  commentId: M:Global.IGCPlayerStoreOutput`1.Clear
-  fullName: IGCPlayerStoreOutput<T>.Clear()
-  fullName.vb: IGCPlayerStoreOutput(Of T).Clear()
-  nameWithType: IGCPlayerStoreOutput<T>.Clear()
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).Clear()
-- uid: Global.IGCPlayerStoreOutput`1.Clear*
-  name: Clear
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_Clear_
-  commentId: Overload:Global.IGCPlayerStoreOutput`1.Clear
-  isSpec: "True"
-  fullName: IGCPlayerStoreOutput<T>.Clear
-  fullName.vb: IGCPlayerStoreOutput(Of T).Clear
-  nameWithType: IGCPlayerStoreOutput<T>.Clear
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).Clear
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerById(System.Int32)
-  name: GetPlayerById(int)
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerById_System_Int32_
-  commentId: M:Global.IGCPlayerStoreOutput`1.GetPlayerById(System.Int32)
-  name.vb: GetPlayerById(Integer)
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerById(int)
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerById(Integer)
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerById(int)
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerById(Integer)
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerById*
-  name: GetPlayerById
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerById_
-  commentId: Overload:Global.IGCPlayerStoreOutput`1.GetPlayerById
-  isSpec: "True"
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerById
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerById
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerById
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerById
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerByIndex(System.Int32)
-  name: GetPlayerByIndex(int)
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerByIndex_System_Int32_
-  commentId: M:Global.IGCPlayerStoreOutput`1.GetPlayerByIndex(System.Int32)
-  name.vb: GetPlayerByIndex(Integer)
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerByIndex(int)
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerByIndex(Integer)
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerByIndex(int)
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerByIndex(Integer)
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerByIndex*
-  name: GetPlayerByIndex
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerByIndex_
-  commentId: Overload:Global.IGCPlayerStoreOutput`1.GetPlayerByIndex
-  isSpec: "True"
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerByIndex
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerByIndex
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerByIndex
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerByIndex
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerCount
-  name: GetPlayerCount()
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerCount
-  commentId: M:Global.IGCPlayerStoreOutput`1.GetPlayerCount
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerCount()
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerCount()
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerCount()
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerCount()
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayerCount*
-  name: GetPlayerCount
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayerCount_
-  commentId: Overload:Global.IGCPlayerStoreOutput`1.GetPlayerCount
-  isSpec: "True"
-  fullName: IGCPlayerStoreOutput<T>.GetPlayerCount
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayerCount
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayerCount
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayerCount
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayersEnumerable
-  name: GetPlayersEnumerable()
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayersEnumerable
-  commentId: M:Global.IGCPlayerStoreOutput`1.GetPlayersEnumerable
-  fullName: IGCPlayerStoreOutput<T>.GetPlayersEnumerable()
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayersEnumerable()
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayersEnumerable()
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayersEnumerable()
-- uid: Global.IGCPlayerStoreOutput`1.GetPlayersEnumerable*
-  name: GetPlayersEnumerable
-  href: api/Global.IGCPlayerStoreOutput-1.html#Global_IGCPlayerStoreOutput_1_GetPlayersEnumerable_
-  commentId: Overload:Global.IGCPlayerStoreOutput`1.GetPlayersEnumerable
-  isSpec: "True"
-  fullName: IGCPlayerStoreOutput<T>.GetPlayersEnumerable
-  fullName.vb: IGCPlayerStoreOutput(Of T).GetPlayersEnumerable
-  nameWithType: IGCPlayerStoreOutput<T>.GetPlayersEnumerable
-  nameWithType.vb: IGCPlayerStoreOutput(Of T).GetPlayersEnumerable

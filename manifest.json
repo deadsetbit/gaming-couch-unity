@@ -105,6 +105,76 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCGame.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCGame.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCGameHudOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCGameHudOptions.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCGameSetupOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCGameSetupOptions.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCGameVersus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCGameVersus.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCGameVersusSetupOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCGameVersusSetupOptions.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.GCPlacementSortCriteria.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.GCPlacementSortCriteria.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Game.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Game.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GamingCouch.yml",
       "output": {
         ".html": {
@@ -195,6 +265,16 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.PlayersHudValueType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.PlayersHudValueType.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.Hud.yml",
       "output": {
         ".html": {
@@ -205,10 +285,40 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.LogLevel.yml",
+      "source_relative_path": "api/DSB.GC.Log.GCLog.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DSB.GC.LogLevel.html"
+          "relative_path": "api/DSB.GC.Log.GCLog.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Log.LogLevel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Log.LogLevel.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Log.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Log.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.PlayerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.PlayerStatus.html"
         }
       },
       "version": ""
@@ -225,40 +335,30 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Global.GCPlayerStoreInput-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Global.GCPlayerStoreInput-1.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Global.GCPlayerStoreOutput-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Global.GCPlayerStoreOutput-1.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Global.GamingCouchEditor.yml",
       "output": {
         ".html": {
           "relative_path": "api/Global.GamingCouchEditor.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Global.IGCPlayer.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Global.IGCPlayer.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Global.IGCPlayerStoreInput-1.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Global.IGCPlayerStoreInput-1.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Global.IGCPlayerStoreOutput-1.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Global.IGCPlayerStoreOutput-1.html"
         }
       },
       "version": ""

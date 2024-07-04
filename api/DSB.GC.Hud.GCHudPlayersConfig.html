@@ -89,7 +89,7 @@
 
 
   <h1 id="DSB_GC_Hud_GCHudPlayersConfig" data-uid="DSB.GC.Hud.GCHudPlayersConfig" class="text-break">
-Struct GCHudPlayersConfig  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Struct GCHudPlayersConfig  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -103,13 +103,19 @@ Struct GCHudPlayersConfig  <a class="header-action link-secondary" title="View s
 
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">[Serializable]
-public struct GCHudPlayersConfig</code></pre>
+public struct GCHudPlayersConfig : ISerializationCallbackReceiver</code></pre>
   </div>
 
 
 
 
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><span class="xref">ISerializationCallbackReceiver</span></div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
@@ -145,17 +151,17 @@ public struct GCHudPlayersConfig</code></pre>
 
 
 
-  <h3 id="DSB_GC_Hud_GCHudPlayersConfig_valueType" data-uid="DSB.GC.Hud.GCHudPlayersConfig.valueType">
-  valueType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum" data-uid="DSB.GC.Hud.GCHudPlayersConfig.valueTypeEnum">
+  valueTypeEnum
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>pointsSmall, text, lives</p>
-</div>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string valueType</code></pre>
+    <pre><code class="lang-csharp hljs">[NonSerialized]
+public PlayersHudValueType valueTypeEnum</code></pre>
   </div>
 
 
@@ -163,9 +169,65 @@ public struct GCHudPlayersConfig</code></pre>
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><a class="xref" href="DSB.GC.Hud.PlayersHudValueType.html">PlayersHudValueType</a></dt>
     <dd></dd>
   </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="DSB_GC_Hud_GCHudPlayersConfig_OnAfterDeserialize_" data-uid="DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize*"></a>
+
+  <h3 id="DSB_GC_Hud_GCHudPlayersConfig_OnAfterDeserialize" data-uid="DSB.GC.Hud.GCHudPlayersConfig.OnAfterDeserialize">
+  OnAfterDeserialize()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void OnAfterDeserialize()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_Hud_GCHudPlayersConfig_OnBeforeSerialize_" data-uid="DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize*"></a>
+
+  <h3 id="DSB_GC_Hud_GCHudPlayersConfig_OnBeforeSerialize" data-uid="DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize">
+  OnBeforeSerialize()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void OnBeforeSerialize()</code></pre>
+  </div>
+
+
+
+
 
 
 
