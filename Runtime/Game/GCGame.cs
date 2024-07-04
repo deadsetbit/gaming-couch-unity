@@ -26,7 +26,11 @@ namespace DSB.GC.Game
     public class GCGameSetupOptions
     {
         public int maxScore = -1;
-        public GCPlacementSortCriteria[] placementCriteria = new GCPlacementSortCriteria[] { GCPlacementSortCriteria.EliminatedDescending, GCPlacementSortCriteria.ScoreDescending, GCPlacementSortCriteria.Finished };
+        public GCPlacementSortCriteria[] placementCriteria = new GCPlacementSortCriteria[] {
+            GCPlacementSortCriteria.EliminatedDescending,
+            GCPlacementSortCriteria.ScoreDescending,
+            GCPlacementSortCriteria.Finished
+        };
         public GCGameHudOptions hud;
     }
 
@@ -123,13 +127,13 @@ namespace DSB.GC.Game
             {
                 case GCPlacementSortCriteria.Eliminated:
                 case GCPlacementSortCriteria.EliminatedDescending:
-                    return p => p.LastSetEliminatedTime > 0.0f ? p.LastSetEliminatedTime : float.MaxValue;
+                    return p => p.IsEliminated ? p.LastSetEliminatedTime : float.MaxValue;
                 case GCPlacementSortCriteria.Score:
                 case GCPlacementSortCriteria.ScoreDescending:
                     return p => p.Score;
                 case GCPlacementSortCriteria.Finished:
                 case GCPlacementSortCriteria.FinishedDescending:
-                    return p => p.FinishedTime > 0.0f ? p.FinishedTime : float.MaxValue;
+                    return p => p.IsFinished ? p.FinishedTime : float.MaxValue;
                 default:
                     throw new Exception($"Unhandled placement sort criteria '{criteria}'");
             }
