@@ -221,6 +221,12 @@ namespace DSB.GC
             this.game = game;
         }
 
+        /// <summary>
+        /// Call when the game is over.
+        /// Note: This will trigger the platform to show the game over screen immediately,
+        /// so make sure to call this after possible outro animations etc. are done.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Throws if SetupGame is not called before.</exception>
         public void GameOver()
         {
             if (game == null)
