@@ -100,7 +100,18 @@ When the game ends, simply call:
 GamingCouch.Instance.GameOver();
 ```
 
-# Players HUD
+# HUD
+
+NOTE: All HUD related features are only rendered in the Gaming Couch platform and cant be tested in the editor or unity build alone.
+
+## Name tags
+
+To add name tags for players, you need to add GCNameTag component to your player game object.
+Usually you want to position the name tag to be above the player, so you can also add the GCNameTag component
+to child object of the player game object and offset it to be above the player's head for example.
+
+NOTE: Currently, there is no way to show the name tags in the editor or unity build alone.
+The only way to see if the name tags are working correctly is to test it in the Gaming Couch platform.
 
 ## Configure Players HUD to display score, lives etc.
 
