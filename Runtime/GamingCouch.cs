@@ -42,6 +42,9 @@ namespace DSB.GC
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
         public LogLevel LogLevel = LogLevel.Debug;
+        private float timeScaleOnPause = 1.0f;
+        private float volumeOnPause = 1.0f;
+        private bool paused = false;
 
         private void Awake()
         {
@@ -161,6 +164,46 @@ namespace DSB.GC
             Play(options);
         }
 
+        /// <summary>
+        /// Called by the platform when the game is paused or resumed.
+        /// Sets the time scale to 0 when paused and back to previous value when resumed.
+        /// </summary>
+        private void GamingCouchPause(string pauseString)
+        {
+            var pause = bool.Parse(pauseString);
+            GCLog.LogInfo("GamingCouchPause: " + pause);
+
+            if (paused && pause)
+            {
+                GCLog.LogWarning("GamingCouchPause: Trying to pause while already paused.");
+                return;
+            }
+
+            if (!paused && !pause)
+            {
+                GCLog.LogWarning("GamingCouchPause: Trying to resume when not paused.");
+                return;
+            }
+
+            paused = pause;
+
+            if (pause)
+            {
+                inputsByPlayerId.Clear();
+
+                volumeOnPause = AudioListener.volume;
+                AudioListener.volume = 0.0f;
+                GCLog.LogInfo("GamingCouchPause: Pausing");
+                timeScaleOnPause = Time.timeScale;
+                Time.timeScale = 0;
+                return;
+            }
+
+            GCLog.LogInfo("GamingCouchPause: Resuming");
+            AudioListener.volume = volumeOnPause;
+            Time.timeScale = timeScaleOnPause;
+        }
+
         private IEnumerator _EditorPlay()
         {
             GCLog.LogInfo("_EditorPlay");
@@ -182,6 +225,11 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchInputs(string playerIdAndInputs)
         {
+            if (paused)
+            {
+                return;
+            }
+
             string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
 
             GCControllerInputs inputs = GCControllerInputs.CreateFromJSON(playerIdAndInputsArray[1]);
