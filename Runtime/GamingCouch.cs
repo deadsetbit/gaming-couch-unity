@@ -25,6 +25,7 @@ namespace DSB.GC
 
         private static int MAX_PLAYERS = 8;
         private static int MAX_NAME_LENGTH = 8;
+        private static float AUDIO_FADE_SECONDS = 3.0f;
         private static GamingCouch instance = null;
         public static GamingCouch Instance => instance;
         [Header("Integration configuration")]
@@ -83,6 +84,8 @@ namespace DSB.GC
             }
 
             GCLog.LogDebug("Start");
+
+            AudioListener.volume = 0.0f;
 
 #if UNITY_EDITOR
             // When integrated, platform will define the setup options on Unity boot up.
@@ -198,6 +201,8 @@ namespace DSB.GC
         {
             GCLog.LogDebug("SetupDone");
 
+            StartCoroutine(_FadeVolume(AudioListener.volume, 1.0f));
+
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
 #else
@@ -258,6 +263,8 @@ namespace DSB.GC
                 result[i] = (byte)placementsByPlayerId[i];
             }
 
+            StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchGameEnd(result, result.Length);
 #endif
@@ -265,6 +272,20 @@ namespace DSB.GC
             status = GCStatus.GameOver;
         }
         #endregion
+
+        private IEnumerator _FadeVolume(float startVolume, float endVolume)
+        {
+            var duration = AUDIO_FADE_SECONDS;
+            var time = 0.0f;
+
+            while (time < duration)
+            {
+                time += Time.deltaTime;
+                AudioListener.volume = Mathf.Lerp(startVolume, endVolume, time / duration);
+                yield return null;
+            }
+        }
+
 
         #region Player
         private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : GCPlayer
