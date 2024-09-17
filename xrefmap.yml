@@ -111,15 +111,15 @@ references:
   commentId: T:DSB.GC.GCPlayer
   fullName: DSB.GC.GCPlayer
   nameWithType: GCPlayer
-- uid: DSB.GC.GCPlayer.AddLives(System.Int32)
-  name: AddLives(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddLives_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.AddLives(System.Int32)
-  name.vb: AddLives(Integer)
-  fullName: DSB.GC.GCPlayer.AddLives(int)
-  fullName.vb: DSB.GC.GCPlayer.AddLives(Integer)
-  nameWithType: GCPlayer.AddLives(int)
-  nameWithType.vb: GCPlayer.AddLives(Integer)
+- uid: DSB.GC.GCPlayer.AddLives(System.Int32,System.String)
+  name: AddLives(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddLives_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.AddLives(System.Int32,System.String)
+  name.vb: AddLives(Integer, String)
+  fullName: DSB.GC.GCPlayer.AddLives(int, string)
+  fullName.vb: DSB.GC.GCPlayer.AddLives(Integer, String)
+  nameWithType: GCPlayer.AddLives(int, string)
+  nameWithType.vb: GCPlayer.AddLives(Integer, String)
 - uid: DSB.GC.GCPlayer.AddLives*
   name: AddLives
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddLives_
@@ -127,15 +127,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.AddLives
   nameWithType: GCPlayer.AddLives
-- uid: DSB.GC.GCPlayer.AddScore(System.Int32)
-  name: AddScore(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddScore_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.AddScore(System.Int32)
-  name.vb: AddScore(Integer)
-  fullName: DSB.GC.GCPlayer.AddScore(int)
-  fullName.vb: DSB.GC.GCPlayer.AddScore(Integer)
-  nameWithType: GCPlayer.AddScore(int)
-  nameWithType.vb: GCPlayer.AddScore(Integer)
+- uid: DSB.GC.GCPlayer.AddScore(System.Int32,System.String)
+  name: AddScore(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddScore_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.AddScore(System.Int32,System.String)
+  name.vb: AddScore(Integer, String)
+  fullName: DSB.GC.GCPlayer.AddScore(int, string)
+  fullName.vb: DSB.GC.GCPlayer.AddScore(Integer, String)
+  nameWithType: GCPlayer.AddScore(int, string)
+  nameWithType.vb: GCPlayer.AddScore(Integer, String)
 - uid: DSB.GC.GCPlayer.AddScore*
   name: AddScore
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_AddScore_
@@ -348,12 +348,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Score
   nameWithType: GCPlayer.Score
-- uid: DSB.GC.GCPlayer.SetEliminated
-  name: SetEliminated()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetEliminated
-  commentId: M:DSB.GC.GCPlayer.SetEliminated
-  fullName: DSB.GC.GCPlayer.SetEliminated()
-  nameWithType: GCPlayer.SetEliminated()
+- uid: DSB.GC.GCPlayer.SetEliminated(System.String)
+  name: SetEliminated(string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetEliminated_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetEliminated(System.String)
+  name.vb: SetEliminated(String)
+  fullName: DSB.GC.GCPlayer.SetEliminated(string)
+  fullName.vb: DSB.GC.GCPlayer.SetEliminated(String)
+  nameWithType: GCPlayer.SetEliminated(string)
+  nameWithType.vb: GCPlayer.SetEliminated(String)
 - uid: DSB.GC.GCPlayer.SetEliminated*
   name: SetEliminated
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetEliminated_
@@ -361,12 +364,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetEliminated
   nameWithType: GCPlayer.SetEliminated
-- uid: DSB.GC.GCPlayer.SetFinished
-  name: SetFinished()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetFinished
-  commentId: M:DSB.GC.GCPlayer.SetFinished
-  fullName: DSB.GC.GCPlayer.SetFinished()
-  nameWithType: GCPlayer.SetFinished()
+- uid: DSB.GC.GCPlayer.SetFinished(System.String)
+  name: SetFinished(string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetFinished_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetFinished(System.String)
+  name.vb: SetFinished(String)
+  fullName: DSB.GC.GCPlayer.SetFinished(string)
+  fullName.vb: DSB.GC.GCPlayer.SetFinished(String)
+  nameWithType: GCPlayer.SetFinished(string)
+  nameWithType.vb: GCPlayer.SetFinished(String)
 - uid: DSB.GC.GCPlayer.SetFinished*
   name: SetFinished
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetFinished_
@@ -374,15 +380,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetFinished
   nameWithType: GCPlayer.SetFinished
-- uid: DSB.GC.GCPlayer.SetLives(System.Int32)
-  name: SetLives(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetLives_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.SetLives(System.Int32)
-  name.vb: SetLives(Integer)
-  fullName: DSB.GC.GCPlayer.SetLives(int)
-  fullName.vb: DSB.GC.GCPlayer.SetLives(Integer)
-  nameWithType: GCPlayer.SetLives(int)
-  nameWithType.vb: GCPlayer.SetLives(Integer)
+- uid: DSB.GC.GCPlayer.SetLives(System.Int32,System.String)
+  name: SetLives(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetLives_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetLives(System.Int32,System.String)
+  name.vb: SetLives(Integer, String)
+  fullName: DSB.GC.GCPlayer.SetLives(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SetLives(Integer, String)
+  nameWithType: GCPlayer.SetLives(int, string)
+  nameWithType.vb: GCPlayer.SetLives(Integer, String)
 - uid: DSB.GC.GCPlayer.SetLives*
   name: SetLives
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetLives_
@@ -390,15 +396,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetLives
   nameWithType: GCPlayer.SetLives
-- uid: DSB.GC.GCPlayer.SetScore(System.Int32)
-  name: SetScore(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.SetScore(System.Int32)
-  name.vb: SetScore(Integer)
-  fullName: DSB.GC.GCPlayer.SetScore(int)
-  fullName.vb: DSB.GC.GCPlayer.SetScore(Integer)
-  nameWithType: GCPlayer.SetScore(int)
-  nameWithType.vb: GCPlayer.SetScore(Integer)
+- uid: DSB.GC.GCPlayer.SetScore(System.Int32,System.String)
+  name: SetScore(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetScore(System.Int32,System.String)
+  name.vb: SetScore(Integer, String)
+  fullName: DSB.GC.GCPlayer.SetScore(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SetScore(Integer, String)
+  nameWithType: GCPlayer.SetScore(int, string)
+  nameWithType.vb: GCPlayer.SetScore(Integer, String)
 - uid: DSB.GC.GCPlayer.SetScore*
   name: SetScore
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_
@@ -406,15 +412,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetScore
   nameWithType: GCPlayer.SetScore
-- uid: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String)
-  name: SetStatus(PlayerStatus, string)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_
-  commentId: M:DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String)
-  name.vb: SetStatus(PlayerStatus, String)
-  fullName: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, string)
-  fullName.vb: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, String)
-  nameWithType: GCPlayer.SetStatus(PlayerStatus, string)
-  nameWithType.vb: GCPlayer.SetStatus(PlayerStatus, String)
+- uid: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String,System.String)
+  name: SetStatus(PlayerStatus, string, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String,System.String)
+  name.vb: SetStatus(PlayerStatus, String, String)
+  fullName: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, string, string)
+  fullName.vb: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, String, String)
+  nameWithType: GCPlayer.SetStatus(PlayerStatus, string, string)
+  nameWithType.vb: GCPlayer.SetStatus(PlayerStatus, String, String)
 - uid: DSB.GC.GCPlayer.SetStatus*
   name: SetStatus
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_
@@ -422,12 +428,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetStatus
   nameWithType: GCPlayer.SetStatus
-- uid: DSB.GC.GCPlayer.SetUneliminated
-  name: SetUneliminated()
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetUneliminated
-  commentId: M:DSB.GC.GCPlayer.SetUneliminated
-  fullName: DSB.GC.GCPlayer.SetUneliminated()
-  nameWithType: GCPlayer.SetUneliminated()
+- uid: DSB.GC.GCPlayer.SetUneliminated(System.String)
+  name: SetUneliminated(string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetUneliminated_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetUneliminated(System.String)
+  name.vb: SetUneliminated(String)
+  fullName: DSB.GC.GCPlayer.SetUneliminated(string)
+  fullName.vb: DSB.GC.GCPlayer.SetUneliminated(String)
+  nameWithType: GCPlayer.SetUneliminated(string)
+  nameWithType.vb: GCPlayer.SetUneliminated(String)
 - uid: DSB.GC.GCPlayer.SetUneliminated*
   name: SetUneliminated
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetUneliminated_
@@ -461,15 +470,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.StatusText
   nameWithType: GCPlayer.StatusText
-- uid: DSB.GC.GCPlayer.SubtractLives(System.Int32)
-  name: SubtractLives(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractLives_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.SubtractLives(System.Int32)
-  name.vb: SubtractLives(Integer)
-  fullName: DSB.GC.GCPlayer.SubtractLives(int)
-  fullName.vb: DSB.GC.GCPlayer.SubtractLives(Integer)
-  nameWithType: GCPlayer.SubtractLives(int)
-  nameWithType.vb: GCPlayer.SubtractLives(Integer)
+- uid: DSB.GC.GCPlayer.SubtractLives(System.Int32,System.String)
+  name: SubtractLives(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractLives_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SubtractLives(System.Int32,System.String)
+  name.vb: SubtractLives(Integer, String)
+  fullName: DSB.GC.GCPlayer.SubtractLives(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SubtractLives(Integer, String)
+  nameWithType: GCPlayer.SubtractLives(int, string)
+  nameWithType.vb: GCPlayer.SubtractLives(Integer, String)
 - uid: DSB.GC.GCPlayer.SubtractLives*
   name: SubtractLives
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractLives_
@@ -477,15 +486,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SubtractLives
   nameWithType: GCPlayer.SubtractLives
-- uid: DSB.GC.GCPlayer.SubtractScore(System.Int32)
-  name: SubtractScore(int)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractScore_System_Int32_
-  commentId: M:DSB.GC.GCPlayer.SubtractScore(System.Int32)
-  name.vb: SubtractScore(Integer)
-  fullName: DSB.GC.GCPlayer.SubtractScore(int)
-  fullName.vb: DSB.GC.GCPlayer.SubtractScore(Integer)
-  nameWithType: GCPlayer.SubtractScore(int)
-  nameWithType.vb: GCPlayer.SubtractScore(Integer)
+- uid: DSB.GC.GCPlayer.SubtractScore(System.Int32,System.String)
+  name: SubtractScore(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractScore_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SubtractScore(System.Int32,System.String)
+  name.vb: SubtractScore(Integer, String)
+  fullName: DSB.GC.GCPlayer.SubtractScore(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SubtractScore(Integer, String)
+  nameWithType: GCPlayer.SubtractScore(int, string)
+  nameWithType.vb: GCPlayer.SubtractScore(Integer, String)
 - uid: DSB.GC.GCPlayer.SubtractScore*
   name: SubtractScore
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SubtractScore_

@@ -137,7 +137,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action OnEliminated</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnEliminated</code></pre>
   </div>
 
 
@@ -145,7 +145,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action">Action</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -167,7 +167,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action OnFinished</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnFinished</code></pre>
   </div>
 
 
@@ -175,7 +175,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action">Action</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -197,7 +197,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;int, int&gt; OnLivesChanged</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;int, int, string&gt; OnLivesChanged</code></pre>
   </div>
 
 
@@ -205,7 +205,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-2">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-3">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -227,7 +227,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;int, int&gt; OnScoreChanged</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;int, int, string&gt; OnScoreChanged</code></pre>
   </div>
 
 
@@ -235,7 +235,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-2">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-3">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -257,7 +257,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;PlayerStatus, string&gt; OnStatusChanged</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;PlayerStatus, string, string&gt; OnStatusChanged</code></pre>
   </div>
 
 
@@ -265,7 +265,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-2">Action</a>&lt;<a class="xref" href="DSB.GC.PlayerStatus.html">PlayerStatus</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-3">Action</a>&lt;<a class="xref" href="DSB.GC.PlayerStatus.html">PlayerStatus</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -287,7 +287,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action OnUneliminated</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnUneliminated</code></pre>
   </div>
 
 
@@ -295,7 +295,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action">Action</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -706,9 +706,9 @@ If Players HUD is set to display status text, this will be reflected there as we
 
   <a id="DSB_GC_GCPlayer_AddLives_" data-uid="DSB.GC.GCPlayer.AddLives*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_AddLives_System_Int32_" data-uid="DSB.GC.GCPlayer.AddLives(System.Int32)">
-  AddLives(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_AddLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.AddLives(System.Int32,System.String)">
+  AddLives(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L197"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Add to player's lives.</p>
@@ -716,12 +716,14 @@ If Players HUD is set to display status text, this will be reflected there as we
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void AddLives(int lives)</code></pre>
+    <pre><code class="lang-csharp hljs">public void AddLives(int lives, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>lives</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -738,9 +740,9 @@ If Players HUD is set to display status text, this will be reflected there as we
 
   <a id="DSB_GC_GCPlayer_AddScore_" data-uid="DSB.GC.GCPlayer.AddScore*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_AddScore_System_Int32_" data-uid="DSB.GC.GCPlayer.AddScore(System.Int32)">
-  AddScore(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_AddScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.AddScore(System.Int32,System.String)">
+  AddScore(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L146"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Add to player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
@@ -749,12 +751,14 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void AddScore(int score)</code></pre>
+    <pre><code class="lang-csharp hljs">public void AddScore(int score, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>score</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -807,7 +811,7 @@ You can access all the properties set by this method, such as Id, PlayerName, Co
 
   <h3 id="DSB_GC_GCPlayer_GetHudStatusText" data-uid="DSB.GC.GCPlayer.GetHudStatusText">
   GetHudStatusText()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L240"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's HUD status text to be displayed in the HUD.
@@ -840,7 +844,7 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_GetHudValueText" data-uid="DSB.GC.GCPlayer.GetHudValueText">
   GetHudValueText()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L247"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L249"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's HUD value to be displayed in the HUD.</p>
@@ -870,8 +874,8 @@ This will include the status text and status.</p>
 
   <a id="DSB_GC_GCPlayer_SetEliminated_" data-uid="DSB.GC.GCPlayer.SetEliminated*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetEliminated" data-uid="DSB.GC.GCPlayer.SetEliminated">
-  SetEliminated()
+  <h3 id="DSB_GC_GCPlayer_SetEliminated_System_String_" data-uid="DSB.GC.GCPlayer.SetEliminated(System.String)">
+  SetEliminated(string)
   <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -880,9 +884,14 @@ This will include the status text and status.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetEliminated()</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetEliminated(string reason)</code></pre>
   </div>
 
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
 
 
 
@@ -897,9 +906,9 @@ This will include the status text and status.</p>
 
   <a id="DSB_GC_GCPlayer_SetFinished_" data-uid="DSB.GC.GCPlayer.SetFinished*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetFinished" data-uid="DSB.GC.GCPlayer.SetFinished">
-  SetFinished()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SetFinished_System_String_" data-uid="DSB.GC.GCPlayer.SetFinished(System.String)">
+  SetFinished(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.</p>
@@ -907,9 +916,14 @@ This will include the status text and status.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetFinished()</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetFinished(string reason)</code></pre>
   </div>
 
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
 
 
 
@@ -924,9 +938,9 @@ This will include the status text and status.</p>
 
   <a id="DSB_GC_GCPlayer_SetLives_" data-uid="DSB.GC.GCPlayer.SetLives*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetLives_System_Int32_" data-uid="DSB.GC.GCPlayer.SetLives(System.Int32)">
-  SetLives(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SetLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetLives(System.Int32,System.String)">
+  SetLives(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's lives.</p>
@@ -934,12 +948,14 @@ This will include the status text and status.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetLives(int newLives)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetLives(int newLives, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>newLives</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -956,9 +972,9 @@ This will include the status text and status.</p>
 
   <a id="DSB_GC_GCPlayer_SetScore_" data-uid="DSB.GC.GCPlayer.SetScore*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetScore_System_Int32_" data-uid="DSB.GC.GCPlayer.SetScore(System.Int32)">
-  SetScore(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SetScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetScore(System.Int32,System.String)">
+  SetScore(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L130"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
@@ -967,12 +983,14 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetScore(int newScore)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetScore(int newScore, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>newScore</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -989,9 +1007,9 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <a id="DSB_GC_GCPlayer_SetStatus_" data-uid="DSB.GC.GCPlayer.SetStatus*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_" data-uid="DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String)">
-  SetStatus(PlayerStatus, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_System_String_" data-uid="DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String,System.String)">
+  SetStatus(PlayerStatus, string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L224"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's status and status text.
@@ -1008,7 +1026,7 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetStatus(PlayerStatus status, string statusText)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetStatus(PlayerStatus status, string statusText, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -1016,6 +1034,8 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
     <dt><code>status</code> <a class="xref" href="DSB.GC.PlayerStatus.html">PlayerStatus</a></dt>
     <dd></dd>
     <dt><code>statusText</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -1032,8 +1052,8 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <a id="DSB_GC_GCPlayer_SetUneliminated_" data-uid="DSB.GC.GCPlayer.SetUneliminated*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetUneliminated" data-uid="DSB.GC.GCPlayer.SetUneliminated">
-  SetUneliminated()
+  <h3 id="DSB_GC_GCPlayer_SetUneliminated_System_String_" data-uid="DSB.GC.GCPlayer.SetUneliminated(System.String)">
+  SetUneliminated(string)
   <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L117"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -1042,9 +1062,14 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetUneliminated()</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetUneliminated(string reason)</code></pre>
   </div>
 
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
 
 
 
@@ -1059,9 +1084,9 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <a id="DSB_GC_GCPlayer_SubtractLives_" data-uid="DSB.GC.GCPlayer.SubtractLives*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SubtractLives_System_Int32_" data-uid="DSB.GC.GCPlayer.SubtractLives(System.Int32)">
-  SubtractLives(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L203"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SubtractLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SubtractLives(System.Int32,System.String)">
+  SubtractLives(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L205"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Subtract from player's lives.</p>
@@ -1069,12 +1094,14 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SubtractLives(int lives)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SubtractLives(int lives, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>lives</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -1091,9 +1118,9 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <a id="DSB_GC_GCPlayer_SubtractScore_" data-uid="DSB.GC.GCPlayer.SubtractScore*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SubtractScore_System_Int32_" data-uid="DSB.GC.GCPlayer.SubtractScore(System.Int32)">
-  SubtractScore(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L153"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_SubtractScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SubtractScore(System.Int32,System.String)">
+  SubtractScore(int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Subtract from player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
@@ -1102,12 +1129,14 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SubtractScore(int score)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SubtractScore(int score, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>score</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
