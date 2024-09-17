@@ -63,5 +63,42 @@ namespace DSB.GC.Hud
                 y = screenPosition.y / Screen.height
             });
         }
+
+
+        [Header("Debug")]
+        [SerializeField]
+        private bool drawDebugGizmo = true;
+        private float debugGizmoWidth = 100.0f; // px
+        private float debugGizmoHeight = 20.0f; // px
+        private Color gizmoColor = Color.green;
+
+        private void OnDrawGizmos()
+        {
+            // if (!drawDebugGizmo) return;
+            // if (playerId == -1) return;
+
+            Camera camera = Camera.main;
+            if (camera == null) return;
+
+            Vector3 screenPosition = camera.WorldToScreenPoint(transform.position);
+
+            float halfWidth = debugGizmoWidth * 0.5f;
+
+            Vector3 topLeftScreen = new Vector3(screenPosition.x - halfWidth, screenPosition.y + debugGizmoHeight, screenPosition.z);
+            Vector3 topRightScreen = new Vector3(screenPosition.x + halfWidth, screenPosition.y + debugGizmoHeight, screenPosition.z);
+            Vector3 bottomLeftScreen = new Vector3(screenPosition.x - halfWidth, screenPosition.y, screenPosition.z);
+            Vector3 bottomRightScreen = new Vector3(screenPosition.x + halfWidth, screenPosition.y, screenPosition.z);
+
+            Vector3 topLeftWorld = camera.ScreenToWorldPoint(topLeftScreen);
+            Vector3 topRightWorld = camera.ScreenToWorldPoint(topRightScreen);
+            Vector3 bottomLeftWorld = camera.ScreenToWorldPoint(bottomLeftScreen);
+            Vector3 bottomRightWorld = camera.ScreenToWorldPoint(bottomRightScreen);
+
+            Gizmos.color = gizmoColor;
+            Gizmos.DrawLine(topLeftWorld, topRightWorld);
+            Gizmos.DrawLine(topRightWorld, bottomRightWorld);
+            Gizmos.DrawLine(bottomRightWorld, bottomLeftWorld);
+            Gizmos.DrawLine(bottomLeftWorld, topLeftWorld);
+        }
     }
 }
