@@ -63,8 +63,8 @@ namespace DSB.GC
 
             playerById[player.Id] = player;
 
-            player.OnEliminated += () => HandlePlayerEliminated(player);
-            player.OnUneliminated += () => HandlePlayerUneliminated(player);
+            player.OnEliminated += (string reason) => HandlePlayerEliminated(player);
+            player.OnUneliminated += (string reason) => HandlePlayerUneliminated(player);
         }
 
         public void Clear()

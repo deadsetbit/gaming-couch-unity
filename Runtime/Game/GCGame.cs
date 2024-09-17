@@ -65,32 +65,32 @@ namespace DSB.GC.Game
 
                 foreach (var player in playerStore.PlayersEnumerable)
                 {
-                    player.OnEliminated += () =>
+                    player.OnEliminated += (string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
 
-                    player.OnUneliminated += () =>
+                    player.OnUneliminated += (string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
 
-                    player.OnFinished += () =>
+                    player.OnFinished += (string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
 
-                    player.OnScoreChanged += (int playerId, int score) =>
+                    player.OnScoreChanged += (int playerId, int score, string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
 
-                    player.OnLivesChanged += (int playerId, int lives) =>
+                    player.OnLivesChanged += (int playerId, int lives, string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
 
-                    player.OnStatusChanged += (PlayerStatus status, string statusText) =>
+                    player.OnStatusChanged += (PlayerStatus status, string statusText, string reason) =>
                     {
                         isPlayersHudAutoUpdatePending = true;
                     };
