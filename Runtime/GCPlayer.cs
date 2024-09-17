@@ -16,12 +16,12 @@ namespace DSB.GC
 
     public class GCPlayer : MonoBehaviour
     {
-        public Action OnEliminated;
-        public Action OnUneliminated;
-        public Action OnFinished;
-        public Action<int, int> OnScoreChanged;
-        public Action<int, int> OnLivesChanged;
-        public Action<PlayerStatus, string> OnStatusChanged;
+        public Action<string> OnEliminated;
+        public Action<string> OnUneliminated;
+        public Action<string> OnFinished;
+        public Action<int, int, string> OnScoreChanged;
+        public Action<int, int, string> OnLivesChanged;
+        public Action<PlayerStatus, string, string> OnStatusChanged;
         private int id = -1;
         /// <summary>
         /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
@@ -102,77 +102,79 @@ namespace DSB.GC
         /// <summary>
         /// Mark the player as eliminated. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// </summary>
-        public void SetEliminated()
+        public void SetEliminated(string reason)
         {
-            GCLog.LogInfo($"Player {id} eliminated.");
+            GCLog.LogInfo($"Player {id} eliminated - reason: " + reason);
 
             isEliminated = true;
             lastSetEliminatedTime = Time.time;
-            OnEliminated?.Invoke();
+            OnEliminated?.Invoke(reason);
         }
 
         /// <summary>
         /// Clear the player's eliminated status.
         /// </summary>
-        public void SetUneliminated()
+        public void SetUneliminated(string reason)
         {
+            GCLog.LogInfo($"Player {id} uneliminated - reason: " + reason);
+
             isEliminated = false;
             lastSetUneliminatedTime = Time.time;
-            OnUneliminated?.Invoke();
+            OnUneliminated?.Invoke(reason);
         }
 
         /// <summary>
         /// Set the player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
-        public void SetScore(int newScore)
+        public void SetScore(int newScore, string reason)
         {
-            GCLog.LogInfo($"Player {id} score set to {newScore}.");
+            GCLog.LogInfo($"Player {id} score set to {newScore} - reason: " + reason);
 
             if (this.score == newScore) return;
 
             var oldScore = this.score;
             score = newScore;
 
-            OnScoreChanged?.Invoke(oldScore, newScore);
+            OnScoreChanged?.Invoke(oldScore, newScore, reason);
         }
 
         /// <summary>
         /// Add to player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
-        public void AddScore(int score)
+        public void AddScore(int score, string reason)
         {
-            SetScore(this.score + score);
+            SetScore(this.score + score, reason);
         }
 
         /// <summary>
         /// Subtract from player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
-        public void SubtractScore(int score)
+        public void SubtractScore(int score, string reason)
         {
-            SetScore(this.score - score);
+            SetScore(this.score - score, reason);
         }
 
         /// <summary>
         /// Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
         /// </summary>
-        public void SetFinished()
+        public void SetFinished(string reason)
         {
-            GCLog.LogInfo($"Player {id} finished.");
+            GCLog.LogInfo($"Player {id} finished - reason: " + reason);
 
             finishedTime = Time.time;
 
-            OnFinished?.Invoke();
+            OnFinished?.Invoke(reason);
         }
 
         /// <summary>
         /// Set the player's lives.
         /// </summary>
-        public void SetLives(int newLives)
+        public void SetLives(int newLives, string reason)
         {
-            GCLog.LogInfo($"Player {id} lives set to {newLives}.");
+            GCLog.LogInfo($"Player {id} lives set to {newLives} - reason: " + reason);
 
             if (newLives < 0)
             {
@@ -185,24 +187,24 @@ namespace DSB.GC
             var oldLives = this.lives;
             lives = newLives;
 
-            OnLivesChanged?.Invoke(oldLives, newLives);
+            OnLivesChanged?.Invoke(oldLives, newLives, reason);
         }
 
         /// <summary>
         /// Add to player's lives.
         /// </summary>
         /// <param name="lives"></param>
-        public void AddLives(int lives)
+        public void AddLives(int lives, string reason)
         {
-            SetLives(this.lives + lives);
+            SetLives(this.lives + lives, reason);
         }
 
         /// <summary>
         /// Subtract from player's lives.
         /// </summary>
-        public void SubtractLives(int lives)
+        public void SubtractLives(int lives, string reason)
         {
-            SetLives(this.lives - lives);
+            SetLives(this.lives - lives, reason);
         }
 
         /// <summary>
@@ -219,16 +221,16 @@ namespace DSB.GC
         /// If left without spot:
         /// SetStatus(PlayerStatus.Failure, "Sadge :(");
         /// </summary>
-        public void SetStatus(PlayerStatus status, string statusText)
+        public void SetStatus(PlayerStatus status, string statusText, string reason)
         {
             if (this.status == status && this.statusText == statusText) return;
 
-            GCLog.LogInfo($"Player {id} status set to {status} with text {statusText}.");
+            GCLog.LogInfo($"Player {id} status set to {status} with text {statusText} - reason: " + reason);
 
             this.status = status;
             this.statusText = statusText;
 
-            OnStatusChanged?.Invoke(status, statusText);
+            OnStatusChanged?.Invoke(status, statusText, reason);
         }
 
         /// <summary>
