@@ -336,11 +336,11 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor) where T : GCPlayer
+        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor, Vector3 position, Quaternion rotation) where T : GCPlayer
         {
             GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
 
-            var gameObject = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+            var gameObject = Instantiate(playerPrefab, position, rotation);
             var targetType = gameObject.GetComponent<T>();
             if (targetType == null)
             {
@@ -380,7 +380,7 @@ namespace DSB.GC
         /// <typeparam name="T">Your game specific player class that extends GCPlayer.</typeparam>
         /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions) where T : GCPlayer
+        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions, Vector3 position, Quaternion rotation) where T : GCPlayer
         {
             GCLog.LogInfo("InstantiatePlayers");
 
@@ -396,7 +396,7 @@ namespace DSB.GC
 
             for (var i = 0; i < playerOptions.Length; i++)
             {
-                var player = InstantiatePlayer<T>(playerOptions[i].playerId, playerOptions[i].name, playerOptions[i].color);
+                var player = InstantiatePlayer<T>(playerOptions[i].playerId, playerOptions[i].name, playerOptions[i].color, position, rotation);
                 playerStore.AddPlayer(player);
             }
 
