@@ -1182,15 +1182,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.InstantiatePlayers
   nameWithType: GamingCouch.InstantiatePlayers
-- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[])
-  name: InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[])
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__DSB_GC_GCPlayerOptions___
-  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[])
-  name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions())
-  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, DSB.GC.GCPlayerOptions[])
-  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.GCPlayerOptions())
-  nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[])
-  nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions())
+- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[],Vector3,Quaternion)
+  name: InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[], Vector3, Quaternion)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__DSB_GC_GCPlayerOptions___Vector3_Quaternion_
+  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[],Vector3,Quaternion)
+  name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions(), Vector3, Quaternion)
+  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, DSB.GC.GCPlayerOptions[], Vector3, Quaternion)
+  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.GCPlayerOptions(), Vector3, Quaternion)
+  nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[], Vector3, Quaternion)
+  nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions(), Vector3, Quaternion)
 - uid: DSB.GC.GamingCouch.LogLevel
   name: LogLevel
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_LogLevel

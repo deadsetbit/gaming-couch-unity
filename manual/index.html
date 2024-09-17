@@ -136,7 +136,7 @@ private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt
 {
     // we now have all the successfully loaded players so we can instantiate them.
     // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
-    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players);
+    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.up * 100, Quaternion.identity);
 
     // Setup the game and HUD based on the game/game mode
     GamingCouch.Instance.SetupGameVersus(
