@@ -74,8 +74,8 @@ namespace DSB.GC.Hud
 
         private void OnDrawGizmos()
         {
-            // if (!drawDebugGizmo) return;
-            // if (playerId == -1) return;
+            if (!drawDebugGizmo) return;
+            if (playerId == -1) return;
 
             Camera camera = Camera.main;
             if (camera == null) return;
