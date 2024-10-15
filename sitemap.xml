@@ -2,253 +2,253 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCControllerInputs.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayerColor.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayerOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayerSetupOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayerStore-1.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCSetupOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCStatus.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCGame.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCGameHudOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCGameSetupOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCGameVersus.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCGameVersusSetupOptions.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.GCPlacementSortCriteria.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Game.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GamingCouch.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHud.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudConfig.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCNameTag.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudData.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCPlayersHudDataPlayer.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCScreenPointData.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCScreenPointDataPoint.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.PlayersHudValueType.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Log.GCLog.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Log.LogLevel.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Log.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.PlayerStatus.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/Global.GCPlayerStoreInput-1.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/Global.GCPlayerStoreOutput-1.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/Global.GamingCouchEditor.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/Global.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/api/index.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/changelog/CHANGELOG.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/index.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/license/LICENSE.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/manual/README.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://deadsetbit.github.io/gaming-couch-unity/manual/index.html</loc>
-    <lastmod>2024-09-18T07:08:38+00:00</lastmod>
+    <lastmod>2024-10-15T09:35:23+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>

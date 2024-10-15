@@ -156,6 +156,45 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Color
   nameWithType: GCPlayer.Color
+- uid: DSB.GC.GCPlayer.ColorEnum
+  name: ColorEnum
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorEnum
+  commentId: P:DSB.GC.GCPlayer.ColorEnum
+  fullName: DSB.GC.GCPlayer.ColorEnum
+  nameWithType: GCPlayer.ColorEnum
+- uid: DSB.GC.GCPlayer.ColorEnum*
+  name: ColorEnum
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorEnum_
+  commentId: Overload:DSB.GC.GCPlayer.ColorEnum
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorEnum
+  nameWithType: GCPlayer.ColorEnum
+- uid: DSB.GC.GCPlayer.ColorHex
+  name: ColorHex
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorHex
+  commentId: P:DSB.GC.GCPlayer.ColorHex
+  fullName: DSB.GC.GCPlayer.ColorHex
+  nameWithType: GCPlayer.ColorHex
+- uid: DSB.GC.GCPlayer.ColorHex*
+  name: ColorHex
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorHex_
+  commentId: Overload:DSB.GC.GCPlayer.ColorHex
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorHex
+  nameWithType: GCPlayer.ColorHex
+- uid: DSB.GC.GCPlayer.ColorName
+  name: ColorName
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorName
+  commentId: P:DSB.GC.GCPlayer.ColorName
+  fullName: DSB.GC.GCPlayer.ColorName
+  nameWithType: GCPlayer.ColorName
+- uid: DSB.GC.GCPlayer.ColorName*
+  name: ColorName
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorName_
+  commentId: Overload:DSB.GC.GCPlayer.ColorName
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorName
+  nameWithType: GCPlayer.ColorName
 - uid: DSB.GC.GCPlayer.FinishedTime
   name: FinishedTime
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_FinishedTime
@@ -592,6 +631,24 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.color
   fullName: DSB.GC.GCPlayerSetupOptions.color
   nameWithType: GCPlayerSetupOptions.color
+- uid: DSB.GC.GCPlayerSetupOptions.colorEnum
+  name: colorEnum
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorEnum
+  commentId: F:DSB.GC.GCPlayerSetupOptions.colorEnum
+  fullName: DSB.GC.GCPlayerSetupOptions.colorEnum
+  nameWithType: GCPlayerSetupOptions.colorEnum
+- uid: DSB.GC.GCPlayerSetupOptions.colorHex
+  name: colorHex
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorHex
+  commentId: F:DSB.GC.GCPlayerSetupOptions.colorHex
+  fullName: DSB.GC.GCPlayerSetupOptions.colorHex
+  nameWithType: GCPlayerSetupOptions.colorHex
+- uid: DSB.GC.GCPlayerSetupOptions.colorName
+  name: colorName
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorName
+  commentId: F:DSB.GC.GCPlayerSetupOptions.colorName
+  fullName: DSB.GC.GCPlayerSetupOptions.colorName
+  nameWithType: GCPlayerSetupOptions.colorName
 - uid: DSB.GC.GCPlayerSetupOptions.name
   name: name
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_name
