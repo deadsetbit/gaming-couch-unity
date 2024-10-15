@@ -34,10 +34,25 @@ namespace DSB.GC
         public string PlayerName => playerName;
         private Color color;
         /// <summary>
-        /// GamingCouch player color.
+        /// GamingCouch player color in unity Color format.
         /// </summary>
         public Color Color => color;
         private PlayerStatus status = PlayerStatus.Neutral;
+        /// <summary>
+        /// GamingCouch player color name in enum format.
+        /// </summary>
+        private GCPlayerColor colorEnum;
+        public GCPlayerColor ColorEnum => colorEnum;
+        /// <summary>
+        /// GamingCouch player color name in string format.
+        /// </summary>
+        private string colorName;
+        public string ColorName => colorName;
+        /// <summary>
+        /// GamingCouch player color in hex format.
+        /// </summary>
+        private string colorHex;
+        public string ColorHex => colorHex;
         /// <summary>
         /// Player status.
         /// This can be utilized in different ways to indicate the player's status in the game.
@@ -97,6 +112,9 @@ namespace DSB.GC
             id = options.playerId;
             playerName = options.name;
             color = options.color;
+            colorEnum = options.colorEnum;
+            colorName = options.colorName;
+            colorHex = options.colorHex;
         }
 
         /// <summary>

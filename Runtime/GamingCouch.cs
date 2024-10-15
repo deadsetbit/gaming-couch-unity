@@ -336,9 +336,9 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string htmlColor, Vector3 position, Quaternion rotation) where T : GCPlayer
+        private T InstantiatePlayer<T>(int playerId, string name, string colorName, Vector3 position, Quaternion rotation) where T : GCPlayer
         {
-            GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {htmlColor}");
+            GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {colorName}");
 
             var gameObject = Instantiate(playerPrefab, position, rotation);
             var targetType = gameObject.GetComponent<T>();
@@ -355,20 +355,19 @@ namespace DSB.GC
 
             gameObject.name = "Player - " + name;
 
-
             // ColorUtility.TryParseHtmlString does not support color name "pink"
-            if (htmlColor == "pink")
-            {
-                htmlColor = "#FFC0CB";
-            }
-
-            ColorUtility.TryParseHtmlString(htmlColor, out Color unityColor);
+            // TODO: Pass color name and hex value from the platform so this will not be an issue.
+            var colorHex = colorName == "pink" ? "#FFC0CB" : colorName;
+            ColorUtility.TryParseHtmlString(colorHex, out Color unityColor);
 
             player.GamingCouchSetup(new GCPlayerSetupOptions
             {
                 playerId = playerId,
                 name = name,
-                color = unityColor
+                color = unityColor,
+                colorHex = colorHex,
+                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), colorName),
+                colorName = colorName,
             });
 
             return targetType;

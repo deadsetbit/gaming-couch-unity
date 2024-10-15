@@ -7,5 +7,8 @@ namespace DSB.GC
         public int playerId;
         public string name;
         public Color color;
+        public GCPlayerColor colorEnum;
+        public string colorName;
+        public string colorHex;
     }
 }
