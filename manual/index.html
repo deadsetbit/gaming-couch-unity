@@ -250,17 +250,17 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 <p>You do not need to sort the players, just define correct placement criteria in the SetupGame call (see above)
 and use the GCPlayer methods to set the player state (eliminated, score, finished):</p>
 <pre><code class="lang-C#">// Set player eliminated
-player.SetEliminated();
+player.SetEliminated(&quot;Out of bounds&quot;);
 
 // Set player score
-player.SetScore(10);
+player.SetScore(0, &quot;Dropped all coins&quot;);
 // ...or add score
-player.AddScore(1);
+player.AddScore(1, &quot;Collected a coin&quot;);
 // ...or subtract score
-player.SubtractScore(2);
+player.SubtractScore(2, &quot;Pushed off the edge&quot;);
 
 // Set player finished
-player.SetFinished();
+player.SetFinished(&quot;Finish line&quot;);
 </code></pre>
 <h1 id="build-your-project-for-gaming-couch">Build your project for Gaming Couch</h1>
 <p>When you are ready to build your project for Gaming Couch, you need to build it as WebGL. You can change this by selecting the WebGL tab from
