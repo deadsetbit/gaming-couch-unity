@@ -211,17 +211,17 @@ and use the GCPlayer methods to set the player state (eliminated, score, finishe
 
 ```C#
 // Set player eliminated
-player.SetEliminated();
+player.SetEliminated("Out of bounds");
 
 // Set player score
-player.SetScore(10);
+player.SetScore(0, "Dropped all coins");
 // ...or add score
-player.AddScore(1);
+player.AddScore(1, "Collected a coin");
 // ...or subtract score
-player.SubtractScore(2);
+player.SubtractScore(2, "Pushed off the edge");
 
 // Set player finished
-player.SetFinished();
+player.SetFinished("Finish line");
 ```
 
 # Build your project for Gaming Couch
