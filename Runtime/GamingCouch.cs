@@ -360,7 +360,7 @@ namespace DSB.GC
             var colorHex = colorName == "pink" ? "#FFC0CB" : colorName;
             ColorUtility.TryParseHtmlString(colorHex, out Color unityColor);
 
-            player.GamingCouchSetup(new GCPlayerSetupOptions
+            var playerSetupOptions = new GCPlayerSetupOptions
             {
                 playerId = playerId,
                 name = name,
@@ -368,7 +368,9 @@ namespace DSB.GC
                 colorHex = colorHex,
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), colorName),
                 colorName = colorName,
-            });
+            };
+
+            player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
 
             return targetType;
         }
@@ -525,22 +527,22 @@ namespace DSB.GC
         private bool useKeyboardControls = true;
         [SerializeField]
         [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Horizontal'")]
-        private string lx = "Horizontal";
+        private string a0 = "Horizontal";
         [SerializeField]
         [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Vertical'")]
-        private string ly = "Vertical";
+        private string a1 = "Vertical";
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Jump'")]
-        private string b1 = "Jump";
+        private string b0 = "Jump";
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Fire1'")]
-        private string b2 = "Fire1";
+        private string b1 = "Fire1";
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Fire2'")]
-        private string b3 = "Fire2";
+        private string b2 = "Fire2";
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Fire3'")]
-        private string b4 = "Fire3";
+        private string b3 = "Fire3";
 
         private int controlPlayerIndex = 0;
 
@@ -564,15 +566,15 @@ namespace DSB.GC
 
             if (player == null) return;
 
-            var inputs = new GCControllerInputs
+            var inputs = new GCControllerInputs(new GCControllerInputsData
             {
-                lx = Input.GetAxis(lx),
-                ly = Input.GetAxis(ly),
+                a0 = Input.GetAxis(a0),
+                a1 = Input.GetAxis(a1),
+                b0 = Input.GetButton(b0) ? 1 : 0,
                 b1 = Input.GetButton(b1) ? 1 : 0,
                 b2 = Input.GetButton(b2) ? 1 : 0,
-                b3 = Input.GetButton(b3) ? 1 : 0,
-                b4 = Input.GetButton(b4) ? 1 : 0
-            };
+                b3 = Input.GetButton(b3) ? 1 : 0
+            });
 
             inputsByPlayerId[player.Id] = inputs;
         }

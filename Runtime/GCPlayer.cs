@@ -103,11 +103,11 @@ namespace DSB.GC
         public bool IsFinished => finishedTime != -1;
 
         /// <summary>
-        /// Do not call this in your game script. This is called by the GamingCouch script.
+        /// This is called by the GamingCouch script.
         /// You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().
         /// </summary>
         /// <param name="options">Options provided by the platform</param>
-        public void GamingCouchSetup(GCPlayerSetupOptions options)
+        private void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
             id = options.playerId;
             playerName = options.name;
