@@ -10,6 +10,7 @@ Follow the integration steps below to get started.
 
 # Configure the Editor
 
+- From *Build Settings*, switch the platform to "WebGL"
 - fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
 
 # Basic integration
