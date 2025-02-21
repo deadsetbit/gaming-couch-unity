@@ -22,16 +22,16 @@ Add GamingCouch game object to your main scene by right clicking the scene hiera
 ## 2) Create and link game script
 
 - (for new game project) create "Game" game object to the main scene and create and add "Game.cs" main game script to it
-- link your main game script to the "Listener" field in GamingCouch game object (via inspector)
+- link your main game object to the "Listener" field in the GamingCouch game object (via inspector)
   - now the game script will be able hook up to GamingCouch specific messages (we will get back to this)
 
-## 2) Create and link player prefab
+## 3) Create and link player prefab
 
 - (for new game project) create "Player" prefab and create and add "Player.cs" script to it
-- make your player script extends DSB.GC.GCPlayer (instead of MonoBehaviour)
+- make your player script extend DSB.GC.GCPlayer (instead of MonoBehaviour)
 - link the player prefab to the "Player Prefab" field in GamingCouch game object (via inspector)
 
-## 3) Hook up your main game script
+## 4) Hook up your main game script
 
 ### Define player store in your main game script
 
@@ -199,8 +199,8 @@ private void Update()
         var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
         if (inputs == null) continue;
 
-        player.PlayerController.Move(inputs.lx);
-        player.PlayerController.Jump(inputs.b1 == 1);
+        player.PlayerController.Move(inputs.leftX);
+        player.PlayerController.Jump(inputs.primary);
     }
 }
 ```
