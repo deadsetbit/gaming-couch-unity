@@ -102,19 +102,19 @@
 <h2 id="2-create-and-link-game-script">2) Create and link game script</h2>
 <ul>
 <li>(for new game project) create &quot;Game&quot; game object to the main scene and create and add &quot;Game.cs&quot; main game script to it</li>
-<li>link your main game script to the &quot;Listener&quot; field in GamingCouch game object (via inspector)
+<li>link your main game object to the &quot;Listener&quot; field in the GamingCouch game object (via inspector)
 <ul>
 <li>now the game script will be able hook up to GamingCouch specific messages (we will get back to this)</li>
 </ul>
 </li>
 </ul>
-<h2 id="2-create-and-link-player-prefab">2) Create and link player prefab</h2>
+<h2 id="3-create-and-link-player-prefab">3) Create and link player prefab</h2>
 <ul>
 <li>(for new game project) create &quot;Player&quot; prefab and create and add &quot;Player.cs&quot; script to it</li>
-<li>make your player script extends DSB.GC.GCPlayer (instead of MonoBehaviour)</li>
+<li>make your player script extend DSB.GC.GCPlayer (instead of MonoBehaviour)</li>
 <li>link the player prefab to the &quot;Player Prefab&quot; field in GamingCouch game object (via inspector)</li>
 </ul>
-<h2 id="3-hook-up-your-main-game-script">3) Hook up your main game script</h2>
+<h2 id="4-hook-up-your-main-game-script">4) Hook up your main game script</h2>
 <h3 id="define-player-store-in-your-main-game-script">Define player store in your main game script</h3>
 <pre><code class="lang-C#">// Use GamingCouch:
 using DSB.GC;
@@ -242,8 +242,8 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
         var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
         if (inputs == null) continue;
 
-        player.PlayerController.Move(inputs.lx);
-        player.PlayerController.Jump(inputs.b1 == 1);
+        player.PlayerController.Move(inputs.leftX);
+        player.PlayerController.Jump(inputs.primary);
     }
 }
 </code></pre>
