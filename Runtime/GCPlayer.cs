@@ -32,11 +32,22 @@ namespace DSB.GC
         /// GamingCouch player name.
         /// </summary>
         public string PlayerName => playerName;
-        private Color color;
         /// <summary>
-        /// GamingCouch player color in unity Color format.
+        /// GamingCouch player color "base" variant.
         /// </summary>
-        public Color Color => color;
+        public Color ColorBase => GCPlayerColorData.Variants[colorEnum].BaseColor;
+        /// <summary>
+        /// GamingCouch player color "dark" variant.
+        /// </summary>
+        public Color ColorDark => GCPlayerColorData.Variants[colorEnum].Dark;
+        /// <summary>
+        /// GamingCouch player color "light" variant.
+        /// </summary>
+        public Color ColorLight => GCPlayerColorData.Variants[colorEnum].Light;
+        /// <summary>
+        /// GamingCouch player color "off-white" variant.
+        /// </summary>
+        public Color ColorOffWhite => GCPlayerColorData.Variants[colorEnum].OffWhite;
         private PlayerStatus status = PlayerStatus.Neutral;
         /// <summary>
         /// GamingCouch player color name in enum format.
@@ -111,10 +122,8 @@ namespace DSB.GC
         {
             id = options.playerId;
             playerName = options.name;
-            color = options.color;
             colorEnum = options.colorEnum;
             colorName = options.colorName;
-            colorHex = options.colorHex;
         }
 
         /// <summary>
@@ -232,10 +241,10 @@ namespace DSB.GC
         /// Example:
         /// In parking game, while player is finding a spot:
         /// SetStatus(PlayerStatus.Pending, "Finding a spot");
-        /// 
+        ///
         /// When spot is found:
         /// SetStatus(PlayerStatus.Success, "Parked!");
-        /// 
+        ///
         /// If left without spot:
         /// SetStatus(PlayerStatus.Failure, "Sadge :(");
         /// </summary>

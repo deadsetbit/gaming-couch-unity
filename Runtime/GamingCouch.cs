@@ -355,17 +355,10 @@ namespace DSB.GC
 
             gameObject.name = "Player - " + name;
 
-            // ColorUtility.TryParseHtmlString does not support color name "pink"
-            // TODO: Pass color name and hex value from the platform so this will not be an issue.
-            var colorHex = colorName == "pink" ? "#FFC0CB" : colorName;
-            ColorUtility.TryParseHtmlString(colorHex, out Color unityColor);
-
             var playerSetupOptions = new GCPlayerSetupOptions
             {
                 playerId = playerId,
                 name = name,
-                color = unityColor,
-                colorHex = colorHex,
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), colorName),
                 colorName = colorName,
             };

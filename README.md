@@ -10,7 +10,7 @@ Follow the integration steps below to get started.
 
 # Configure the Editor
 
-- From *Build Settings*, switch the platform to "WebGL"
+- From _Build Settings_, switch the platform to "WebGL"
 - fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
 
 # Basic integration
@@ -180,7 +180,7 @@ public class Player : GCPlayer
 
     private void Start()
     {
-        GetComponent<SpriteRenderer>().color = Color;
+        GetComponent<SpriteRenderer>().color = ColorBase;
     }
 
     ...
@@ -223,6 +223,17 @@ player.SubtractScore(2, "Pushed off the edge");
 
 // Set player finished
 player.SetFinished("Finish line");
+```
+
+# Player colors
+
+Access different player color variants directly via the GCPlayer instance:
+
+```C#
+GCPlayer.ColorBase
+GCPlayer.ColorDark
+GCPlayer.ColorLight
+GCPlayer.ColorOffWhite
 ```
 
 # Build your project for Gaming Couch
