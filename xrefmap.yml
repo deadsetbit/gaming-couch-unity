@@ -299,19 +299,32 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.AddScore
   nameWithType: GCPlayer.AddScore
-- uid: DSB.GC.GCPlayer.Color
-  name: Color
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Color
-  commentId: P:DSB.GC.GCPlayer.Color
-  fullName: DSB.GC.GCPlayer.Color
-  nameWithType: GCPlayer.Color
-- uid: DSB.GC.GCPlayer.Color*
-  name: Color
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Color_
-  commentId: Overload:DSB.GC.GCPlayer.Color
+- uid: DSB.GC.GCPlayer.ColorBase
+  name: ColorBase
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorBase
+  commentId: P:DSB.GC.GCPlayer.ColorBase
+  fullName: DSB.GC.GCPlayer.ColorBase
+  nameWithType: GCPlayer.ColorBase
+- uid: DSB.GC.GCPlayer.ColorBase*
+  name: ColorBase
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorBase_
+  commentId: Overload:DSB.GC.GCPlayer.ColorBase
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.Color
-  nameWithType: GCPlayer.Color
+  fullName: DSB.GC.GCPlayer.ColorBase
+  nameWithType: GCPlayer.ColorBase
+- uid: DSB.GC.GCPlayer.ColorDark
+  name: ColorDark
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorDark
+  commentId: P:DSB.GC.GCPlayer.ColorDark
+  fullName: DSB.GC.GCPlayer.ColorDark
+  nameWithType: GCPlayer.ColorDark
+- uid: DSB.GC.GCPlayer.ColorDark*
+  name: ColorDark
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorDark_
+  commentId: Overload:DSB.GC.GCPlayer.ColorDark
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorDark
+  nameWithType: GCPlayer.ColorDark
 - uid: DSB.GC.GCPlayer.ColorEnum
   name: ColorEnum
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorEnum
@@ -338,6 +351,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.ColorHex
   nameWithType: GCPlayer.ColorHex
+- uid: DSB.GC.GCPlayer.ColorLight
+  name: ColorLight
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorLight
+  commentId: P:DSB.GC.GCPlayer.ColorLight
+  fullName: DSB.GC.GCPlayer.ColorLight
+  nameWithType: GCPlayer.ColorLight
+- uid: DSB.GC.GCPlayer.ColorLight*
+  name: ColorLight
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorLight_
+  commentId: Overload:DSB.GC.GCPlayer.ColorLight
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorLight
+  nameWithType: GCPlayer.ColorLight
 - uid: DSB.GC.GCPlayer.ColorName
   name: ColorName
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorName
@@ -351,6 +377,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.ColorName
   nameWithType: GCPlayer.ColorName
+- uid: DSB.GC.GCPlayer.ColorOffWhite
+  name: ColorOffWhite
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorOffWhite
+  commentId: P:DSB.GC.GCPlayer.ColorOffWhite
+  fullName: DSB.GC.GCPlayer.ColorOffWhite
+  nameWithType: GCPlayer.ColorOffWhite
+- uid: DSB.GC.GCPlayer.ColorOffWhite*
+  name: ColorOffWhite
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_ColorOffWhite_
+  commentId: Overload:DSB.GC.GCPlayer.ColorOffWhite
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.ColorOffWhite
+  nameWithType: GCPlayer.ColorOffWhite
 - uid: DSB.GC.GCPlayer.FinishedTime
   name: FinishedTime
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_FinishedTime
@@ -768,24 +807,12 @@ references:
   commentId: T:DSB.GC.GCPlayerSetupOptions
   fullName: DSB.GC.GCPlayerSetupOptions
   nameWithType: GCPlayerSetupOptions
-- uid: DSB.GC.GCPlayerSetupOptions.color
-  name: color
-  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_color
-  commentId: F:DSB.GC.GCPlayerSetupOptions.color
-  fullName: DSB.GC.GCPlayerSetupOptions.color
-  nameWithType: GCPlayerSetupOptions.color
 - uid: DSB.GC.GCPlayerSetupOptions.colorEnum
   name: colorEnum
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorEnum
   commentId: F:DSB.GC.GCPlayerSetupOptions.colorEnum
   fullName: DSB.GC.GCPlayerSetupOptions.colorEnum
   nameWithType: GCPlayerSetupOptions.colorEnum
-- uid: DSB.GC.GCPlayerSetupOptions.colorHex
-  name: colorHex
-  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorHex
-  commentId: F:DSB.GC.GCPlayerSetupOptions.colorHex
-  fullName: DSB.GC.GCPlayerSetupOptions.colorHex
-  nameWithType: GCPlayerSetupOptions.colorHex
 - uid: DSB.GC.GCPlayerSetupOptions.colorName
   name: colorName
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_colorName
@@ -1889,6 +1916,67 @@ references:
 - uid: Global
   name: ''
   href: api/Global.html
+- uid: Global.GCPlayerColorData
+  name: GCPlayerColorData
+  href: api/Global.GCPlayerColorData.html
+  commentId: T:Global.GCPlayerColorData
+  fullName: GCPlayerColorData
+  nameWithType: GCPlayerColorData
+- uid: Global.GCPlayerColorData.Variants
+  name: Variants
+  href: api/Global.GCPlayerColorData.html#Global_GCPlayerColorData_Variants
+  commentId: F:Global.GCPlayerColorData.Variants
+  fullName: GCPlayerColorData.Variants
+  nameWithType: GCPlayerColorData.Variants
+- uid: Global.GCPlayerColorVariants
+  name: GCPlayerColorVariants
+  href: api/Global.GCPlayerColorVariants.html
+  commentId: T:Global.GCPlayerColorVariants
+  fullName: GCPlayerColorVariants
+  nameWithType: GCPlayerColorVariants
+- uid: Global.GCPlayerColorVariants.#ctor(Color,Color,Color,Color)
+  name: GCPlayerColorVariants(Color, Color, Color, Color)
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants__ctor_Color_Color_Color_Color_
+  commentId: M:Global.GCPlayerColorVariants.#ctor(Color,Color,Color,Color)
+  name.vb: New(Color, Color, Color, Color)
+  fullName: GCPlayerColorVariants.GCPlayerColorVariants(Color, Color, Color, Color)
+  fullName.vb: GCPlayerColorVariants.New(Color, Color, Color, Color)
+  nameWithType: GCPlayerColorVariants.GCPlayerColorVariants(Color, Color, Color, Color)
+  nameWithType.vb: GCPlayerColorVariants.New(Color, Color, Color, Color)
+- uid: Global.GCPlayerColorVariants.#ctor*
+  name: GCPlayerColorVariants
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants__ctor_
+  commentId: Overload:Global.GCPlayerColorVariants.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: GCPlayerColorVariants.GCPlayerColorVariants
+  fullName.vb: GCPlayerColorVariants.New
+  nameWithType: GCPlayerColorVariants.GCPlayerColorVariants
+  nameWithType.vb: GCPlayerColorVariants.New
+- uid: Global.GCPlayerColorVariants.BaseColor
+  name: BaseColor
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants_BaseColor
+  commentId: F:Global.GCPlayerColorVariants.BaseColor
+  fullName: GCPlayerColorVariants.BaseColor
+  nameWithType: GCPlayerColorVariants.BaseColor
+- uid: Global.GCPlayerColorVariants.Dark
+  name: Dark
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants_Dark
+  commentId: F:Global.GCPlayerColorVariants.Dark
+  fullName: GCPlayerColorVariants.Dark
+  nameWithType: GCPlayerColorVariants.Dark
+- uid: Global.GCPlayerColorVariants.Light
+  name: Light
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants_Light
+  commentId: F:Global.GCPlayerColorVariants.Light
+  fullName: GCPlayerColorVariants.Light
+  nameWithType: GCPlayerColorVariants.Light
+- uid: Global.GCPlayerColorVariants.OffWhite
+  name: OffWhite
+  href: api/Global.GCPlayerColorVariants.html#Global_GCPlayerColorVariants_OffWhite
+  commentId: F:Global.GCPlayerColorVariants.OffWhite
+  fullName: GCPlayerColorVariants.OffWhite
+  nameWithType: GCPlayerColorVariants.OffWhite
 - uid: Global.GCPlayerStoreInput`1
   name: GCPlayerStoreInput<T>
   href: api/Global.GCPlayerStoreInput-1.html

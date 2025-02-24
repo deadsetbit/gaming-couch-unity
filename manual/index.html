@@ -227,7 +227,7 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 
     private void Start()
     {
-        GetComponent&lt;SpriteRenderer&gt;().color = Color;
+        GetComponent&lt;SpriteRenderer&gt;().color = ColorBase;
     }
 
     ...
@@ -262,6 +262,13 @@ player.SubtractScore(2, &quot;Pushed off the edge&quot;);
 
 // Set player finished
 player.SetFinished(&quot;Finish line&quot;);
+</code></pre>
+<h1 id="player-colors">Player colors</h1>
+<p>Access different player color variants directly via the GCPlayer instance:</p>
+<pre><code class="lang-C#">GCPlayer.ColorBase
+GCPlayer.ColorDark
+GCPlayer.ColorLight
+GCPlayer.ColorOffWhite
 </code></pre>
 <h1 id="build-your-project-for-gaming-couch">Build your project for Gaming Couch</h1>
 <p>When you are ready to build your project for Gaming Couch, you need to build it as WebGL. You can change this by selecting the WebGL tab from
