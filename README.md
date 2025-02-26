@@ -36,8 +36,9 @@ Add GamingCouch game object to your main scene by right clicking the scene hiera
 ### Define player store in your main game script
 
 ```C#
-// Use GamingCouch:
 using DSB.GC;
+using DSB.GC.Game;
+using DSB.GC.Hud;
 
 // Add new field for playerStore. Replace the "Player" with your player script name, if it differs:
 private GCPlayerStore<Player> playerStore = new GCPlayerStore<Player>();
