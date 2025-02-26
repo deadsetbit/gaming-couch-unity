@@ -116,8 +116,9 @@
 </ul>
 <h2 id="4-hook-up-your-main-game-script">4) Hook up your main game script</h2>
 <h3 id="define-player-store-in-your-main-game-script">Define player store in your main game script</h3>
-<pre><code class="lang-C#">// Use GamingCouch:
-using DSB.GC;
+<pre><code class="lang-C#">using DSB.GC;
+using DSB.GC.Game;
+using DSB.GC.Hud;
 
 // Add new field for playerStore. Replace the &quot;Player&quot; with your player script name, if it differs:
 private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt;();
