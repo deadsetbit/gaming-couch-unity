@@ -8,6 +8,7 @@ namespace DSB.GC
         public int playerId;
         public string name;
         public string color;
+        public bool isBot;
     }
 
     [System.Serializable]

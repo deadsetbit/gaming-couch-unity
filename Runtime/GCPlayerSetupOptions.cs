@@ -8,5 +8,6 @@ namespace DSB.GC
         public string name;
         public GCPlayerColor colorEnum;
         public string colorName;
+        public bool isBot;
     }
 }

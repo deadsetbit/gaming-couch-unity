@@ -336,9 +336,9 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(int playerId, string name, string colorName, Vector3 position, Quaternion rotation) where T : GCPlayer
+        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation) where T : GCPlayer
         {
-            GCLog.LogDebug($"InstantiatePlayer: {playerId}, {name}, {colorName}");
+            GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {name}, {options.color}");
 
             var gameObject = Instantiate(playerPrefab, position, rotation);
             var targetType = gameObject.GetComponent<T>();
@@ -357,10 +357,11 @@ namespace DSB.GC
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
-                playerId = playerId,
+                playerId = options.playerId,
                 name = name,
-                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), colorName),
-                colorName = colorName,
+                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
+                colorName = options.color,
+                isBot = options.isBot
             };
 
             player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
@@ -390,7 +391,7 @@ namespace DSB.GC
 
             for (var i = 0; i < playerOptions.Length; i++)
             {
-                var player = InstantiatePlayer<T>(playerOptions[i].playerId, playerOptions[i].name, playerOptions[i].color, position, rotation);
+                var player = InstantiatePlayer<T>(playerOptions[i], position, rotation);
                 playerStore.AddPlayer(player);
             }
 
@@ -471,8 +472,10 @@ namespace DSB.GC
         {
             public string name;
             public GCPlayerColor color;
+            public bool isBot;
         }
 
+        [SerializeField]
         [Header("Editor player settings")]
         private PlayerEditorData[] playerData = new PlayerEditorData[0];
 
@@ -499,13 +502,24 @@ namespace DSB.GC
                 players = new GCPlayerOptions[numberOfPlayers]
             };
 
+            var usedColors = new List<GCPlayerColor>();
+
             for (int i = 0; i < numberOfPlayers; i++)
             {
+                if (usedColors.Contains(playerData[i].color))
+                {
+                    throw new Exception("Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
+                }
+
+                usedColors.Add(playerData[i].color);
+
+
                 options.players[i] = new GCPlayerOptions
                 {
                     playerId = randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
                     name = playerData[i].name,
                     color = playerData[i].color.ToString(),
+                    isBot = playerData[i].isBot
                 };
             }
 

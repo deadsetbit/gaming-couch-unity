@@ -22,6 +22,8 @@ namespace DSB.GC
         public Action<int, int, string> OnScoreChanged;
         public Action<int, int, string> OnLivesChanged;
         public Action<PlayerStatus, string, string> OnStatusChanged;
+        public bool isBot = false;
+        public bool IsBot => isBot;
         private int id = -1;
         /// <summary>
         /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
@@ -124,6 +126,7 @@ namespace DSB.GC
             playerName = options.name;
             colorEnum = options.colorEnum;
             colorName = options.colorName;
+            isBot = options.isBot;
         }
 
         /// <summary>
