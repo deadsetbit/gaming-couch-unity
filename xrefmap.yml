@@ -442,6 +442,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Id
   nameWithType: GCPlayer.Id
+- uid: DSB.GC.GCPlayer.IsBot
+  name: IsBot
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsBot
+  commentId: P:DSB.GC.GCPlayer.IsBot
+  fullName: DSB.GC.GCPlayer.IsBot
+  nameWithType: GCPlayer.IsBot
+- uid: DSB.GC.GCPlayer.IsBot*
+  name: IsBot
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsBot_
+  commentId: Overload:DSB.GC.GCPlayer.IsBot
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.IsBot
+  nameWithType: GCPlayer.IsBot
 - uid: DSB.GC.GCPlayer.IsEliminated
   name: IsEliminated
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsEliminated
@@ -723,6 +736,12 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SubtractScore
   nameWithType: GCPlayer.SubtractScore
+- uid: DSB.GC.GCPlayer.isBot
+  name: isBot
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_isBot
+  commentId: F:DSB.GC.GCPlayer.isBot
+  fullName: DSB.GC.GCPlayer.isBot
+  nameWithType: GCPlayer.isBot
 - uid: DSB.GC.GCPlayerColor
   name: GCPlayerColor
   href: api/DSB.GC.GCPlayerColor.html
@@ -789,6 +808,12 @@ references:
   commentId: F:DSB.GC.GCPlayerOptions.color
   fullName: DSB.GC.GCPlayerOptions.color
   nameWithType: GCPlayerOptions.color
+- uid: DSB.GC.GCPlayerOptions.isBot
+  name: isBot
+  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_isBot
+  commentId: F:DSB.GC.GCPlayerOptions.isBot
+  fullName: DSB.GC.GCPlayerOptions.isBot
+  nameWithType: GCPlayerOptions.isBot
 - uid: DSB.GC.GCPlayerOptions.name
   name: name
   href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_name
@@ -819,6 +844,12 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.colorName
   fullName: DSB.GC.GCPlayerSetupOptions.colorName
   nameWithType: GCPlayerSetupOptions.colorName
+- uid: DSB.GC.GCPlayerSetupOptions.isBot
+  name: isBot
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_isBot
+  commentId: F:DSB.GC.GCPlayerSetupOptions.isBot
+  fullName: DSB.GC.GCPlayerSetupOptions.isBot
+  nameWithType: GCPlayerSetupOptions.isBot
 - uid: DSB.GC.GCPlayerSetupOptions.name
   name: name
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_name
