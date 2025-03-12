@@ -95,6 +95,16 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerType.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCSetupOptions.yml",
       "output": {
         ".html": {

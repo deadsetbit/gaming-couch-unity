@@ -736,12 +736,12 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SubtractScore
   nameWithType: GCPlayer.SubtractScore
-- uid: DSB.GC.GCPlayer.isBot
-  name: isBot
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_isBot
-  commentId: F:DSB.GC.GCPlayer.isBot
-  fullName: DSB.GC.GCPlayer.isBot
-  nameWithType: GCPlayer.isBot
+- uid: DSB.GC.GCPlayer.playerType
+  name: playerType
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_playerType
+  commentId: F:DSB.GC.GCPlayer.playerType
+  fullName: DSB.GC.GCPlayer.playerType
+  nameWithType: GCPlayer.playerType
 - uid: DSB.GC.GCPlayerColor
   name: GCPlayerColor
   href: api/DSB.GC.GCPlayerColor.html
@@ -808,12 +808,6 @@ references:
   commentId: F:DSB.GC.GCPlayerOptions.color
   fullName: DSB.GC.GCPlayerOptions.color
   nameWithType: GCPlayerOptions.color
-- uid: DSB.GC.GCPlayerOptions.isBot
-  name: isBot
-  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_isBot
-  commentId: F:DSB.GC.GCPlayerOptions.isBot
-  fullName: DSB.GC.GCPlayerOptions.isBot
-  nameWithType: GCPlayerOptions.isBot
 - uid: DSB.GC.GCPlayerOptions.name
   name: name
   href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_name
@@ -826,6 +820,12 @@ references:
   commentId: F:DSB.GC.GCPlayerOptions.playerId
   fullName: DSB.GC.GCPlayerOptions.playerId
   nameWithType: GCPlayerOptions.playerId
+- uid: DSB.GC.GCPlayerOptions.type
+  name: type
+  href: api/DSB.GC.GCPlayerOptions.html#DSB_GC_GCPlayerOptions_type
+  commentId: F:DSB.GC.GCPlayerOptions.type
+  fullName: DSB.GC.GCPlayerOptions.type
+  nameWithType: GCPlayerOptions.type
 - uid: DSB.GC.GCPlayerSetupOptions
   name: GCPlayerSetupOptions
   href: api/DSB.GC.GCPlayerSetupOptions.html
@@ -844,12 +844,6 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.colorName
   fullName: DSB.GC.GCPlayerSetupOptions.colorName
   nameWithType: GCPlayerSetupOptions.colorName
-- uid: DSB.GC.GCPlayerSetupOptions.isBot
-  name: isBot
-  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_isBot
-  commentId: F:DSB.GC.GCPlayerSetupOptions.isBot
-  fullName: DSB.GC.GCPlayerSetupOptions.isBot
-  nameWithType: GCPlayerSetupOptions.isBot
 - uid: DSB.GC.GCPlayerSetupOptions.name
   name: name
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_name
@@ -862,6 +856,12 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.playerId
   fullName: DSB.GC.GCPlayerSetupOptions.playerId
   nameWithType: GCPlayerSetupOptions.playerId
+- uid: DSB.GC.GCPlayerSetupOptions.type
+  name: type
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_type
+  commentId: F:DSB.GC.GCPlayerSetupOptions.type
+  fullName: DSB.GC.GCPlayerSetupOptions.type
+  nameWithType: GCPlayerSetupOptions.type
 - uid: DSB.GC.GCPlayerStore`1
   name: GCPlayerStore<T>
   href: api/DSB.GC.GCPlayerStore-1.html
@@ -1113,6 +1113,30 @@ references:
   fullName.vb: DSB.GC.GCPlayerStore(Of T).UneliminatedPlayersEnumerable
   nameWithType: GCPlayerStore<T>.UneliminatedPlayersEnumerable
   nameWithType.vb: GCPlayerStore(Of T).UneliminatedPlayersEnumerable
+- uid: DSB.GC.GCPlayerType
+  name: GCPlayerType
+  href: api/DSB.GC.GCPlayerType.html
+  commentId: T:DSB.GC.GCPlayerType
+  fullName: DSB.GC.GCPlayerType
+  nameWithType: GCPlayerType
+- uid: DSB.GC.GCPlayerType.bot
+  name: bot
+  href: api/DSB.GC.GCPlayerType.html#DSB_GC_GCPlayerType_bot
+  commentId: F:DSB.GC.GCPlayerType.bot
+  fullName: DSB.GC.GCPlayerType.bot
+  nameWithType: GCPlayerType.bot
+- uid: DSB.GC.GCPlayerType.player
+  name: player
+  href: api/DSB.GC.GCPlayerType.html#DSB_GC_GCPlayerType_player
+  commentId: F:DSB.GC.GCPlayerType.player
+  fullName: DSB.GC.GCPlayerType.player
+  nameWithType: GCPlayerType.player
+- uid: DSB.GC.GCPlayerType.unset
+  name: unset
+  href: api/DSB.GC.GCPlayerType.html#DSB_GC_GCPlayerType_unset
+  commentId: F:DSB.GC.GCPlayerType.unset
+  fullName: DSB.GC.GCPlayerType.unset
+  nameWithType: GCPlayerType.unset
 - uid: DSB.GC.GCSetupOptions
   name: GCSetupOptions
   href: api/DSB.GC.GCSetupOptions.html
