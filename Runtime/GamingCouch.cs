@@ -14,6 +14,8 @@ namespace DSB.GC
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
+    public enum GCPlayerType { unset, player, bot }
+
     [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
     {
@@ -357,11 +359,11 @@ namespace DSB.GC
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
+                type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 playerId = options.playerId,
                 name = name,
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
                 colorName = options.color,
-                isBot = options.isBot
             };
 
             player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
@@ -516,10 +518,10 @@ namespace DSB.GC
 
                 options.players[i] = new GCPlayerOptions
                 {
+                    type = playerData[i].isBot ? GCPlayerType.bot.ToString() : GCPlayerType.player.ToString(),
                     playerId = randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
                     name = playerData[i].name,
                     color = playerData[i].color.ToString(),
-                    isBot = playerData[i].isBot
                 };
             }
 

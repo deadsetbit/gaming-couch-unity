@@ -22,8 +22,8 @@ namespace DSB.GC
         public Action<int, int, string> OnScoreChanged;
         public Action<int, int, string> OnLivesChanged;
         public Action<PlayerStatus, string, string> OnStatusChanged;
-        public bool isBot = false;
-        public bool IsBot => isBot;
+        public GCPlayerType playerType = GCPlayerType.unset;
+        public bool IsBot => playerType == GCPlayerType.bot;
         private int id = -1;
         /// <summary>
         /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
@@ -122,11 +122,11 @@ namespace DSB.GC
         /// <param name="options">Options provided by the platform</param>
         private void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
+            playerType = options.type;
             id = options.playerId;
             playerName = options.name;
             colorEnum = options.colorEnum;
             colorName = options.colorName;
-            isBot = options.isBot;
         }
 
         /// <summary>

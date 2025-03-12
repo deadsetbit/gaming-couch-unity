@@ -5,10 +5,10 @@ namespace DSB.GC
     [System.Serializable]
     public struct GCPlayerOptions
     {
+        public string type;
         public int playerId;
         public string name;
         public string color;
-        public bool isBot;
     }
 
     [System.Serializable]
