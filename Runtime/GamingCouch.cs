@@ -493,6 +493,7 @@ namespace DSB.GC
         {
             return new GCSetupOptions
             {
+                isHost = true,
                 gameModeId = gameModeId,
             };
         }
