@@ -342,6 +342,9 @@ namespace DSB.GC
         {
             GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
 
+            var activeOriginal = playerPrefab.activeSelf;
+            playerPrefab.SetActive(false);
+
             var gameObject = Instantiate(playerPrefab, position, rotation);
             var targetType = gameObject.GetComponent<T>();
             if (targetType == null)
@@ -366,7 +369,11 @@ namespace DSB.GC
                 colorName = options.color,
             };
 
-            player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
+            // player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
+            player._InternalGamingCouchSetup(playerSetupOptions);
+
+            gameObject.SetActive(activeOriginal);
+            playerPrefab.SetActive(activeOriginal);
 
             return targetType;
         }
