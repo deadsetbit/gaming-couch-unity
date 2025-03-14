@@ -120,7 +120,7 @@ namespace DSB.GC
         /// You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().
         /// </summary>
         /// <param name="options">Options provided by the platform</param>
-        private void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
+        public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
             playerType = options.type;
             id = options.playerId;
