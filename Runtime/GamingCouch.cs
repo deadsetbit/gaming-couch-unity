@@ -20,6 +20,9 @@ namespace DSB.GC
     public class GamingCouch : MonoBehaviour
     {
         [DllImport("__Internal")]
+        private static extern void GamingCouchInstanceStarted();
+
+        [DllImport("__Internal")]
         private static extern void GamingCouchSetupDone();
 
         [DllImport("__Internal")]
@@ -92,28 +95,15 @@ namespace DSB.GC
 
             AudioListener.volume = 0.0f;
 
-#if UNITY_EDITOR
-            // When integrated, platform will define the setup options on Unity boot up.
-            setupOptions = GetEditorSetupOptions();
-#endif
-
-            GCStart();
-        }
-
-        private void GCStart()
-        {
-            GCLog.LogDebug("GCStart");
-
             status = GCStatus.PendingSetup;
 
-            if (setupOptions == null)
-            {
-                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
-            }
-
-            Debug.Log("GamingCouch setup options: " + setupOptions.gameModeId);
-
-            listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+#if UNITY_EDITOR
+            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
+            setupOptions = GetEditorSetupOptions();
+            GamingCouchSetup();
+#else
+            GamingCouchInstanceStarted();
+#endif
         }
 
         private void OnValidate()
@@ -141,18 +131,34 @@ namespace DSB.GC
 
         #region Methods called by the GamingCouch platform
         /// <summary>
-        /// Called by the platform when the game is ready for setup.
-        /// In setup, the game should load levels, assets etc. but not yet instantiate any players.
+        /// Called by the platform to provide necessary setup options on start.
         /// </summary>
-        private void GamingCouchSetup(string optionsJson)
+        private void GamingCouchSetupOptions(string optionsJson)
         {
-            GCLog.LogInfo("GamingCouchSetup: " + optionsJson);
+            GCLog.LogInfo("GamingCouchSetupOptions: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
             setupOptions = GCSetupOptions.CreateFromJSON(optionsJson);
         }
 
+        /// <summary>
+        /// Called by the platform when the game is ready for setup and receive network messages.
+        /// This occurs after all the players has loaded the game and called GamingCouchInstanceStarted.
+        /// In setup, the game should prepare game mode eg. load/instantiate required levels and so on.
+        /// Setup is not yet a place to spawn players as that should occur in GamingCouchPlay where
+        /// the available players are locked in for the round as there is a possibility that some one
+        /// leaves or joins during the setup phase.
+        /// </summary>
+        private void GamingCouchSetup()
+        {
+            if (setupOptions == null)
+            {
+                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
+            }
+
+            listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+        }
 
         /// <summary>
         /// Called by the platform when all players are loaded and ready to be instantiated in the game.

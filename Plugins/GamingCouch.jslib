@@ -1,4 +1,12 @@
 mergeInto(LibraryManager.library, {
+  GamingCouchInstanceStarted: function () {
+    if (!window.gamingCouchInstanceStarted) {
+      console.error("gamingCouchInstanceStarted is not defined");
+      return;
+    }
+    window.gamingCouchInstanceStarted();
+  },
+
   GamingCouchSetupDone: function () {
     if (!window.gamingCouchSetupDone) {
       console.error("GamingCouchSetupDone is not defined");
