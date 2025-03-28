@@ -7,6 +7,7 @@ using DSB.GC.Hud;
 using DSB.GC.Game;
 using DSB.GC.Log;
 using System.Linq;
+using UnityEngine.Assertions;
 
 namespace DSB.GC
 {
@@ -40,6 +41,18 @@ namespace DSB.GC
         [Tooltip("Make sure your player prefab extends GCPlayer.")]
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions; // this is assigned in GCSetup
+        public bool IsHost
+        {
+            get
+            {
+                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
+                return setupOptions.isHost;
+            }
+        }
+        [SerializeField]
+        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for host and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
+        private bool onlineMultiplayerSupport = false;
+        private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
@@ -56,7 +69,7 @@ namespace DSB.GC
             GCLog.logLevel = LogLevel;
 
             GCLog.LogDebug("Awake");
-            if (FindObjectsOfType<GamingCouch>().Length > 1)
+            if (FindObjectsByType<GamingCouch>(FindObjectsSortMode.None).Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
                 {
@@ -100,9 +113,14 @@ namespace DSB.GC
 #if UNITY_EDITOR
             // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
             setupOptions = GetEditorSetupOptions();
-            GamingCouchSetup();
+            if (!onlineMultiplayerSupport)
+            {
+                GamingCouchSetup();
+            }
 #else
-            GamingCouchInstanceStarted();
+            if (!onlineMultiplayerSupport) {
+                GamingCouchInstanceStarted();
+            }
 #endif
         }
 
@@ -248,6 +266,32 @@ namespace DSB.GC
         #endregion
 
         #region Methods to be called by the game
+
+        /// <summary>
+        /// Inform the platform tha the server is ready to receive multiplayer clients.
+        /// </summary>
+        public void OnlineMultiplayerServerReady()
+        {
+            Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
+            Assert.IsTrue(setupOptions.isHost, "ServerReady should only be called by the host.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "ServerReady should only be called once.");
+
+            GamingCouchInstanceStarted();
+            onlineMultiplayerReadyCalled = true;
+        }
+
+        /// <summary>
+        /// Inform the platform that the client is ready to connect with the multiplayer server.
+        /// </summary>
+        public void OnlineMultiplayerClientReady()
+        {
+            Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
+            Assert.IsFalse(setupOptions.isHost, "ClientReady should only be called by the client.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "ClientReady should only be called once.");
+
+            GamingCouchInstanceStarted();
+            onlineMultiplayerReadyCalled = true;
+        }
 
         /// <summary>
         /// Call after game setup is done eg. level and other assets are loaded and the game is ready to play intro and spawn players.
