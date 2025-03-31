@@ -82,7 +82,6 @@ namespace DSB.GC.Unity.NGO.Transport
 
             if (e.Payload != null)
             {
-                Debug.Log("Payload: " + e.Payload.Length);
                 payload = new ArraySegment<byte>(e.Payload);
             }
             else
@@ -95,9 +94,7 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
-            Debug.Log("Sending message: " + data.Count + " delivery mode:" + delivery);
-
-            var isReliable = false;
+            bool isReliable;
 
             // It could be possible to achieve all of these with multiple data channels on WebRTC side,
             // but should be sufficient now to either reliable or unreliable.
@@ -160,13 +157,12 @@ namespace DSB.GC.Unity.NGO.Transport
             GCServer = new GCServer();
 
             //--- hack
-            // TODO: This is required to start sending the messages from the server to the clients for now
-            // TODO: Currently one client is enough for everything. Think the client as the GC client and the client
-            // TODO: broadcasts all the messages to all the clients. This makes it impossible for server to send message for a specific client.
-            // TODO: This should be changed so that the host waits for all the clients to connect or?:
-            // TODO:   - the GC client handles the connections and server only replicates messages to all clients
+            // The server (transport) does not currently wait for specific number of clients to connect,
+            // instead we add this mock client that acts as a connection between server and platform.
+            // Currently all messages sent from the server will be sent to all clients eg. there is no
+            // way to send messages to specific client. This is not ideal, but works for current requirements
+            // and should be improved if we distribute this to 3rd parties.
             GCServer.AddMockClients();
-            // InvokeOnTransportEvent(NetworkEvent.Connect, 1, new ArraySegment<byte>(), Time.realtimeSinceStartup);
             //--- hack ends
 
             IsStarted = true;
