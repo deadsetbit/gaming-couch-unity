@@ -1,3 +1,4 @@
+#if GC_UNITY_NETCODE_GAMEOBJECTS
 using Unity.Netcode;
 
 namespace DSB.GC.Unity.NGO.Transport
@@ -31,3 +32,4 @@ namespace DSB.GC.Unity.NGO.Transport
         }
     }
 }
+#endif

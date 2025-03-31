@@ -1,3 +1,4 @@
+#if GC_UNITY_NETCODE_GAMEOBJECTS
 using System;
 using System.Runtime.InteropServices;
 using AOT;
@@ -41,3 +42,4 @@ namespace DSB.GC.Unity.NGO.Transport
         }
     }
 }
+#endif

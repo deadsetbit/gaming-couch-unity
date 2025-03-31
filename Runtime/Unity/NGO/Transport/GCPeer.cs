@@ -1,3 +1,4 @@
+#if GC_UNITY_NETCODE_GAMEOBJECTS
 namespace DSB.GC.Unity.NGO.Transport
 {
     public struct GCPeer
@@ -23,3 +24,4 @@ namespace DSB.GC.Unity.NGO.Transport
         }
     }
 }
+#endif
