@@ -2,7 +2,8 @@
     "name": "Gaming Couch Transport for Netcode for GameObjects",
     "rootNamespace": "",
     "references": [
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "GamingCouch"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

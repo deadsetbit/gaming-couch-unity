@@ -52,6 +52,7 @@ namespace DSB.GC
         [SerializeField]
         [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for host and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
         private bool onlineMultiplayerSupport = false;
+        public bool OnlineMultiplayerSupport => onlineMultiplayerSupport;
         private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;

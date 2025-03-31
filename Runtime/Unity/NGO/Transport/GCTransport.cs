@@ -1,6 +1,7 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
+using DSB.GC;
 
 namespace DSB.GC.Unity.NGO.Transport
 {
@@ -11,6 +12,22 @@ namespace DSB.GC.Unity.NGO.Transport
         private bool IsStarted = false;
 
         public override ulong ServerClientId => 0;
+
+        private void OnValidate()
+        {
+            // Try to find GamingCouch component from the scene
+            var gamingCouch = FindFirstObjectByType<GamingCouch>();
+
+            if (!gamingCouch)
+            {
+                throw new InvalidOperationException("GCTransport requires GamingCouch to be present in the scene");
+            }
+
+            if (!gamingCouch.OnlineMultiplayerSupport)
+            {
+                throw new InvalidOperationException("GCTransport requires Online Multiplayer Support to be enabled in GamingCouch. Please enable it from the GamingCouch object on scene and follow the GamingCouch online multiplayer instructions in the documentation.");
+            }
+        }
 
         private void ReceiveMessage(string base64String)
         {
