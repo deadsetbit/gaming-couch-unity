@@ -25,7 +25,7 @@ namespace DSB.GC.Unity.NGO.Transport
 
             if (!gamingCouch.OnlineMultiplayerSupport)
             {
-                throw new InvalidOperationException("GCTransport requires Online Multiplayer Support to be enabled in GamingCouch. Please enable it from the GamingCouch object on scene and follow the GamingCouch online multiplayer instructions in the documentation.");
+                throw new InvalidOperationException("GCTransport requires 'Online Multiplayer Support' to be enabled in GamingCouch. Please enable it from the GamingCouch scene object and follow the GamingCouch online multiplayer instructions in the documentation.");
             }
         }
 
