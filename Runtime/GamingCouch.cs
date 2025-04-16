@@ -15,7 +15,7 @@ namespace DSB.GC
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
-    public enum GCPlayerType { unset, player, bot }
+    public enum GCPlayerType { unset = 0, player = 1, bot = 2 }
 
     [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
@@ -57,6 +57,7 @@ namespace DSB.GC
         private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
+        private GCPlayerStore<GCPlayer> internalPlayerStore = new GCPlayerStore<GCPlayer>();
         private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
         private GCGame game;
         private GCHud hud = new GCHud();
@@ -97,6 +98,11 @@ namespace DSB.GC
             {
                 Debug.LogError("GamingCouch listener not set. Set game object via inspector that will receive and handle GamingCouch related events. This will likely be your main game script.");
             }
+
+#if UNITY_EDITOR
+            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
+            setupOptions = GetEditorSetupOptions();
+#endif
         }
 
         private void Start()
@@ -113,8 +119,6 @@ namespace DSB.GC
             status = GCStatus.PendingSetup;
 
 #if UNITY_EDITOR
-            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
-            setupOptions = GetEditorSetupOptions();
             if (!onlineMultiplayerSupport)
             {
                 GamingCouchSetup();
@@ -280,8 +284,13 @@ namespace DSB.GC
             Assert.IsTrue(setupOptions.isHost, "ServerReady should only be called by the host.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "ServerReady should only be called once.");
 
-            GamingCouchInstanceStarted();
             onlineMultiplayerReadyCalled = true;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchInstanceStarted();
+#else
+            GamingCouchSetup();
+#endif
         }
 
         /// <summary>
@@ -293,8 +302,13 @@ namespace DSB.GC
             Assert.IsFalse(setupOptions.isHost, "ClientReady should only be called by the client.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "ClientReady should only be called once.");
 
-            GamingCouchInstanceStarted();
             onlineMultiplayerReadyCalled = true;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchInstanceStarted();
+#else
+            GamingCouchSetup();
+#endif
         }
 
         /// <summary>
@@ -314,10 +328,9 @@ namespace DSB.GC
 #endif
             status = GCStatus.SetupDone;
         }
-
         public void SetupGameVersus(GCGameVersusSetupOptions options)
         {
-            SetupGame(new GCGameVersus(this, playerStoreOutput, options));
+            SetupGame(new GCGameVersus(this, internalPlayerStore, options));
         }
 
         private void SetupGame(GCGame game)
@@ -437,6 +450,10 @@ namespace DSB.GC
             Debug.Log("debug - _InternalSetPlayerProperties " + options.playerId);
 
             player._InternalGamingCouchSetup(playerSetupOptions);
+
+            // TODO: move as this fnc is for player properties?
+            this.game.SetupPlayer(player);
+            this.internalPlayerStore.AddPlayer(player);
         }
 
         /// <summary>
@@ -449,9 +466,14 @@ namespace DSB.GC
         {
             GCLog.LogInfo("InstantiatePlayers");
 
-            if (typeof(T) == typeof(GCPlayer))
+            if (game == null)
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit GCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<GCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that extends GCPlayer.");
+                throw new InvalidOperationException("Game not set. You should call SetupGame before calling InstantiatePlayers.");
+            }
+
+            if (playerStore == null)
+            {
+                throw new InvalidOperationException("Player store not set. You should call SetupGame before calling InstantiatePlayers.");
             }
 
             if (playerStore.PlayerCount > 0)
@@ -671,6 +693,7 @@ namespace DSB.GC
         /// </summary>
         public void Clear()
         {
+            internalPlayerStore.Clear();
             playerStoreOutput.Clear();
             ClearInputs();
         }

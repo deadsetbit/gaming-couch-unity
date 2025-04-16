@@ -1,9 +1,9 @@
+using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using DSB.GC.Hud;
 using DSB.GC.Log;
-using UnityEngine;
 
 namespace DSB.GC.Game
 {
@@ -61,41 +61,50 @@ namespace DSB.GC.Game
                         players = options.hud.players
                     }
                 );
-                AutoUpdatePlayersHud();
-
-                foreach (var player in playerStore.PlayersEnumerable)
-                {
-                    player.OnEliminated += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-
-                    player.OnUneliminated += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-
-                    player.OnFinished += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-
-                    player.OnScoreChanged += (int playerId, int score, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-
-                    player.OnLivesChanged += (int playerId, int lives, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-
-                    player.OnStatusChanged += (PlayerStatus status, string statusText, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-                }
+                UpdatePlayersHud();
             }
+        }
+
+        public void SetupPlayer(GCPlayer player)
+        {
+            Debug.Log("SetupPlayer - playerId:" + player.name + " playerStore count:" + playerStore.PlayersEnumerable.Count());
+
+            var self = this;
+
+            if (isPlayersHudAutoUpdateEnabled)
+            {
+                isPlayersHudAutoUpdatePending = true;
+            }
+
+            player.OnEliminated += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnUneliminated += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnFinished += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnScoreChanged += (playerId, score, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnLivesChanged += (playerId, lives, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnStatusChanged += (status, statusText, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
         }
 
         private void ValidateOptions(GCGameSetupOptions options)
@@ -116,7 +125,7 @@ namespace DSB.GC.Game
         {
             if (isPlayersHudAutoUpdateEnabled && isPlayersHudAutoUpdatePending)
             {
-                AutoUpdatePlayersHud();
+                UpdatePlayersHud();
                 isPlayersHudAutoUpdatePending = false;
             }
         }
@@ -195,8 +204,10 @@ namespace DSB.GC.Game
             }
         }
 
-        private void AutoUpdatePlayersHud()
+        private void UpdatePlayersHud()
         {
+            Debug.Log("UpdatePlayersHud - player count:" + playerStore.PlayersEnumerable.Count());
+
             var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
 
             gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData

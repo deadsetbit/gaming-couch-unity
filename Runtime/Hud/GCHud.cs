@@ -149,9 +149,9 @@ namespace DSB.GC.Hud
 #endif
         }
 
-        public void UpdateScreenPointHud(GCScreenPointData testPointData)
+        public void UpdateScreenPointHud(GCScreenPointData pointData)
         {
-            string screenPointHudDataJson = JsonUtility.ToJson(testPointData);
+            string screenPointHudDataJson = JsonUtility.ToJson(pointData);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchUpdateScreenPointHud(screenPointHudDataJson);
