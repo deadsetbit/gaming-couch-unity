@@ -2,7 +2,6 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
-using DSB.GC;
 
 namespace DSB.GC.Unity.NGO.Transport
 {

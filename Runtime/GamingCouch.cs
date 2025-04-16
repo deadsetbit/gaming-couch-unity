@@ -40,7 +40,8 @@ namespace DSB.GC
         [SerializeField]
         [Tooltip("Make sure your player prefab extends GCPlayer.")]
         private GameObject playerPrefab;
-        private GCSetupOptions setupOptions; // this is assigned in GCSetup
+        private GCSetupOptions setupOptions;
+        private GCPlayOptions playOptions;
         public bool IsHost
         {
             get
@@ -119,7 +120,8 @@ namespace DSB.GC
                 GamingCouchSetup();
             }
 #else
-            if (!onlineMultiplayerSupport) {
+            if (!onlineMultiplayerSupport)
+            {
                 GamingCouchInstanceStarted();
             }
 #endif
@@ -234,7 +236,7 @@ namespace DSB.GC
         private IEnumerator _EditorPlay()
         {
             GCLog.LogInfo("_EditorPlay");
-            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPlay by the platform
+            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
             Play(GetEditorPlayOptions());
         }
 
@@ -243,6 +245,7 @@ namespace DSB.GC
         /// </summary>
         private void Play(GCPlayOptions options)
         {
+            playOptions = options;
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
         }
@@ -409,7 +412,17 @@ namespace DSB.GC
                 throw new Exception("Player prefab does not have a component that extends GCPlayer.");
             }
 
-            gameObject.name = "Player - " + options.name;
+            _InternalSetPlayerProperties(player, options);
+
+            gameObject.SetActive(activeOriginal);
+            playerPrefab.SetActive(activeOriginal);
+
+            return targetType;
+        }
+
+        public void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
+        {
+            player.gameObject.name = "Player - " + options.name;
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
@@ -420,13 +433,10 @@ namespace DSB.GC
                 colorName = options.color,
             };
 
-            // player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
+
+            Debug.Log("debug - _InternalSetPlayerProperties " + options.playerId);
+
             player._InternalGamingCouchSetup(playerSetupOptions);
-
-            gameObject.SetActive(activeOriginal);
-            playerPrefab.SetActive(activeOriginal);
-
-            return targetType;
         }
 
         /// <summary>
@@ -456,6 +466,11 @@ namespace DSB.GC
             }
 
             playerStoreOutput = playerStore;
+        }
+
+        public GCPlayerOptions GetPlayerOptions(int playerId)
+        {
+            return playOptions.players.Single(p => p.playerId == playerId);
         }
         #endregion
 
