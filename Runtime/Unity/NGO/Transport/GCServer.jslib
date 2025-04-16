@@ -4,6 +4,8 @@ var LibraryGCServer = {
     onMessage: null,
   },
 
+  _SetOnOpen: function (callback) {},
+
   _SetOnMessage: function (callback) {
     state.onMessage = callback;
   },
