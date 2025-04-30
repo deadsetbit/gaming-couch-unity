@@ -165,14 +165,10 @@ namespace DSB.GC.Hud
             pointDataQueue.Add(pointData);
         }
 
-        private bool pointDataPendingUpdate = false;
-
         public void HandleQueue()
         {
-            if (pointDataQueue.Count > 0 || pointDataPendingUpdate)
+            if (pointDataQueue.Count > 0)
             {
-                pointDataPendingUpdate = pointDataQueue.Count > 0;
-
                 var pointData = new GCScreenPointData
                 {
                     points = pointDataQueue.ToArray()
