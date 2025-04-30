@@ -340,7 +340,7 @@ namespace DSB.GC
         #region Player
         private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation) where T : GCPlayer
         {
-            GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {name}, {options.color}");
+            GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
 
             var gameObject = Instantiate(playerPrefab, position, rotation);
             var targetType = gameObject.GetComponent<T>();
@@ -355,13 +355,13 @@ namespace DSB.GC
                 throw new Exception("Player prefab does not have a component that extends GCPlayer.");
             }
 
-            gameObject.name = "Player - " + name;
+            gameObject.name = "Player - " + options.name;
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 playerId = options.playerId,
-                name = name,
+                name = options.name,
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
                 colorName = options.color,
             };
