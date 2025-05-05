@@ -429,7 +429,10 @@ namespace DSB.GC
 
                 _InternalSetPlayerProperties(player, options);
 
+                playerPrefab.SetActive(activeOriginal);
                 gameObject.SetActive(activeOriginal);
+
+                return targetType;
             }
             catch (Exception e)
             {
@@ -437,10 +440,6 @@ namespace DSB.GC
                 Debug.LogError("Error instantiating player: " + e.Message);
                 throw;
             }
-
-            playerPrefab.SetActive(activeOriginal);
-
-            return targetType;
         }
 
         public void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
