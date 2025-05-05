@@ -9,7 +9,7 @@ namespace DSB.GC.Unity.NGO.Transport
     public class GCServer
     {
         [DllImport("__Internal")]
-        internal static extern void _GCNetSendMessageToJS(byte[] data, int offset, int count, bool isReliable);
+        internal static extern void _GCGameMessageToJS(byte[] data, int offset, int count, bool isReliable);
 
         private static Dictionary<ulong, GCPeer> Clients = new Dictionary<ulong, GCPeer>();
 
@@ -50,12 +50,12 @@ namespace DSB.GC.Unity.NGO.Transport
 
                         Buffer.BlockCopy(data.Array, data.Offset, slimPayload, 0, data.Count);
 
-                        _GCNetSendMessageToJS(slimPayload, 0, slimPayload.Length, isReliable); // TODO: This sends to all!
+                        _GCGameMessageToJS(slimPayload, 0, slimPayload.Length, isReliable); // TODO: This sends to all!
                         // Clients[clientId].Send(slimPayload);
                     }
                     else
                     {
-                        _GCNetSendMessageToJS(data.Array, data.Offset, data.Count, isReliable); // TODO: This sends to all!
+                        _GCGameMessageToJS(data.Array, data.Offset, data.Count, isReliable); // TODO: This sends to all!
                         // Clients[clientId].Send(data.Array);
                     }
                 }

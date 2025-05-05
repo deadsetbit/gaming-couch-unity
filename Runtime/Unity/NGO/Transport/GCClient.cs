@@ -10,7 +10,7 @@ namespace DSB.GC.Unity.NGO.Transport
         public Queue<GCEvent> EventQueue { get; } = new Queue<GCEvent>();
 
         [DllImport("__Internal")]
-        internal static extern void _GCNetSendMessageToJS(byte[] data, int offset, int count, bool isReliable);
+        internal static extern void _GCGameMessageToJS(byte[] data, int offset, int count, bool isReliable);
 
         public ulong WaitTime => 0;
 
@@ -23,7 +23,7 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public void Send(ArraySegment<byte> data, bool isReliable)
         {
-            _GCNetSendMessageToJS(data.Array, data.Offset, data.Count, isReliable);
+            _GCGameMessageToJS(data.Array, data.Offset, data.Count, isReliable);
         }
 
         public GCEvent Poll()

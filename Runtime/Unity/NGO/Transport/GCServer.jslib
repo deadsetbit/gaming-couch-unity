@@ -25,8 +25,8 @@ var LibraryGCServer = {
     }
   },
 
-  _GCNetSendMessageToJS: function (bufferPtr, offset, count, isReliable) {
-    window.gcNetHandleJsonMessage(
+  _GCGameMessageToJS: function (bufferPtr, offset, count, isReliable) {
+    window.gcHandleGameMessageFromUnity(
       HEAPU8.buffer.slice(bufferPtr + offset, bufferPtr + count - offset),
       Boolean(isReliable)
     );
