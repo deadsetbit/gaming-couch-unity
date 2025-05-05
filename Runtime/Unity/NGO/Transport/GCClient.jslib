@@ -1,8 +1,5 @@
 var LibraryGCClient = {
-  $state: {
-    debug: false,
-    onMessage: null,
-  },
+  $state: {},
 
   _SetOnOpen: function (callback) {},
 
