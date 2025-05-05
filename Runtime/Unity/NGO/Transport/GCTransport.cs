@@ -63,7 +63,7 @@ namespace DSB.GC.Unity.NGO.Transport
             Debug.Log("GCTransport - Initializing");
         }
 
-        public GCEvent GetNextWebSocketEvent()
+        public GCEvent GetNextEvent()
         {
             if (GCClient != null)
             {
@@ -75,7 +75,7 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
-            var e = GetNextWebSocketEvent();
+            var e = GetNextEvent();
 
             clientId = e.ClientId;
             receiveTime = Time.realtimeSinceStartup;
@@ -89,7 +89,7 @@ namespace DSB.GC.Unity.NGO.Transport
                 payload = new ArraySegment<byte>();
             }
 
-            return e.GetNetworkEvent();
+            return e.Type;
         }
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)

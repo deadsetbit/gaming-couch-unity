@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Unity.Netcode;
 
 namespace DSB.GC.Unity.NGO.Transport
 {
@@ -11,6 +12,8 @@ namespace DSB.GC.Unity.NGO.Transport
 
         [DllImport("__Internal")]
         internal static extern void _GCGameMessageToJS(byte[] data, int offset, int count, bool isReliable);
+
+        private static GCEvent NothingEvent = new GCEvent(NetworkEvent.Nothing, 0, null);
 
         public ulong WaitTime => 0;
 
@@ -34,12 +37,7 @@ namespace DSB.GC.Unity.NGO.Transport
             }
             else
             {
-                return new GCEvent()
-                {
-                    ClientId = 0,
-                    Payload = null,
-                    Type = GCEvent.GCEventType.Nothing,
-                };
+                return NothingEvent;
             }
         }
 
@@ -47,22 +45,12 @@ namespace DSB.GC.Unity.NGO.Transport
         {
             UnityEngine.Debug.Log("GCClient - OnOpen");
 
-            EventQueue.Enqueue(new GCEvent()
-            {
-                ClientId = 0,
-                Payload = null,
-                Type = GCEvent.GCEventType.Open,
-            });
+            EventQueue.Enqueue(new GCEvent(NetworkEvent.Connect, 0, null));
         }
 
         public void OnMessage(ArraySegment<byte> data)
         {
-            EventQueue.Enqueue(new GCEvent()
-            {
-                ClientId = 0,
-                Payload = data.Array,
-                Type = GCEvent.GCEventType.Payload,
-            });
+            EventQueue.Enqueue(new GCEvent(NetworkEvent.Data, 0, data.Array));
         }
     }
 }

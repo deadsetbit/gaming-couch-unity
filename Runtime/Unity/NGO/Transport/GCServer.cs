@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
+using Unity.Netcode;
 
 namespace DSB.GC.Unity.NGO.Transport
 {
@@ -17,6 +18,8 @@ namespace DSB.GC.Unity.NGO.Transport
 
         private static ulong ClientIdCounter = 1;
         private static Queue<GCEvent> EventQueue = new Queue<GCEvent>();
+
+        private static GCEvent NothingEvent = new GCEvent(NetworkEvent.Nothing, 0, null);
 
         private static ulong GetNextClientId()
         {
@@ -45,7 +48,6 @@ namespace DSB.GC.Unity.NGO.Transport
                 {
                     if (data.Count < data.Array.Length || data.Offset > 0)
                     {
-                        // WebSocket-Csharp cant handle this.
                         byte[] slimPayload = new byte[data.Count];
 
                         Buffer.BlockCopy(data.Array, data.Offset, slimPayload, 0, data.Count);
@@ -73,12 +75,7 @@ namespace DSB.GC.Unity.NGO.Transport
                 }
                 else
                 {
-                    return new GCEvent()
-                    {
-                        ClientId = 0,
-                        Payload = null,
-                        Type = GCEvent.GCEventType.Nothing,
-                    };
+                    return NothingEvent;
                 }
             }
         }
@@ -93,12 +90,7 @@ namespace DSB.GC.Unity.NGO.Transport
                 ClientId = GetNextClientId();
                 Clients[ClientId] = new GCPeer(ClientId);
 
-                EventQueue.Enqueue(new GCEvent()
-                {
-                    ClientId = ClientId,
-                    Payload = null,
-                    Type = GCEvent.GCEventType.Open,
-                });
+                EventQueue.Enqueue(new GCEvent(NetworkEvent.Connect, ClientId, null));
             }
         }
 
@@ -109,12 +101,7 @@ namespace DSB.GC.Unity.NGO.Transport
             {
                 if (Clients.ContainsKey(ClientId))
                 {
-                    EventQueue.Enqueue(new GCEvent()
-                    {
-                        ClientId = ClientId,
-                        Payload = data.Array,
-                        Type = GCEvent.GCEventType.Payload,
-                    });
+                    EventQueue.Enqueue(new GCEvent(NetworkEvent.Data, ClientId, data.Array));
                 }
             }
         }

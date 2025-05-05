@@ -3,33 +3,18 @@ using Unity.Netcode;
 
 namespace DSB.GC.Unity.NGO.Transport
 {
-    public class GCEvent
+    public readonly struct GCEvent
     {
-        public enum GCEventType
+        public GCEvent(NetworkEvent type, ulong clientId, byte[] payload)
         {
-            Nothing,
-            Open,
-            Payload,
+            Type = type;
+            ClientId = clientId;
+            Payload = payload;
         }
 
-        public GCEventType Type;
-        public ulong ClientId;
-        public byte[] Payload;
-
-        public NetworkEvent GetNetworkEvent()
-        {
-            switch (Type)
-            {
-                case GCEventType.Payload:
-                    return NetworkEvent.Data;
-                case GCEventType.Nothing:
-                    return NetworkEvent.Nothing;
-                case GCEventType.Open:
-                    return NetworkEvent.Connect;
-            }
-
-            return NetworkEvent.Nothing;
-        }
+        public readonly NetworkEvent Type;
+        public readonly ulong ClientId;
+        public readonly byte[] Payload;
     }
 }
 #endif
