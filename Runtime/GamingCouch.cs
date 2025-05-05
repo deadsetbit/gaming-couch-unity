@@ -42,16 +42,16 @@ namespace DSB.GC
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
-        public bool IsHost
+        public bool IsServer
         {
             get
             {
                 Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
-                return setupOptions.isHost;
+                return setupOptions.isServer;
             }
         }
         [SerializeField]
-        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for host and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
+        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for server and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
         private bool onlineMultiplayerSupport = false;
         public bool OnlineMultiplayerSupport => onlineMultiplayerSupport;
         private bool onlineMultiplayerReadyCalled = false;
@@ -281,7 +281,7 @@ namespace DSB.GC
         public void OnlineMultiplayerServerReady()
         {
             Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
-            Assert.IsTrue(setupOptions.isHost, "ServerReady should only be called by the host.");
+            Assert.IsTrue(setupOptions.isServer, "ServerReady should only be called by the server.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "ServerReady should only be called once.");
 
             onlineMultiplayerReadyCalled = true;
@@ -299,7 +299,7 @@ namespace DSB.GC
         public void OnlineMultiplayerClientReady()
         {
             Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
-            Assert.IsFalse(setupOptions.isHost, "ClientReady should only be called by the client.");
+            Assert.IsFalse(setupOptions.isServer, "ClientReady should only be called by the client.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "ClientReady should only be called once.");
 
             onlineMultiplayerReadyCalled = true;
@@ -597,7 +597,7 @@ namespace DSB.GC
         {
             return new GCSetupOptions
             {
-                isHost = true,
+                isServer = true,
                 gameModeId = gameModeId,
             };
         }

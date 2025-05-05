@@ -5,7 +5,7 @@ namespace DSB.GC
     [System.Serializable]
     public class GCSetupOptions
     {
-        public bool isHost;
+        public bool isServer;
         public string gameModeId;
 
         public static GCSetupOptions CreateFromJSON(string optionsJson)
