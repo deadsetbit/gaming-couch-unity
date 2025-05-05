@@ -412,22 +412,32 @@ namespace DSB.GC
             var activeOriginal = playerPrefab.activeSelf;
             playerPrefab.SetActive(false);
 
-            var gameObject = Instantiate(playerPrefab, position, rotation);
-            var targetType = gameObject.GetComponent<T>();
-            if (targetType == null)
+            try
             {
-                throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
+                var gameObject = Instantiate(playerPrefab, position, rotation);
+                var targetType = gameObject.GetComponent<T>();
+                if (targetType == null)
+                {
+                    throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
+                }
+
+                var player = gameObject.GetComponent<GCPlayer>();
+                if (player == null)
+                {
+                    throw new Exception("Player prefab does not have a component that extends GCPlayer.");
+                }
+
+                _InternalSetPlayerProperties(player, options);
+
+                gameObject.SetActive(activeOriginal);
+            }
+            catch (Exception e)
+            {
+                playerPrefab.SetActive(activeOriginal);
+                Debug.LogError("Error instantiating player: " + e.Message);
+                throw;
             }
 
-            var player = gameObject.GetComponent<GCPlayer>();
-            if (player == null)
-            {
-                throw new Exception("Player prefab does not have a component that extends GCPlayer.");
-            }
-
-            _InternalSetPlayerProperties(player, options);
-
-            gameObject.SetActive(activeOriginal);
             playerPrefab.SetActive(activeOriginal);
 
             return targetType;
