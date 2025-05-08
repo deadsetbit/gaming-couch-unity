@@ -31,11 +31,17 @@ namespace DSB.GC.Unity.NGO.Transport
 
         private void ReceiveMessage(string base64String)
         {
-            byte[] data = Convert.FromBase64String(base64String);
+            byte[] combined = System.Convert.FromBase64String(base64String);
+            uint gcClientId = System.BitConverter.ToUInt32(combined, 0);
+
+            byte[] data = new byte[combined.Length - 4];
+            Buffer.BlockCopy(combined, 4, data, 0, data.Length);
+
+            var clientId = GCNetworkManager.Instance.GetNetworkIdByGCClientId(gcClientId);
 
             if (NetworkManager.Singleton.IsServer)
             {
-                GCServer.OnMessage(new ArraySegment<byte>(data));
+                GCServer.OnMessage(clientId, new ArraySegment<byte>(data));
             }
             else
             {
@@ -132,7 +138,7 @@ namespace DSB.GC.Unity.NGO.Transport
         {
             if (IsStarted)
             {
-                throw new InvalidOperationException("Socket already started");
+                throw new InvalidOperationException("Client already started");
             }
 
             Debug.Log("GCTransport - Starting client");

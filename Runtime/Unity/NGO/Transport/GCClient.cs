@@ -11,7 +11,7 @@ namespace DSB.GC.Unity.NGO.Transport
         public Queue<GCEvent> EventQueue { get; } = new Queue<GCEvent>();
 
         [DllImport("__Internal")]
-        internal static extern void _GCGameMessageToJS(byte[] data, int offset, int count, bool isReliable);
+        internal static extern void _GCGameMessageToJS(byte[] data, int offset, int count, uint gcClientId, bool isReliable);
 
         private static GCEvent NothingEvent = new GCEvent(NetworkEvent.Nothing, 0, null);
 
@@ -22,11 +22,14 @@ namespace DSB.GC.Unity.NGO.Transport
             UnityEngine.Debug.Log("GCClient - Connect");
 
             OnOpen();
+
+            // send connect message to server
         }
 
         public void Send(ArraySegment<byte> data, bool isReliable)
         {
-            _GCGameMessageToJS(data.Array, data.Offset, data.Count, isReliable);
+            // TODO: sending clientId here should be not required, as the gc client could stamp it?
+            _GCGameMessageToJS(data.Array, data.Offset, data.Count, GamingCouch.Instance.ClientId, isReliable);
         }
 
         public GCEvent Poll()

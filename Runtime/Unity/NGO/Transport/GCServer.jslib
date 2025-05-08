@@ -22,9 +22,16 @@ var LibraryGCServer = {
     }
   },
 
-  _GCGameMessageToJS: function (bufferPtr, offset, count, isReliable) {
+  _GCGameMessageToJS: function (
+    bufferPtr,
+    offset,
+    count,
+    gcClientId,
+    isReliable
+  ) {
     window.gcHandleGameMessageFromUnity(
       HEAPU8.buffer.slice(bufferPtr + offset, bufferPtr + count - offset),
+      Number(gcClientId),
       Boolean(isReliable)
     );
   },

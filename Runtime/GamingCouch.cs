@@ -46,8 +46,16 @@ namespace DSB.GC
         {
             get
             {
-                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
+                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set when reading IsServer.");
                 return setupOptions.isServer;
+            }
+        }
+        public uint ClientId
+        {
+            get
+            {
+                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set when reading ClientId.");
+                return setupOptions.clientId;
             }
         }
         [SerializeField]
