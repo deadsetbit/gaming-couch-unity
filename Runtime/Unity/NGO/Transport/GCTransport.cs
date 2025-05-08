@@ -153,17 +153,6 @@ namespace DSB.GC.Unity.NGO.Transport
             }
 
             GCServer = new GCServer();
-
-            // foreach (var clientId in GamingCouch.Instance.ConnectedClientsIds)
-            // {
-            //     GCServer.OnClientConnect(clientId);
-            // }
-
-            // GamingCouch.Instance.OnClientConnect += (clientId) =>
-            // {
-            //     GCServer.OnClientConnect(clientId);
-            // };
-
             IsStarted = true;
 
             return true;
