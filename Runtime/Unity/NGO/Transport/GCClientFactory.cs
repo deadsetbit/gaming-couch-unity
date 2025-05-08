@@ -8,20 +8,10 @@ namespace DSB.GC.Unity.NGO.Transport
     public class GCClientFactory
     {
         public static GCClient Client;
-
-        internal delegate void OnOpenCallback();
         internal delegate void OnMessageCallback(IntPtr messagePointer, int messageSize);
 
         [DllImport("__Internal")]
-        internal static extern void _SetOnOpen(OnOpenCallback callback);
-        [DllImport("__Internal")]
         internal static extern void _SetOnMessage(OnMessageCallback callback);
-
-        [MonoPInvokeCallback(typeof(OnOpenCallback))]
-        internal static void OnOpenEvent()
-        {
-            Client.OnOpen();
-        }
 
         [MonoPInvokeCallback(typeof(OnMessageCallback))]
         internal static void OnMessageEvent(IntPtr payloadPointer, int length)
@@ -35,7 +25,6 @@ namespace DSB.GC.Unity.NGO.Transport
         public static GCClient Create()
         {
             Client = new GCClient();
-            _SetOnOpen(OnOpenEvent);
             _SetOnMessage(OnMessageEvent);
 
             return Client;

@@ -17,18 +17,14 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public ulong WaitTime => 0;
 
-        public void Connect()
+        public void HandshakeWithServer()
         {
-            UnityEngine.Debug.Log("GCClient - Connect");
-
-            OnOpen();
-
-            // send connect message to server
+            // initiate the handshake, the server should then respond with NetworkEvent.Connect in response
+            EventQueue.Enqueue(new GCEvent(NetworkEvent.Connect, 0, null));
         }
 
         public void Send(ArraySegment<byte> data, bool isReliable)
         {
-            // TODO: sending clientId here should be not required, as the gc client could stamp it?
             _GCGameMessageToJS(data.Array, data.Offset, data.Count, GamingCouch.Instance.ClientId, isReliable);
         }
 

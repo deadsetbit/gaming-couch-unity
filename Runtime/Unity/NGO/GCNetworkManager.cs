@@ -3,7 +3,6 @@ using UnityEngine;
 using Unity.Netcode;
 using DSB.GC.Unity.NGO.Transport;
 using System;
-using System.Collections.Generic;
 
 namespace DSB.GC.Unity.NGO
 {
@@ -68,19 +67,8 @@ namespace DSB.GC.Unity.NGO
       };
     }
 
-    private Dictionary<ulong, uint> networkClientIdToGCClientId = new Dictionary<ulong, uint>();
-    private Dictionary<uint, ulong> gcClientIdToNetworkClientId = new Dictionary<uint, ulong>();
-
     private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-      var connectionData = DeserializeFromBytes<ClientConnectionData>(request.Payload);
-
-      var gcClientId = connectionData.GCClientId;
-      var clientId = request.ClientNetworkId;
-
-      networkClientIdToGCClientId[clientId] = gcClientId;
-      gcClientIdToNetworkClientId[gcClientId] = clientId;
-
       response.Approved = true;
       response.CreatePlayerObject = false;
       response.PlayerPrefabHash = null;
@@ -105,6 +93,8 @@ namespace DSB.GC.Unity.NGO
         throw new InvalidOperationException("StartServer has already been called.");
       }
 
+      Debug.Log("Starting server...");
+
       startServerCalled = true;
 
       SetNetworkConfigs();
@@ -124,15 +114,12 @@ namespace DSB.GC.Unity.NGO
         throw new InvalidOperationException("StartClient has already been called.");
       }
 
+      Debug.Log("Starting client - GamingCouch.Instance.ClientId:" + GamingCouch.Instance.ClientId);
+
       startClientCalled = true;
 
       SetNetworkConfigs();
 
-      byte[] connectionBytes = SerializeToBytes(new ClientConnectionData
-      {
-        GCClientId = GamingCouch.Instance.ClientId
-      });
-      NetworkManager.Singleton.NetworkConfig.ConnectionData = connectionBytes;
       NetworkManager.Singleton.StartClient();
     }
 
@@ -146,30 +133,6 @@ namespace DSB.GC.Unity.NGO
     {
       string json = System.Text.Encoding.UTF8.GetString(data);
       return JsonUtility.FromJson<T>(json);
-    }
-
-    public uint GetGCClientIdByNetworkId(ulong networkId)
-    {
-      if (networkClientIdToGCClientId.TryGetValue(networkId, out uint gcClientId))
-      {
-        return gcClientId;
-      }
-      else
-      {
-        throw new KeyNotFoundException($"No GC client ID found for network ID {networkId}");
-      }
-    }
-
-    public ulong GetNetworkIdByGCClientId(uint gcClientId)
-    {
-      if (gcClientIdToNetworkClientId.TryGetValue(gcClientId, out ulong networkId))
-      {
-        return networkId;
-      }
-      else
-      {
-        throw new KeyNotFoundException($"No network ID found for GC client ID {gcClientId}");
-      }
     }
   }
 }

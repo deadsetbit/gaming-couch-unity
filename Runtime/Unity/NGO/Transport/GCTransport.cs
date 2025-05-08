@@ -15,7 +15,6 @@ namespace DSB.GC.Unity.NGO.Transport
 
         private void OnValidate()
         {
-            // Try to find GamingCouch component from the scene
             var gamingCouch = FindFirstObjectByType<GamingCouch>();
 
             if (!gamingCouch)
@@ -37,8 +36,7 @@ namespace DSB.GC.Unity.NGO.Transport
             byte[] data = new byte[combined.Length - 4];
             Buffer.BlockCopy(combined, 4, data, 0, data.Length);
 
-            var clientId = GCNetworkManager.Instance.GetNetworkIdByGCClientId(gcClientId);
-
+            var clientId = gcClientId;
             if (NetworkManager.Singleton.IsServer)
             {
                 GCServer.OnMessage(clientId, new ArraySegment<byte>(data));
@@ -66,7 +64,6 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Log("GCTransport - Initializing");
         }
 
         public GCEvent GetNextEvent()
@@ -131,7 +128,6 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public override void Shutdown()
         {
-
         }
 
         public override bool StartClient()
@@ -141,10 +137,8 @@ namespace DSB.GC.Unity.NGO.Transport
                 throw new InvalidOperationException("Client already started");
             }
 
-            Debug.Log("GCTransport - Starting client");
-
             GCClient = GCClientFactory.Create();
-            GCClient.Connect();
+            GCClient.HandshakeWithServer();
 
             IsStarted = true;
 
@@ -155,24 +149,22 @@ namespace DSB.GC.Unity.NGO.Transport
         {
             if (IsStarted)
             {
-                throw new InvalidOperationException("Socket already started");
+                throw new InvalidOperationException("Server already started");
             }
-
-            Debug.Log("GCTransport - Starting server");
 
             GCServer = new GCServer();
 
-            //--- hack
-            // The server (transport) does not currently wait for specific number of clients to connect,
-            // instead we add this mock client that acts as a connection between server and platform.
-            // Currently all messages sent from the server will be sent to all clients eg. there is no
-            // way to send messages to specific client. This is not ideal, but works for current requirements
-            // and should be improved if we distribute this to 3rd parties.
-            GCServer.AddMockClients();
-            //--- hack ends
+            // foreach (var clientId in GamingCouch.Instance.ConnectedClientsIds)
+            // {
+            //     GCServer.OnClientConnect(clientId);
+            // }
+
+            // GamingCouch.Instance.OnClientConnect += (clientId) =>
+            // {
+            //     GCServer.OnClientConnect(clientId);
+            // };
 
             IsStarted = true;
-
 
             return true;
         }
