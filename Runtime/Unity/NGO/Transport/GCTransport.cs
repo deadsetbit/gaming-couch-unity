@@ -137,7 +137,7 @@ namespace DSB.GC.Unity.NGO.Transport
                 throw new InvalidOperationException("Client already started");
             }
 
-            GCClient = GCClientFactory.Create();
+            GCClient = new GCClient();
             GCClient.HandshakeWithServer();
 
             IsStarted = true;

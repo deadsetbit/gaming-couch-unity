@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using AOT;
 using Unity.Netcode;
 
 namespace DSB.GC.Unity.NGO.Transport
@@ -17,9 +18,14 @@ namespace DSB.GC.Unity.NGO.Transport
 
         public ulong WaitTime => 0;
 
+        public void OnMessage(ArraySegment<byte> data)
+        {
+            EventQueue.Enqueue(new GCEvent(NetworkEvent.Data, 0, data.Array));
+        }
+
         public void HandshakeWithServer()
         {
-            // initiate the handshake, the server should then respond with NetworkEvent.Connect in response
+            // initiate the handshake, the server should then respond with NetworkEvent.Connect
             EventQueue.Enqueue(new GCEvent(NetworkEvent.Connect, 0, null));
         }
 
@@ -38,18 +44,6 @@ namespace DSB.GC.Unity.NGO.Transport
             {
                 return NothingEvent;
             }
-        }
-
-        public void OnOpen()
-        {
-            UnityEngine.Debug.Log("GCClient - OnOpen");
-
-            EventQueue.Enqueue(new GCEvent(NetworkEvent.Connect, 0, null));
-        }
-
-        public void OnMessage(ArraySegment<byte> data)
-        {
-            EventQueue.Enqueue(new GCEvent(NetworkEvent.Data, 0, data.Array));
         }
     }
 }
