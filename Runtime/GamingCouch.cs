@@ -288,9 +288,9 @@ namespace DSB.GC
         /// </summary>
         public void OnlineMultiplayerServerReady()
         {
-            Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
-            Assert.IsTrue(setupOptions.isServer, "ServerReady should only be called by the server.");
-            Assert.IsFalse(onlineMultiplayerReadyCalled, "ServerReady should only be called once.");
+            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            Assert.IsTrue(setupOptions.isServer, "[GamingCouch] ServerReady should only be called by the server.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ServerReady should only be called once.");
 
             onlineMultiplayerReadyCalled = true;
 
@@ -306,9 +306,9 @@ namespace DSB.GC
         /// </summary>
         public void OnlineMultiplayerClientReady()
         {
-            Assert.IsNotNull(setupOptions, "GamingCouch setup options not set.");
-            Assert.IsFalse(setupOptions.isServer, "ClientReady should only be called by the client.");
-            Assert.IsFalse(onlineMultiplayerReadyCalled, "ClientReady should only be called once.");
+            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            Assert.IsFalse(setupOptions.isServer, "[GamingCouch] ClientReady should only be called by the client.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ClientReady should only be called once.");
 
             onlineMultiplayerReadyCalled = true;
 
@@ -341,11 +341,19 @@ namespace DSB.GC
             SetupGame(new GCGameVersus(this, internalPlayerStore, options));
         }
 
+        private void RequireGameSetupDone(string source)
+        {
+            if (game == null)
+            {
+                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGame() before calling '" + source + "'.");
+            }
+        }
+
         private void SetupGame(GCGame game)
         {
             if (this.game != null)
             {
-                throw new InvalidOperationException("Game already set. You should call SetupGame only once.");
+                throw new InvalidOperationException("[GamingCouch] Game already set. You should call SetupGame only once.");
             }
 
             this.game = game;
@@ -359,10 +367,7 @@ namespace DSB.GC
         /// <exception cref="InvalidOperationException">Throws if SetupGame is not called before.</exception>
         public void GameOver()
         {
-            if (game == null)
-            {
-                throw new InvalidOperationException("Game not set. You should call SetupGame before calling GameOver.");
-            }
+            RequireGameSetupDone("GameOver");
 
             var players = playerStoreOutput.PlayersEnumerable.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
@@ -463,9 +468,6 @@ namespace DSB.GC
                 colorName = options.color,
             };
 
-
-            Debug.Log("debug - _InternalSetPlayerProperties " + options.playerId);
-
             player._InternalGamingCouchSetup(playerSetupOptions);
 
             // TODO: move as this fnc is for player properties?
@@ -483,19 +485,16 @@ namespace DSB.GC
         {
             GCLog.LogInfo("InstantiatePlayers");
 
-            if (game == null)
-            {
-                throw new InvalidOperationException("Game not set. You should call SetupGame before calling InstantiatePlayers.");
-            }
+            RequireGameSetupDone("InstantiatePlayers");
 
             if (playerStore == null)
             {
-                throw new InvalidOperationException("Player store not set. You should call SetupGame before calling InstantiatePlayers.");
+                throw new InvalidOperationException("[GamingCouch] Player store not set. You should call GamingCouch.Instance.SetupGame() before calling InstantiatePlayers.");
             }
 
             if (playerStore.PlayerCount > 0)
             {
-                throw new InvalidOperationException("Players already instantiated. Call ClearPlayers before calling InstantiatePlayers.");
+                throw new InvalidOperationException("[GamingCouch] Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling InstantiatePlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
             }
 
             for (var i = 0; i < playerOptions.Length; i++)
@@ -623,7 +622,7 @@ namespace DSB.GC
             {
                 if (usedColors.Contains(playerData[i].color))
                 {
-                    throw new Exception("Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
+                    throw new Exception("[GamingCouch] Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
                 }
 
                 usedColors.Add(playerData[i].color);
@@ -729,7 +728,7 @@ namespace DSB.GC
 
             if (Application.isEditor && !Application.isPlaying)
             {
-                throw new Exception("Restart can only be called in play mode.");
+                throw new Exception("[GamingCouch] Restart can only be called in play mode.");
             }
 
             game = null;
