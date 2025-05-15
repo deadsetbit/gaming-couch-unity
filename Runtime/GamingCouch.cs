@@ -349,6 +349,12 @@ namespace DSB.GC
             }
         }
 
+        public void SetGameMaxScore(int maxScore)
+        {
+            RequireGameSetupDone("SetGameMaxScore");
+            game.SetMaxScore(maxScore);
+        }
+
         private void SetupGame(GCGame game)
         {
             if (this.game != null)

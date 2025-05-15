@@ -107,13 +107,24 @@ namespace DSB.GC.Game
             };
         }
 
+        public void SetMaxScore(int maxScore)
+        {
+            options.maxScore = maxScore;
+            ValidateOptions(options);
+
+            if (isPlayersHudAutoUpdateEnabled)
+            {
+                isPlayersHudAutoUpdatePending = true;
+            }
+        }
+
         private void ValidateOptions(GCGameSetupOptions options)
         {
             if (options.hud != null)
             {
                 if (options.hud.players.valueTypeEnum == PlayersHudValueType.PointsSmall)
                 {
-                    if (options.maxScore < 0)
+                    if (options.maxScore <= 0)
                     {
                         throw new Exception("Game options maxScore must be defined when using 'PlayersHudValueType.PointsSmall'");
                     }
