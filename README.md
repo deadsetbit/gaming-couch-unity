@@ -53,20 +53,6 @@ private void GamingCouchSetup(GCSetupOptions options)
 {
     // do stuff based on the options. Eg. load level based on game mode etc.
 
-    // after setup is done call:
-    GamingCouch.Instance.SetupDone();
-}
-```
-
-Next we need to listen when GC and all the players are ready to play:
-
-```C#
-private void GamingCouchPlay(GCPlayOptions options)
-{
-    // we now have all the successfully loaded players so we can instantiate them.
-    // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
-    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.up * 100, Quaternion.identity);
-
     // Setup the game and HUD based on the game/game mode
     GamingCouch.Instance.SetupGameVersus(
         new GCGameVersusSetupOptions()
@@ -90,6 +76,20 @@ private void GamingCouchPlay(GCPlayOptions options)
             }
         }
     );
+
+    // after setup is done call:
+    GamingCouch.Instance.SetupDone();
+}
+```
+
+Next we need to listen when GC and all the players are ready to play:
+
+```C#
+private void GamingCouchPlay(GCPlayOptions options)
+{
+    // we now have all the successfully loaded players so we can instantiate them.
+    // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
+    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.up * 100, Quaternion.identity);
 
     // next we can set the game to play mode and or play intro
     StartMyGameNow();
