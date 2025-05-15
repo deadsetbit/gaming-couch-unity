@@ -167,15 +167,12 @@ namespace DSB.GC.Hud
 
         public void HandleQueue()
         {
-            if (pointDataQueue.Count > 0)
+            var pointData = new GCScreenPointData
             {
-                var pointData = new GCScreenPointData
-                {
-                    points = pointDataQueue.ToArray()
-                };
-                UpdateScreenPointHud(pointData);
-                pointDataQueue.Clear();
-            }
+                points = pointDataQueue.ToArray()
+            };
+            UpdateScreenPointHud(pointData);
+            pointDataQueue.Clear();
         }
 
         public void SetCamera(Camera camera)
