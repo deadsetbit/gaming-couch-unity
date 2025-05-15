@@ -93,8 +93,6 @@ namespace DSB.GC.Unity.NGO
         throw new InvalidOperationException("StartServer has already been called.");
       }
 
-      Debug.Log("Starting server...");
-
       startServerCalled = true;
 
       SetNetworkConfigs();
@@ -114,12 +112,8 @@ namespace DSB.GC.Unity.NGO
         throw new InvalidOperationException("StartClient has already been called.");
       }
 
-      Debug.Log("Starting client - GamingCouch.Instance.ClientId:" + GamingCouch.Instance.ClientId);
-
       startClientCalled = true;
-
       SetNetworkConfigs();
-
       NetworkManager.Singleton.StartClient();
     }
 

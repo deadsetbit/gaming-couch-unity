@@ -42,7 +42,6 @@ namespace DSB.GC.Unity.NGO
 
         private void StateSyncClient()
         {
-            Debug.Log("debug - Client: " + netPlayerId.Value);
             var playerOptions = GamingCouch.Instance.GetPlayerOptions((int)netPlayerId.Value);
             GamingCouch.Instance._InternalSetPlayerProperties(player, playerOptions);
 
