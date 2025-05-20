@@ -258,3 +258,91 @@ you can create project from scratch by following these steps:
 
 - create new unity project with the "Universal 3D" template (URP) or optionally "Universal 2D" (URP)
 - follow the [installation and integration steps](#installation)
+
+# Adding online multiplayer support for your game (WIP)
+
+NOTE: These steps are still work in progress and currently documented steps requires verifying.
+
+In case you want to expand your game to support online multiplayer you need to go thru some extra steps. Make sure you have GamingCouch integration done first before setting up the multiplayer support.
+
+1. Check the "Online Multiplayer Support" checkbox in the GamingCouch game object.
+2. Install the "Unity Netcode for GameObjects" package via Package Manager.
+3. Add NetworkManager object to your scene.
+4. Add these components to the NetworkManager object:
+   - GCNetworkManager
+   - GCTransport
+   - NetworkManager
+5. In the NetworkManager component, assign the GCTransport component you added in previous step to the "Network Transport" field.
+6. Next add NetworkObject, NetworkTransform and GCNetworkPlayer components to your player prefab. Optionally you can add NetworkRigidbody/NetworkRigidbody2D
+7. Add the player prefab to "Network Prefabs List" in the NetworkManager component.
+8. Apply some code modifications:
+
+In your main game scripts Start method, you need to add the following code to start the server/client:
+
+```C#
+private void Start() {
+    if (GamingCouch.Instance.IsServer)
+    {
+        GCNetworkManager.Instance.OnServerStarted += () =>
+        {
+            GamingCouch.Instance.OnlineMultiplayerServerReady();
+        };
+        GCNetworkManager.Instance.StartServer();
+    }
+    else
+    {
+        GamingCouch.Instance.OnlineMultiplayerClientReady();
+    }
+}
+```
+
+next in your GamingCouchSetup method, you need to
+
+```C#
+private void GamingCouchSetup(GCSetupOptions options)
+{
+    // setup game mode etc...
+
+    // Start client in as the server should be ready for clients to connect
+    if (!GamingCouch.Instance.IsServer)
+    {
+        GCNetworkManager.Instance.OnClientConnectedCallback += (clientId) =>
+        {
+            GamingCouch.Instance.SetupDone();
+        };
+        GCNetworkManager.Instance.StartClient();
+    } else {
+        GamingCouch.Instance.SetupDone();
+    }
+}
+```
+
+finally in your GamingCouchPlay method, you need to add the following code to instantiate the players on server side:
+
+```C#
+private void GamingCouchPlay(GCPlayOptions options)
+{
+    if (GamingCouch.Instance.IsServer) {
+        GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.zero, Quaternion.identity);
+    }
+
+    // call your game's own start game method etc:
+    StartGame();
+}
+```
+
+---
+
+Other notes:
+
+- you can extend GCNetworkPlayer to add game specific SyncVars or RCP's.
+- do not add the player prefab to the "Player Prefab" field in the GamingCouch game object as we do not want to instantiate the player prefab on connect. Instead the GamingCouch scripts will always handle player instantiations on server side.
+- these notes are early and might may not have all the details needed
+- follow documentation of Unity Netcode for GameObjects for more details on how to set up the multiplayer support
+- Unity 6000.0.38f1 + Unity Netcode for GameObjects 2.2.0 was used when this was written
+
+TODO:
+
+- multiplayer support to be fully testable in the editor with Multiplayer Play Mode (MPPM)
+- best practices for Unity Netcode for GameObjects + GamingCouch for different type of games
+- properly documented example project for multiplayer support
