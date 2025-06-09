@@ -619,7 +619,8 @@ namespace DSB.GC
         {
             GCPlayOptions options = new GCPlayOptions
             {
-                players = new GCPlayerOptions[numberOfPlayers]
+                players = new GCPlayerOptions[numberOfPlayers],
+                seed = UnityEngine.Random.Range(1, 999999),
             };
 
             var usedColors = new List<GCPlayerColor>();
