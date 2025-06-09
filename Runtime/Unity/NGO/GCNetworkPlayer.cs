@@ -25,7 +25,6 @@ namespace DSB.GC.Unity.NGO
         {
             player = GetComponent<GCPlayer>();
             isEliminated.Value = player.IsEliminated;
-            Debug.Log("debug - Player Awake: " + netPlayerId.Value);
         }
 
         public override void OnNetworkSpawn()

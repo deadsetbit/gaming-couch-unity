@@ -66,7 +66,7 @@ namespace DSB.GC
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         private GCPlayerStore<GCPlayer> internalPlayerStore = new GCPlayerStore<GCPlayer>();
-        private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
+        public GCPlayerStore<GCPlayer> InternalPlayerStore => internalPlayerStore;
         private GCGame game;
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
@@ -375,7 +375,7 @@ namespace DSB.GC
         {
             RequireGameSetupDone("GameOver");
 
-            var players = playerStoreOutput.PlayersEnumerable.ToList();
+            var players = internalPlayerStore.PlayersEnumerable.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
             var placementsByPlayerId = new int[playersSorted.Count];
@@ -389,7 +389,7 @@ namespace DSB.GC
             for (var i = 0; i < placementsByPlayerId.Length; i++)
             {
                 var playerId = placementsByPlayerId[i];
-                var player = playerStoreOutput.GetPlayerById(playerId);
+                var player = internalPlayerStore.GetPlayerById(playerId);
                 GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
             }
 
@@ -424,7 +424,7 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation) where T : GCPlayer
+        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
         {
             GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
 
@@ -477,39 +477,82 @@ namespace DSB.GC
             player._InternalGamingCouchSetup(playerSetupOptions);
 
             // TODO: move as this fnc is for player properties?
-            this.game.SetupPlayer(player);
-            this.internalPlayerStore.AddPlayer(player);
+            game.SetupPlayer(player);
+            internalPlayerStore.AddPlayer(player);
+            SetupPlayerReady?.Invoke(player);
+        }
+
+        private Action<GCPlayer> SetupPlayerReady;
+        private void SetPlayerReadyCallback<T>(Action<T> onReady) where T : GCPlayer
+        {
+            SetupPlayerReady = (gcPlayer) =>
+            {
+                var player = gcPlayer as T;
+                Debug.Assert(player != null, "Invalid player type in SetPlayerReadyCallback. Expected: " + typeof(T).Name + ", got: " + gcPlayer.GetType().Name);
+                onReady(player);
+            };
         }
 
         /// <summary>
-        /// Instantiate players by using the prefab defined in GamingCouch game object's inspector.
+        /// Properties to define the player spawn position and rotation when calling SetupPlayers.
+        /// </summary>
+        public struct GCPlayerSpawnProperties
+        {
+            public Vector3 position;
+            public Quaternion rotation;
+        }
+
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
+        {
+            SetupPlayers(playerOptions, null, onPlayerSetupReady);
+        }
+
+        /// <summary>
+        /// Setup and instantiate players by using the prefab defined in GamingCouch game object's inspector.
         /// </summary>
         /// <typeparam name="T">Your game specific player class that extends GCPlayer.</typeparam>
-        /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions, Vector3 position, Quaternion rotation) where T : GCPlayer
+        /// <param name="spawnProperties">Spawn properties to define the player spawn position and rotation.</param>
+        /// <param name="onPlayerSetupReady">Callback to be called when the player is ready. This is useful to store the player in your own game specific player store to access players by your games player type.</param>
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
-            GCLog.LogInfo("InstantiatePlayers");
+            GCLog.LogInfo("SetupPlayers");
 
             RequireGameSetupDone("InstantiatePlayers");
 
-            if (playerStore == null)
+            if (spawnProperties != null)
             {
-                throw new InvalidOperationException("[GamingCouch] Player store not set. You should call GamingCouch.Instance.SetupGame() before calling InstantiatePlayers.");
+                if (spawnProperties.Length < MAX_PLAYERS)
+                {
+                    throw new ArgumentException($"[GamingCouch] Not enough GCPlayerSpawnProperties provided. Expected at least {MAX_PLAYERS}, got {spawnProperties.Length}.");
+                }
+
+                if (spawnProperties.Length != MAX_PLAYERS)
+                {
+                    GCLog.LogWarning($"Number of GCPlayerSpawnProperties provided ({spawnProperties.Length}) does not match the maximum players ({MAX_PLAYERS}). Properties exceeding max players will never be used. This may indicate an error in your code.");
+                }
             }
 
-            if (playerStore.PlayerCount > 0)
+            if (internalPlayerStore.PlayerCount > 0)
             {
-                throw new InvalidOperationException("[GamingCouch] Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling InstantiatePlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling InstantiatePlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+            }
+
+            SetPlayerReadyCallback(onPlayerSetupReady);
+
+            // Client never instantiates the players as the server will do that.
+            // We still want to listen for the SetPlayerReadyCallback as defined above.
+            if (OnlineMultiplayerSupport && !IsServer)
+            {
+                return;
             }
 
             for (var i = 0; i < playerOptions.Length; i++)
             {
-                var player = InstantiatePlayer<T>(playerOptions[i], position, rotation);
-                playerStore.AddPlayer(player);
+                var position = spawnProperties != null && i < spawnProperties.Length ? spawnProperties[i].position : Vector3.zero;
+                var rotation = spawnProperties != null && i < spawnProperties.Length ? spawnProperties[i].rotation : Quaternion.identity;
+                InstantiatePlayer<T>(playerOptions[i], position, rotation);
             }
-
-            playerStoreOutput = playerStore;
         }
 
         public GCPlayerOptions GetPlayerOptions(int playerId)
@@ -678,9 +721,8 @@ namespace DSB.GC
         {
             if (!useKeyboardControls) return;
 
-            if (playerStoreOutput == null) return;
-
-            if (playerStoreOutput.PlayerCount == 0) return;
+            if (internalPlayerStore == null) return;
+            if (internalPlayerStore.PlayerCount == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
@@ -690,7 +732,7 @@ namespace DSB.GC
                 }
             }
 
-            var player = playerStoreOutput.GetPlayerByIndex(controlPlayerIndex);
+            var player = internalPlayerStore.GetPlayerByIndex(controlPlayerIndex);
 
             if (player == null) return;
 
@@ -717,7 +759,6 @@ namespace DSB.GC
         public void Clear()
         {
             internalPlayerStore.Clear();
-            playerStoreOutput.Clear();
             ClearInputs();
         }
 

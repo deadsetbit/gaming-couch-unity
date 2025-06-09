@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DSB.GC.Utils;
 using UnityEngine;
 
 namespace DSB.GC
@@ -50,6 +51,9 @@ namespace DSB.GC
 
         public void AddPlayer(T player)
         {
+            Assert.IsNotNull(player, "Trying to add null player to store. This could be due to invalid player type casting?");
+            Assert.IsTrue(player.Id != -1, "Player not properly initialized before adding to store");
+
             players.Add(player);
 
             if (!player.IsEliminated)
