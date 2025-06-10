@@ -8,6 +8,7 @@ using DSB.GC.Game;
 using DSB.GC.Log;
 using System.Linq;
 using UnityEngine.Assertions;
+using UnityEngine.SceneManagement;
 
 namespace DSB.GC
 {
@@ -151,10 +152,8 @@ namespace DSB.GC
 
         private void Update()
         {
-            if (Application.isEditor && Application.isPlaying)
-            {
-                UpdateEditorInputs();
-            }
+            HandleEditorInputs();
+            HandleGamePlayModeRestart();
         }
 
         private void LateUpdate()
@@ -724,8 +723,13 @@ namespace DSB.GC
 
         private int controlPlayerIndex = 0;
 
-        private void UpdateEditorInputs()
+        private void HandleEditorInputs()
         {
+            if (!Application.isEditor || !Application.isPlaying)
+            {
+                return;
+            }
+
             if (!useKeyboardControls) return;
 
             if (internalPlayerStore == null) return;
@@ -790,6 +794,59 @@ namespace DSB.GC
 
             Clear();
             Start();
+        }
+        #endregion
+
+        #region Play mode restart
+        [Header("Developer utils")]
+
+        [SerializeField]
+        private bool enablePlayModeRestart = true;
+
+        [SerializeField]
+        private KeyCode playModeRestartKey = KeyCode.Tab;
+
+        private void HandleGamePlayModeRestart()
+        {
+            if (!Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
+            {
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                GCLog.LogDebug("Restarting game in play mode -----------");
+
+                // Destroy all DontDestroyOnLoad objects
+                // This is necessary as SceneManager.LoadScene will not destroy them
+                // We need to probe the scene as Unity does not provide reference to the special scene.
+                GameObject temp = new GameObject("SceneProbe");
+                DontDestroyOnLoad(temp);
+                Scene dontDestroyScene = temp.scene;
+                DestroyImmediate(temp);
+
+                GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+                List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
+
+                foreach (var obj in allObjects)
+                {
+                    if (obj.scene == dontDestroyScene && obj.transform.parent == null)
+                    {
+                        donDestroyOnLoadObjects.Add(obj);
+                    }
+                }
+
+                foreach (var obj in donDestroyOnLoadObjects)
+                {
+                    if (obj != null)
+                    {
+                        DestroyImmediate(obj);
+                    }
+                }
+
+                // Finally just reload the current scene and we should have a clean slate... fingers crossed.
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
         }
         #endregion
     }
