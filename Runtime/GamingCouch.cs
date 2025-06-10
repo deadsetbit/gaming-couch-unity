@@ -11,6 +11,8 @@ using UnityEngine.Assertions;
 
 namespace DSB.GC
 {
+    public enum GCMode { Development = 1, Production = 2 }
+
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
@@ -58,6 +60,8 @@ namespace DSB.GC
                 return setupOptions.clientId;
             }
         }
+        private GCMode mode = GCMode.Production;
+        public GCMode Mode => mode;
         [SerializeField]
         [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for server and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
         private bool onlineMultiplayerSupport = false;
@@ -189,6 +193,8 @@ namespace DSB.GC
             {
                 throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
             }
+
+            mode = setupOptions.mode;
 
             listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
         }
@@ -655,6 +661,7 @@ namespace DSB.GC
             {
                 isServer = true,
                 gameModeId = gameModeId,
+                mode = GCMode.Development,
             };
         }
 

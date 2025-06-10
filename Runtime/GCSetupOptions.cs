@@ -5,6 +5,7 @@ namespace DSB.GC
     [System.Serializable]
     public class GCSetupOptions
     {
+        public GCMode mode = GCMode.Production;
         public uint clientId;
         public bool isServer;
         public string gameModeId;
