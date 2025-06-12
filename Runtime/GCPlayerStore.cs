@@ -25,6 +25,12 @@ namespace DSB.GC
 
         private void HandlePlayerEliminated(T player)
         {
+            if (!uneliminatedPlayers.Contains(player))
+            {
+                Debug.LogWarning($"Player {player.Id} is not in the uneliminated players list when trying to eliminate them. Possibly calling SetEliminated on a player that is already eliminated?");
+                return;
+            }
+
             uneliminatedPlayers.Remove(player);
             eliminatedPlayers.Add(player);
 
@@ -33,6 +39,12 @@ namespace DSB.GC
 
         private void HandlePlayerUneliminated(T player)
         {
+            if (!eliminatedPlayers.Contains(player))
+            {
+                Debug.LogWarning($"Player {player.Id} is not in the eliminated players list when trying to uneliminate them. Possibly calling SetUneliminated on a player that is already uneliminated?");
+                return;
+            }
+
             eliminatedPlayers.Remove(player);
             uneliminatedPlayers.Add(player);
 
