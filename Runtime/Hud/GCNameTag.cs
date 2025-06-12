@@ -4,7 +4,10 @@ namespace DSB.GC.Hud
 {
     public class GCNameTag : MonoBehaviour
     {
-        private int playerId = -1;
+        [SerializeField]
+        private bool hideWhenPlayerEliminated = true;
+
+        private GCPlayer player;
 
         private GCPlayer FindPlayerComponent()
         {
@@ -25,30 +28,27 @@ namespace DSB.GC.Hud
 
         private void Start()
         {
-            if (playerId == -1)
+            if (!player)
             {
-                var player = FindPlayerComponent();
-                if (player != null)
-                {
-                    playerId = player.Id;
-                }
+                player = FindPlayerComponent();
             }
 
-            if (playerId == -1)
+            if (!player)
             {
                 Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayerId before Start.");
                 return;
             }
         }
 
-        public void SetPlayerId(int playerId)
+        public void SetPlayer(GCPlayer player)
         {
-            this.playerId = playerId;
+            this.player = player;
         }
 
         private void Update()
         {
-            if (playerId == -1) return;
+            if (!player) return;
+            if (hideWhenPlayerEliminated && player.IsEliminated) return;
 
             var screenPosition = GamingCouch.Instance.Hud.Camera.WorldToScreenPoint(transform.position);
 
@@ -58,7 +58,7 @@ namespace DSB.GC.Hud
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
                 type = "name",
-                playerId = playerId,
+                playerId = player.Id,
                 x = screenPosition.x / Screen.width,
                 y = screenPosition.y / Screen.height
             });
@@ -75,7 +75,7 @@ namespace DSB.GC.Hud
         private void OnDrawGizmos()
         {
             if (!drawDebugGizmo) return;
-            if (playerId == -1) return;
+            if (player == null || player.Id == -1) return;
 
             Camera camera = Camera.main;
             if (camera == null) return;
