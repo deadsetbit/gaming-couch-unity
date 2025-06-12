@@ -70,6 +70,14 @@ namespace DSB.GC
         private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
+        public int GameSeed
+        {
+            get
+            {
+                Assert.IsNotNull(playOptions, "GamingCouch play options not set when reading GameSeed.");
+                return playOptions.seed;
+            }
+        }
         private GCPlayerStore<GCPlayer> internalPlayerStore = new GCPlayerStore<GCPlayer>();
         public GCPlayerStore<GCPlayer> InternalPlayerStore => internalPlayerStore;
         private GCGame game;
