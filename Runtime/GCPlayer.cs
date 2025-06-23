@@ -24,6 +24,11 @@ namespace DSB.GC
         public Action<GCPlayerStatus, string, string> OnStatusChanged;
         public GCPlayerType PlayerType = GCPlayerType.unset;
         public bool IsBot => PlayerType == GCPlayerType.bot;
+        private int index = -1;
+        public int Index => index;
+        // TODO:
+        // deprecate/remove this as games should be using Index instead.
+        // Can't remove the ID completely yet as it's still used to communicate placements to the platform.
         private int id = -1;
         /// <summary>
         /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
@@ -122,6 +127,7 @@ namespace DSB.GC
         /// <param name="options">Options provided by the platform</param>
         public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
+            index = options.index;
             PlayerType = options.type;
             id = options.playerId;
             playerName = options.name;

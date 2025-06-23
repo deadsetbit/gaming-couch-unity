@@ -480,6 +480,7 @@ namespace DSB.GC
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
+                index = internalPlayerStore.PlayerCount,
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 playerId = options.playerId,
                 name = options.name,
