@@ -532,7 +532,7 @@ namespace DSB.GC
         {
             GCLog.LogInfo("SetupPlayers");
 
-            RequireGameSetupDone("InstantiatePlayers");
+            RequireGameSetupDone("SetupPlayers");
 
             if (spawnProperties != null)
             {
@@ -549,7 +549,7 @@ namespace DSB.GC
 
             if (internalPlayerStore.PlayerCount > 0)
             {
-                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling InstantiatePlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
             }
 
             SetPlayerReadyCallback(onPlayerSetupReady);

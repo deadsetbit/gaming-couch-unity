@@ -35,7 +35,7 @@ namespace DSB.GC.Hud
 
             if (!player)
             {
-                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayerId before Start.");
+                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayer before Start.");
                 return;
             }
         }
