@@ -72,8 +72,10 @@ public class WebBuildOptimizer
         // Deactivate debug symbols
         PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Embedded;
 
+#if UNITY_2023_1_OR_NEWER
         //Enable WebAssembly 2023 features
         PlayerSettings.WebGL.wasm2023 = true;
+#endif
 
         // Enable development build
         EditorUserBuildSettings.development = true;
