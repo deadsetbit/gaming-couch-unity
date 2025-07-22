@@ -89,7 +89,10 @@ private void GamingCouchPlay(GCPlayOptions options)
 {
     // we now have all the successfully loaded players so we can instantiate them.
     // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
-    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.up * 100, Quaternion.identity);
+    GamingCouch.Instance.SetupPlayers<Player>(options.players, (player) =>
+    {
+        playerStore.AddPlayer(player);
+    });
 
     // next we can set the game to play mode and or play intro
     StartMyGameNow();
@@ -323,7 +326,10 @@ finally in your GamingCouchPlay method, you need to add the following code to in
 private void GamingCouchPlay(GCPlayOptions options)
 {
     if (GamingCouch.Instance.IsServer) {
-        GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.zero, Quaternion.identity);
+        GamingCouch.Instance.SetupPlayers<Player>(options.players, (player) =>
+        {
+            playerStore.AddPlayer(player);
+        });
     }
 
     // call your game's own start game method etc:
