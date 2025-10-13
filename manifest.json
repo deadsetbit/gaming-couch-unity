@@ -35,6 +35,16 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCMode.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCPlayOptions.yml",
       "output": {
         ".html": {
@@ -79,6 +89,16 @@
       "output": {
         ".html": {
           "relative_path": "api/DSB.GC.GCPlayerSetupOptions.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GCPlayerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GCPlayerStatus.html"
         }
       },
       "version": ""
@@ -189,6 +209,16 @@
       "output": {
         ".html": {
           "relative_path": "api/DSB.GC.Game.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.GamingCouch.GCPlayerSpawnProperties.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.GamingCouch.GCPlayerSpawnProperties.html"
         }
       },
       "version": ""
@@ -335,10 +365,20 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/DSB.GC.PlayerStatus.yml",
+      "source_relative_path": "api/DSB.GC.Utils.Assert.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DSB.GC.PlayerStatus.html"
+          "relative_path": "api/DSB.GC.Utils.Assert.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Utils.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Utils.html"
         }
       },
       "version": ""
@@ -399,6 +439,16 @@
       "output": {
         ".html": {
           "relative_path": "api/Global.GamingCouchEditor.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Global.WebBuildOptimizer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Global.WebBuildOptimizer.html"
         }
       },
       "version": ""

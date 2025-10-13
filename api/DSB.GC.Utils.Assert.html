@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class GCNameTag | Gaming Couch | 0.0.1 </title>
+      <title>Class Assert | Gaming Couch | 0.0.1 </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class GCNameTag | Gaming Couch | 0.0.1 ">
+      <meta name="title" content="Class Assert | Gaming Couch | 0.0.1 ">
       
       
       <link rel="icon" href="../favicon.ico">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       <meta name="docfx:disablenewtab" content="true">
       
-      <meta name="docfx:docurl" content="https://github.com/deadsetbit/gaming-couch-unity/new/main/apiSpec/new?filename=DSB_GC_Hud_GCNameTag.md&amp;value=---%0Auid%3A%20DSB.GC.Hud.GCNameTag%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/deadsetbit/gaming-couch-unity/new/main/apiSpec/new?filename=DSB_GC_Utils_Assert.md&amp;value=---%0Auid%3A%20DSB.GC.Utils.Assert%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,16 +84,16 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="DSB.GC.Hud.GCNameTag">
+        <article data-uid="DSB.GC.Utils.Assert">
 
 
 
-  <h1 id="DSB_GC_Hud_GCNameTag" data-uid="DSB.GC.Hud.GCNameTag" class="text-break">
-Class GCNameTag  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCNameTag.cs/#L5"><i class="bi bi-code-slash"></i></a>
+  <h1 id="DSB_GC_Utils_Assert" data-uid="DSB.GC.Utils.Assert" class="text-break">
+Class Assert  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Utils/NewEmptyCSharpScript.cs/#L3"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
-    <dl><dt>Namespace</dt><dd><a class="xref" href="DSB.html">DSB</a>.<a class="xref" href="DSB.GC.html">GC</a>.<a class="xref" href="DSB.GC.Hud.html">Hud</a></dd></dl>
+    <dl><dt>Namespace</dt><dd><a class="xref" href="DSB.html">DSB</a>.<a class="xref" href="DSB.GC.html">GC</a>.<a class="xref" href="DSB.GC.Utils.html">Utils</a></dd></dl>
   
   </div>
 
@@ -101,7 +101,7 @@ Class GCNameTag  <a class="header-action link-secondary" title="View source" hre
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class GCNameTag : MonoBehaviour</code></pre>
+    <pre><code class="lang-csharp hljs">public static class Assert</code></pre>
   </div>
 
 
@@ -111,12 +111,37 @@ Class GCNameTag  <a class="header-action link-secondary" title="View source" hre
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">GCNameTag</span></div>
+      <div><span class="xref">Assert</span></div>
     </dd>
   </dl>
 
 
 
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
 
 
 
@@ -127,23 +152,58 @@ Class GCNameTag  <a class="header-action link-secondary" title="View source" hre
 </h2>
 
 
-  <a id="DSB_GC_Hud_GCNameTag_SetPlayer_" data-uid="DSB.GC.Hud.GCNameTag.SetPlayer*"></a>
+  <a id="DSB_GC_Utils_Assert_IsNotNull_" data-uid="DSB.GC.Utils.Assert.IsNotNull*"></a>
 
-  <h3 id="DSB_GC_Hud_GCNameTag_SetPlayer_DSB_GC_GCPlayer_" data-uid="DSB.GC.Hud.GCNameTag.SetPlayer(DSB.GC.GCPlayer)">
-  SetPlayer(GCPlayer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCNameTag.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_Utils_Assert_IsNotNull_System_Object_System_String_" data-uid="DSB.GC.Utils.Assert.IsNotNull(System.Object,System.String)">
+  IsNotNull(object, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Utils/NewEmptyCSharpScript.cs/#L11"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetPlayer(GCPlayer player)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void IsNotNull(object obj, string message)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>player</code> <a class="xref" href="DSB.GC.GCPlayer.html">GCPlayer</a></dt>
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd></dd>
+    <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_Utils_Assert_IsTrue_" data-uid="DSB.GC.Utils.Assert.IsTrue*"></a>
+
+  <h3 id="DSB_GC_Utils_Assert_IsTrue_System_Boolean_System_String_" data-uid="DSB.GC.Utils.Assert.IsTrue(System.Boolean,System.String)">
+  IsTrue(bool, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Utils/NewEmptyCSharpScript.cs/#L5"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IsTrue(bool condition, string message)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>condition</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+    <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 

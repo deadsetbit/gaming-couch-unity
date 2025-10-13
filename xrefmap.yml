@@ -233,6 +233,24 @@ references:
   commentId: F:DSB.GC.GCControllerInputsData.b3
   fullName: DSB.GC.GCControllerInputsData.b3
   nameWithType: GCControllerInputsData.b3
+- uid: DSB.GC.GCMode
+  name: GCMode
+  href: api/DSB.GC.GCMode.html
+  commentId: T:DSB.GC.GCMode
+  fullName: DSB.GC.GCMode
+  nameWithType: GCMode
+- uid: DSB.GC.GCMode.Development
+  name: Development
+  href: api/DSB.GC.GCMode.html#DSB_GC_GCMode_Development
+  commentId: F:DSB.GC.GCMode.Development
+  fullName: DSB.GC.GCMode.Development
+  nameWithType: GCMode.Development
+- uid: DSB.GC.GCMode.Production
+  name: Production
+  href: api/DSB.GC.GCMode.html#DSB_GC_GCMode_Production
+  commentId: F:DSB.GC.GCMode.Production
+  fullName: DSB.GC.GCMode.Production
+  nameWithType: GCMode.Production
 - uid: DSB.GC.GCPlayOptions
   name: GCPlayOptions
   href: api/DSB.GC.GCPlayOptions.html
@@ -261,6 +279,12 @@ references:
   commentId: F:DSB.GC.GCPlayOptions.players
   fullName: DSB.GC.GCPlayOptions.players
   nameWithType: GCPlayOptions.players
+- uid: DSB.GC.GCPlayOptions.seed
+  name: seed
+  href: api/DSB.GC.GCPlayOptions.html#DSB_GC_GCPlayOptions_seed
+  commentId: F:DSB.GC.GCPlayOptions.seed
+  fullName: DSB.GC.GCPlayOptions.seed
+  nameWithType: GCPlayOptions.seed
 - uid: DSB.GC.GCPlayer
   name: GCPlayer
   href: api/DSB.GC.GCPlayer.html
@@ -442,6 +466,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Id
   nameWithType: GCPlayer.Id
+- uid: DSB.GC.GCPlayer.Index
+  name: Index
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Index
+  commentId: P:DSB.GC.GCPlayer.Index
+  fullName: DSB.GC.GCPlayer.Index
+  nameWithType: GCPlayer.Index
+- uid: DSB.GC.GCPlayer.Index*
+  name: Index
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Index_
+  commentId: Overload:DSB.GC.GCPlayer.Index
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.Index
+  nameWithType: GCPlayer.Index
 - uid: DSB.GC.GCPlayer.IsBot
   name: IsBot
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_IsBot
@@ -569,6 +606,12 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.PlayerName
   nameWithType: GCPlayer.PlayerName
+- uid: DSB.GC.GCPlayer.PlayerType
+  name: PlayerType
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_PlayerType
+  commentId: F:DSB.GC.GCPlayer.PlayerType
+  fullName: DSB.GC.GCPlayer.PlayerType
+  nameWithType: GCPlayer.PlayerType
 - uid: DSB.GC.GCPlayer.Score
   name: Score
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Score
@@ -646,15 +689,15 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetScore
   nameWithType: GCPlayer.SetScore
-- uid: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String,System.String)
-  name: SetStatus(PlayerStatus, string, string)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_DSB_GC_PlayerStatus_System_String_System_String_
-  commentId: M:DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus,System.String,System.String)
-  name.vb: SetStatus(PlayerStatus, String, String)
-  fullName: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, string, string)
-  fullName.vb: DSB.GC.GCPlayer.SetStatus(DSB.GC.PlayerStatus, String, String)
-  nameWithType: GCPlayer.SetStatus(PlayerStatus, string, string)
-  nameWithType.vb: GCPlayer.SetStatus(PlayerStatus, String, String)
+- uid: DSB.GC.GCPlayer.SetStatus(DSB.GC.GCPlayerStatus,System.String,System.String)
+  name: SetStatus(GCPlayerStatus, string, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_DSB_GC_GCPlayerStatus_System_String_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetStatus(DSB.GC.GCPlayerStatus,System.String,System.String)
+  name.vb: SetStatus(GCPlayerStatus, String, String)
+  fullName: DSB.GC.GCPlayer.SetStatus(DSB.GC.GCPlayerStatus, string, string)
+  fullName.vb: DSB.GC.GCPlayer.SetStatus(DSB.GC.GCPlayerStatus, String, String)
+  nameWithType: GCPlayer.SetStatus(GCPlayerStatus, string, string)
+  nameWithType.vb: GCPlayer.SetStatus(GCPlayerStatus, String, String)
 - uid: DSB.GC.GCPlayer.SetStatus*
   name: SetStatus
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetStatus_
@@ -736,12 +779,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SubtractScore
   nameWithType: GCPlayer.SubtractScore
-- uid: DSB.GC.GCPlayer.playerType
-  name: playerType
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_playerType
-  commentId: F:DSB.GC.GCPlayer.playerType
-  fullName: DSB.GC.GCPlayer.playerType
-  nameWithType: GCPlayer.playerType
+- uid: DSB.GC.GCPlayer._InternalGamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
+  name: _InternalGamingCouchSetup(GCPlayerSetupOptions)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer__InternalGamingCouchSetup_DSB_GC_GCPlayerSetupOptions_
+  commentId: M:DSB.GC.GCPlayer._InternalGamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
+  fullName: DSB.GC.GCPlayer._InternalGamingCouchSetup(DSB.GC.GCPlayerSetupOptions)
+  nameWithType: GCPlayer._InternalGamingCouchSetup(GCPlayerSetupOptions)
+- uid: DSB.GC.GCPlayer._InternalGamingCouchSetup*
+  name: _InternalGamingCouchSetup
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer__InternalGamingCouchSetup_
+  commentId: Overload:DSB.GC.GCPlayer._InternalGamingCouchSetup
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer._InternalGamingCouchSetup
+  nameWithType: GCPlayer._InternalGamingCouchSetup
 - uid: DSB.GC.GCPlayerColor
   name: GCPlayerColor
   href: api/DSB.GC.GCPlayerColor.html
@@ -844,6 +894,12 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.colorName
   fullName: DSB.GC.GCPlayerSetupOptions.colorName
   nameWithType: GCPlayerSetupOptions.colorName
+- uid: DSB.GC.GCPlayerSetupOptions.index
+  name: index
+  href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_index
+  commentId: F:DSB.GC.GCPlayerSetupOptions.index
+  fullName: DSB.GC.GCPlayerSetupOptions.index
+  nameWithType: GCPlayerSetupOptions.index
 - uid: DSB.GC.GCPlayerSetupOptions.name
   name: name
   href: api/DSB.GC.GCPlayerSetupOptions.html#DSB_GC_GCPlayerSetupOptions_name
@@ -862,6 +918,36 @@ references:
   commentId: F:DSB.GC.GCPlayerSetupOptions.type
   fullName: DSB.GC.GCPlayerSetupOptions.type
   nameWithType: GCPlayerSetupOptions.type
+- uid: DSB.GC.GCPlayerStatus
+  name: GCPlayerStatus
+  href: api/DSB.GC.GCPlayerStatus.html
+  commentId: T:DSB.GC.GCPlayerStatus
+  fullName: DSB.GC.GCPlayerStatus
+  nameWithType: GCPlayerStatus
+- uid: DSB.GC.GCPlayerStatus.Failure
+  name: Failure
+  href: api/DSB.GC.GCPlayerStatus.html#DSB_GC_GCPlayerStatus_Failure
+  commentId: F:DSB.GC.GCPlayerStatus.Failure
+  fullName: DSB.GC.GCPlayerStatus.Failure
+  nameWithType: GCPlayerStatus.Failure
+- uid: DSB.GC.GCPlayerStatus.Neutral
+  name: Neutral
+  href: api/DSB.GC.GCPlayerStatus.html#DSB_GC_GCPlayerStatus_Neutral
+  commentId: F:DSB.GC.GCPlayerStatus.Neutral
+  fullName: DSB.GC.GCPlayerStatus.Neutral
+  nameWithType: GCPlayerStatus.Neutral
+- uid: DSB.GC.GCPlayerStatus.Pending
+  name: Pending
+  href: api/DSB.GC.GCPlayerStatus.html#DSB_GC_GCPlayerStatus_Pending
+  commentId: F:DSB.GC.GCPlayerStatus.Pending
+  fullName: DSB.GC.GCPlayerStatus.Pending
+  nameWithType: GCPlayerStatus.Pending
+- uid: DSB.GC.GCPlayerStatus.Success
+  name: Success
+  href: api/DSB.GC.GCPlayerStatus.html#DSB_GC_GCPlayerStatus_Success
+  commentId: F:DSB.GC.GCPlayerStatus.Success
+  fullName: DSB.GC.GCPlayerStatus.Success
+  nameWithType: GCPlayerStatus.Success
 - uid: DSB.GC.GCPlayerStore`1
   name: GCPlayerStore<T>
   href: api/DSB.GC.GCPlayerStore-1.html
@@ -1159,12 +1245,30 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCSetupOptions.CreateFromJSON
   nameWithType: GCSetupOptions.CreateFromJSON
+- uid: DSB.GC.GCSetupOptions.clientId
+  name: clientId
+  href: api/DSB.GC.GCSetupOptions.html#DSB_GC_GCSetupOptions_clientId
+  commentId: F:DSB.GC.GCSetupOptions.clientId
+  fullName: DSB.GC.GCSetupOptions.clientId
+  nameWithType: GCSetupOptions.clientId
 - uid: DSB.GC.GCSetupOptions.gameModeId
   name: gameModeId
   href: api/DSB.GC.GCSetupOptions.html#DSB_GC_GCSetupOptions_gameModeId
   commentId: F:DSB.GC.GCSetupOptions.gameModeId
   fullName: DSB.GC.GCSetupOptions.gameModeId
   nameWithType: GCSetupOptions.gameModeId
+- uid: DSB.GC.GCSetupOptions.isServer
+  name: isServer
+  href: api/DSB.GC.GCSetupOptions.html#DSB_GC_GCSetupOptions_isServer
+  commentId: F:DSB.GC.GCSetupOptions.isServer
+  fullName: DSB.GC.GCSetupOptions.isServer
+  nameWithType: GCSetupOptions.isServer
+- uid: DSB.GC.GCSetupOptions.mode
+  name: mode
+  href: api/DSB.GC.GCSetupOptions.html#DSB_GC_GCSetupOptions_mode
+  commentId: F:DSB.GC.GCSetupOptions.mode
+  fullName: DSB.GC.GCSetupOptions.mode
+  nameWithType: GCSetupOptions.mode
 - uid: DSB.GC.GCStatus
   name: GCStatus
   href: api/DSB.GC.GCStatus.html
@@ -1255,6 +1359,35 @@ references:
   isSpec: "True"
   fullName: DSB.GC.Game.GCGame.HandlePlayersHudAutoUpdate
   nameWithType: GCGame.HandlePlayersHudAutoUpdate
+- uid: DSB.GC.Game.GCGame.SetMaxScore(System.Int32)
+  name: SetMaxScore(int)
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_SetMaxScore_System_Int32_
+  commentId: M:DSB.GC.Game.GCGame.SetMaxScore(System.Int32)
+  name.vb: SetMaxScore(Integer)
+  fullName: DSB.GC.Game.GCGame.SetMaxScore(int)
+  fullName.vb: DSB.GC.Game.GCGame.SetMaxScore(Integer)
+  nameWithType: GCGame.SetMaxScore(int)
+  nameWithType.vb: GCGame.SetMaxScore(Integer)
+- uid: DSB.GC.Game.GCGame.SetMaxScore*
+  name: SetMaxScore
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_SetMaxScore_
+  commentId: Overload:DSB.GC.Game.GCGame.SetMaxScore
+  isSpec: "True"
+  fullName: DSB.GC.Game.GCGame.SetMaxScore
+  nameWithType: GCGame.SetMaxScore
+- uid: DSB.GC.Game.GCGame.SetupPlayer(DSB.GC.GCPlayer)
+  name: SetupPlayer(GCPlayer)
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_SetupPlayer_DSB_GC_GCPlayer_
+  commentId: M:DSB.GC.Game.GCGame.SetupPlayer(DSB.GC.GCPlayer)
+  fullName: DSB.GC.Game.GCGame.SetupPlayer(DSB.GC.GCPlayer)
+  nameWithType: GCGame.SetupPlayer(GCPlayer)
+- uid: DSB.GC.Game.GCGame.SetupPlayer*
+  name: SetupPlayer
+  href: api/DSB.GC.Game.GCGame.html#DSB_GC_Game_GCGame_SetupPlayer_
+  commentId: Overload:DSB.GC.Game.GCGame.SetupPlayer
+  isSpec: "True"
+  fullName: DSB.GC.Game.GCGame.SetupPlayer
+  nameWithType: GCGame.SetupPlayer
 - uid: DSB.GC.Game.GCGameHudOptions
   name: GCGameHudOptions
   href: api/DSB.GC.Game.GCGameHudOptions.html
@@ -1402,6 +1535,37 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.ClearInputs
   nameWithType: GamingCouch.ClearInputs
+- uid: DSB.GC.GamingCouch.ClientId
+  name: ClientId
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_ClientId
+  commentId: P:DSB.GC.GamingCouch.ClientId
+  fullName: DSB.GC.GamingCouch.ClientId
+  nameWithType: GamingCouch.ClientId
+- uid: DSB.GC.GamingCouch.ClientId*
+  name: ClientId
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_ClientId_
+  commentId: Overload:DSB.GC.GamingCouch.ClientId
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.ClientId
+  nameWithType: GamingCouch.ClientId
+- uid: DSB.GC.GamingCouch.GCPlayerSpawnProperties
+  name: GamingCouch.GCPlayerSpawnProperties
+  href: api/DSB.GC.GamingCouch.GCPlayerSpawnProperties.html
+  commentId: T:DSB.GC.GamingCouch.GCPlayerSpawnProperties
+  fullName: DSB.GC.GamingCouch.GCPlayerSpawnProperties
+  nameWithType: GamingCouch.GCPlayerSpawnProperties
+- uid: DSB.GC.GamingCouch.GCPlayerSpawnProperties.position
+  name: position
+  href: api/DSB.GC.GamingCouch.GCPlayerSpawnProperties.html#DSB_GC_GamingCouch_GCPlayerSpawnProperties_position
+  commentId: F:DSB.GC.GamingCouch.GCPlayerSpawnProperties.position
+  fullName: DSB.GC.GamingCouch.GCPlayerSpawnProperties.position
+  nameWithType: GamingCouch.GCPlayerSpawnProperties.position
+- uid: DSB.GC.GamingCouch.GCPlayerSpawnProperties.rotation
+  name: rotation
+  href: api/DSB.GC.GamingCouch.GCPlayerSpawnProperties.html#DSB_GC_GamingCouch_GCPlayerSpawnProperties_rotation
+  commentId: F:DSB.GC.GamingCouch.GCPlayerSpawnProperties.rotation
+  fullName: DSB.GC.GamingCouch.GCPlayerSpawnProperties.rotation
+  nameWithType: GamingCouch.GCPlayerSpawnProperties.rotation
 - uid: DSB.GC.GamingCouch.GameOver
   name: GameOver()
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameOver
@@ -1415,6 +1579,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.GameOver
   nameWithType: GamingCouch.GameOver
+- uid: DSB.GC.GamingCouch.GameSeed
+  name: GameSeed
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameSeed
+  commentId: P:DSB.GC.GamingCouch.GameSeed
+  fullName: DSB.GC.GamingCouch.GameSeed
+  nameWithType: GamingCouch.GameSeed
+- uid: DSB.GC.GamingCouch.GameSeed*
+  name: GameSeed
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GameSeed_
+  commentId: Overload:DSB.GC.GamingCouch.GameSeed
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.GameSeed
+  nameWithType: GamingCouch.GameSeed
 - uid: DSB.GC.GamingCouch.GetInputsByPlayerId(System.Int32)
   name: GetInputsByPlayerId(int)
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetInputsByPlayerId_System_Int32_
@@ -1431,6 +1608,22 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.GetInputsByPlayerId
   nameWithType: GamingCouch.GetInputsByPlayerId
+- uid: DSB.GC.GamingCouch.GetPlayerOptions(System.Int32)
+  name: GetPlayerOptions(int)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetPlayerOptions_System_Int32_
+  commentId: M:DSB.GC.GamingCouch.GetPlayerOptions(System.Int32)
+  name.vb: GetPlayerOptions(Integer)
+  fullName: DSB.GC.GamingCouch.GetPlayerOptions(int)
+  fullName.vb: DSB.GC.GamingCouch.GetPlayerOptions(Integer)
+  nameWithType: GamingCouch.GetPlayerOptions(int)
+  nameWithType.vb: GamingCouch.GetPlayerOptions(Integer)
+- uid: DSB.GC.GamingCouch.GetPlayerOptions*
+  name: GetPlayerOptions
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_GetPlayerOptions_
+  commentId: Overload:DSB.GC.GamingCouch.GetPlayerOptions
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.GetPlayerOptions
+  nameWithType: GamingCouch.GetPlayerOptions
 - uid: DSB.GC.GamingCouch.Hud
   name: Hud
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Hud
@@ -1457,28 +1650,90 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.Instance
   nameWithType: GamingCouch.Instance
-- uid: DSB.GC.GamingCouch.InstantiatePlayers*
-  name: InstantiatePlayers
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers_
-  commentId: Overload:DSB.GC.GamingCouch.InstantiatePlayers
+- uid: DSB.GC.GamingCouch.InternalPlayerStore
+  name: InternalPlayerStore
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InternalPlayerStore
+  commentId: P:DSB.GC.GamingCouch.InternalPlayerStore
+  fullName: DSB.GC.GamingCouch.InternalPlayerStore
+  nameWithType: GamingCouch.InternalPlayerStore
+- uid: DSB.GC.GamingCouch.InternalPlayerStore*
+  name: InternalPlayerStore
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InternalPlayerStore_
+  commentId: Overload:DSB.GC.GamingCouch.InternalPlayerStore
   isSpec: "True"
-  fullName: DSB.GC.GamingCouch.InstantiatePlayers
-  nameWithType: GamingCouch.InstantiatePlayers
-- uid: DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[],Vector3,Quaternion)
-  name: InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[], Vector3, Quaternion)
-  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_InstantiatePlayers__1_DSB_GC_GCPlayerStore___0__DSB_GC_GCPlayerOptions___Vector3_Quaternion_
-  commentId: M:DSB.GC.GamingCouch.InstantiatePlayers``1(DSB.GC.GCPlayerStore{``0},DSB.GC.GCPlayerOptions[],Vector3,Quaternion)
-  name.vb: InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions(), Vector3, Quaternion)
-  fullName: DSB.GC.GamingCouch.InstantiatePlayers<T>(DSB.GC.GCPlayerStore<T>, DSB.GC.GCPlayerOptions[], Vector3, Quaternion)
-  fullName.vb: DSB.GC.GamingCouch.InstantiatePlayers(Of T)(DSB.GC.GCPlayerStore(Of T), DSB.GC.GCPlayerOptions(), Vector3, Quaternion)
-  nameWithType: GamingCouch.InstantiatePlayers<T>(GCPlayerStore<T>, GCPlayerOptions[], Vector3, Quaternion)
-  nameWithType.vb: GamingCouch.InstantiatePlayers(Of T)(GCPlayerStore(Of T), GCPlayerOptions(), Vector3, Quaternion)
+  fullName: DSB.GC.GamingCouch.InternalPlayerStore
+  nameWithType: GamingCouch.InternalPlayerStore
+- uid: DSB.GC.GamingCouch.IsServer
+  name: IsServer
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_IsServer
+  commentId: P:DSB.GC.GamingCouch.IsServer
+  fullName: DSB.GC.GamingCouch.IsServer
+  nameWithType: GamingCouch.IsServer
+- uid: DSB.GC.GamingCouch.IsServer*
+  name: IsServer
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_IsServer_
+  commentId: Overload:DSB.GC.GamingCouch.IsServer
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.IsServer
+  nameWithType: GamingCouch.IsServer
 - uid: DSB.GC.GamingCouch.LogLevel
   name: LogLevel
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_LogLevel
   commentId: F:DSB.GC.GamingCouch.LogLevel
   fullName: DSB.GC.GamingCouch.LogLevel
   nameWithType: GamingCouch.LogLevel
+- uid: DSB.GC.GamingCouch.Mode
+  name: Mode
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Mode
+  commentId: P:DSB.GC.GamingCouch.Mode
+  fullName: DSB.GC.GamingCouch.Mode
+  nameWithType: GamingCouch.Mode
+- uid: DSB.GC.GamingCouch.Mode*
+  name: Mode
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Mode_
+  commentId: Overload:DSB.GC.GamingCouch.Mode
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.Mode
+  nameWithType: GamingCouch.Mode
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerClientReady
+  name: OnlineMultiplayerClientReady()
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerClientReady
+  commentId: M:DSB.GC.GamingCouch.OnlineMultiplayerClientReady
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerClientReady()
+  nameWithType: GamingCouch.OnlineMultiplayerClientReady()
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerClientReady*
+  name: OnlineMultiplayerClientReady
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerClientReady_
+  commentId: Overload:DSB.GC.GamingCouch.OnlineMultiplayerClientReady
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerClientReady
+  nameWithType: GamingCouch.OnlineMultiplayerClientReady
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerServerReady
+  name: OnlineMultiplayerServerReady()
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerServerReady
+  commentId: M:DSB.GC.GamingCouch.OnlineMultiplayerServerReady
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerServerReady()
+  nameWithType: GamingCouch.OnlineMultiplayerServerReady()
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerServerReady*
+  name: OnlineMultiplayerServerReady
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerServerReady_
+  commentId: Overload:DSB.GC.GamingCouch.OnlineMultiplayerServerReady
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerServerReady
+  nameWithType: GamingCouch.OnlineMultiplayerServerReady
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerSupport
+  name: OnlineMultiplayerSupport
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerSupport
+  commentId: P:DSB.GC.GamingCouch.OnlineMultiplayerSupport
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerSupport
+  nameWithType: GamingCouch.OnlineMultiplayerSupport
+- uid: DSB.GC.GamingCouch.OnlineMultiplayerSupport*
+  name: OnlineMultiplayerSupport
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_OnlineMultiplayerSupport_
+  commentId: Overload:DSB.GC.GamingCouch.OnlineMultiplayerSupport
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.OnlineMultiplayerSupport
+  nameWithType: GamingCouch.OnlineMultiplayerSupport
 - uid: DSB.GC.GamingCouch.Restart
   name: Restart()
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Restart
@@ -1492,6 +1747,22 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.Restart
   nameWithType: GamingCouch.Restart
+- uid: DSB.GC.GamingCouch.SetGameMaxScore(System.Int32)
+  name: SetGameMaxScore(int)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetGameMaxScore_System_Int32_
+  commentId: M:DSB.GC.GamingCouch.SetGameMaxScore(System.Int32)
+  name.vb: SetGameMaxScore(Integer)
+  fullName: DSB.GC.GamingCouch.SetGameMaxScore(int)
+  fullName.vb: DSB.GC.GamingCouch.SetGameMaxScore(Integer)
+  nameWithType: GamingCouch.SetGameMaxScore(int)
+  nameWithType.vb: GamingCouch.SetGameMaxScore(Integer)
+- uid: DSB.GC.GamingCouch.SetGameMaxScore*
+  name: SetGameMaxScore
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetGameMaxScore_
+  commentId: Overload:DSB.GC.GamingCouch.SetGameMaxScore
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.SetGameMaxScore
+  nameWithType: GamingCouch.SetGameMaxScore
 - uid: DSB.GC.GamingCouch.SetupDone
   name: SetupDone()
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupDone
@@ -1518,6 +1789,31 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.SetupGameVersus
   nameWithType: GamingCouch.SetupGameVersus
+- uid: DSB.GC.GamingCouch.SetupPlayers*
+  name: SetupPlayers
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupPlayers_
+  commentId: Overload:DSB.GC.GamingCouch.SetupPlayers
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.SetupPlayers
+  nameWithType: GamingCouch.SetupPlayers
+- uid: DSB.GC.GamingCouch.SetupPlayers``1(DSB.GC.GCPlayerOptions[],DSB.GC.GamingCouch.GCPlayerSpawnProperties[],System.Action{``0})
+  name: SetupPlayers<T>(GCPlayerOptions[], GCPlayerSpawnProperties[], Action<T>)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupPlayers__1_DSB_GC_GCPlayerOptions___DSB_GC_GamingCouch_GCPlayerSpawnProperties___System_Action___0__
+  commentId: M:DSB.GC.GamingCouch.SetupPlayers``1(DSB.GC.GCPlayerOptions[],DSB.GC.GamingCouch.GCPlayerSpawnProperties[],System.Action{``0})
+  name.vb: SetupPlayers(Of T)(GCPlayerOptions(), GCPlayerSpawnProperties(), Action(Of T))
+  fullName: DSB.GC.GamingCouch.SetupPlayers<T>(DSB.GC.GCPlayerOptions[], DSB.GC.GamingCouch.GCPlayerSpawnProperties[], System.Action<T>)
+  fullName.vb: DSB.GC.GamingCouch.SetupPlayers(Of T)(DSB.GC.GCPlayerOptions(), DSB.GC.GamingCouch.GCPlayerSpawnProperties(), System.Action(Of T))
+  nameWithType: GamingCouch.SetupPlayers<T>(GCPlayerOptions[], GamingCouch.GCPlayerSpawnProperties[], Action<T>)
+  nameWithType.vb: GamingCouch.SetupPlayers(Of T)(GCPlayerOptions(), GamingCouch.GCPlayerSpawnProperties(), Action(Of T))
+- uid: DSB.GC.GamingCouch.SetupPlayers``1(DSB.GC.GCPlayerOptions[],System.Action{``0})
+  name: SetupPlayers<T>(GCPlayerOptions[], Action<T>)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_SetupPlayers__1_DSB_GC_GCPlayerOptions___System_Action___0__
+  commentId: M:DSB.GC.GamingCouch.SetupPlayers``1(DSB.GC.GCPlayerOptions[],System.Action{``0})
+  name.vb: SetupPlayers(Of T)(GCPlayerOptions(), Action(Of T))
+  fullName: DSB.GC.GamingCouch.SetupPlayers<T>(DSB.GC.GCPlayerOptions[], System.Action<T>)
+  fullName.vb: DSB.GC.GamingCouch.SetupPlayers(Of T)(DSB.GC.GCPlayerOptions(), System.Action(Of T))
+  nameWithType: GamingCouch.SetupPlayers<T>(GCPlayerOptions[], Action<T>)
+  nameWithType.vb: GamingCouch.SetupPlayers(Of T)(GCPlayerOptions(), Action(Of T))
 - uid: DSB.GC.GamingCouch.Status
   name: Status
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_Status
@@ -1531,6 +1827,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.Status
   nameWithType: GamingCouch.Status
+- uid: DSB.GC.GamingCouch._InternalSetPlayerProperties(DSB.GC.GCPlayer,DSB.GC.GCPlayerOptions)
+  name: _InternalSetPlayerProperties(GCPlayer, GCPlayerOptions)
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch__InternalSetPlayerProperties_DSB_GC_GCPlayer_DSB_GC_GCPlayerOptions_
+  commentId: M:DSB.GC.GamingCouch._InternalSetPlayerProperties(DSB.GC.GCPlayer,DSB.GC.GCPlayerOptions)
+  fullName: DSB.GC.GamingCouch._InternalSetPlayerProperties(DSB.GC.GCPlayer, DSB.GC.GCPlayerOptions)
+  nameWithType: GamingCouch._InternalSetPlayerProperties(GCPlayer, GCPlayerOptions)
+- uid: DSB.GC.GamingCouch._InternalSetPlayerProperties*
+  name: _InternalSetPlayerProperties
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch__InternalSetPlayerProperties_
+  commentId: Overload:DSB.GC.GamingCouch._InternalSetPlayerProperties
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch._InternalSetPlayerProperties
+  nameWithType: GamingCouch._InternalSetPlayerProperties
 - uid: DSB.GC.Hud
   name: DSB.GC.Hud
   href: api/DSB.GC.Hud.html
@@ -1690,22 +1999,19 @@ references:
   commentId: T:DSB.GC.Hud.GCNameTag
   fullName: DSB.GC.Hud.GCNameTag
   nameWithType: GCNameTag
-- uid: DSB.GC.Hud.GCNameTag.SetPlayerId(System.Int32)
-  name: SetPlayerId(int)
-  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayerId_System_Int32_
-  commentId: M:DSB.GC.Hud.GCNameTag.SetPlayerId(System.Int32)
-  name.vb: SetPlayerId(Integer)
-  fullName: DSB.GC.Hud.GCNameTag.SetPlayerId(int)
-  fullName.vb: DSB.GC.Hud.GCNameTag.SetPlayerId(Integer)
-  nameWithType: GCNameTag.SetPlayerId(int)
-  nameWithType.vb: GCNameTag.SetPlayerId(Integer)
-- uid: DSB.GC.Hud.GCNameTag.SetPlayerId*
-  name: SetPlayerId
-  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayerId_
-  commentId: Overload:DSB.GC.Hud.GCNameTag.SetPlayerId
+- uid: DSB.GC.Hud.GCNameTag.SetPlayer(DSB.GC.GCPlayer)
+  name: SetPlayer(GCPlayer)
+  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayer_DSB_GC_GCPlayer_
+  commentId: M:DSB.GC.Hud.GCNameTag.SetPlayer(DSB.GC.GCPlayer)
+  fullName: DSB.GC.Hud.GCNameTag.SetPlayer(DSB.GC.GCPlayer)
+  nameWithType: GCNameTag.SetPlayer(GCPlayer)
+- uid: DSB.GC.Hud.GCNameTag.SetPlayer*
+  name: SetPlayer
+  href: api/DSB.GC.Hud.GCNameTag.html#DSB_GC_Hud_GCNameTag_SetPlayer_
+  commentId: Overload:DSB.GC.Hud.GCNameTag.SetPlayer
   isSpec: "True"
-  fullName: DSB.GC.Hud.GCNameTag.SetPlayerId
-  nameWithType: GCNameTag.SetPlayerId
+  fullName: DSB.GC.Hud.GCNameTag.SetPlayer
+  nameWithType: GCNameTag.SetPlayer
 - uid: DSB.GC.Hud.GCPlayersHudData
   name: GCPlayersHudData
   href: api/DSB.GC.Hud.GCPlayersHudData.html
@@ -1938,36 +2244,50 @@ references:
   commentId: F:DSB.GC.Log.LogLevel.Warning
   fullName: DSB.GC.Log.LogLevel.Warning
   nameWithType: LogLevel.Warning
-- uid: DSB.GC.PlayerStatus
-  name: PlayerStatus
-  href: api/DSB.GC.PlayerStatus.html
-  commentId: T:DSB.GC.PlayerStatus
-  fullName: DSB.GC.PlayerStatus
-  nameWithType: PlayerStatus
-- uid: DSB.GC.PlayerStatus.Failure
-  name: Failure
-  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Failure
-  commentId: F:DSB.GC.PlayerStatus.Failure
-  fullName: DSB.GC.PlayerStatus.Failure
-  nameWithType: PlayerStatus.Failure
-- uid: DSB.GC.PlayerStatus.Neutral
-  name: Neutral
-  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Neutral
-  commentId: F:DSB.GC.PlayerStatus.Neutral
-  fullName: DSB.GC.PlayerStatus.Neutral
-  nameWithType: PlayerStatus.Neutral
-- uid: DSB.GC.PlayerStatus.Pending
-  name: Pending
-  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Pending
-  commentId: F:DSB.GC.PlayerStatus.Pending
-  fullName: DSB.GC.PlayerStatus.Pending
-  nameWithType: PlayerStatus.Pending
-- uid: DSB.GC.PlayerStatus.Success
-  name: Success
-  href: api/DSB.GC.PlayerStatus.html#DSB_GC_PlayerStatus_Success
-  commentId: F:DSB.GC.PlayerStatus.Success
-  fullName: DSB.GC.PlayerStatus.Success
-  nameWithType: PlayerStatus.Success
+- uid: DSB.GC.Utils
+  name: DSB.GC.Utils
+  href: api/DSB.GC.Utils.html
+  commentId: N:DSB.GC.Utils
+  fullName: DSB.GC.Utils
+  nameWithType: DSB.GC.Utils
+- uid: DSB.GC.Utils.Assert
+  name: Assert
+  href: api/DSB.GC.Utils.Assert.html
+  commentId: T:DSB.GC.Utils.Assert
+  fullName: DSB.GC.Utils.Assert
+  nameWithType: Assert
+- uid: DSB.GC.Utils.Assert.IsNotNull(System.Object,System.String)
+  name: IsNotNull(object, string)
+  href: api/DSB.GC.Utils.Assert.html#DSB_GC_Utils_Assert_IsNotNull_System_Object_System_String_
+  commentId: M:DSB.GC.Utils.Assert.IsNotNull(System.Object,System.String)
+  name.vb: IsNotNull(Object, String)
+  fullName: DSB.GC.Utils.Assert.IsNotNull(object, string)
+  fullName.vb: DSB.GC.Utils.Assert.IsNotNull(Object, String)
+  nameWithType: Assert.IsNotNull(object, string)
+  nameWithType.vb: Assert.IsNotNull(Object, String)
+- uid: DSB.GC.Utils.Assert.IsNotNull*
+  name: IsNotNull
+  href: api/DSB.GC.Utils.Assert.html#DSB_GC_Utils_Assert_IsNotNull_
+  commentId: Overload:DSB.GC.Utils.Assert.IsNotNull
+  isSpec: "True"
+  fullName: DSB.GC.Utils.Assert.IsNotNull
+  nameWithType: Assert.IsNotNull
+- uid: DSB.GC.Utils.Assert.IsTrue(System.Boolean,System.String)
+  name: IsTrue(bool, string)
+  href: api/DSB.GC.Utils.Assert.html#DSB_GC_Utils_Assert_IsTrue_System_Boolean_System_String_
+  commentId: M:DSB.GC.Utils.Assert.IsTrue(System.Boolean,System.String)
+  name.vb: IsTrue(Boolean, String)
+  fullName: DSB.GC.Utils.Assert.IsTrue(bool, string)
+  fullName.vb: DSB.GC.Utils.Assert.IsTrue(Boolean, String)
+  nameWithType: Assert.IsTrue(bool, string)
+  nameWithType.vb: Assert.IsTrue(Boolean, String)
+- uid: DSB.GC.Utils.Assert.IsTrue*
+  name: IsTrue
+  href: api/DSB.GC.Utils.Assert.html#DSB_GC_Utils_Assert_IsTrue_
+  commentId: Overload:DSB.GC.Utils.Assert.IsTrue
+  isSpec: "True"
+  fullName: DSB.GC.Utils.Assert.IsTrue
+  nameWithType: Assert.IsTrue
 - uid: Global
   name: ''
   href: api/Global.html
@@ -2228,3 +2548,35 @@ references:
   commentId: T:Global.GamingCouchEditor
   fullName: GamingCouchEditor
   nameWithType: GamingCouchEditor
+- uid: Global.WebBuildOptimizer
+  name: WebBuildOptimizer
+  href: api/Global.WebBuildOptimizer.html
+  commentId: T:Global.WebBuildOptimizer
+  fullName: WebBuildOptimizer
+  nameWithType: WebBuildOptimizer
+- uid: Global.WebBuildOptimizer.ApplyDevBuildSettings
+  name: ApplyDevBuildSettings()
+  href: api/Global.WebBuildOptimizer.html#Global_WebBuildOptimizer_ApplyDevBuildSettings
+  commentId: M:Global.WebBuildOptimizer.ApplyDevBuildSettings
+  fullName: WebBuildOptimizer.ApplyDevBuildSettings()
+  nameWithType: WebBuildOptimizer.ApplyDevBuildSettings()
+- uid: Global.WebBuildOptimizer.ApplyDevBuildSettings*
+  name: ApplyDevBuildSettings
+  href: api/Global.WebBuildOptimizer.html#Global_WebBuildOptimizer_ApplyDevBuildSettings_
+  commentId: Overload:Global.WebBuildOptimizer.ApplyDevBuildSettings
+  isSpec: "True"
+  fullName: WebBuildOptimizer.ApplyDevBuildSettings
+  nameWithType: WebBuildOptimizer.ApplyDevBuildSettings
+- uid: Global.WebBuildOptimizer.ApplyReleaseBuildSettings
+  name: ApplyReleaseBuildSettings()
+  href: api/Global.WebBuildOptimizer.html#Global_WebBuildOptimizer_ApplyReleaseBuildSettings
+  commentId: M:Global.WebBuildOptimizer.ApplyReleaseBuildSettings
+  fullName: WebBuildOptimizer.ApplyReleaseBuildSettings()
+  nameWithType: WebBuildOptimizer.ApplyReleaseBuildSettings()
+- uid: Global.WebBuildOptimizer.ApplyReleaseBuildSettings*
+  name: ApplyReleaseBuildSettings
+  href: api/Global.WebBuildOptimizer.html#Global_WebBuildOptimizer_ApplyReleaseBuildSettings_
+  commentId: Overload:Global.WebBuildOptimizer.ApplyReleaseBuildSettings
+  isSpec: "True"
+  fullName: WebBuildOptimizer.ApplyReleaseBuildSettings
+  nameWithType: WebBuildOptimizer.ApplyReleaseBuildSettings
