@@ -7,18 +7,25 @@ using DSB.GC.Hud;
 using DSB.GC.Game;
 using DSB.GC.Log;
 using System.Linq;
+using UnityEngine.Assertions;
+using UnityEngine.SceneManagement;
 
 namespace DSB.GC
 {
+    public enum GCMode { Development = 1, Production = 2 }
+
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
-    public enum GCPlayerType { unset, player, bot }
+    public enum GCPlayerType { unset = 0, player = 1, bot = 2 }
 
     [ExecuteInEditMode]
     public class GamingCouch : MonoBehaviour
     {
+        [DllImport("__Internal")]
+        private static extern void GamingCouchInstanceStarted();
+
         [DllImport("__Internal")]
         private static extern void GamingCouchSetupDone();
 
@@ -36,10 +43,43 @@ namespace DSB.GC
         [SerializeField]
         [Tooltip("Make sure your player prefab extends GCPlayer.")]
         private GameObject playerPrefab;
-        private GCSetupOptions setupOptions; // this is assigned in GCSetup
+        private GCSetupOptions setupOptions;
+        private GCPlayOptions playOptions;
+        public bool IsServer
+        {
+            get
+            {
+                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set when reading IsServer.");
+                return setupOptions.isServer;
+            }
+        }
+        public uint ClientId
+        {
+            get
+            {
+                Assert.IsNotNull(setupOptions, "GamingCouch setup options not set when reading ClientId.");
+                return setupOptions.clientId;
+            }
+        }
+        private GCMode mode = GCMode.Production;
+        public GCMode Mode => mode;
+        [SerializeField]
+        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for server and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
+        private bool onlineMultiplayerSupport = false;
+        public bool OnlineMultiplayerSupport => onlineMultiplayerSupport;
+        private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
-        private GCPlayerStoreOutput<GCPlayer> playerStoreOutput;
+        public int GameSeed
+        {
+            get
+            {
+                Assert.IsNotNull(playOptions, "GamingCouch play options not set when reading GameSeed.");
+                return playOptions.seed;
+            }
+        }
+        private GCPlayerStore<GCPlayer> internalPlayerStore = new GCPlayerStore<GCPlayer>();
+        public GCPlayerStore<GCPlayer> InternalPlayerStore => internalPlayerStore;
         private GCGame game;
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
@@ -53,7 +93,7 @@ namespace DSB.GC
             GCLog.logLevel = LogLevel;
 
             GCLog.LogDebug("Awake");
-            if (FindObjectsOfType<GamingCouch>().Length > 1)
+            if (FindObjectsByType<GamingCouch>(FindObjectsSortMode.None).Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
                 {
@@ -79,6 +119,11 @@ namespace DSB.GC
             {
                 Debug.LogError("GamingCouch listener not set. Set game object via inspector that will receive and handle GamingCouch related events. This will likely be your main game script.");
             }
+
+#if UNITY_EDITOR
+            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
+            setupOptions = GetEditorSetupOptions();
+#endif
         }
 
         private void Start()
@@ -92,28 +137,19 @@ namespace DSB.GC
 
             AudioListener.volume = 0.0f;
 
-#if UNITY_EDITOR
-            // When integrated, platform will define the setup options on Unity boot up.
-            setupOptions = GetEditorSetupOptions();
-#endif
-
-            GCStart();
-        }
-
-        private void GCStart()
-        {
-            GCLog.LogDebug("GCStart");
-
             status = GCStatus.PendingSetup;
 
-            if (setupOptions == null)
+#if UNITY_EDITOR
+            if (!onlineMultiplayerSupport)
             {
-                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
+                GamingCouchSetup();
             }
-
-            Debug.Log("GamingCouch setup options: " + setupOptions.gameModeId);
-
-            listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+#else
+            if (!onlineMultiplayerSupport)
+            {
+                GamingCouchInstanceStarted();
+            }
+#endif
         }
 
         private void OnValidate()
@@ -124,10 +160,8 @@ namespace DSB.GC
 
         private void Update()
         {
-            if (Application.isEditor && Application.isPlaying)
-            {
-                UpdateEditorInputs();
-            }
+            HandleEditorInputs();
+            HandleGamePlayModeRestart();
         }
 
         private void LateUpdate()
@@ -141,18 +175,36 @@ namespace DSB.GC
 
         #region Methods called by the GamingCouch platform
         /// <summary>
-        /// Called by the platform when the game is ready for setup.
-        /// In setup, the game should load levels, assets etc. but not yet instantiate any players.
+        /// Called by the platform to provide necessary setup options on start.
         /// </summary>
-        private void GamingCouchSetup(string optionsJson)
+        private void GamingCouchSetupOptions(string optionsJson)
         {
-            GCLog.LogInfo("GamingCouchSetup: " + optionsJson);
+            GCLog.LogInfo("GamingCouchSetupOptions: " + optionsJson);
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
             setupOptions = GCSetupOptions.CreateFromJSON(optionsJson);
         }
 
+        /// <summary>
+        /// Called by the platform when the game is ready for setup and receive network messages.
+        /// This occurs after all the players has loaded the game and called GamingCouchInstanceStarted.
+        /// In setup, the game should prepare game mode eg. load/instantiate required levels and so on.
+        /// Setup is not yet a place to spawn players as that should occur in GamingCouchPlay where
+        /// the available players are locked in for the round as there is a possibility that some one
+        /// leaves or joins during the setup phase.
+        /// </summary>
+        private void GamingCouchSetup()
+        {
+            if (setupOptions == null)
+            {
+                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
+            }
+
+            mode = setupOptions.mode;
+
+            listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+        }
 
         /// <summary>
         /// Called by the platform when all players are loaded and ready to be instantiated in the game.
@@ -209,7 +261,7 @@ namespace DSB.GC
         private IEnumerator _EditorPlay()
         {
             GCLog.LogInfo("_EditorPlay");
-            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called via GCPlay by the platform
+            yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
             Play(GetEditorPlayOptions());
         }
 
@@ -218,6 +270,7 @@ namespace DSB.GC
         /// </summary>
         private void Play(GCPlayOptions options)
         {
+            playOptions = options;
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
         }
@@ -244,6 +297,42 @@ namespace DSB.GC
         #region Methods to be called by the game
 
         /// <summary>
+        /// Inform the platform tha the server is ready to receive multiplayer clients.
+        /// </summary>
+        public void OnlineMultiplayerServerReady()
+        {
+            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            Assert.IsTrue(setupOptions.isServer, "[GamingCouch] ServerReady should only be called by the server.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ServerReady should only be called once.");
+
+            onlineMultiplayerReadyCalled = true;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchInstanceStarted();
+#else
+            GamingCouchSetup();
+#endif
+        }
+
+        /// <summary>
+        /// Inform the platform that the client is ready to connect with the multiplayer server.
+        /// </summary>
+        public void OnlineMultiplayerClientReady()
+        {
+            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            Assert.IsFalse(setupOptions.isServer, "[GamingCouch] ClientReady should only be called by the client.");
+            Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ClientReady should only be called once.");
+
+            onlineMultiplayerReadyCalled = true;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchInstanceStarted();
+#else
+            GamingCouchSetup();
+#endif
+        }
+
+        /// <summary>
         /// Call after game setup is done eg. level and other assets are loaded and the game is ready to play intro and spawn players.
         /// GamingCouchPlay will be called next by the platform. You should not start the game before GamingCouchPlay is called.
         /// </summary>
@@ -260,17 +349,30 @@ namespace DSB.GC
 #endif
             status = GCStatus.SetupDone;
         }
-
         public void SetupGameVersus(GCGameVersusSetupOptions options)
         {
-            SetupGame(new GCGameVersus(this, playerStoreOutput, options));
+            SetupGame(new GCGameVersus(this, internalPlayerStore, options));
+        }
+
+        private void RequireGameSetupDone(string source)
+        {
+            if (game == null)
+            {
+                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGame() before calling '" + source + "'.");
+            }
+        }
+
+        public void SetGameMaxScore(int maxScore)
+        {
+            RequireGameSetupDone("SetGameMaxScore");
+            game.SetMaxScore(maxScore);
         }
 
         private void SetupGame(GCGame game)
         {
             if (this.game != null)
             {
-                throw new InvalidOperationException("Game already set. You should call SetupGame only once.");
+                throw new InvalidOperationException("[GamingCouch] Game already set. You should call SetupGame only once.");
             }
 
             this.game = game;
@@ -284,12 +386,9 @@ namespace DSB.GC
         /// <exception cref="InvalidOperationException">Throws if SetupGame is not called before.</exception>
         public void GameOver()
         {
-            if (game == null)
-            {
-                throw new InvalidOperationException("Game not set. You should call SetupGame before calling GameOver.");
-            }
+            RequireGameSetupDone("GameOver");
 
-            var players = playerStoreOutput.PlayersEnumerable.ToList();
+            var players = internalPlayerStore.PlayersEnumerable.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
             var placementsByPlayerId = new int[playersSorted.Count];
@@ -303,7 +402,7 @@ namespace DSB.GC
             for (var i = 0; i < placementsByPlayerId.Length; i++)
             {
                 var playerId = placementsByPlayerId[i];
-                var player = playerStoreOutput.GetPlayerById(playerId);
+                var player = internalPlayerStore.GetPlayerById(playerId);
                 GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
             }
 
@@ -338,27 +437,50 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation) where T : GCPlayer
+        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
         {
             GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
 
-            var gameObject = Instantiate(playerPrefab, position, rotation);
-            var targetType = gameObject.GetComponent<T>();
-            if (targetType == null)
-            {
-                throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
-            }
+            var activeOriginal = playerPrefab.activeSelf;
+            playerPrefab.SetActive(false);
 
-            var player = gameObject.GetComponent<GCPlayer>();
-            if (player == null)
+            try
             {
-                throw new Exception("Player prefab does not have a component that extends GCPlayer.");
-            }
+                var gameObject = Instantiate(playerPrefab, position, rotation);
+                var targetType = gameObject.GetComponent<T>();
+                if (targetType == null)
+                {
+                    throw new Exception("Player prefab does not have a component of type " + typeof(T).Name);
+                }
 
-            gameObject.name = "Player - " + options.name;
+                var player = gameObject.GetComponent<GCPlayer>();
+                if (player == null)
+                {
+                    throw new Exception("Player prefab does not have a component that extends GCPlayer.");
+                }
+
+                _InternalSetPlayerProperties(player, options);
+
+                playerPrefab.SetActive(activeOriginal);
+                gameObject.SetActive(activeOriginal);
+
+                return targetType;
+            }
+            catch (Exception e)
+            {
+                playerPrefab.SetActive(activeOriginal);
+                Debug.LogError("Error instantiating player: " + e.Message);
+                throw;
+            }
+        }
+
+        public void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
+        {
+            player.gameObject.name = "Player - " + options.name;
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
+                index = internalPlayerStore.PlayerCount,
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 playerId = options.playerId,
                 name = options.name,
@@ -366,38 +488,90 @@ namespace DSB.GC
                 colorName = options.color,
             };
 
-            player.SendMessage("_InternalGamingCouchSetup", playerSetupOptions, SendMessageOptions.RequireReceiver);
+            player._InternalGamingCouchSetup(playerSetupOptions);
 
-            return targetType;
+            // TODO: move as this fnc is for player properties?
+            game.SetupPlayer(player);
+            internalPlayerStore.AddPlayer(player);
+            SetupPlayerReady?.Invoke(player);
+        }
+
+        private Action<GCPlayer> SetupPlayerReady;
+        private void SetPlayerReadyCallback<T>(Action<T> onReady) where T : GCPlayer
+        {
+            SetupPlayerReady = (gcPlayer) =>
+            {
+                var player = gcPlayer as T;
+                Debug.Assert(player != null, "Invalid player type in SetPlayerReadyCallback. Expected: " + typeof(T).Name + ", got: " + gcPlayer.GetType().Name);
+                onReady(player);
+            };
         }
 
         /// <summary>
-        /// Instantiate players by using the prefab defined in GamingCouch game object's inspector.
+        /// Properties to define the player spawn position and rotation when calling SetupPlayers.
+        /// </summary>
+        public struct GCPlayerSpawnProperties
+        {
+            public Vector3 position;
+            public Quaternion rotation;
+        }
+
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
+        {
+            SetupPlayers(playerOptions, null, onPlayerSetupReady);
+        }
+
+        /// <summary>
+        /// Setup and instantiate players by using the prefab defined in GamingCouch game object's inspector.
         /// </summary>
         /// <typeparam name="T">Your game specific player class that extends GCPlayer.</typeparam>
-        /// <param name="playerStore">Player store to add the players to. Note: You should instantiate this store in your main Game script to be able to provide it here. Refer the integration manual.</param>
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
-        public void InstantiatePlayers<T>(GCPlayerStore<T> playerStore, GCPlayerOptions[] playerOptions, Vector3 position, Quaternion rotation) where T : GCPlayer
+        /// <param name="spawnProperties">Spawn properties to define the player spawn position and rotation.</param>
+        /// <param name="onPlayerSetupReady">Callback to be called when the player is ready. This is useful to store the player in your own game specific player store to access players by your games player type.</param>
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
-            GCLog.LogInfo("InstantiatePlayers");
+            GCLog.LogInfo("SetupPlayers");
 
-            if (typeof(T) == typeof(GCPlayer))
+            RequireGameSetupDone("SetupPlayers");
+
+            if (spawnProperties != null)
             {
-                throw new InvalidOperationException("Call InstantiatePlayers by providing your game specific class as generic. The class should inherit GCPlayer or extend GCPlayer. Eg. do not call InstantiatePlayers<GCPlayer>, but instead InstantiatePlayers<MyPlayer> where MyPlayer is a class that extends GCPlayer.");
+                if (spawnProperties.Length < MAX_PLAYERS)
+                {
+                    throw new ArgumentException($"[GamingCouch] Not enough GCPlayerSpawnProperties provided. Expected at least {MAX_PLAYERS}, got {spawnProperties.Length}.");
+                }
+
+                if (spawnProperties.Length != MAX_PLAYERS)
+                {
+                    GCLog.LogWarning($"Number of GCPlayerSpawnProperties provided ({spawnProperties.Length}) does not match the maximum players ({MAX_PLAYERS}). Properties exceeding max players will never be used. This may indicate an error in your code.");
+                }
             }
 
-            if (playerStore.PlayerCount > 0)
+            if (internalPlayerStore.PlayerCount > 0)
             {
-                throw new InvalidOperationException("Players already instantiated. Call ClearPlayers before calling InstantiatePlayers.");
+                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+            }
+
+            SetPlayerReadyCallback(onPlayerSetupReady);
+
+            // Client never instantiates the players as the server will do that.
+            // We still want to listen for the SetPlayerReadyCallback as defined above.
+            if (OnlineMultiplayerSupport && !IsServer)
+            {
+                return;
             }
 
             for (var i = 0; i < playerOptions.Length; i++)
             {
-                var player = InstantiatePlayer<T>(playerOptions[i], position, rotation);
-                playerStore.AddPlayer(player);
+                var position = spawnProperties != null && i < spawnProperties.Length ? spawnProperties[i].position : Vector3.zero;
+                var rotation = spawnProperties != null && i < spawnProperties.Length ? spawnProperties[i].rotation : Quaternion.identity;
+                InstantiatePlayer<T>(playerOptions[i], position, rotation);
             }
+        }
 
-            playerStoreOutput = playerStore;
+        public GCPlayerOptions GetPlayerOptions(int playerId)
+        {
+            return playOptions.players.Single(p => p.playerId == playerId);
         }
         #endregion
 
@@ -493,7 +667,9 @@ namespace DSB.GC
         {
             return new GCSetupOptions
             {
+                isServer = true,
                 gameModeId = gameModeId,
+                mode = GCMode.Development,
             };
         }
 
@@ -501,7 +677,8 @@ namespace DSB.GC
         {
             GCPlayOptions options = new GCPlayOptions
             {
-                players = new GCPlayerOptions[numberOfPlayers]
+                players = new GCPlayerOptions[numberOfPlayers],
+                seed = UnityEngine.Random.Range(1, 999999),
             };
 
             var usedColors = new List<GCPlayerColor>();
@@ -510,7 +687,7 @@ namespace DSB.GC
             {
                 if (usedColors.Contains(playerData[i].color))
                 {
-                    throw new Exception("Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
+                    throw new Exception("[GamingCouch] Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
                 }
 
                 usedColors.Add(playerData[i].color);
@@ -555,13 +732,17 @@ namespace DSB.GC
 
         private int controlPlayerIndex = 0;
 
-        private void UpdateEditorInputs()
+        private void HandleEditorInputs()
         {
+            if (!Application.isEditor || !Application.isPlaying)
+            {
+                return;
+            }
+
             if (!useKeyboardControls) return;
 
-            if (playerStoreOutput == null) return;
-
-            if (playerStoreOutput.PlayerCount == 0) return;
+            if (internalPlayerStore == null) return;
+            if (internalPlayerStore.PlayerCount == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
@@ -571,7 +752,7 @@ namespace DSB.GC
                 }
             }
 
-            var player = playerStoreOutput.GetPlayerByIndex(controlPlayerIndex);
+            var player = internalPlayerStore.GetPlayerByIndex(controlPlayerIndex);
 
             if (player == null) return;
 
@@ -597,7 +778,7 @@ namespace DSB.GC
         /// </summary>
         public void Clear()
         {
-            playerStoreOutput.Clear();
+            internalPlayerStore.Clear();
             ClearInputs();
         }
 
@@ -615,13 +796,66 @@ namespace DSB.GC
 
             if (Application.isEditor && !Application.isPlaying)
             {
-                throw new Exception("Restart can only be called in play mode.");
+                throw new Exception("[GamingCouch] Restart can only be called in play mode.");
             }
 
             game = null;
 
             Clear();
             Start();
+        }
+        #endregion
+
+        #region Play mode restart
+        [Header("Developer utils")]
+
+        [SerializeField]
+        private bool enablePlayModeRestart = true;
+
+        [SerializeField]
+        private KeyCode playModeRestartKey = KeyCode.Tab;
+
+        private void HandleGamePlayModeRestart()
+        {
+            if (!Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
+            {
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                GCLog.LogDebug("Restarting game in play mode -----------");
+
+                // Destroy all DontDestroyOnLoad objects
+                // This is necessary as SceneManager.LoadScene will not destroy them
+                // We need to probe the scene as Unity does not provide reference to the special scene.
+                GameObject temp = new GameObject("SceneProbe");
+                DontDestroyOnLoad(temp);
+                Scene dontDestroyScene = temp.scene;
+                DestroyImmediate(temp);
+
+                GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+                List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
+
+                foreach (var obj in allObjects)
+                {
+                    if (obj.scene == dontDestroyScene && obj.transform.parent == null)
+                    {
+                        donDestroyOnLoadObjects.Add(obj);
+                    }
+                }
+
+                foreach (var obj in donDestroyOnLoadObjects)
+                {
+                    if (obj != null)
+                    {
+                        DestroyImmediate(obj);
+                    }
+                }
+
+                // Finally just reload the current scene and we should have a clean slate... fingers crossed.
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
         }
         #endregion
     }

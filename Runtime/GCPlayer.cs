@@ -6,12 +6,12 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public enum PlayerStatus
+    public enum GCPlayerStatus
     {
-        Neutral,
-        Pending,
-        Success,
-        Failure
+        Neutral = 0,
+        Pending = 1,
+        Success = 2,
+        Failure = 3
     }
 
     public class GCPlayer : MonoBehaviour
@@ -21,9 +21,14 @@ namespace DSB.GC
         public Action<string> OnFinished;
         public Action<int, int, string> OnScoreChanged;
         public Action<int, int, string> OnLivesChanged;
-        public Action<PlayerStatus, string, string> OnStatusChanged;
-        public GCPlayerType playerType = GCPlayerType.unset;
-        public bool IsBot => playerType == GCPlayerType.bot;
+        public Action<GCPlayerStatus, string, string> OnStatusChanged;
+        public GCPlayerType PlayerType = GCPlayerType.unset;
+        public bool IsBot => PlayerType == GCPlayerType.bot;
+        private int index = -1;
+        public int Index => index;
+        // TODO:
+        // deprecate/remove this as games should be using Index instead.
+        // Can't remove the ID completely yet as it's still used to communicate placements to the platform.
         private int id = -1;
         /// <summary>
         /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
@@ -50,7 +55,7 @@ namespace DSB.GC
         /// GamingCouch player color "off-white" variant.
         /// </summary>
         public Color ColorOffWhite => GCPlayerColorData.Variants[colorEnum].OffWhite;
-        private PlayerStatus status = PlayerStatus.Neutral;
+        private GCPlayerStatus status = GCPlayerStatus.Neutral;
         /// <summary>
         /// GamingCouch player color name in enum format.
         /// </summary>
@@ -71,7 +76,7 @@ namespace DSB.GC
         /// This can be utilized in different ways to indicate the player's status in the game.
         /// If Players HUD is set to display status text, this will be reflected there as well.
         /// </summary>
-        public PlayerStatus Status => status;
+        public GCPlayerStatus Status => status;
         private string statusText = "";
         /// <summary>
         /// Players status text.
@@ -120,9 +125,10 @@ namespace DSB.GC
         /// You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().
         /// </summary>
         /// <param name="options">Options provided by the platform</param>
-        private void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
+        public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
-            playerType = options.type;
+            index = options.index;
+            PlayerType = options.type;
             id = options.playerId;
             playerName = options.name;
             colorEnum = options.colorEnum;
@@ -251,7 +257,7 @@ namespace DSB.GC
         /// If left without spot:
         /// SetStatus(PlayerStatus.Failure, "Sadge :(");
         /// </summary>
-        public void SetStatus(PlayerStatus status, string statusText, string reason)
+        public void SetStatus(GCPlayerStatus status, string statusText, string reason)
         {
             if (this.status == status && this.statusText == statusText) return;
 

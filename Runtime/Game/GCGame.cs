@@ -1,9 +1,9 @@
+using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using DSB.GC.Hud;
 using DSB.GC.Log;
-using UnityEngine;
 
 namespace DSB.GC.Game
 {
@@ -61,40 +61,60 @@ namespace DSB.GC.Game
                         players = options.hud.players
                     }
                 );
-                AutoUpdatePlayersHud();
+                UpdatePlayersHud();
+            }
+        }
 
-                foreach (var player in playerStore.PlayersEnumerable)
-                {
-                    player.OnEliminated += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
+        public void SetupPlayer(GCPlayer player)
+        {
+            Debug.Log("SetupPlayer - playerId:" + player.name + " playerStore count:" + playerStore.PlayersEnumerable.Count());
 
-                    player.OnUneliminated += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
+            var self = this;
 
-                    player.OnFinished += (string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
+            if (isPlayersHudAutoUpdateEnabled)
+            {
+                isPlayersHudAutoUpdatePending = true;
+            }
 
-                    player.OnScoreChanged += (int playerId, int score, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
+            player.OnEliminated += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
 
-                    player.OnLivesChanged += (int playerId, int lives, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
+            player.OnUneliminated += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
 
-                    player.OnStatusChanged += (PlayerStatus status, string statusText, string reason) =>
-                    {
-                        isPlayersHudAutoUpdatePending = true;
-                    };
-                }
+            player.OnFinished += reason =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnScoreChanged += (playerId, score, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnLivesChanged += (playerId, lives, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+
+            player.OnStatusChanged += (status, statusText, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
+        }
+
+        public void SetMaxScore(int maxScore)
+        {
+            options.maxScore = maxScore;
+            ValidateOptions(options);
+
+            if (isPlayersHudAutoUpdateEnabled)
+            {
+                isPlayersHudAutoUpdatePending = true;
             }
         }
 
@@ -104,7 +124,7 @@ namespace DSB.GC.Game
             {
                 if (options.hud.players.valueTypeEnum == PlayersHudValueType.PointsSmall)
                 {
-                    if (options.maxScore < 0)
+                    if (options.maxScore <= 0)
                     {
                         throw new Exception("Game options maxScore must be defined when using 'PlayersHudValueType.PointsSmall'");
                     }
@@ -116,7 +136,7 @@ namespace DSB.GC.Game
         {
             if (isPlayersHudAutoUpdateEnabled && isPlayersHudAutoUpdatePending)
             {
-                AutoUpdatePlayersHud();
+                UpdatePlayersHud();
                 isPlayersHudAutoUpdatePending = false;
             }
         }
@@ -195,8 +215,10 @@ namespace DSB.GC.Game
             }
         }
 
-        private void AutoUpdatePlayersHud()
+        private void UpdatePlayersHud()
         {
+            Debug.Log("UpdatePlayersHud - player count:" + playerStore.PlayersEnumerable.Count());
+
             var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
 
             gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData

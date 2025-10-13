@@ -53,20 +53,6 @@ private void GamingCouchSetup(GCSetupOptions options)
 {
     // do stuff based on the options. Eg. load level based on game mode etc.
 
-    // after setup is done call:
-    GamingCouch.Instance.SetupDone();
-}
-```
-
-Next we need to listen when GC and all the players are ready to play:
-
-```C#
-private void GamingCouchPlay(GCPlayOptions options)
-{
-    // we now have all the successfully loaded players so we can instantiate them.
-    // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
-    GamingCouch.Instance.InstantiatePlayers(playerStore, options.players, Vector3.up * 100, Quaternion.identity);
-
     // Setup the game and HUD based on the game/game mode
     GamingCouch.Instance.SetupGameVersus(
         new GCGameVersusSetupOptions()
@@ -91,6 +77,23 @@ private void GamingCouchPlay(GCPlayOptions options)
         }
     );
 
+    // after setup is done call:
+    GamingCouch.Instance.SetupDone();
+}
+```
+
+Next we need to listen when GC and all the players are ready to play:
+
+```C#
+private void GamingCouchPlay(GCPlayOptions options)
+{
+    // we now have all the successfully loaded players so we can instantiate them.
+    // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
+    GamingCouch.Instance.SetupPlayers<Player>(options.players, (player) =>
+    {
+        playerStore.AddPlayer(player);
+    });
+
     // next we can set the game to play mode and or play intro
     StartMyGameNow();
 }
@@ -111,6 +114,8 @@ NOTE: All HUD related features are only rendered in the Gaming Couch platform an
 To add name tags for players, you need to add GCNameTag component to your player game object.
 Usually you want to position the name tag to be above the player, so you can also add the GCNameTag component
 to child object of the player game object and offset it to be above the player's head for example.
+
+In case you need to place the name tag out of the player game object, you must manually define the tag's player with `GCNameTag.SetPlayer` method.
 
 NOTE: Currently, there is no way to show the name tags in the editor or unity build alone.
 The only way to see if the name tags are working correctly is to test it in the Gaming Couch platform.
@@ -258,3 +263,94 @@ you can create project from scratch by following these steps:
 
 - create new unity project with the "Universal 3D" template (URP) or optionally "Universal 2D" (URP)
 - follow the [installation and integration steps](#installation)
+
+# Adding online multiplayer support for your game (WIP)
+
+NOTE: These steps are still work in progress and currently documented steps requires verifying.
+
+In case you want to expand your game to support online multiplayer you need to go thru some extra steps. Make sure you have GamingCouch integration done first before setting up the multiplayer support.
+
+1. Check the "Online Multiplayer Support" checkbox in the GamingCouch game object.
+2. Install the "Unity Netcode for GameObjects" package via Package Manager.
+3. Add NetworkManager object to your scene.
+4. Add these components to the NetworkManager object:
+   - GCNetworkManager
+   - GCTransport
+   - NetworkManager
+5. In the NetworkManager component, assign the GCTransport component you added in previous step to the "Network Transport" field.
+6. Next add NetworkObject, NetworkTransform and GCNetworkPlayer components to your player prefab. Optionally you can add NetworkRigidbody/NetworkRigidbody2D
+7. Add the player prefab to "Network Prefabs List" in the NetworkManager component.
+8. Apply some code modifications:
+
+In your main game scripts Start method, you need to add the following code to start the server/client:
+
+```C#
+private void Start() {
+    if (GamingCouch.Instance.IsServer)
+    {
+        GCNetworkManager.Instance.OnServerStarted += () =>
+        {
+            GamingCouch.Instance.OnlineMultiplayerServerReady();
+        };
+        GCNetworkManager.Instance.StartServer();
+    }
+    else
+    {
+        GamingCouch.Instance.OnlineMultiplayerClientReady();
+    }
+}
+```
+
+next in your GamingCouchSetup method, you need to
+
+```C#
+private void GamingCouchSetup(GCSetupOptions options)
+{
+    // setup game mode etc...
+
+    // Start client in as the server should be ready for clients to connect
+    if (!GamingCouch.Instance.IsServer)
+    {
+        GCNetworkManager.Instance.OnClientConnectedCallback += (clientId) =>
+        {
+            GamingCouch.Instance.SetupDone();
+        };
+        GCNetworkManager.Instance.StartClient();
+    } else {
+        GamingCouch.Instance.SetupDone();
+    }
+}
+```
+
+finally in your GamingCouchPlay method, you need to add the following code to instantiate the players on server side:
+
+```C#
+private void GamingCouchPlay(GCPlayOptions options)
+{
+    if (GamingCouch.Instance.IsServer) {
+        GamingCouch.Instance.SetupPlayers<Player>(options.players, (player) =>
+        {
+            playerStore.AddPlayer(player);
+        });
+    }
+
+    // call your game's own start game method etc:
+    StartGame();
+}
+```
+
+---
+
+Other notes:
+
+- you can extend GCNetworkPlayer to add game specific SyncVars or RCP's.
+- do not add the player prefab to the "Player Prefab" field in the GamingCouch game object as we do not want to instantiate the player prefab on connect. Instead the GamingCouch scripts will always handle player instantiations on server side.
+- these notes are early and might may not have all the details needed
+- follow documentation of Unity Netcode for GameObjects for more details on how to set up the multiplayer support
+- Unity 6000.0.38f1 + Unity Netcode for GameObjects 2.2.0 was used when this was written
+
+TODO:
+
+- multiplayer support to be fully testable in the editor with Multiplayer Play Mode (MPPM)
+- best practices for Unity Netcode for GameObjects + GamingCouch for different type of games
+- properly documented example project for multiplayer support

@@ -149,9 +149,9 @@ namespace DSB.GC.Hud
 #endif
         }
 
-        public void UpdateScreenPointHud(GCScreenPointData testPointData)
+        public void UpdateScreenPointHud(GCScreenPointData pointData)
         {
-            string screenPointHudDataJson = JsonUtility.ToJson(testPointData);
+            string screenPointHudDataJson = JsonUtility.ToJson(pointData);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchUpdateScreenPointHud(screenPointHudDataJson);
@@ -165,21 +165,14 @@ namespace DSB.GC.Hud
             pointDataQueue.Add(pointData);
         }
 
-        private bool pointDataPendingUpdate = false;
-
         public void HandleQueue()
         {
-            if (pointDataQueue.Count > 0 || pointDataPendingUpdate)
+            var pointData = new GCScreenPointData
             {
-                pointDataPendingUpdate = pointDataQueue.Count > 0;
-
-                var pointData = new GCScreenPointData
-                {
-                    points = pointDataQueue.ToArray()
-                };
-                UpdateScreenPointHud(pointData);
-                pointDataQueue.Clear();
-            }
+                points = pointDataQueue.ToArray()
+            };
+            UpdateScreenPointHud(pointData);
+            pointDataQueue.Clear();
         }
 
         public void SetCamera(Camera camera)
