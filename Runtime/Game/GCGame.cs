@@ -105,6 +105,11 @@ namespace DSB.GC.Game
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
+
+            player.OnMeterValueChanged += (playerId, meterValue, reason) =>
+            {
+                self.isPlayersHudAutoUpdatePending = true;
+            };
         }
 
         public void SetMaxScore(int maxScore)
@@ -228,7 +233,8 @@ namespace DSB.GC.Game
                     playerId = player.Id,
                     eliminated = player.IsEliminated,
                     placement = index,
-                    value = GetPlayerHudValue(player)
+                    value = GetPlayerHudValue(player),
+                    meterValue = player.MeterValue
                 }).ToArray()
             });
         }

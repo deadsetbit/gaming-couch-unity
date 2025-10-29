@@ -14,6 +14,15 @@ namespace DSB.GC.Hud
         Lives
     }
 
+    public enum PlayersHudMeterType
+    {
+        None,
+        RedBar,
+        OrangeBar,
+        GreenBar,
+        BlueBar,
+    }
+
     /// <summary>
     /// Configuration for the players hud.
     /// </summary>
@@ -22,19 +31,27 @@ namespace DSB.GC.Hud
     {
         [NonSerialized]
         public PlayersHudValueType valueTypeEnum;
-
         [SerializeField]
         private string valueType;
+
+        [NonSerialized]
+        public PlayersHudMeterType meterTypeEnum;
+        [SerializeField]
+        private string meterType;
 
         public void OnBeforeSerialize()
         {
             var str = valueTypeEnum.ToString();
             valueType = char.ToLower(str[0]) + str[1..]; // set first letter to lowercase
+
+            str = meterTypeEnum.ToString();
+            meterType = char.ToLower(str[0]) + str[1..]; // set first letter to lowercase
         }
 
         public void OnAfterDeserialize()
         {
             valueTypeEnum = (PlayersHudValueType)Enum.Parse(typeof(PlayersHudValueType), valueType);
+            meterTypeEnum = (PlayersHudMeterType)Enum.Parse(typeof(PlayersHudMeterType), meterType);
         }
     }
 
@@ -64,6 +81,10 @@ namespace DSB.GC.Hud
         /// The value to display for the player. This can be points, lives, etc. based on the valueType in the GCHudPlayersConfig.
         /// </summary>
         public string value;
+        /// <summary>
+        /// The meter value (-1-100) to display for the player. This can be health, boost, etc. based on the meterType in the GCHudPlayersConfig.
+        /// </summary>
+        public int meterValue;
     }
 
     [Serializable]

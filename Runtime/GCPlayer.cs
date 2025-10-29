@@ -21,6 +21,7 @@ namespace DSB.GC
         public Action<string> OnFinished;
         public Action<int, int, string> OnScoreChanged;
         public Action<int, int, string> OnLivesChanged;
+        public Action<int, int, string> OnMeterValueChanged;
         public Action<GCPlayerStatus, string, string> OnStatusChanged;
         public GCPlayerType PlayerType = GCPlayerType.unset;
         public bool IsBot => PlayerType == GCPlayerType.bot;
@@ -119,6 +120,11 @@ namespace DSB.GC
         /// Get the player's finished status. Use FinishedTime to get the time the player was set as finished.
         /// </summary>
         public bool IsFinished => finishedTime != -1;
+        /// <summary>
+        /// Get the player's meter value (-1-100).
+        /// </summary>
+        private int meterValue = -1;
+        public int MeterValue => meterValue;
 
         /// <summary>
         /// This is called by the GamingCouch script.
@@ -267,6 +273,31 @@ namespace DSB.GC
             this.statusText = statusText;
 
             OnStatusChanged?.Invoke(status, statusText, reason);
+        }
+
+        /// <summary>
+        /// Set the player's meter value ranging from -1 to 100. Depending on the HUD configuration, this will be displayed in the HUD.
+        /// Set value to -1 to hide the meter from the HUD (if meter is configured to be displayed in the HUD). 
+        /// </summary>
+        public void SetMeterValue(int newMeterValue, string reason)
+        {
+            if (newMeterValue < -1)
+            {
+                Debug.LogWarning("Player meter value cannot be less than -1. Clamping to -1.");
+                newMeterValue = -1;
+            }
+            else if (newMeterValue > 100)
+            {
+                Debug.LogWarning("Player meter value cannot be greater than 100. Clamping to 100.");
+                newMeterValue = 100;
+            }
+
+            if (this.meterValue == newMeterValue) return;
+
+            var oldMeterValue = this.meterValue;
+            meterValue = newMeterValue;
+
+            OnMeterValueChanged?.Invoke(oldMeterValue, newMeterValue, reason);
         }
 
         /// <summary>
