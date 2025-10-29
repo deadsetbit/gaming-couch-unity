@@ -112,6 +112,10 @@ namespace DSB.GC.Hud
         /// The y position of the point in percentages eg. 0-1. Values outside this range are considered off screen but not disregarded.
         /// </summary>
         public float y;
+        /// <summary>
+        /// If the point is off screen. When point is off screen, the X or Y coordinates are still clamped to 0-1.
+        /// </summary>
+        public bool isOffScreen;
     }
 
     [Serializable]
