@@ -105,11 +105,11 @@ namespace DSB.GC.Hud
         /// </summary>
         public int playerId;
         /// <summary>
-        /// The x position of the point in percentages 0-1.
+        /// The x position of the point in percentages eg. 0-1. Values outside this range are considered off screen but not disregarded.
         /// </summary>
         public float x;
         /// <summary>
-        /// The y position of the point in percentages 0-1.
+        /// The y position of the point in percentages eg. 0-1. Values outside this range are considered off screen but not disregarded.
         /// </summary>
         public float y;
     }

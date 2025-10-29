@@ -111,11 +111,13 @@ NOTE: All HUD related features are only rendered in the Gaming Couch platform an
 
 ## Name tags
 
-To add name tags for players, you need to add GCNameTag component to your player game object.
-Usually you want to position the name tag to be above the player, so you can also add the GCNameTag component
-to child object of the player game object and offset it to be above the player's head for example.
+To add name tags for players, add the GCPlayerOverhead component to your player game object.
+Usually you want to position the name tag above the player, so you can also add the GCPlayerOverhead component
+to a child object of the player game object and offset it above the player's head, for example.
 
-In case you need to place the name tag out of the player game object, you must manually define the tag's player with `GCNameTag.SetPlayer` method.
+In case you need to place the name tag outside the player game object, manually define the tag's player with `GCPlayerOverhead.SetPlayer`.
+
+Adding GCPlayerOverhead will also automatically display any related HUD elements for the player, such as points or meter bar.
 
 NOTE: Currently, there is no way to show the name tags in the editor or unity build alone.
 The only way to see if the name tags are working correctly is to test it in the Gaming Couch platform.

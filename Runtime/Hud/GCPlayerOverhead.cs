@@ -1,10 +1,8 @@
 using UnityEngine;
-using System;
 
 namespace DSB.GC.Hud
 {
-    [Obsolete("GCNameTag is deprecated. Replace with GCPlayerOverhead.")]
-    public class GCNameTag : MonoBehaviour
+    public class GCPlayerOverhead : MonoBehaviour
     {
         [SerializeField]
         private bool hideWhenPlayerEliminated = true;
@@ -37,7 +35,7 @@ namespace DSB.GC.Hud
 
             if (!player)
             {
-                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayer before Start.");
+                Debug.LogError("GCPlayerOverhead: Player id not set. Attach GCPlayerOverhead to a player (GCPlayer), have it as a child or set player id manually via GCPlayerOverhead.SetPlayer before Start.");
                 return;
             }
         }
@@ -59,7 +57,7 @@ namespace DSB.GC.Hud
 
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
-                type = "name",
+                type = "playerOverhead",
                 playerId = player.Id,
                 x = screenPosition.x / Screen.width,
                 y = screenPosition.y / Screen.height
