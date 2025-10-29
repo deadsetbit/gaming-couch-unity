@@ -557,6 +557,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Lives
   nameWithType: GCPlayer.Lives
+- uid: DSB.GC.GCPlayer.MeterValue
+  name: MeterValue
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_MeterValue
+  commentId: P:DSB.GC.GCPlayer.MeterValue
+  fullName: DSB.GC.GCPlayer.MeterValue
+  nameWithType: GCPlayer.MeterValue
+- uid: DSB.GC.GCPlayer.MeterValue*
+  name: MeterValue
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_MeterValue_
+  commentId: Overload:DSB.GC.GCPlayer.MeterValue
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.MeterValue
+  nameWithType: GCPlayer.MeterValue
 - uid: DSB.GC.GCPlayer.OnEliminated
   name: OnEliminated
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnEliminated
@@ -575,6 +588,12 @@ references:
   commentId: F:DSB.GC.GCPlayer.OnLivesChanged
   fullName: DSB.GC.GCPlayer.OnLivesChanged
   nameWithType: GCPlayer.OnLivesChanged
+- uid: DSB.GC.GCPlayer.OnMeterValueChanged
+  name: OnMeterValueChanged
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnMeterValueChanged
+  commentId: F:DSB.GC.GCPlayer.OnMeterValueChanged
+  fullName: DSB.GC.GCPlayer.OnMeterValueChanged
+  nameWithType: GCPlayer.OnMeterValueChanged
 - uid: DSB.GC.GCPlayer.OnScoreChanged
   name: OnScoreChanged
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnScoreChanged
@@ -673,6 +692,22 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetLives
   nameWithType: GCPlayer.SetLives
+- uid: DSB.GC.GCPlayer.SetMeterValue(System.Int32,System.String)
+  name: SetMeterValue(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeterValue_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetMeterValue(System.Int32,System.String)
+  name.vb: SetMeterValue(Integer, String)
+  fullName: DSB.GC.GCPlayer.SetMeterValue(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SetMeterValue(Integer, String)
+  nameWithType: GCPlayer.SetMeterValue(int, string)
+  nameWithType.vb: GCPlayer.SetMeterValue(Integer, String)
+- uid: DSB.GC.GCPlayer.SetMeterValue*
+  name: SetMeterValue
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeterValue_
+  commentId: Overload:DSB.GC.GCPlayer.SetMeterValue
+  isSpec: "True"
+  fullName: DSB.GC.GCPlayer.SetMeterValue
+  nameWithType: GCPlayer.SetMeterValue
 - uid: DSB.GC.GCPlayer.SetScore(System.Int32,System.String)
   name: SetScore(int, string)
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_System_Int32_System_String_
@@ -1987,6 +2022,12 @@ references:
   isSpec: "True"
   fullName: DSB.GC.Hud.GCHudPlayersConfig.OnBeforeSerialize
   nameWithType: GCHudPlayersConfig.OnBeforeSerialize
+- uid: DSB.GC.Hud.GCHudPlayersConfig.meterTypeEnum
+  name: meterTypeEnum
+  href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_meterTypeEnum
+  commentId: F:DSB.GC.Hud.GCHudPlayersConfig.meterTypeEnum
+  fullName: DSB.GC.Hud.GCHudPlayersConfig.meterTypeEnum
+  nameWithType: GCHudPlayersConfig.meterTypeEnum
 - uid: DSB.GC.Hud.GCHudPlayersConfig.valueTypeEnum
   name: valueTypeEnum
   href: api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum
@@ -2036,6 +2077,12 @@ references:
   commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.eliminated
   fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.eliminated
   nameWithType: GCPlayersHudDataPlayer.eliminated
+- uid: DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
+  name: meterValue
+  href: api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_meterValue
+  commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
+  fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
+  nameWithType: GCPlayersHudDataPlayer.meterValue
 - uid: DSB.GC.Hud.GCPlayersHudDataPlayer.placement
   name: placement
   href: api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_placement
@@ -2096,6 +2143,42 @@ references:
   commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.y
   fullName: DSB.GC.Hud.GCScreenPointDataPoint.y
   nameWithType: GCScreenPointDataPoint.y
+- uid: DSB.GC.Hud.PlayersHudMeterType
+  name: PlayersHudMeterType
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html
+  commentId: T:DSB.GC.Hud.PlayersHudMeterType
+  fullName: DSB.GC.Hud.PlayersHudMeterType
+  nameWithType: PlayersHudMeterType
+- uid: DSB.GC.Hud.PlayersHudMeterType.BlueBar
+  name: BlueBar
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html#DSB_GC_Hud_PlayersHudMeterType_BlueBar
+  commentId: F:DSB.GC.Hud.PlayersHudMeterType.BlueBar
+  fullName: DSB.GC.Hud.PlayersHudMeterType.BlueBar
+  nameWithType: PlayersHudMeterType.BlueBar
+- uid: DSB.GC.Hud.PlayersHudMeterType.GreenBar
+  name: GreenBar
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html#DSB_GC_Hud_PlayersHudMeterType_GreenBar
+  commentId: F:DSB.GC.Hud.PlayersHudMeterType.GreenBar
+  fullName: DSB.GC.Hud.PlayersHudMeterType.GreenBar
+  nameWithType: PlayersHudMeterType.GreenBar
+- uid: DSB.GC.Hud.PlayersHudMeterType.None
+  name: None
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html#DSB_GC_Hud_PlayersHudMeterType_None
+  commentId: F:DSB.GC.Hud.PlayersHudMeterType.None
+  fullName: DSB.GC.Hud.PlayersHudMeterType.None
+  nameWithType: PlayersHudMeterType.None
+- uid: DSB.GC.Hud.PlayersHudMeterType.OrangeBar
+  name: OrangeBar
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html#DSB_GC_Hud_PlayersHudMeterType_OrangeBar
+  commentId: F:DSB.GC.Hud.PlayersHudMeterType.OrangeBar
+  fullName: DSB.GC.Hud.PlayersHudMeterType.OrangeBar
+  nameWithType: PlayersHudMeterType.OrangeBar
+- uid: DSB.GC.Hud.PlayersHudMeterType.RedBar
+  name: RedBar
+  href: api/DSB.GC.Hud.PlayersHudMeterType.html#DSB_GC_Hud_PlayersHudMeterType_RedBar
+  commentId: F:DSB.GC.Hud.PlayersHudMeterType.RedBar
+  fullName: DSB.GC.Hud.PlayersHudMeterType.RedBar
+  nameWithType: PlayersHudMeterType.RedBar
 - uid: DSB.GC.Hud.PlayersHudValueType
   name: PlayersHudValueType
   href: api/DSB.GC.Hud.PlayersHudValueType.html
