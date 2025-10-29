@@ -2053,6 +2053,44 @@ references:
   isSpec: "True"
   fullName: DSB.GC.Hud.GCNameTag.SetPlayer
   nameWithType: GCNameTag.SetPlayer
+- uid: DSB.GC.Hud.GCPlayerOverhead
+  name: GCPlayerOverhead
+  href: api/DSB.GC.Hud.GCPlayerOverhead.html
+  commentId: T:DSB.GC.Hud.GCPlayerOverhead
+  fullName: DSB.GC.Hud.GCPlayerOverhead
+  nameWithType: GCPlayerOverhead
+- uid: DSB.GC.Hud.GCPlayerOverhead.SetPlayer(DSB.GC.GCPlayer)
+  name: SetPlayer(GCPlayer)
+  href: api/DSB.GC.Hud.GCPlayerOverhead.html#DSB_GC_Hud_GCPlayerOverhead_SetPlayer_DSB_GC_GCPlayer_
+  commentId: M:DSB.GC.Hud.GCPlayerOverhead.SetPlayer(DSB.GC.GCPlayer)
+  fullName: DSB.GC.Hud.GCPlayerOverhead.SetPlayer(DSB.GC.GCPlayer)
+  nameWithType: GCPlayerOverhead.SetPlayer(GCPlayer)
+- uid: DSB.GC.Hud.GCPlayerOverhead.SetPlayer*
+  name: SetPlayer
+  href: api/DSB.GC.Hud.GCPlayerOverhead.html#DSB_GC_Hud_GCPlayerOverhead_SetPlayer_
+  commentId: Overload:DSB.GC.Hud.GCPlayerOverhead.SetPlayer
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCPlayerOverhead.SetPlayer
+  nameWithType: GCPlayerOverhead.SetPlayer
+- uid: DSB.GC.Hud.GCPlayerPosition
+  name: GCPlayerPosition
+  href: api/DSB.GC.Hud.GCPlayerPosition.html
+  commentId: T:DSB.GC.Hud.GCPlayerPosition
+  fullName: DSB.GC.Hud.GCPlayerPosition
+  nameWithType: GCPlayerPosition
+- uid: DSB.GC.Hud.GCPlayerPosition.SetPlayer(DSB.GC.GCPlayer)
+  name: SetPlayer(GCPlayer)
+  href: api/DSB.GC.Hud.GCPlayerPosition.html#DSB_GC_Hud_GCPlayerPosition_SetPlayer_DSB_GC_GCPlayer_
+  commentId: M:DSB.GC.Hud.GCPlayerPosition.SetPlayer(DSB.GC.GCPlayer)
+  fullName: DSB.GC.Hud.GCPlayerPosition.SetPlayer(DSB.GC.GCPlayer)
+  nameWithType: GCPlayerPosition.SetPlayer(GCPlayer)
+- uid: DSB.GC.Hud.GCPlayerPosition.SetPlayer*
+  name: SetPlayer
+  href: api/DSB.GC.Hud.GCPlayerPosition.html#DSB_GC_Hud_GCPlayerPosition_SetPlayer_
+  commentId: Overload:DSB.GC.Hud.GCPlayerPosition.SetPlayer
+  isSpec: "True"
+  fullName: DSB.GC.Hud.GCPlayerPosition.SetPlayer
+  nameWithType: GCPlayerPosition.SetPlayer
 - uid: DSB.GC.Hud.GCPlayersHudData
   name: GCPlayersHudData
   href: api/DSB.GC.Hud.GCPlayersHudData.html
@@ -2119,6 +2157,12 @@ references:
   commentId: T:DSB.GC.Hud.GCScreenPointDataPoint
   fullName: DSB.GC.Hud.GCScreenPointDataPoint
   nameWithType: GCScreenPointDataPoint
+- uid: DSB.GC.Hud.GCScreenPointDataPoint.isOffScreen
+  name: isOffScreen
+  href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_isOffScreen
+  commentId: F:DSB.GC.Hud.GCScreenPointDataPoint.isOffScreen
+  fullName: DSB.GC.Hud.GCScreenPointDataPoint.isOffScreen
+  nameWithType: GCScreenPointDataPoint.isOffScreen
 - uid: DSB.GC.Hud.GCScreenPointDataPoint.playerId
   name: playerId
   href: api/DSB.GC.Hud.GCScreenPointDataPoint.html#DSB_GC_Hud_GCScreenPointDataPoint_playerId

@@ -275,6 +275,26 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCPlayerOverhead.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCPlayerOverhead.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Hud.GCPlayerPosition.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Hud.GCPlayerPosition.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.Hud.GCPlayersHudData.yml",
       "output": {
         ".html": {
