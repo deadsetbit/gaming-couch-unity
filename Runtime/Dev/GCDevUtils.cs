@@ -1,5 +1,10 @@
 using UnityEngine;
-using UnityEngine.Assertions.Must;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+using System;
+using DSB.GC;
+using DSB.GC.Log;
 
 namespace DSB.GC.Dev
 {
@@ -41,6 +46,16 @@ namespace DSB.GC.Dev
         [SerializeField]
         private int fluctuateMaxMsPerFrame = 16;
 
+        [Header("Play Mode Restart")]
+        [SerializeField]
+        private bool enablePlayModeRestart = true;
+
+        [SerializeField]
+        private KeyCode playModeRestartKey = KeyCode.Tab;
+
+        private bool isRestarting = false;
+        public bool IsRestarting => isRestarting;
+
         private void OnEnable()
         {
             if (ShouldFluctuateFps())
@@ -54,6 +69,7 @@ namespace DSB.GC.Dev
         private void Update()
         {
             HandleFluctuateFps();
+            HandlePlayModeRestart();
         }
 
         void OnGUI()
@@ -96,7 +112,7 @@ namespace DSB.GC.Dev
             if (shouldFluctuate && fluctuateMaxMsPerFrame > 0)
             {
                 var t = (Mathf.Sin(Time.time * 7.0f) + 1.0f) * 0.5f;
-                var jitter = Random.Range(0, 4);
+                var jitter = UnityEngine.Random.Range(0, 4);
                 var targetMs = Mathf.Clamp(Mathf.RoundToInt(t * fluctuateMaxMsPerFrame) + jitter, 0, fluctuateMaxMsPerFrame + 3);
 
                 var start = System.Diagnostics.Stopwatch.StartNew();
@@ -139,6 +155,62 @@ namespace DSB.GC.Dev
                 }
             }
 #endif
+        }
+
+        private void HandlePlayModeRestart()
+        {
+            if (Input.GetKeyDown(playModeRestartKey) && !isRestarting)
+            {
+                StartCoroutine(_HandleGamePlayModeRestart());
+            }
+        }
+
+        private IEnumerator _HandleGamePlayModeRestart()
+        {
+            if (isRestarting || !Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
+            {
+                yield break;
+            }
+
+            isRestarting = true;
+
+            try
+            {
+                GCLog.LogDebug("Restarting game in play mode -----------");
+
+                GameObject temp = new GameObject("SceneProbe");
+                DontDestroyOnLoad(temp);
+                Scene dontDestroyScene = temp.scene;
+                DestroyImmediate(temp);
+
+                GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+                List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
+
+                foreach (var obj in allObjects)
+                {
+                    if (obj.scene == dontDestroyScene && obj.transform.parent == null)
+                    {
+                        donDestroyOnLoadObjects.Add(obj);
+                    }
+                }
+
+                foreach (var obj in donDestroyOnLoadObjects)
+                {
+                    if (obj != null)
+                    {
+                        DestroyImmediate(obj);
+                    }
+                }
+
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
+            catch (Exception e)
+            {
+                GCLog.LogWarning("Error restarting game in play mode: " + e.Message);
+            }
+
+            yield return null;
+            isRestarting = false;
         }
     }
 }
