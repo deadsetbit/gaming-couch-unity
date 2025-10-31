@@ -7,7 +7,7 @@
   "api/DSB.GC.Dev.GCDevUtils.html": {
     "href": "api/DSB.GC.Dev.GCDevUtils.html",
     "title": "Class GCDevUtils | Gaming Couch | 0.0.1",
-    "keywords": "Class GCDevUtils Namespace DSB.GC.Dev public class GCDevUtils : MonoBehaviour Inheritance object GCDevUtils Properties IsRestarting public bool IsRestarting { get; } Property Value bool"
+    "keywords": "Class GCDevUtils Namespace DSB.GC.Dev public class GCDevUtils : MonoBehaviour Inheritance object GCDevUtils"
   },
   "api/DSB.GC.Dev.html": {
     "href": "api/DSB.GC.Dev.html",
@@ -192,12 +192,12 @@
   "api/DSB.GC.Log.GCLog.html": {
     "href": "api/DSB.GC.Log.GCLog.html",
     "title": "Class GCLog | Gaming Couch | 0.0.1",
-    "keywords": "Class GCLog Namespace DSB.GC.Log public class GCLog Inheritance object GCLog Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Fields logLevel public static LogLevel logLevel Field Value LogLevel Methods Log(LogLevel, string) public static void Log(LogLevel level, string message) Parameters level LogLevel message string LogDebug(string) public static void LogDebug(string message) Parameters message string LogInfo(string) public static void LogInfo(string message) Parameters message string LogWarning(string) public static void LogWarning(string message) Parameters message string"
+    "keywords": "Class GCLog Namespace DSB.GC.Log public class GCLog Inheritance object GCLog Inherited Members object.Equals(object) object.Equals(object, object) object.GetHashCode() object.GetType() object.MemberwiseClone() object.ReferenceEquals(object, object) object.ToString() Fields logLevel public static LogLevel logLevel Field Value LogLevel Methods Log(LogLevel, string) public static void Log(LogLevel level, string message) Parameters level LogLevel message string LogDebug(string) public static void LogDebug(string message) Parameters message string LogError(string) public static void LogError(string message) Parameters message string LogInfo(string) public static void LogInfo(string message) Parameters message string LogWarning(string) public static void LogWarning(string message) Parameters message string"
   },
   "api/DSB.GC.Log.LogLevel.html": {
     "href": "api/DSB.GC.Log.LogLevel.html",
     "title": "Enum LogLevel | Gaming Couch | 0.0.1",
-    "keywords": "Enum LogLevel Namespace DSB.GC.Log public enum LogLevel Fields Debug = 3 Info = 2 None = 0 Warning = 1"
+    "keywords": "Enum LogLevel Namespace DSB.GC.Log public enum LogLevel Fields Debug = 4 Error = 1 Info = 3 None = 0 Warning = 2"
   },
   "api/DSB.GC.Log.html": {
     "href": "api/DSB.GC.Log.html",

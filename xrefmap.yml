@@ -43,19 +43,6 @@ references:
   commentId: T:DSB.GC.Dev.GCDevUtils
   fullName: DSB.GC.Dev.GCDevUtils
   nameWithType: GCDevUtils
-- uid: DSB.GC.Dev.GCDevUtils.IsRestarting
-  name: IsRestarting
-  href: api/DSB.GC.Dev.GCDevUtils.html#DSB_GC_Dev_GCDevUtils_IsRestarting
-  commentId: P:DSB.GC.Dev.GCDevUtils.IsRestarting
-  fullName: DSB.GC.Dev.GCDevUtils.IsRestarting
-  nameWithType: GCDevUtils.IsRestarting
-- uid: DSB.GC.Dev.GCDevUtils.IsRestarting*
-  name: IsRestarting
-  href: api/DSB.GC.Dev.GCDevUtils.html#DSB_GC_Dev_GCDevUtils_IsRestarting_
-  commentId: Overload:DSB.GC.Dev.GCDevUtils.IsRestarting
-  isSpec: "True"
-  fullName: DSB.GC.Dev.GCDevUtils.IsRestarting
-  nameWithType: GCDevUtils.IsRestarting
 - uid: DSB.GC.GCControllerInputs
   name: GCControllerInputs
   href: api/DSB.GC.GCControllerInputs.html
@@ -2495,6 +2482,22 @@ references:
   isSpec: "True"
   fullName: DSB.GC.Log.GCLog.LogDebug
   nameWithType: GCLog.LogDebug
+- uid: DSB.GC.Log.GCLog.LogError(System.String)
+  name: LogError(string)
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogError_System_String_
+  commentId: M:DSB.GC.Log.GCLog.LogError(System.String)
+  name.vb: LogError(String)
+  fullName: DSB.GC.Log.GCLog.LogError(string)
+  fullName.vb: DSB.GC.Log.GCLog.LogError(String)
+  nameWithType: GCLog.LogError(string)
+  nameWithType.vb: GCLog.LogError(String)
+- uid: DSB.GC.Log.GCLog.LogError*
+  name: LogError
+  href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogError_
+  commentId: Overload:DSB.GC.Log.GCLog.LogError
+  isSpec: "True"
+  fullName: DSB.GC.Log.GCLog.LogError
+  nameWithType: GCLog.LogError
 - uid: DSB.GC.Log.GCLog.LogInfo(System.String)
   name: LogInfo(string)
   href: api/DSB.GC.Log.GCLog.html#DSB_GC_Log_GCLog_LogInfo_System_String_
@@ -2545,6 +2548,12 @@ references:
   commentId: F:DSB.GC.Log.LogLevel.Debug
   fullName: DSB.GC.Log.LogLevel.Debug
   nameWithType: LogLevel.Debug
+- uid: DSB.GC.Log.LogLevel.Error
+  name: Error
+  href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_Error
+  commentId: F:DSB.GC.Log.LogLevel.Error
+  fullName: DSB.GC.Log.LogLevel.Error
+  nameWithType: LogLevel.Error
 - uid: DSB.GC.Log.LogLevel.Info
   name: Info
   href: api/DSB.GC.Log.LogLevel.html#DSB_GC_Log_LogLevel_Info
