@@ -593,19 +593,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.Lives
   nameWithType: GCPlayer.Lives
-- uid: DSB.GC.GCPlayer.MeterValue
-  name: MeterValue
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_MeterValue
-  commentId: P:DSB.GC.GCPlayer.MeterValue
-  fullName: DSB.GC.GCPlayer.MeterValue
-  nameWithType: GCPlayer.MeterValue
-- uid: DSB.GC.GCPlayer.MeterValue*
-  name: MeterValue
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_MeterValue_
-  commentId: Overload:DSB.GC.GCPlayer.MeterValue
+- uid: DSB.GC.GCPlayer.Meter
+  name: Meter
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Meter
+  commentId: P:DSB.GC.GCPlayer.Meter
+  fullName: DSB.GC.GCPlayer.Meter
+  nameWithType: GCPlayer.Meter
+- uid: DSB.GC.GCPlayer.Meter*
+  name: Meter
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_Meter_
+  commentId: Overload:DSB.GC.GCPlayer.Meter
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.MeterValue
-  nameWithType: GCPlayer.MeterValue
+  fullName: DSB.GC.GCPlayer.Meter
+  nameWithType: GCPlayer.Meter
 - uid: DSB.GC.GCPlayer.OnEliminated
   name: OnEliminated
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnEliminated
@@ -624,12 +624,12 @@ references:
   commentId: F:DSB.GC.GCPlayer.OnLivesChanged
   fullName: DSB.GC.GCPlayer.OnLivesChanged
   nameWithType: GCPlayer.OnLivesChanged
-- uid: DSB.GC.GCPlayer.OnMeterValueChanged
-  name: OnMeterValueChanged
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnMeterValueChanged
-  commentId: F:DSB.GC.GCPlayer.OnMeterValueChanged
-  fullName: DSB.GC.GCPlayer.OnMeterValueChanged
-  nameWithType: GCPlayer.OnMeterValueChanged
+- uid: DSB.GC.GCPlayer.OnMeterChanged
+  name: OnMeterChanged
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnMeterChanged
+  commentId: F:DSB.GC.GCPlayer.OnMeterChanged
+  fullName: DSB.GC.GCPlayer.OnMeterChanged
+  nameWithType: GCPlayer.OnMeterChanged
 - uid: DSB.GC.GCPlayer.OnScoreChanged
   name: OnScoreChanged
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_OnScoreChanged
@@ -728,22 +728,22 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GCPlayer.SetLives
   nameWithType: GCPlayer.SetLives
-- uid: DSB.GC.GCPlayer.SetMeterValue(System.Int32,System.String)
-  name: SetMeterValue(int, string)
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeterValue_System_Int32_System_String_
-  commentId: M:DSB.GC.GCPlayer.SetMeterValue(System.Int32,System.String)
-  name.vb: SetMeterValue(Integer, String)
-  fullName: DSB.GC.GCPlayer.SetMeterValue(int, string)
-  fullName.vb: DSB.GC.GCPlayer.SetMeterValue(Integer, String)
-  nameWithType: GCPlayer.SetMeterValue(int, string)
-  nameWithType.vb: GCPlayer.SetMeterValue(Integer, String)
-- uid: DSB.GC.GCPlayer.SetMeterValue*
-  name: SetMeterValue
-  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeterValue_
-  commentId: Overload:DSB.GC.GCPlayer.SetMeterValue
+- uid: DSB.GC.GCPlayer.SetMeter(System.Int32,System.String)
+  name: SetMeter(int, string)
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeter_System_Int32_System_String_
+  commentId: M:DSB.GC.GCPlayer.SetMeter(System.Int32,System.String)
+  name.vb: SetMeter(Integer, String)
+  fullName: DSB.GC.GCPlayer.SetMeter(int, string)
+  fullName.vb: DSB.GC.GCPlayer.SetMeter(Integer, String)
+  nameWithType: GCPlayer.SetMeter(int, string)
+  nameWithType.vb: GCPlayer.SetMeter(Integer, String)
+- uid: DSB.GC.GCPlayer.SetMeter*
+  name: SetMeter
+  href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetMeter_
+  commentId: Overload:DSB.GC.GCPlayer.SetMeter
   isSpec: "True"
-  fullName: DSB.GC.GCPlayer.SetMeterValue
-  nameWithType: GCPlayer.SetMeterValue
+  fullName: DSB.GC.GCPlayer.SetMeter
+  nameWithType: GCPlayer.SetMeter
 - uid: DSB.GC.GCPlayer.SetScore(System.Int32,System.String)
   name: SetScore(int, string)
   href: api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_SetScore_System_Int32_System_String_
@@ -2312,12 +2312,12 @@ references:
   commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.eliminated
   fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.eliminated
   nameWithType: GCPlayersHudDataPlayer.eliminated
-- uid: DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
-  name: meterValue
-  href: api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_meterValue
-  commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
-  fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.meterValue
-  nameWithType: GCPlayersHudDataPlayer.meterValue
+- uid: DSB.GC.Hud.GCPlayersHudDataPlayer.meter
+  name: meter
+  href: api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_meter
+  commentId: F:DSB.GC.Hud.GCPlayersHudDataPlayer.meter
+  fullName: DSB.GC.Hud.GCPlayersHudDataPlayer.meter
+  nameWithType: GCPlayersHudDataPlayer.meter
 - uid: DSB.GC.Hud.GCPlayersHudDataPlayer.placement
   name: placement
   href: api/DSB.GC.Hud.GCPlayersHudDataPlayer.html#DSB_GC_Hud_GCPlayersHudDataPlayer_placement

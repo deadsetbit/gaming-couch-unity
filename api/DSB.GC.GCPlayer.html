@@ -218,8 +218,8 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
-  <h3 id="DSB_GC_GCPlayer_OnMeterValueChanged" data-uid="DSB.GC.GCPlayer.OnMeterValueChanged">
-  OnMeterValueChanged
+  <h3 id="DSB_GC_GCPlayer_OnMeterChanged" data-uid="DSB.GC.GCPlayer.OnMeterChanged">
+  OnMeterChanged
   <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -227,7 +227,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;int, int, string&gt; OnMeterValueChanged</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;int, int, string&gt; OnMeterChanged</code></pre>
   </div>
 
 
@@ -879,18 +879,19 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
 
 
-  <a id="DSB_GC_GCPlayer_MeterValue_" data-uid="DSB.GC.GCPlayer.MeterValue*"></a>
+  <a id="DSB_GC_GCPlayer_Meter_" data-uid="DSB.GC.GCPlayer.Meter*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_MeterValue" data-uid="DSB.GC.GCPlayer.MeterValue">
-  MeterValue
+  <h3 id="DSB_GC_GCPlayer_Meter" data-uid="DSB.GC.GCPlayer.Meter">
+  Meter
   <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L129"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Get the player's meter value (-1-100).</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int MeterValue { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public int Meter { get; }</code></pre>
   </div>
 
 
@@ -1278,10 +1279,10 @@ This will include the status text and status.</p>
 
 
 
-  <a id="DSB_GC_GCPlayer_SetMeterValue_" data-uid="DSB.GC.GCPlayer.SetMeterValue*"></a>
+  <a id="DSB_GC_GCPlayer_SetMeter_" data-uid="DSB.GC.GCPlayer.SetMeter*"></a>
 
-  <h3 id="DSB_GC_GCPlayer_SetMeterValue_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetMeterValue(System.Int32,System.String)">
-  SetMeterValue(int, string)
+  <h3 id="DSB_GC_GCPlayer_SetMeter_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetMeter(System.Int32,System.String)">
+  SetMeter(int, string)
   <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L284"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -1291,12 +1292,12 @@ Set value to -1 to hide the meter from the HUD (if meter is configured to be dis
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetMeterValue(int newMeterValue, string reason)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SetMeter(int newMeter, string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>newMeterValue</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><code>newMeter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd></dd>
     <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
