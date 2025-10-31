@@ -7,6 +7,42 @@ references:
   commentId: N:DSB.GC
   fullName: DSB.GC
   nameWithType: DSB.GC
+- uid: DSB.GC.Dev
+  name: DSB.GC.Dev
+  href: api/DSB.GC.Dev.html
+  commentId: N:DSB.GC.Dev
+  fullName: DSB.GC.Dev
+  nameWithType: DSB.GC.Dev
+- uid: DSB.GC.Dev.FluctuateFpsMode
+  name: FluctuateFpsMode
+  href: api/DSB.GC.Dev.FluctuateFpsMode.html
+  commentId: T:DSB.GC.Dev.FluctuateFpsMode
+  fullName: DSB.GC.Dev.FluctuateFpsMode
+  nameWithType: FluctuateFpsMode
+- uid: DSB.GC.Dev.FluctuateFpsMode.Disabled
+  name: Disabled
+  href: api/DSB.GC.Dev.FluctuateFpsMode.html#DSB_GC_Dev_FluctuateFpsMode_Disabled
+  commentId: F:DSB.GC.Dev.FluctuateFpsMode.Disabled
+  fullName: DSB.GC.Dev.FluctuateFpsMode.Disabled
+  nameWithType: FluctuateFpsMode.Disabled
+- uid: DSB.GC.Dev.FluctuateFpsMode.EditorAndBuild
+  name: EditorAndBuild
+  href: api/DSB.GC.Dev.FluctuateFpsMode.html#DSB_GC_Dev_FluctuateFpsMode_EditorAndBuild
+  commentId: F:DSB.GC.Dev.FluctuateFpsMode.EditorAndBuild
+  fullName: DSB.GC.Dev.FluctuateFpsMode.EditorAndBuild
+  nameWithType: FluctuateFpsMode.EditorAndBuild
+- uid: DSB.GC.Dev.FluctuateFpsMode.EditorOnly
+  name: EditorOnly
+  href: api/DSB.GC.Dev.FluctuateFpsMode.html#DSB_GC_Dev_FluctuateFpsMode_EditorOnly
+  commentId: F:DSB.GC.Dev.FluctuateFpsMode.EditorOnly
+  fullName: DSB.GC.Dev.FluctuateFpsMode.EditorOnly
+  nameWithType: FluctuateFpsMode.EditorOnly
+- uid: DSB.GC.Dev.GCDevUtils
+  name: GCDevUtils
+  href: api/DSB.GC.Dev.GCDevUtils.html
+  commentId: T:DSB.GC.Dev.GCDevUtils
+  fullName: DSB.GC.Dev.GCDevUtils
+  nameWithType: GCDevUtils
 - uid: DSB.GC.GCControllerInputs
   name: GCControllerInputs
   href: api/DSB.GC.GCControllerInputs.html

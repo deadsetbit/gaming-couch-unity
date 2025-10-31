@@ -15,6 +15,36 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Dev.FluctuateFpsMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Dev.FluctuateFpsMode.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Dev.GCDevUtils.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Dev.GCDevUtils.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/DSB.GC.Dev.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DSB.GC.Dev.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/DSB.GC.GCControllerInputs.yml",
       "output": {
         ".html": {

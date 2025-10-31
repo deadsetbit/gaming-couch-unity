@@ -1,4 +1,19 @@
 {
+  "api/DSB.GC.Dev.FluctuateFpsMode.html": {
+    "href": "api/DSB.GC.Dev.FluctuateFpsMode.html",
+    "title": "Enum FluctuateFpsMode | Gaming Couch | 0.0.1",
+    "keywords": "Enum FluctuateFpsMode Namespace DSB.GC.Dev public enum FluctuateFpsMode Fields Disabled = 0 EditorAndBuild = 2 EditorOnly = 1"
+  },
+  "api/DSB.GC.Dev.GCDevUtils.html": {
+    "href": "api/DSB.GC.Dev.GCDevUtils.html",
+    "title": "Class GCDevUtils | Gaming Couch | 0.0.1",
+    "keywords": "Class GCDevUtils Namespace DSB.GC.Dev public class GCDevUtils : MonoBehaviour Inheritance object GCDevUtils"
+  },
+  "api/DSB.GC.Dev.html": {
+    "href": "api/DSB.GC.Dev.html",
+    "title": "Namespace DSB.GC.Dev | Gaming Couch | 0.0.1",
+    "keywords": "Namespace DSB.GC.Dev Classes GCDevUtils Enums FluctuateFpsMode"
+  },
   "api/DSB.GC.GCControllerInputs.html": {
     "href": "api/DSB.GC.GCControllerInputs.html",
     "title": "Class GCControllerInputs | Gaming Couch | 0.0.1",
