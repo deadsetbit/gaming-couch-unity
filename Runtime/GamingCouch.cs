@@ -161,7 +161,11 @@ namespace DSB.GC
         private void Update()
         {
             HandleEditorInputs();
-            HandleGamePlayModeRestart();
+
+            if (Input.GetKeyDown(KeyCode.Tab) && !isRestarting)
+            {
+                StartCoroutine(_HandleGamePlayModeRestart());
+            }
         }
 
         private void LateUpdate()
@@ -814,16 +818,21 @@ namespace DSB.GC
 
         [SerializeField]
         private KeyCode playModeRestartKey = KeyCode.Tab;
+        private bool isRestarting = false;
+        public bool IsRestarting => isRestarting;
 
-        private void HandleGamePlayModeRestart()
+        private IEnumerator _HandleGamePlayModeRestart()
         {
-            if (!Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
+            if (isRestarting || !Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
             {
-                return;
+                yield break;
             }
 
-            if (Input.GetKeyDown(KeyCode.Tab))
+            isRestarting = true;
+
+            try
             {
+
                 GCLog.LogDebug("Restarting game in play mode -----------");
 
                 // Destroy all DontDestroyOnLoad objects
@@ -856,6 +865,13 @@ namespace DSB.GC
                 // Finally just reload the current scene and we should have a clean slate... fingers crossed.
                 SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
+            catch (Exception e)
+            {
+                GCLog.LogWarning("Error restarting game in play mode: " + e.Message);
+            }
+
+            yield return null;
+            isRestarting = false;
         }
         #endregion
     }
