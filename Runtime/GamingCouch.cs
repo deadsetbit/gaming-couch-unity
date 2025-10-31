@@ -9,6 +9,7 @@ using DSB.GC.Log;
 using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
+using DSB.GC.Dev;
 
 namespace DSB.GC
 {
@@ -21,6 +22,7 @@ namespace DSB.GC
     public enum GCPlayerType { unset = 0, player = 1, bot = 2 }
 
     [ExecuteInEditMode]
+    [RequireComponent(typeof(GCDevUtils))]
     public class GamingCouch : MonoBehaviour
     {
         [DllImport("__Internal")]
