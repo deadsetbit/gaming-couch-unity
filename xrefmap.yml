@@ -1846,6 +1846,19 @@ references:
   isSpec: "True"
   fullName: DSB.GC.GamingCouch.InternalPlayerStore
   nameWithType: GamingCouch.InternalPlayerStore
+- uid: DSB.GC.GamingCouch.IsRestarting
+  name: IsRestarting
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_IsRestarting
+  commentId: P:DSB.GC.GamingCouch.IsRestarting
+  fullName: DSB.GC.GamingCouch.IsRestarting
+  nameWithType: GamingCouch.IsRestarting
+- uid: DSB.GC.GamingCouch.IsRestarting*
+  name: IsRestarting
+  href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_IsRestarting_
+  commentId: Overload:DSB.GC.GamingCouch.IsRestarting
+  isSpec: "True"
+  fullName: DSB.GC.GamingCouch.IsRestarting
+  nameWithType: GamingCouch.IsRestarting
 - uid: DSB.GC.GamingCouch.IsServer
   name: IsServer
   href: api/DSB.GC.GamingCouch.html#DSB_GC_GamingCouch_IsServer
