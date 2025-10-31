@@ -15,10 +15,22 @@ namespace DSB.GC
         public List<T> UneliminatedPlayers => uneliminatedPlayers;
         public int UneliminatedPlayerCount => uneliminatedPlayers.Count;
         public IEnumerable<T> UneliminatedPlayersEnumerable => uneliminatedPlayers;
+        private List<T> uneliminatedNonBotPlayers = new List<T>();
+        public List<T> UneliminatedNonBotPlayers => uneliminatedNonBotPlayers;
+        public IEnumerable<T> UneliminatedNonBotPlayersEnumerable => uneliminatedNonBotPlayers;
+        private List<T> uneliminatedBotPlayers = new List<T>();
+        public List<T> UneliminatedBotPlayers => uneliminatedBotPlayers;
+        public IEnumerable<T> UneliminatedBotPlayersEnumerable => uneliminatedBotPlayers;
         private List<T> eliminatedPlayers = new List<T>();
         public List<T> EliminatedPlayers => eliminatedPlayers;
         public int EliminatedPlayerCount => eliminatedPlayers.Count;
         public IEnumerable<T> EliminatedPlayersEnumerable => eliminatedPlayers;
+        private List<T> eliminatedNonBotPlayers = new List<T>();
+        public List<T> EliminatedNonBotPlayers => eliminatedNonBotPlayers;
+        public IEnumerable<T> EliminatedNonBotPlayersEnumerable => eliminatedNonBotPlayers;
+        private List<T> eliminatedBotPlayers = new List<T>();
+        public List<T> EliminatedBotPlayers => eliminatedBotPlayers;
+        public IEnumerable<T> EliminatedBotPlayersEnumerable => eliminatedBotPlayers;
         private Dictionary<int, T> playerById = new Dictionary<int, T>();
 
         public GCPlayerStore() { }
@@ -34,6 +46,23 @@ namespace DSB.GC
             uneliminatedPlayers.Remove(player);
             eliminatedPlayers.Add(player);
 
+            if (player.IsBot)
+            {
+                if (uneliminatedBotPlayers.Contains(player))
+                {
+                    uneliminatedBotPlayers.Remove(player);
+                }
+                eliminatedBotPlayers.Add(player);
+            }
+            else
+            {
+                if (uneliminatedNonBotPlayers.Contains(player))
+                {
+                    uneliminatedNonBotPlayers.Remove(player);
+                }
+                eliminatedNonBotPlayers.Add(player);
+            }
+
             Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
         }
 
@@ -47,6 +76,23 @@ namespace DSB.GC
 
             eliminatedPlayers.Remove(player);
             uneliminatedPlayers.Add(player);
+
+            if (player.IsBot)
+            {
+                if (eliminatedBotPlayers.Contains(player))
+                {
+                    eliminatedBotPlayers.Remove(player);
+                }
+                uneliminatedBotPlayers.Add(player);
+            }
+            else
+            {
+                if (eliminatedNonBotPlayers.Contains(player))
+                {
+                    eliminatedNonBotPlayers.Remove(player);
+                }
+                uneliminatedNonBotPlayers.Add(player);
+            }
 
             Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
         }
@@ -71,10 +117,26 @@ namespace DSB.GC
             if (!player.IsEliminated)
             {
                 uneliminatedPlayers.Add(player);
+                if (player.IsBot)
+                {
+                    uneliminatedBotPlayers.Add(player);
+                }
+                else
+                {
+                    uneliminatedNonBotPlayers.Add(player);
+                }
             }
             else
             {
                 eliminatedPlayers.Add(player);
+                if (player.IsBot)
+                {
+                    eliminatedBotPlayers.Add(player);
+                }
+                else
+                {
+                    eliminatedNonBotPlayers.Add(player);
+                }
             }
 
             playerById[player.Id] = player;
@@ -92,7 +154,11 @@ namespace DSB.GC
 
             players.Clear();
             uneliminatedPlayers.Clear();
+            uneliminatedNonBotPlayers.Clear();
+            uneliminatedBotPlayers.Clear();
             eliminatedPlayers.Clear();
+            eliminatedNonBotPlayers.Clear();
+            eliminatedBotPlayers.Clear();
             playerById.Clear();
         }
     }
