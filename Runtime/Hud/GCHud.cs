@@ -81,7 +81,7 @@ namespace DSB.GC.Hud
         /// <summary>
         /// The meter value (-1-100) to display for the player. This can be health, boost, etc. based on the meterType in the GCHudPlayersConfig.
         /// </summary>
-        public int meterValue;
+        public int meter;
     }
 
     [Serializable]

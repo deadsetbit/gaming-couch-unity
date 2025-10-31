@@ -106,7 +106,7 @@ namespace DSB.GC.Game
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
-            player.OnMeterValueChanged += (playerId, meterValue, reason) =>
+            player.OnMeterChanged += (playerId, meter, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
@@ -234,7 +234,7 @@ namespace DSB.GC.Game
                     eliminated = player.IsEliminated,
                     placement = index,
                     value = GetPlayerHudValue(player),
-                    meterValue = player.MeterValue
+                    meter = player.Meter
                 }).ToArray()
             });
         }
