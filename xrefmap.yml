@@ -43,6 +43,19 @@ references:
   commentId: T:DSB.GC.Dev.GCDevUtils
   fullName: DSB.GC.Dev.GCDevUtils
   nameWithType: GCDevUtils
+- uid: DSB.GC.Dev.GCDevUtils.IsRestarting
+  name: IsRestarting
+  href: api/DSB.GC.Dev.GCDevUtils.html#DSB_GC_Dev_GCDevUtils_IsRestarting
+  commentId: P:DSB.GC.Dev.GCDevUtils.IsRestarting
+  fullName: DSB.GC.Dev.GCDevUtils.IsRestarting
+  nameWithType: GCDevUtils.IsRestarting
+- uid: DSB.GC.Dev.GCDevUtils.IsRestarting*
+  name: IsRestarting
+  href: api/DSB.GC.Dev.GCDevUtils.html#DSB_GC_Dev_GCDevUtils_IsRestarting_
+  commentId: Overload:DSB.GC.Dev.GCDevUtils.IsRestarting
+  isSpec: "True"
+  fullName: DSB.GC.Dev.GCDevUtils.IsRestarting
+  nameWithType: GCDevUtils.IsRestarting
 - uid: DSB.GC.GCControllerInputs
   name: GCControllerInputs
   href: api/DSB.GC.GCControllerInputs.html
