@@ -1,10 +1,6 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 using System;
 using DSB.GC;
-using DSB.GC.Log;
 
 namespace DSB.GC.Dev
 {
@@ -52,9 +48,6 @@ namespace DSB.GC.Dev
 
         [SerializeField]
         private KeyCode playModeRestartKey = KeyCode.Tab;
-
-        private bool isRestarting = false;
-        public bool IsRestarting => isRestarting;
 
         private void OnEnable()
         {
@@ -159,58 +152,13 @@ namespace DSB.GC.Dev
 
         private void HandlePlayModeRestart()
         {
-            if (Input.GetKeyDown(playModeRestartKey) && !isRestarting)
+            if (Input.GetKeyDown(playModeRestartKey) && GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
             {
-                StartCoroutine(_HandleGamePlayModeRestart());
-            }
-        }
-
-        private IEnumerator _HandleGamePlayModeRestart()
-        {
-            if (isRestarting || !Application.isEditor || !enablePlayModeRestart || !Application.isPlaying)
-            {
-                yield break;
-            }
-
-            isRestarting = true;
-
-            try
-            {
-                GCLog.LogDebug("Restarting game in play mode -----------");
-
-                GameObject temp = new GameObject("SceneProbe");
-                DontDestroyOnLoad(temp);
-                Scene dontDestroyScene = temp.scene;
-                DestroyImmediate(temp);
-
-                GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-                List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
-
-                foreach (var obj in allObjects)
+                if (enablePlayModeRestart)
                 {
-                    if (obj.scene == dontDestroyScene && obj.transform.parent == null)
-                    {
-                        donDestroyOnLoadObjects.Add(obj);
-                    }
+                    GamingCouch.Instance.InternalHandleGamePlayModeRestart();
                 }
-
-                foreach (var obj in donDestroyOnLoadObjects)
-                {
-                    if (obj != null)
-                    {
-                        DestroyImmediate(obj);
-                    }
-                }
-
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
-            catch (Exception e)
-            {
-                GCLog.LogWarning("Error restarting game in play mode: " + e.Message);
-            }
-
-            yield return null;
-            isRestarting = false;
         }
     }
 }

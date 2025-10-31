@@ -47,7 +47,8 @@ namespace DSB.GC
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
-        public bool IsRestarting => devUtils != null ? devUtils.IsRestarting : false;
+        private bool isRestarting = false;
+        public bool IsRestarting => isRestarting;
         public bool IsServer
         {
             get
@@ -86,7 +87,6 @@ namespace DSB.GC
         private GCGame game;
         private GCHud hud = new GCHud();
         public GCHud Hud => hud;
-        private GCDevUtils devUtils;
         public LogLevel LogLevel = LogLevel.Debug;
         private float timeScaleOnPause = 1.0f;
         private float volumeOnPause = 1.0f;
@@ -111,8 +111,6 @@ namespace DSB.GC
             }
 
             instance = this;
-
-            devUtils = GetComponent<GCDevUtils>();
 
             if (Application.isEditor && !Application.isPlaying)
             {
@@ -810,6 +808,62 @@ namespace DSB.GC
 
             Clear();
             Start();
+        }
+
+        internal void InternalHandleGamePlayModeRestart()
+        {
+            if (!isRestarting)
+            {
+                StartCoroutine(_HandleGamePlayModeRestart());
+            }
+        }
+
+        private IEnumerator _HandleGamePlayModeRestart()
+        {
+            if (isRestarting || !Application.isEditor || !Application.isPlaying)
+            {
+                yield break;
+            }
+
+            isRestarting = true;
+
+            try
+            {
+                GCLog.LogDebug("Restarting game in play mode -----------");
+
+                GameObject temp = new GameObject("SceneProbe");
+                DontDestroyOnLoad(temp);
+                Scene dontDestroyScene = temp.scene;
+                DestroyImmediate(temp);
+
+                GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+                List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
+
+                foreach (var obj in allObjects)
+                {
+                    if (obj.scene == dontDestroyScene && obj.transform.parent == null)
+                    {
+                        donDestroyOnLoadObjects.Add(obj);
+                    }
+                }
+
+                foreach (var obj in donDestroyOnLoadObjects)
+                {
+                    if (obj != null)
+                    {
+                        DestroyImmediate(obj);
+                    }
+                }
+
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
+            catch (Exception e)
+            {
+                GCLog.LogWarning("Error restarting game in play mode: " + e.Message);
+            }
+
+            yield return null;
+            isRestarting = false;
         }
         #endregion
     }
