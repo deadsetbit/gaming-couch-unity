@@ -17,10 +17,7 @@ namespace DSB.GC.Hud
     public enum PlayersHudMeterType
     {
         None,
-        RedBar,
-        OrangeBar,
-        GreenBar,
-        BlueBar,
+        Bar,
     }
 
     /// <summary>

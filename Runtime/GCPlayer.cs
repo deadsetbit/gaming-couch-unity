@@ -11,7 +11,9 @@ namespace DSB.GC
         Neutral = 0,
         Pending = 1,
         Success = 2,
-        Failure = 3
+        Failure = 3,
+        Warning = 4,
+        Alert = 5
     }
 
     public class GCPlayer : MonoBehaviour
