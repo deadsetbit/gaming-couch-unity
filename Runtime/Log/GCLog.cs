@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DSB.GC.Log
 {
-    public enum LogLevel { None, Warning, Info, Debug }
+    public enum LogLevel { None, Error, Warning, Info, Debug }
 
     public class GCLog
     {
@@ -17,6 +17,10 @@ namespace DSB.GC.Log
             var logLevelIndex = (int)logLevel;
             switch (level)
             {
+                case LogLevel.Error:
+                    if (logLevelIndex < (int)LogLevel.Error) return;
+                    Debug.LogError($"[GC] ({level}) {message}");
+                    break;
                 case LogLevel.Warning:
                     if (logLevelIndex < (int)LogLevel.Warning) return;
                     Debug.LogWarning($"[GC] ({level}) {message}");
@@ -30,6 +34,11 @@ namespace DSB.GC.Log
                     Debug.Log($"[GC] ({level}) {message}");
                     break;
             }
+        }
+
+        public static void LogError(string message)
+        {
+            Log(LogLevel.Error, message);
         }
 
         public static void LogWarning(string message)
