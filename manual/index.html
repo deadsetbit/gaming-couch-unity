@@ -176,7 +176,13 @@ private GCPlayerStore&lt;Player&gt; playerStore = new GCPlayerStore&lt;Player&gt
 </code></pre>
 <h1 id="hud">HUD</h1>
 <p>NOTE: All HUD related features are only rendered in the Gaming Couch platform and cant be tested in the editor or unity build alone.</p>
-<h2 id="name-tags">Name tags</h2>
+<h2 id="player-position">Player position</h2>
+<p>Tracks players position and enables features such as:</p>
+<ul>
+<li>displaying an offscreen indicator for the player in the HUD when they move off screen.</li>
+<li>dimming/fading away the left hand player's HUD if the player is positioned &quot;underneath&quot; the HUD.</li>
+</ul>
+<h2 id="overhead-hud-name-tags-points-meter-bar">Overhead HUD (Name tags, points, meter bar)</h2>
 <p>To add name tags for players, add the GCPlayerOverhead component to your player game object.
 Usually you want to position the name tag above the player, so you can also add the GCPlayerOverhead component
 to a child object of the player game object and offset it above the player's head, for example.</p>
