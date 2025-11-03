@@ -116,6 +116,8 @@ Tracks players position and enables features such as:
 - displaying an offscreen indicator for the player in the HUD when they move off screen.
 - dimming/fading away the left hand player's HUD if the player is positioned "underneath" the HUD.
 
+You should add this to a transform that indicates the player's position in the world.
+
 ## Overhead HUD (Name tags, points, meter bar)
 
 To add name tags for players, add the GCPlayerOverhead component to your player game object.
