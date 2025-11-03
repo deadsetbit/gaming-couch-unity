@@ -109,7 +109,14 @@ GamingCouch.Instance.GameOver();
 
 NOTE: All HUD related features are only rendered in the Gaming Couch platform and cant be tested in the editor or unity build alone.
 
-## Name tags
+## Player position
+
+Tracks players position and enables features such as:
+
+- displaying an offscreen indicator for the player in the HUD when they move off screen.
+- dimming/fading away the left hand player's HUD if the player is positioned "underneath" the HUD.
+
+## Overhead HUD (Name tags, points, meter bar)
 
 To add name tags for players, add the GCPlayerOverhead component to your player game object.
 Usually you want to position the name tag above the player, so you can also add the GCPlayerOverhead component
