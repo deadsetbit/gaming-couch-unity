@@ -166,11 +166,74 @@ namespace DSB.GC.Dev
                         ForwardToGamingCouch(data.playerId, data.inputs);
                     }
                 }
+                else if (message.Contains("\"type\":\"devtool\""))
+                {
+                    var data = JsonUtility.FromJson<WebSocketDevToolMessage>(message);
+                    if (data.type == "devtool")
+                    {
+                        HandleDevToolAction(data);
+                    }
+                }
             }
             catch (Exception e)
             {
                 Debug.LogError($"Error parsing WebSocket message: {e.Message}\nMessage: {message}");
             }
+        }
+
+        void HandleDevToolAction(WebSocketDevToolMessage message)
+        {
+            switch (message.action)
+            {
+                case "restart":
+                    RestartGame();
+                    break;
+                case "pause":
+                    SetPause(true);
+                    break;
+                case "play":
+                    SetPause(false);
+                    break;
+                case "pauseToggle":
+                    TogglePause();
+                    break;
+                case "setTimescale":
+                    if (message.payload != null)
+                    {
+                        SetTimescale(message.payload.timescale);
+                    }
+                    break;
+            }
+        }
+
+        void RestartGame()
+        {
+            if (GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
+            {
+                GamingCouch.Instance.InternalHandleGamePlayModeRestart();
+            }
+        }
+
+        void SetPause(bool paused)
+        {
+            if (GamingCouch.Instance != null)
+            {
+                GamingCouch.Instance.SendMessage("GamingCouchPause", paused.ToString(), SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        void TogglePause()
+        {
+            if (GamingCouch.Instance != null)
+            {
+                bool isCurrentlyPaused = Mathf.Approximately(Time.timeScale, 0.0f);
+                GamingCouch.Instance.SendMessage("GamingCouchPause", (!isCurrentlyPaused).ToString(), SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        void SetTimescale(float timescale)
+        {
+            Time.timeScale = Mathf.Clamp(timescale, 0.1f, 5.0f);
         }
 
         void ForwardToGamingCouch(int playerId, WebSocketInputData inputs)
@@ -254,6 +317,21 @@ namespace DSB.GC.Dev
         public float b0;
         public float b1;
         public float b2;
+    }
+
+    [Serializable]
+    public class WebSocketDevToolMessage
+    {
+        public string type;
+        public string action;
+        public WebSocketDevToolPayload payload;
+        public long timestamp;
+    }
+
+    [Serializable]
+    public class WebSocketDevToolPayload
+    {
+        public float timescale;
     }
 #endif
 }
