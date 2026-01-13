@@ -16,7 +16,7 @@ namespace DSB.GC.Dev
     {
         [Header("WebSocket Configuration")]
         [SerializeField]
-        private string serverUrl = "ws://localhost:3000/ws";
+        private string serverUrl = "ws://localhost:3100/ws";
 
         [SerializeField]
         private float reconnectDelay = 2f;
