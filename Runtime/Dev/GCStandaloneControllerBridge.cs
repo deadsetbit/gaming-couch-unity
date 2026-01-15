@@ -53,7 +53,16 @@ namespace DSB.GC.Dev
             CloseWebSocket();
         }
 
-        IEnumerator ConnectWebSocket()
+        
+
+        string BuildConnectionUrl()
+        {
+            var name = Uri.EscapeDataString(string.IsNullOrEmpty(Application.productName) ? "Unity" : Application.productName);
+            var platform = Uri.EscapeDataString(Application.isEditor ? "Unity Editor" : Application.platform.ToString());
+            var separator = serverUrl.Contains("?") ? "&" : "?";
+            return $"{serverUrl}{separator}identity=project&name={name}&platform={platform}";
+        }
+IEnumerator ConnectWebSocket()
         {
             isConnecting = true;
             cancellationTokenSource = new CancellationTokenSource();
@@ -64,7 +73,8 @@ namespace DSB.GC.Dev
 
             try
             {
-                connectTask = websocket.ConnectAsync(new Uri(serverUrl), cancellationTokenSource.Token);
+                var connectUrl = BuildConnectionUrl();
+                connectTask = websocket.ConnectAsync(new Uri(connectUrl), cancellationTokenSource.Token);
             }
             catch (Exception e)
             {
