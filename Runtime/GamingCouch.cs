@@ -343,11 +343,12 @@ namespace DSB.GC
             }
 
             string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
-
-            GCControllerInputs inputs = GCControllerInputs.CreateFromJSON(playerIdAndInputsArray[1]);
+            var inputsData = GCControllerInputsData.CreateFromJSON(playerIdAndInputsArray[1]);
+            GCControllerInputs inputs = new GCControllerInputs(inputsData);
 
             var playerId = int.Parse(playerIdAndInputsArray[0]);
             inputsByPlayerId[playerId] = inputs;
+            externalInputsByPlayerId[playerId] = inputsData;
         }
         #endregion
 
@@ -635,7 +636,6 @@ namespace DSB.GC
         #region Player inputs
         private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
         private Dictionary<int, GCControllerInputsData> externalInputsByPlayerId = new Dictionary<int, GCControllerInputsData>();
-        private Dictionary<int, float> lastExternalInputTimesByPlayerId = new Dictionary<int, float>();
         /// <summary>
         /// Get player inputs by player ID.
         /// </summary>
@@ -658,6 +658,7 @@ namespace DSB.GC
         {
             GCLog.LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
+            externalInputsByPlayerId.Clear();
         }
         #endregion
 
@@ -788,8 +789,25 @@ namespace DSB.GC
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Fire3'")]
         private string b3 = "Fire3";
+        private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
         private int controlPlayerIndex = 0;
+
+        private bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
+        {
+            if (Mathf.Abs(inputs.a0) > axisDeadzone || Mathf.Abs(inputs.a1) > axisDeadzone)
+            {
+                return true;
+            }
+
+            if (Mathf.Abs(inputs.a2) > axisDeadzone || Mathf.Abs(inputs.a3) > axisDeadzone)
+            {
+                return true;
+            }
+
+            return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1 || inputs.b3 == 1 ||
+                inputs.b12 == 1 || inputs.b13 == 1 || inputs.b14 == 1 || inputs.b15 == 1;
+        }
 
         private void HandleEditorInputs()
         {
@@ -815,7 +833,16 @@ namespace DSB.GC
 
             if (player == null) return;
 
-            var inputs = new GCControllerInputs(new GCControllerInputsData
+            var inputsList = new List<GCControllerInputsData>();
+
+            // external inputs
+            if (externalInputsByPlayerId.TryGetValue(player.Id, out var externalInputsData))
+            {
+                inputsList.Add(externalInputsData);
+            }
+
+            // keyboard inputs
+            inputsList.Add(new GCControllerInputsData
             {
                 a0 = Input.GetAxis(a0),
                 a1 = Input.GetAxis(a1),
@@ -825,7 +852,28 @@ namespace DSB.GC
                 b3 = Input.GetButton(b3) ? 1 : 0
             });
 
-            inputsByPlayerId[player.Id] = inputs;
+            var finalInputsData = new GCControllerInputsData();
+            foreach (var inputs in inputsList)
+            {
+                if (!HasNonZeroInput(inputs, INPUT_AXIS_INNER_DEADZONE))
+                {
+                    continue;
+                }
+
+                finalInputsData.a0 += inputs.a0;
+                finalInputsData.a1 += inputs.a1;
+                finalInputsData.b0 += inputs.b0;
+                finalInputsData.b1 += inputs.b1;
+                finalInputsData.b2 += inputs.b2;
+                finalInputsData.b3 += inputs.b3;
+
+                break;
+            }
+
+            finalInputsData.a0 = Mathf.Clamp(finalInputsData.a0, -1.0f, 1.0f);
+            finalInputsData.a1 = Mathf.Clamp(finalInputsData.a1, -1.0f, 1.0f);
+
+            inputsByPlayerId[player.Id] = new GCControllerInputs(finalInputsData);
         }
         #endregion
 
