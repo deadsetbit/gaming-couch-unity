@@ -62,4 +62,25 @@ mergeInto(LibraryManager.library, {
     }
     window.gamingCouchGameEnd(result);
   },
+
+  GamingCouchTimescaleUpdate: function (timescaleString, pausedString) {
+    if (!window.gamingCouchTimescaleUpdate) {
+      console.error("gamingCouchTimescaleUpdate is not defined");
+      return;
+    }
+
+    var timescale = parseFloat(UTF8ToString(timescaleString));
+    var paused = UTF8ToString(pausedString) === "true";
+    window.gamingCouchTimescaleUpdate(timescale, paused);
+  },
+
+  GamingCouchSendProjectInfo: function (projectNameString) {
+    if (!window.gamingCouchSendProjectInfo) {
+      console.error("gamingCouchSendProjectInfo is not defined");
+      return;
+    }
+
+    var projectName = UTF8ToString(projectNameString);
+    window.gamingCouchSendProjectInfo(projectName);
+  },
 });

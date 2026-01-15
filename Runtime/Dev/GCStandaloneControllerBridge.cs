@@ -105,7 +105,8 @@ namespace DSB.GC.Dev
 
         IEnumerator ReceiveMessages()
         {
-            var buffer = new byte[1024 * 4];
+            var buffer = new byte[1024 * 16];
+            var messageBuilder = new StringBuilder(1024);
 
             while (websocket != null && websocket.State == WebSocketState.Open)
             {
@@ -142,8 +143,13 @@ namespace DSB.GC.Dev
 
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    ProcessWebSocketMessage(message);
+                    messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                    if (result.EndOfMessage)
+                    {
+                        var message = messageBuilder.ToString();
+                        messageBuilder.Length = 0;
+                        ProcessWebSocketMessage(message);
+                    }
                 }
             }
 
@@ -335,4 +341,3 @@ namespace DSB.GC.Dev
     }
 #endif
 }
-

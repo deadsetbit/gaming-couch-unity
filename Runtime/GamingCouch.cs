@@ -34,6 +34,9 @@ namespace DSB.GC
         [DllImport("__Internal")]
         private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
 
+        [DllImport("__Internal")]
+        private static extern void GamingCouchSendProjectInfo(string projectName);
+
         private static int MAX_PLAYERS = 8;
         private static int MAX_NAME_LENGTH = 8;
         private static float AUDIO_FADE_SECONDS = 3.0f;
@@ -147,11 +150,13 @@ namespace DSB.GC
             if (!onlineMultiplayerSupport)
             {
                 GamingCouchSetup();
+                SendProjectInfo();
             }
 #else
             if (!onlineMultiplayerSupport)
             {
                 GamingCouchInstanceStarted();
+                SendProjectInfo();
             }
 #endif
         }
@@ -259,6 +264,55 @@ namespace DSB.GC
             GCLog.LogInfo("GamingCouchPause: Resuming");
             AudioListener.volume = volumeOnPause;
             Time.timeScale = timeScaleOnPause;
+        }
+
+        /// <summary>
+        /// Called by the platform when timescale or pause state is updated from dev app.
+        /// </summary>
+        public void OnTimescaleUpdate(string parameters)
+        {
+            var parts = parameters.Split(',');
+            if (parts.Length >= 2)
+            {
+                var timescale = float.Parse(parts[0]);
+                var paused = parts[1] == "1";
+                GCLog.LogInfo($"OnTimescaleUpdate: timescale={timescale}, paused={paused}");
+
+                if (paused && !this.paused)
+                {
+                    // Pause the game
+                    inputsByPlayerId.Clear();
+                    volumeOnPause = AudioListener.volume;
+                    AudioListener.volume = 0.0f;
+                    timeScaleOnPause = Time.timeScale;
+                    Time.timeScale = 0;
+                    this.paused = true;
+                }
+                else if (!paused && this.paused)
+                {
+                    // Resume the game
+                    AudioListener.volume = volumeOnPause;
+                    Time.timeScale = timeScaleOnPause;
+                    this.paused = false;
+                }
+                else if (!paused)
+                {
+                    // Update timescale while not paused
+                    Time.timeScale = timescale;
+                    timeScaleOnPause = timescale;
+                }
+            }
+        }
+
+        private void SendProjectInfo()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            string projectName = Application.productName;
+            if (!string.IsNullOrEmpty(projectName))
+            {
+                GamingCouchSendProjectInfo(projectName);
+            }
+#endif
         }
 
         private IEnumerator _EditorPlay()
@@ -580,6 +634,8 @@ namespace DSB.GC
 
         #region Player inputs
         private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputsData> externalInputsByPlayerId = new Dictionary<int, GCControllerInputsData>();
+        private Dictionary<int, float> lastExternalInputTimesByPlayerId = new Dictionary<int, float>();
         /// <summary>
         /// Get player inputs by player ID.
         /// </summary>
