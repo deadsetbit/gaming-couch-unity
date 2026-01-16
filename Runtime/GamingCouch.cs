@@ -766,23 +766,23 @@ namespace DSB.GC
         }
         #endregion
 
-        [Header("Editor keyboard controls")]
+        [Header("Editor keyboard controls (Unity Input System binds)")]
 
         #region Editor keyboard controls
         [SerializeField]
         private bool useKeyboardControls = true;
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Horizontal'")]
-        private string a0 = "Horizontal";
+        [Tooltip("Left stick X-axis for editor testing. Default: 'Horizontal'")]
+        private string axisX = "Horizontal";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Vertical'")]
-        private string a1 = "Vertical";
+        [Tooltip("Left stick Y-axis for editor testing. Default: 'Vertical'")]
+        private string axisY = "Vertical";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Jump'")]
-        private string b0 = "Jump";
+        [Tooltip("Unity Input keyboard input 'primary' action button (A on Xbox controller). Default: 'Jump'")]
+        private string buttonPrimary = "Jump";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire1'")]
-        private string b1 = "Fire1";
+        [Tooltip("Unity Input keyboard input 'secondary' action button (B on Xbox controller). Default: 'Fire1'")]
+        private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
         private int controlPlayerIndex = 0;
@@ -838,10 +838,10 @@ namespace DSB.GC
             // keyboard inputs
             inputsList.Add(new GCControllerInputsData
             {
-                a0 = Input.GetAxis(a0),
-                a1 = Input.GetAxis(a1),
-                b0 = Input.GetButton(b0) ? 1 : 0,
-                b1 = Input.GetButton(b1) ? 1 : 0,
+                a0 = Input.GetAxis(axisX),
+                a1 = Input.GetAxis(axisY),
+                b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
+                b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
             });
 
             var finalInputsData = new GCControllerInputsData();
@@ -854,16 +854,8 @@ namespace DSB.GC
 
                 finalInputsData.a0 = inputs.a0;
                 finalInputsData.a1 = inputs.a1;
-                // finalInputsData.a2 = inputs.a2;
-                // finalInputsData.a3 = inputs.a3;
                 finalInputsData.b0 = inputs.b0;
                 finalInputsData.b1 = inputs.b1;
-                // finalInputsData.b2 = inputs.b2;
-                // finalInputsData.b3 = inputs.b3;
-                // finalInputsData.b12 = inputs.b12;
-                // finalInputsData.b13 = inputs.b13;
-                // finalInputsData.b14 = inputs.b14;
-                // finalInputsData.b15 = inputs.b15;
 
                 break;
             }
