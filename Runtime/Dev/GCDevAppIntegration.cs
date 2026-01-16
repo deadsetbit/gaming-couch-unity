@@ -12,13 +12,17 @@ namespace DSB.GC.Dev
 {
 #if UNITY_EDITOR
     [RequireComponent(typeof(GamingCouch))]
-    public class GCDevApp : MonoBehaviour
+    public class GCDevAppIntegration : MonoBehaviour
     {
         [Header("WebSocket Configuration")]
         [SerializeField]
         private string serverUrl = "ws://localhost:3100/ws";
         private float reconnectDelay = 2f;
         private bool autoConnectOnPlay = true;
+
+        [Header("Debug")]
+        [SerializeField]
+        private bool webSocketLogging = false;
 
         private ClientWebSocket websocket;
         private CancellationTokenSource cancellationTokenSource;
@@ -37,19 +41,22 @@ namespace DSB.GC.Dev
         {
             if (isConnecting || (websocket != null && websocket.State == WebSocketState.Open))
             {
+                LogWebSocket("Connect ignored; already connecting or connected.");
                 return;
             }
 
+            LogWebSocket("Connect requested.");
             StartCoroutine(ConnectWebSocket());
         }
 
         public void Disconnect()
         {
             shouldReconnect = false;
+            LogWebSocket("Disconnect requested.");
             CloseWebSocket();
         }
 
-        
+
 
         string BuildConnectionUrl()
         {
@@ -58,7 +65,7 @@ namespace DSB.GC.Dev
             var separator = serverUrl.Contains("?") ? "&" : "?";
             return $"{serverUrl}{separator}identity=project&name={name}&platform={platform}";
         }
-IEnumerator ConnectWebSocket()
+        IEnumerator ConnectWebSocket()
         {
             isConnecting = true;
             cancellationTokenSource = new CancellationTokenSource();
@@ -70,11 +77,13 @@ IEnumerator ConnectWebSocket()
             try
             {
                 var connectUrl = BuildConnectionUrl();
+                LogWebSocket($"Connecting to {connectUrl}");
                 connectTask = websocket.ConnectAsync(new Uri(connectUrl), cancellationTokenSource.Token);
             }
             catch (Exception e)
             {
                 hasException = true;
+                LogWebSocket($"Connect exception: {e.Message}");
             }
 
             if (hasException)
@@ -82,6 +91,7 @@ IEnumerator ConnectWebSocket()
                 isConnecting = false;
                 if (shouldReconnect)
                 {
+                    LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
                     yield return new WaitForSeconds(reconnectDelay);
                     StartCoroutine(ConnectWebSocket());
                 }
@@ -93,8 +103,10 @@ IEnumerator ConnectWebSocket()
             if (connectTask.IsFaulted)
             {
                 isConnecting = false;
+                LogWebSocket("Connect faulted.");
                 if (shouldReconnect)
                 {
+                    LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
                     yield return new WaitForSeconds(reconnectDelay);
                     StartCoroutine(ConnectWebSocket());
                 }
@@ -103,6 +115,7 @@ IEnumerator ConnectWebSocket()
 
             if (websocket.State == WebSocketState.Open)
             {
+                LogWebSocket("Connected.");
                 StartCoroutine(ReceiveMessages());
             }
 
@@ -114,6 +127,7 @@ IEnumerator ConnectWebSocket()
             var buffer = new byte[1024 * 16];
             var messageBuilder = new StringBuilder(1024);
 
+            LogWebSocket("Receive loop started.");
             while (websocket != null && websocket.State == WebSocketState.Open)
             {
                 System.Threading.Tasks.Task<System.Net.WebSockets.WebSocketReceiveResult> receiveTask = null;
@@ -126,6 +140,7 @@ IEnumerator ConnectWebSocket()
                 catch (Exception e)
                 {
                     hasException = true;
+                    LogWebSocket($"Receive exception: {e.Message}");
                 }
 
                 if (hasException)
@@ -137,6 +152,7 @@ IEnumerator ConnectWebSocket()
 
                 if (receiveTask.IsFaulted)
                 {
+                    LogWebSocket("Receive faulted.");
                     break;
                 }
 
@@ -144,6 +160,7 @@ IEnumerator ConnectWebSocket()
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
+                    LogWebSocket($"Remote closed: {result.CloseStatus} {result.CloseStatusDescription}");
                     break;
                 }
 
@@ -154,13 +171,16 @@ IEnumerator ConnectWebSocket()
                     {
                         var message = messageBuilder.ToString();
                         messageBuilder.Length = 0;
+                        LogWebSocket($"Incoming: {message}");
                         ProcessWebSocketMessage(message);
                     }
                 }
             }
 
+            LogWebSocket("Receive loop ended.");
             if (shouldReconnect && websocket != null && websocket.State != WebSocketState.Open)
             {
+                LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
                 yield return new WaitForSeconds(reconnectDelay);
                 StartCoroutine(ConnectWebSocket());
             }
@@ -185,6 +205,18 @@ IEnumerator ConnectWebSocket()
                     {
                         HandleDevToolAction(data);
                     }
+                }
+                else if (message.Contains("\"type\":\"timescale_state\""))
+                {
+                    var data = JsonUtility.FromJson<WebSocketTimescaleStateMessage>(message);
+                    if (data.type == "timescale_state")
+                    {
+                        ApplyTimescaleState(data);
+                    }
+                }
+                else
+                {
+                    LogWebSocket("Unhandled message type." + message);
                 }
             }
             catch (Exception e)
@@ -248,6 +280,13 @@ IEnumerator ConnectWebSocket()
             Time.timeScale = Mathf.Clamp(timescale, 0.1f, 5.0f);
         }
 
+        void ApplyTimescaleState(WebSocketTimescaleStateMessage message)
+        {
+            SetTimescale(message.timescale);
+            SetPause(message.paused);
+        }
+
+
         void ForwardToGamingCouch(int playerId, WebSocketInputData inputs)
         {
             if (GamingCouch.Instance == null)
@@ -272,6 +311,7 @@ IEnumerator ConnectWebSocket()
             };
 
             string inputString = $"{playerId}|{JsonUtility.ToJson(inputData)}";
+            LogWebSocket($"Outgoing (to GamingCouch): {inputString}");
             GamingCouch.Instance.SendMessage("GamingCouchInputs", inputString);
         }
 
@@ -285,10 +325,12 @@ IEnumerator ConnectWebSocket()
                 {
                     try
                     {
+                        LogWebSocket("Closing websocket.");
                         websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None).Wait(1000);
                     }
                     catch (Exception e)
                     {
+                        LogWebSocket($"Close exception: {e.Message}");
                     }
                 }
 
@@ -309,6 +351,16 @@ IEnumerator ConnectWebSocket()
         {
             shouldReconnect = false;
             CloseWebSocket();
+        }
+
+        void LogWebSocket(string message)
+        {
+            if (!webSocketLogging)
+            {
+                return;
+            }
+
+            Debug.Log($"[GCDevApp][WebSocket] {message}");
         }
     }
 
@@ -336,6 +388,15 @@ IEnumerator ConnectWebSocket()
         public string type;
         public string action;
         public WebSocketDevToolPayload payload;
+        public long timestamp;
+    }
+
+    [Serializable]
+    public class WebSocketTimescaleStateMessage
+    {
+        public string type;
+        public float timescale;
+        public bool paused;
         public long timestamp;
     }
 

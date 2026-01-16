@@ -23,6 +23,7 @@ namespace DSB.GC
 
     [ExecuteInEditMode]
     [RequireComponent(typeof(GCDevUtils))]
+    [RequireComponent(typeof(GCDevAppIntegration))]
     public class GamingCouch : MonoBehaviour
     {
         [DllImport("__Internal")]
