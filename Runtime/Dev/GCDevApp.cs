@@ -12,17 +12,13 @@ namespace DSB.GC.Dev
 {
 #if UNITY_EDITOR
     [RequireComponent(typeof(GamingCouch))]
-    public class GCStandaloneControllerBridge : MonoBehaviour
+    public class GCDevApp : MonoBehaviour
     {
         [Header("WebSocket Configuration")]
         [SerializeField]
         private string serverUrl = "ws://localhost:3100/ws";
-
-        [SerializeField]
         private float reconnectDelay = 2f;
-
-        [SerializeField]
-        private bool autoConnect = true;
+        private bool autoConnectOnPlay = true;
 
         private ClientWebSocket websocket;
         private CancellationTokenSource cancellationTokenSource;
@@ -31,7 +27,7 @@ namespace DSB.GC.Dev
 
         private void Start()
         {
-            if (autoConnect)
+            if (autoConnectOnPlay)
             {
                 Connect();
             }
@@ -267,7 +263,7 @@ IEnumerator ConnectWebSocket()
                 a3 = 0f,
                 b0 = inputs.b0 > 0.5f ? 1 : 0,
                 b1 = inputs.b1 > 0.5f ? 1 : 0,
-                b2 = inputs.b2 > 0.5f ? 1 : 0,
+                b2 = 0,
                 b3 = 0,
                 b12 = 0,
                 b13 = 0,
@@ -332,7 +328,6 @@ IEnumerator ConnectWebSocket()
         public float a1;
         public float b0;
         public float b1;
-        public float b2;
     }
 
     [Serializable]

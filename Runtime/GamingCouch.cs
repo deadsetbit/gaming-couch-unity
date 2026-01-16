@@ -766,7 +766,7 @@ namespace DSB.GC
         }
         #endregion
 
-        [Header("Editor keyboard controls (Unity Input System binds)")]
+        [Header("Editor keyboard controls (Unity Input System map)")]
 
         #region Editor keyboard controls
         [SerializeField]
