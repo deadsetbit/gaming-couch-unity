@@ -783,12 +783,6 @@ namespace DSB.GC
         [SerializeField]
         [Tooltip("Unity Input button for editor testing. Default: 'Fire1'")]
         private string b1 = "Fire1";
-        [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire2'")]
-        private string b2 = "Fire2";
-        [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire3'")]
-        private string b3 = "Fire3";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
         private int controlPlayerIndex = 0;
@@ -848,8 +842,6 @@ namespace DSB.GC
                 a1 = Input.GetAxis(a1),
                 b0 = Input.GetButton(b0) ? 1 : 0,
                 b1 = Input.GetButton(b1) ? 1 : 0,
-                b2 = Input.GetButton(b2) ? 1 : 0,
-                b3 = Input.GetButton(b3) ? 1 : 0
             });
 
             var finalInputsData = new GCControllerInputsData();
@@ -862,16 +854,16 @@ namespace DSB.GC
 
                 finalInputsData.a0 = inputs.a0;
                 finalInputsData.a1 = inputs.a1;
-                finalInputsData.a2 = inputs.a2;
-                finalInputsData.a3 = inputs.a3;
+                // finalInputsData.a2 = inputs.a2;
+                // finalInputsData.a3 = inputs.a3;
                 finalInputsData.b0 = inputs.b0;
                 finalInputsData.b1 = inputs.b1;
-                finalInputsData.b2 = inputs.b2;
-                finalInputsData.b3 = inputs.b3;
-                finalInputsData.b12 = inputs.b12;
-                finalInputsData.b13 = inputs.b13;
-                finalInputsData.b14 = inputs.b14;
-                finalInputsData.b15 = inputs.b15;
+                // finalInputsData.b2 = inputs.b2;
+                // finalInputsData.b3 = inputs.b3;
+                // finalInputsData.b12 = inputs.b12;
+                // finalInputsData.b13 = inputs.b13;
+                // finalInputsData.b14 = inputs.b14;
+                // finalInputsData.b15 = inputs.b15;
 
                 break;
             }
