@@ -860,12 +860,18 @@ namespace DSB.GC
                     continue;
                 }
 
-                finalInputsData.a0 += inputs.a0;
-                finalInputsData.a1 += inputs.a1;
-                finalInputsData.b0 += inputs.b0;
-                finalInputsData.b1 += inputs.b1;
-                finalInputsData.b2 += inputs.b2;
-                finalInputsData.b3 += inputs.b3;
+                finalInputsData.a0 = inputs.a0;
+                finalInputsData.a1 = inputs.a1;
+                finalInputsData.a2 = inputs.a2;
+                finalInputsData.a3 = inputs.a3;
+                finalInputsData.b0 = inputs.b0;
+                finalInputsData.b1 = inputs.b1;
+                finalInputsData.b2 = inputs.b2;
+                finalInputsData.b3 = inputs.b3;
+                finalInputsData.b12 = inputs.b12;
+                finalInputsData.b13 = inputs.b13;
+                finalInputsData.b14 = inputs.b14;
+                finalInputsData.b15 = inputs.b15;
 
                 break;
             }
