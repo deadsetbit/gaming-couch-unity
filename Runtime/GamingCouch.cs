@@ -53,6 +53,7 @@ namespace DSB.GC
         private GCPlayOptions playOptions;
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
+        public bool IsPaused => paused;
         public bool IsServer
         {
             get

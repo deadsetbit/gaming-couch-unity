@@ -190,28 +190,12 @@ namespace DSB.GC.Dev
         {
             try
             {
-                if (message.Contains("\"type\":\"input\""))
-                {
-                    var data = JsonUtility.FromJson<WebSocketInputMessage>(message);
-                    if (data.type == "input" && data.inputs != null)
-                    {
-                        ForwardToGamingCouch(data.playerId, data.inputs);
-                    }
-                }
-                else if (message.Contains("\"type\":\"devtool\""))
+                if (message.Contains("\"type\":\"devtool\""))
                 {
                     var data = JsonUtility.FromJson<WebSocketDevToolMessage>(message);
                     if (data.type == "devtool")
                     {
                         HandleDevToolAction(data);
-                    }
-                }
-                else if (message.Contains("\"type\":\"timescale_state\""))
-                {
-                    var data = JsonUtility.FromJson<WebSocketTimescaleStateMessage>(message);
-                    if (data.type == "timescale_state")
-                    {
-                        ApplyTimescaleState(data);
                     }
                 }
                 else
@@ -232,19 +216,16 @@ namespace DSB.GC.Dev
                 case "restart":
                     RestartGame();
                     break;
-                case "pause":
-                    SetPause(true);
+                case "input":
+                    if (message.payload != null && message.payload.inputs != null)
+                    {
+                        ForwardToGamingCouch(message.payload.playerId, message.payload.inputs);
+                    }
                     break;
-                case "play":
-                    SetPause(false);
-                    break;
-                case "pauseToggle":
-                    TogglePause();
-                    break;
-                case "setTimescale":
+                case "timescale_state":
                     if (message.payload != null)
                     {
-                        SetTimescale(message.payload.timescale);
+                        ApplyTimescaleState(message.payload);
                     }
                     break;
             }
@@ -266,23 +247,19 @@ namespace DSB.GC.Dev
             }
         }
 
-        void TogglePause()
-        {
-            if (GamingCouch.Instance != null)
-            {
-                bool isCurrentlyPaused = Mathf.Approximately(Time.timeScale, 0.0f);
-                GamingCouch.Instance.SendMessage("GamingCouchPause", (!isCurrentlyPaused).ToString(), SendMessageOptions.DontRequireReceiver);
-            }
-        }
-
         void SetTimescale(float timescale)
         {
             Time.timeScale = Mathf.Clamp(timescale, 0.1f, 5.0f);
         }
 
-        void ApplyTimescaleState(WebSocketTimescaleStateMessage message)
+        void ApplyTimescaleState(WebSocketDevToolPayload message)
         {
             SetTimescale(message.timescale);
+            if (GamingCouch.Instance?.IsPaused == message.paused)
+            {
+                return;
+            }
+
             SetPause(message.paused);
         }
 
@@ -365,15 +342,6 @@ namespace DSB.GC.Dev
     }
 
     [Serializable]
-    public class WebSocketInputMessage
-    {
-        public string type;
-        public int playerId;
-        public WebSocketInputData inputs;
-        public long timestamp;
-    }
-
-    [Serializable]
     public class WebSocketInputData
     {
         public float a0;
@@ -392,18 +360,12 @@ namespace DSB.GC.Dev
     }
 
     [Serializable]
-    public class WebSocketTimescaleStateMessage
-    {
-        public string type;
-        public float timescale;
-        public bool paused;
-        public long timestamp;
-    }
-
-    [Serializable]
     public class WebSocketDevToolPayload
     {
         public float timescale;
+        public bool paused;
+        public int playerId;
+        public WebSocketInputData inputs;
     }
 #endif
 }
