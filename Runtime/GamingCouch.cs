@@ -267,44 +267,6 @@ namespace DSB.GC
             Time.timeScale = timeScaleOnPause;
         }
 
-        /// <summary>
-        /// Called by the platform when timescale or pause state is updated from dev app.
-        /// </summary>
-        public void OnTimescaleUpdate(string parameters)
-        {
-            var parts = parameters.Split(',');
-            if (parts.Length >= 2)
-            {
-                var timescale = float.Parse(parts[0]);
-                var paused = parts[1] == "1";
-                GCLog.LogInfo($"OnTimescaleUpdate: timescale={timescale}, paused={paused}");
-
-                if (paused && !this.paused)
-                {
-                    // Pause the game
-                    inputsByPlayerId.Clear();
-                    volumeOnPause = AudioListener.volume;
-                    AudioListener.volume = 0.0f;
-                    timeScaleOnPause = Time.timeScale;
-                    Time.timeScale = 0;
-                    this.paused = true;
-                }
-                else if (!paused && this.paused)
-                {
-                    // Resume the game
-                    AudioListener.volume = volumeOnPause;
-                    Time.timeScale = timeScaleOnPause;
-                    this.paused = false;
-                }
-                else if (!paused)
-                {
-                    // Update timescale while not paused
-                    Time.timeScale = timescale;
-                    timeScaleOnPause = timescale;
-                }
-            }
-        }
-
         private void SendProjectInfo()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
