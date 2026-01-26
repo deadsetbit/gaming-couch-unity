@@ -10,6 +10,7 @@ namespace DSB.GC
         }
 
         private GCControllerInputsData data;
+        public GCControllerInputsData RawData => data;
 
         public static GCControllerInputs CreateFromJSON(string inputsDataJson)
         {

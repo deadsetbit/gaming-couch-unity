@@ -349,7 +349,6 @@ namespace DSB.GC
 
             var playerId = int.Parse(playerIdAndInputsArray[0]);
             inputsByPlayerId[playerId] = inputs;
-            externalInputsByPlayerId[playerId] = inputsData;
         }
         #endregion
 
@@ -636,7 +635,6 @@ namespace DSB.GC
 
         #region Player inputs
         private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
-        private Dictionary<int, GCControllerInputsData> externalInputsByPlayerId = new Dictionary<int, GCControllerInputsData>();
         /// <summary>
         /// Get player inputs by player ID.
         /// </summary>
@@ -659,7 +657,6 @@ namespace DSB.GC
         {
             GCLog.LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
-            externalInputsByPlayerId.Clear();
         }
         #endregion
 
@@ -811,8 +808,6 @@ namespace DSB.GC
                 return;
             }
 
-            if (!useKeyboardControls) return;
-
             if (internalPlayerStore == null) return;
             if (internalPlayerStore.PlayerCount == 0) return;
 
@@ -830,20 +825,34 @@ namespace DSB.GC
 
             var inputsList = new List<GCControllerInputsData>();
 
+            GCControllerInputsData externalInputsData = null;
+
             // external inputs
-            if (externalInputsByPlayerId.TryGetValue(player.Id, out var externalInputsData))
+            var hasExternalInputs = inputsByPlayerId.TryGetValue(player.Id, out var externalInputs);
+            if (hasExternalInputs)
             {
+                externalInputsData = externalInputs.RawData;
                 inputsList.Add(externalInputsData);
             }
 
             // keyboard inputs
-            inputsList.Add(new GCControllerInputsData
+            GCControllerInputsData keyboardInputsData = null;
+            if (useKeyboardControls)
             {
-                a0 = Input.GetAxis(axisX),
-                a1 = Input.GetAxis(axisY),
-                b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
-                b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
-            });
+                keyboardInputsData = new GCControllerInputsData
+                {
+                    a0 = Input.GetAxis(axisX),
+                    a1 = Input.GetAxis(axisY),
+                    b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
+                    b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
+                };
+                inputsList.Add(keyboardInputsData);
+            }
+
+            if (inputsList.Count == 0)
+            {
+                return;
+            }
 
             var finalInputsData = new GCControllerInputsData();
             foreach (var inputs in inputsList)
