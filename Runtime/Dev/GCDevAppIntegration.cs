@@ -190,10 +190,10 @@ namespace DSB.GC.Dev
         {
             try
             {
-                if (message.Contains("\"type\":\"devtool\""))
+                if (message.Contains("\"type\":\"gcdevtool\""))
                 {
                     var data = JsonUtility.FromJson<WebSocketDevToolMessage>(message);
-                    if (data.type == "devtool")
+                    if (data.type == "gcdevtool")
                     {
                         HandleDevToolAction(data);
                     }
