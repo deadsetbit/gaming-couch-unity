@@ -783,7 +783,7 @@ namespace DSB.GC
         private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
-        private int controlPlayerIndex = 0;
+        private int editorControlPlayerIndex = 0;
 
         private bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
         {
@@ -815,11 +815,11 @@ namespace DSB.GC
             {
                 if (Input.GetKeyDown((i + 1).ToString()))
                 {
-                    controlPlayerIndex = i;
+                    editorControlPlayerIndex = i;
                 }
             }
 
-            var player = internalPlayerStore.GetPlayerByIndex(controlPlayerIndex);
+            var player = internalPlayerStore.GetPlayerByIndex(editorControlPlayerIndex);
 
             if (player == null) return;
 
