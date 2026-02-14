@@ -60,3 +60,6 @@ crashlytics-build.properties
 
 # Allow to commit files ending with ~ (tilde)
 !*~
+
+# Local machine-specific Cursor bridge
+AGENTS.local.md
