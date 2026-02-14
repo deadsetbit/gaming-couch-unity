@@ -258,7 +258,7 @@ namespace DSB.GC.Dev
 
         void SetTimescale(float timescale)
         {
-            Time.timeScale = Mathf.Clamp(timescale, 0.1f, 5.0f);
+            Time.timeScale = Mathf.Clamp(timescale, 0.1f, 10.0f);
         }
 
         void ApplyTimescaleState(WebSocketDevToolPayload message)
