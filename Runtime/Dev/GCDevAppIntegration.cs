@@ -1,16 +1,20 @@
 using UnityEngine;
-#if UNITY_EDITOR
-using System.Net.WebSockets;
-using System.Threading;
-using System.Text;
-using System;
-using System.Collections;
-using DSB.GC;
-#endif
 
 namespace DSB.GC.Dev
 {
-#if UNITY_EDITOR
+#if !UNITY_EDITOR
+    public class GCDevAppIntegration : MonoBehaviour
+    {
+        // stud for builds as dev integrations are not part of the final builds
+    }
+#else
+    using System;
+    using System.Collections;
+    using System.Net.WebSockets;
+    using System.Text;
+    using System.Threading;
+    using DSB.GC;
+
     [RequireComponent(typeof(GamingCouch))]
     public class GCDevAppIntegration : MonoBehaviour
     {
