@@ -1,7 +1,6 @@
 #if GC_UNITY_NETCODE_GAMEOBJECTS
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.UIElements;
 
 namespace DSB.GC.Unity.NGO
 {

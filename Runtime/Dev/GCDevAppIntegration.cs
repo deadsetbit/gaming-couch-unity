@@ -244,7 +244,7 @@ namespace DSB.GC.Dev
         {
             if (GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
             {
-                GamingCouch.Instance.InternalHandleGamePlayModeRestart();
+                GamingCouch.Instance._InternalHandleGamePlayModeRestart();
             }
         }
 

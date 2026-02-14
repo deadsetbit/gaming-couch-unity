@@ -1,6 +1,4 @@
 using UnityEngine;
-using System;
-using DSB.GC;
 
 namespace DSB.GC.Dev
 {
@@ -156,7 +154,7 @@ namespace DSB.GC.Dev
             {
                 if (enablePlayModeRestart)
                 {
-                    GamingCouch.Instance.InternalHandleGamePlayModeRestart();
+                    GamingCouch.Instance._InternalHandleGamePlayModeRestart();
                 }
             }
         }

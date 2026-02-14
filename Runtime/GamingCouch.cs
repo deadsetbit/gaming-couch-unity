@@ -10,6 +10,9 @@ using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using DSB.GC.Dev;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Gaming Couch - Netcode for GameObjects")]
 
 namespace DSB.GC
 {
@@ -495,7 +498,7 @@ namespace DSB.GC
             }
         }
 
-        public void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
+        internal void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
         {
             player.gameObject.name = "Player - " + options.name;
 
@@ -877,7 +880,7 @@ namespace DSB.GC
             Start();
         }
 
-        internal void InternalHandleGamePlayModeRestart()
+        internal void _InternalHandleGamePlayModeRestart()
         {
             if (!isRestarting)
             {
