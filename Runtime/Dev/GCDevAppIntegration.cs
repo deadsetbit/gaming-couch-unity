@@ -1,23 +1,23 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using System;
+using System.Collections;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using DSB.GC;
+#endif
 
 namespace DSB.GC.Dev
 {
-#if !UNITY_EDITOR
-    public class GCDevAppIntegration : MonoBehaviour
-    {
-        // stud for builds as dev integrations are not part of the final builds
-    }
-#else
-    using System;
-    using System.Collections;
-    using System.Net.WebSockets;
-    using System.Text;
-    using System.Threading;
-    using DSB.GC;
-
+#if UNITY_EDITOR
     [RequireComponent(typeof(GamingCouch))]
+#endif
     public class GCDevAppIntegration : MonoBehaviour
     {
+#if !UNITY_EDITOR
+        // Stub for builds as dev integrations are not part of final builds.
+#else
         [Header("WebSocket Configuration")]
         [SerializeField]
         private string serverUrl = "ws://localhost:3100/ws";
@@ -60,8 +60,6 @@ namespace DSB.GC.Dev
             CloseWebSocket();
         }
 
-
-
         string BuildConnectionUrl()
         {
             var name = Uri.EscapeDataString(string.IsNullOrEmpty(Application.productName) ? "Unity" : Application.productName);
@@ -69,6 +67,7 @@ namespace DSB.GC.Dev
             var separator = serverUrl.Contains("?") ? "&" : "?";
             return $"{serverUrl}{separator}identity=project&name={name}&platform={platform}";
         }
+
         IEnumerator ConnectWebSocket()
         {
             isConnecting = true;
@@ -157,6 +156,12 @@ namespace DSB.GC.Dev
                 if (receiveTask.IsFaulted)
                 {
                     LogWebSocket("Receive faulted.");
+                    break;
+                }
+
+                if (receiveTask.IsCanceled)
+                {
+                    LogWebSocket("Receive canceled.");
                     break;
                 }
 
@@ -343,8 +348,10 @@ namespace DSB.GC.Dev
 
             Debug.Log($"[GCDevApp][WebSocket] {message}");
         }
+#endif
     }
 
+#if UNITY_EDITOR
     [Serializable]
     public class WebSocketInputData
     {
