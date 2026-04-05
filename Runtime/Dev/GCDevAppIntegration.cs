@@ -2,6 +2,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using System;
 using System.Collections;
+using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -32,6 +33,9 @@ namespace DSB.GC.Dev
         private CancellationTokenSource cancellationTokenSource;
         private bool isConnecting = false;
         private bool shouldReconnect = true;
+        private bool isSnapshotSendInFlight = false;
+        private string currentRunId;
+        private string lastSentSnapshotSignature;
 
         private void Start()
         {
@@ -39,6 +43,11 @@ namespace DSB.GC.Dev
             {
                 Connect();
             }
+        }
+
+        private void Update()
+        {
+            TryPublishRuntimeSnapshot();
         }
 
         public void Connect()
@@ -62,15 +71,214 @@ namespace DSB.GC.Dev
 
         string BuildConnectionUrl()
         {
-            var name = Uri.EscapeDataString(string.IsNullOrEmpty(Application.productName) ? "Unity" : Application.productName);
-            var platform = Uri.EscapeDataString(Application.isEditor ? "Unity Editor" : Application.platform.ToString());
             var separator = serverUrl.Contains("?") ? "&" : "?";
-            return $"{serverUrl}{separator}identity=project&name={name}&platform={platform}";
+            return $"{serverUrl}{separator}identity=runtime";
+        }
+
+        static string BuildRunId()
+        {
+            return Guid.NewGuid().ToString("N");
+        }
+
+        static bool IsWindowsPath(string value)
+        {
+            return value.Length >= 3 && char.IsLetter(value[0]) && value[1] == ':' && value[2] == '/';
+        }
+
+        static string NormalizeProjectRootPath(string value)
+        {
+            var fullPath = Path.GetFullPath(value);
+            var normalizedSlashes = fullPath.Replace("\\", "/");
+            var trimmedPath = normalizedSlashes.TrimEnd('/');
+            if (string.IsNullOrEmpty(trimmedPath))
+            {
+                trimmedPath = "/";
+            }
+
+            if (IsWindowsPath(trimmedPath) || trimmedPath.StartsWith("//", StringComparison.Ordinal))
+            {
+                return trimmedPath.ToLowerInvariant();
+            }
+
+            return trimmedPath;
+        }
+
+        static string ResolveProjectRootPath()
+        {
+            var projectRootPath = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRootPath))
+            {
+                return NormalizeProjectRootPath(Application.dataPath);
+            }
+
+            return NormalizeProjectRootPath(projectRootPath);
+        }
+
+        static string ResolveProjectName()
+        {
+            if (!string.IsNullOrWhiteSpace(Application.productName))
+            {
+                return Application.productName.Trim();
+            }
+
+            return new DirectoryInfo(ResolveProjectRootPath()).Name;
+        }
+
+        static string ResolveSeatType(string playerType)
+        {
+            return string.Equals(playerType, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? "bot" : "player";
+        }
+
+        RuntimeRegisterMessage BuildRuntimeRegisterMessage()
+        {
+            return new RuntimeRegisterMessage
+            {
+                type = "runtime_register",
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                runtimeKind = "unity_editor",
+                projectRootPath = ResolveProjectRootPath(),
+                projectName = ResolveProjectName(),
+                platform = "unity",
+                rendererMode = "external",
+                displayName = "Unity Editor",
+            };
+        }
+
+        RuntimeCapabilitiesMessage BuildRuntimeCapabilities()
+        {
+            return new RuntimeCapabilitiesMessage
+            {
+                restart = true,
+                pause = true,
+                timescale = true,
+            };
+        }
+
+        RuntimeSeatMessage[] BuildRuntimeSeats()
+        {
+            var gamingCouch = GamingCouch.Instance;
+            if (gamingCouch == null)
+            {
+                return Array.Empty<RuntimeSeatMessage>();
+            }
+
+            var playerOptions = gamingCouch.GetCurrentPlayPlayerOptions();
+            if (playerOptions.Length == 0)
+            {
+                return Array.Empty<RuntimeSeatMessage>();
+            }
+
+            var seats = new RuntimeSeatMessage[playerOptions.Length];
+            for (var index = 0; index < playerOptions.Length; index++)
+            {
+                var playerOption = playerOptions[index];
+                seats[index] = new RuntimeSeatMessage
+                {
+                    playerId = playerOption.playerId,
+                    seatIndex = index + 1,
+                    label = $"Seat {index + 1}",
+                    type = ResolveSeatType(playerOption.type),
+                };
+            }
+
+            return seats;
+        }
+
+        RuntimeSnapshotState BuildRuntimeSnapshotState()
+        {
+            var gamingCouch = GamingCouch.Instance;
+            var isRunning = Application.isPlaying;
+
+            return new RuntimeSnapshotState
+            {
+                runId = isRunning ? currentRunId : null,
+                isRunning = isRunning,
+                capabilities = BuildRuntimeCapabilities(),
+                seats = isRunning ? BuildRuntimeSeats() : Array.Empty<RuntimeSeatMessage>(),
+                paused = gamingCouch != null && gamingCouch.IsPaused,
+                timescale = gamingCouch != null ? gamingCouch.CurrentTimescale : Time.timeScale,
+            };
+        }
+
+        RuntimeSnapshotMessage BuildRuntimeSnapshotMessage(RuntimeSnapshotState state)
+        {
+            return new RuntimeSnapshotMessage
+            {
+                type = "runtime_snapshot",
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                runId = state.runId,
+                isRunning = state.isRunning,
+                capabilities = state.capabilities,
+                seats = state.seats,
+                paused = state.paused,
+                timescale = state.timescale,
+            };
+        }
+
+        IEnumerator SendJsonMessage(string payload)
+        {
+            if (websocket == null || websocket.State != WebSocketState.Open)
+            {
+                yield break;
+            }
+
+            LogWebSocket($"Outgoing: {payload}");
+            var bytes = Encoding.UTF8.GetBytes(payload);
+            var sendTask = websocket.SendAsync(
+                new ArraySegment<byte>(bytes),
+                WebSocketMessageType.Text,
+                true,
+                cancellationTokenSource != null ? cancellationTokenSource.Token : CancellationToken.None
+            );
+
+            yield return new WaitUntil(() => sendTask.IsCompleted);
+
+            if (sendTask.IsFaulted)
+            {
+                LogWebSocket("Send faulted.");
+            }
+        }
+
+        IEnumerator SendRuntimeRegisterMessage()
+        {
+            yield return SendJsonMessage(JsonUtility.ToJson(BuildRuntimeRegisterMessage()));
+        }
+
+        IEnumerator SendRuntimeSnapshotMessage(RuntimeSnapshotState state, string signature)
+        {
+            isSnapshotSendInFlight = true;
+
+            yield return SendJsonMessage(JsonUtility.ToJson(BuildRuntimeSnapshotMessage(state)));
+
+            if (websocket != null && websocket.State == WebSocketState.Open)
+            {
+                lastSentSnapshotSignature = signature;
+            }
+
+            isSnapshotSendInFlight = false;
+        }
+
+        void TryPublishRuntimeSnapshot()
+        {
+            if (websocket == null || websocket.State != WebSocketState.Open || isSnapshotSendInFlight || string.IsNullOrEmpty(currentRunId))
+            {
+                return;
+            }
+
+            var snapshotState = BuildRuntimeSnapshotState();
+            var snapshotSignature = JsonUtility.ToJson(snapshotState);
+            if (snapshotSignature == lastSentSnapshotSignature)
+            {
+                return;
+            }
+
+            StartCoroutine(SendRuntimeSnapshotMessage(snapshotState, snapshotSignature));
         }
 
         IEnumerator ConnectWebSocket()
         {
             isConnecting = true;
+            CloseWebSocket();
             cancellationTokenSource = new CancellationTokenSource();
             websocket = new ClientWebSocket();
 
@@ -119,6 +327,10 @@ namespace DSB.GC.Dev
             if (websocket.State == WebSocketState.Open)
             {
                 LogWebSocket("Connected.");
+                currentRunId = BuildRunId();
+                lastSentSnapshotSignature = null;
+                yield return SendRuntimeRegisterMessage();
+                TryPublishRuntimeSnapshot();
                 StartCoroutine(ReceiveMessages());
             }
 
@@ -252,12 +464,18 @@ namespace DSB.GC.Dev
         {
             if (GamingCouch.Instance != null)
             {
-                GamingCouch.Instance.SendMessage("GamingCouchPause", paused.ToString(), SendMessageOptions.DontRequireReceiver);
+                GamingCouch.Instance.ApplyDevPause(paused);
             }
         }
 
         void SetTimescale(float timescale)
         {
+            if (GamingCouch.Instance != null)
+            {
+                GamingCouch.Instance.ApplyDevTimescale(timescale);
+                return;
+            }
+
             Time.timeScale = Mathf.Clamp(timescale, 0.1f, 10.0f);
         }
 
@@ -303,6 +521,10 @@ namespace DSB.GC.Dev
 
         void CloseWebSocket()
         {
+            currentRunId = null;
+            lastSentSnapshotSignature = null;
+            isSnapshotSendInFlight = false;
+
             if (websocket != null)
             {
                 cancellationTokenSource?.Cancel();
@@ -377,6 +599,60 @@ namespace DSB.GC.Dev
         public bool paused;
         public int playerId;
         public WebSocketInputData inputs;
+    }
+
+    [Serializable]
+    public class RuntimeCapabilitiesMessage
+    {
+        public bool restart;
+        public bool pause;
+        public bool timescale;
+    }
+
+    [Serializable]
+    public class RuntimeSeatMessage
+    {
+        public int playerId;
+        public int seatIndex;
+        public string label;
+        public string type;
+    }
+
+    [Serializable]
+    public class RuntimeRegisterMessage
+    {
+        public string type;
+        public long timestamp;
+        public string runtimeKind;
+        public string projectRootPath;
+        public string projectName;
+        public string platform;
+        public string rendererMode;
+        public string displayName;
+    }
+
+    [Serializable]
+    public class RuntimeSnapshotState
+    {
+        public string runId;
+        public bool isRunning;
+        public RuntimeCapabilitiesMessage capabilities;
+        public RuntimeSeatMessage[] seats;
+        public bool paused;
+        public float timescale;
+    }
+
+    [Serializable]
+    public class RuntimeSnapshotMessage
+    {
+        public string type;
+        public long timestamp;
+        public string runId;
+        public bool isRunning;
+        public RuntimeCapabilitiesMessage capabilities;
+        public RuntimeSeatMessage[] seats;
+        public bool paused;
+        public float timescale;
     }
 #endif
 }

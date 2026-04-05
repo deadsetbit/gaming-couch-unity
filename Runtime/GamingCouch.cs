@@ -57,6 +57,7 @@ namespace DSB.GC
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
+        public float CurrentTimescale => paused ? timeScaleOnPause : Time.timeScale;
         public bool IsServer
         {
             get
@@ -853,6 +854,36 @@ namespace DSB.GC
         {
             internalPlayerStore.Clear();
             ClearInputs();
+        }
+
+        public GCPlayerOptions[] GetCurrentPlayPlayerOptions()
+        {
+            if (playOptions?.players == null)
+            {
+                return Array.Empty<GCPlayerOptions>();
+            }
+
+            var playerOptions = new GCPlayerOptions[playOptions.players.Length];
+            Array.Copy(playOptions.players, playerOptions, playOptions.players.Length);
+            return playerOptions;
+        }
+
+        public void ApplyDevPause(bool nextPaused)
+        {
+            GamingCouchPause(nextPaused.ToString());
+        }
+
+        public void ApplyDevTimescale(float nextTimescale)
+        {
+            var clampedTimescale = Mathf.Clamp(nextTimescale, 0.1f, 10.0f);
+
+            if (paused)
+            {
+                timeScaleOnPause = clampedTimescale;
+                return;
+            }
+
+            Time.timeScale = clampedTimescale;
         }
 
         /**
