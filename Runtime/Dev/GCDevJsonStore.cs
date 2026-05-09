@@ -33,11 +33,21 @@ namespace DSB.GC.Dev
 
         internal GCDevJsonReadResult Read()
         {
+            return Read(ReadMetadata());
+        }
+
+        internal GCDevJsonReadResult Read(GCMetadataJsonReadResult metadataReadResult)
+        {
             var path = ResolveFilePath();
-            return GCDevJsonValidation.BuildReadResult(ReadParsedFile(path));
+            return GCDevJsonValidation.BuildReadResult(ReadParsedFile(path), metadataReadResult);
         }
 
         internal GCDevJsonWriteResult Write(GCDevJsonFile data)
+        {
+            return Write(data, ReadMetadata());
+        }
+
+        internal GCDevJsonWriteResult Write(GCDevJsonFile data, GCMetadataJsonReadResult metadataReadResult)
         {
             var path = ResolveFilePath();
             if (data == null)
@@ -48,7 +58,7 @@ namespace DSB.GC.Dev
                 );
             }
 
-            var dataValidation = GCDevJsonValidation.ValidateData(data, path);
+            var dataValidation = GCDevJsonValidation.ValidateData(data, path, metadataReadResult);
             if (!dataValidation.IsValid)
             {
                 return GCDevJsonWriteResult.Failed(path, dataValidation);
@@ -107,7 +117,12 @@ namespace DSB.GC.Dev
                 );
             }
 
-            return GCDevJsonWriteResult.Succeeded(path);
+            return GCDevJsonWriteResult.Succeeded(path, dataValidation);
+        }
+
+        private GCMetadataJsonReadResult ReadMetadata()
+        {
+            return new GCMetadataJsonStore(projectRootResolver).Read();
         }
 
         private static GCDevJsonParsedFile ReadParsedFile(string path)
@@ -171,6 +186,11 @@ namespace DSB.GC.Dev
         internal static GCDevJsonWriteResult Succeeded(string path)
         {
             return new GCDevJsonWriteResult(path, true, GCDevJsonValidationResult.Valid());
+        }
+
+        internal static GCDevJsonWriteResult Succeeded(string path, GCDevJsonValidationResult validation)
+        {
+            return new GCDevJsonWriteResult(path, true, validation ?? GCDevJsonValidationResult.Valid());
         }
 
         internal static GCDevJsonWriteResult Failed(string path, GCDevJsonValidationResult validation)

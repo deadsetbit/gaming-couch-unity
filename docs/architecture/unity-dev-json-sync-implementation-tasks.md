@@ -33,14 +33,14 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: In progress
 
-Current task: Task 2
+Current task: Task 3
 
-Next action: Implement Task 2 with a GPT-5.5 xhigh subagent after the Task 1 commit.
+Next action: Commit Task 2, then start Task 3 with a GPT-5.5 xhigh implementation subagent.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor JSON dependency and `gc.dev.json` store | Done | GPT-5.5 xhigh subagent | Editor-only JSON dependency and preserving `gc.dev.json` store complete; second review-and-patch pass complete; parent validation passed. |
-| 2. `gc.metadata.json` light read and validation gates | Pending | Unassigned subagent | Adds metadata parser, warning-only missing/invalid behavior, and valid-metadata gates. |
+| 2. `gc.metadata.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Metadata light-read and validation gates complete; both review passes complete; parent validation passed. |
 | 3. File-backed editor play capture | Pending | Unassigned subagent | Replaces serialized editor play source with validated `gc.dev.json` capture while keeping public payloads unchanged. |
 | 4. Active custom inspector and Apply/Revert draft | Pending | Unassigned subagent | Activates inspector UI for file-backed local play settings and hides obsolete serialized settings. |
 | 5. External reload, dirty draft, conflict, and pending play state | Pending | Unassigned subagent | Adds polling, conflict actions, metadata refresh, and play-mode pending-change status. |
@@ -351,6 +351,93 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 3 if complete.
+
+### Task 2 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Runtime/Dev/GCMetadataJsonFile.cs`
+- `Runtime/Dev/GCMetadataJsonFile.cs.meta`
+- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCDevJsonValidation.cs`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null <new Task 2 file>`: no whitespace output for new metadata files; command exits non-zero because `/dev/null` differs from each new file.
+- Metadata read inspection: `GCMetadataJsonStore` only reads project-root `gc.metadata.json`; no metadata write path was added.
+- Missing/invalid metadata inspection: metadata missing, invalid JSON, invalid root, read error, or invalid required fields produce `GCDevJsonIssueSeverity.Warning` issues and `GCMetadataJsonReadResult.data == null`; `GCDevJsonValidation` returns before metadata gates unless `metadataReadResult.IsValid`.
+- Apply/Play gate inspection: valid metadata adds blocking errors for `platform.id != "unity"`, missing selected entry, enabled seats below `minPlayers`, and enabled seats above `maxPlayers`; enabled bot seats with `botSupport == false` add a warning only.
+- Structurally valid dev-file inspection: `GCDevJsonReadResult.data` remains available after metadata gate errors while `GCDevJsonReadResult.IsValid` is false, so later inspector work can still show raw `gc.dev.json` values.
+- Store inspection: normal `GCDevJsonStore.Read()` and `Write()` read metadata and use combined validation; overloads accept a pre-read metadata result for later inspector/play capture reuse.
+- `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`; no Unity editor/CI command is available in this shell.
+
+Decisions:
+
+- Metadata parsing reads only the PRD-required fields: `game.key`, `game.name`, `platform.id`, `game.entries[entryKey].name`, `minPlayers`, `maxPlayers`, `botSupport`, and `properties.colors.players`.
+- `platform.id` is considered structurally valid when it is a non-empty string; any valid metadata value other than `unity` then becomes a blocking metadata gate error.
+- Required metadata fields, including player color variants, must parse for metadata-derived labels and gates to activate. Malformed required metadata remains warning-only.
+- No visible inspector UI, GamingCouch editor play flow changes, public runtime DTO changes, or `gc.metadata.json` writes were added.
+
+Review pass 1 findings:
+
+- Patched one metadata-validity hardening issue: a manually constructed `GCMetadataJsonReadResult` with both `data` and warning issues could previously report `IsValid == true`, which could activate valid-metadata gates accidentally.
+- No blocking defects found after the patch. Structurally valid `gc.dev.json` data remains available when valid metadata gate errors exist, and enabled bot seats with `botSupport: false` remain warning-only.
+
+Review pass 1 patches:
+
+- Moved Task 2 back to `In review`; Task 3 now waits for review pass 2 and parent validation.
+- Hardened `GCMetadataJsonReadResult.IsValid` so metadata gates activate only when parsed metadata data exists and metadata validation has no errors or warnings.
+
+Review pass 1 validation:
+
+- `git diff --check`: passed.
+- `rg -n "[ \t]+$" <Task 2 scoped files>`: no trailing whitespace matches.
+- Metadata write inspection: no write API or write method references in `GCMetadataJsonFile.cs`, `GCMetadataJsonStore.cs`, or metadata validation code.
+- Inspector/play-flow inspection: no `CustomEditor`, `OnInspectorGUI`, or `GamingCouch` editor play references in scoped Task 2 runtime-dev files.
+- `which Unity`: Unity not found; Unity 2022.3 compile/import remains skipped in this shell.
+- `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Review pass 2 findings:
+
+- No blocking Task 2 implementation defects found.
+- `GCMetadataJsonReadResult.IsValid` requiring zero warnings still surfaces missing or invalid metadata warnings through combined dev validation while preventing metadata gates from activating.
+- `GCDevJsonReadResult.data` remains available when structurally valid `gc.dev.json` has valid-metadata gate errors.
+- `GCDevJsonStore.Write` blocks valid-metadata gate errors and allows warning-only missing or invalid metadata results.
+
+Review pass 2 patches:
+
+- Updated this task record to show second review complete while leaving parent validation and commit pending.
+- No code changes were made in pass 2.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- `rg -n "[ \t]+$" <Task 2 scoped files>`: no trailing whitespace matches.
+- Metadata gate inspection: `GCDevJsonValidation` copies metadata warnings into the validation result, returns before gates unless `metadataReadResult.IsValid`, and uses error severity only for valid metadata platform, entry, and seat-count gates.
+- Store inspection: `GCDevJsonStore.Write` fails only when combined validation has errors; warning-only metadata validation can return a successful write result with warnings.
+- Scoped inspection confirmed no visible inspector UI, GamingCouch play-flow changes, public runtime DTO changes, or `gc.metadata.json` writes were added.
+- Unity 2022.3 compile/import remains skipped because no Unity editor/CI command is available in this shell.
+- `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"`: passed.
+- Scoped write inspection: Task 2 adds no `gc.metadata.json` write path; only the existing Task 1 `GCDevJsonStore.Write` and `File.WriteAllText` references remain for `gc.dev.json`.
+- Scoped UI/play inspection: Task 2 files add no `CustomEditor`, `OnInspectorGUI`, or `GamingCouch` editor play-flow references.
+- Public runtime DTO inspection: `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` remain untouched.
+- `git status --short`: only Task 2 owned files are modified or untracked beyond the pre-existing unrelated files listed in the blocker log.
+- Unity 2022.3 compile/import skipped because `which Unity` returned no Unity executable in this shell.
 
 ## Task 3: File-Backed Editor Play Capture
 
