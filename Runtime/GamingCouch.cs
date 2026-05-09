@@ -43,7 +43,6 @@ namespace DSB.GC
         private static extern void GamingCouchSendProjectInfo(string projectName);
 
         private static int MAX_PLAYERS = 8;
-        private static int MAX_NAME_LENGTH = 8;
         private static float AUDIO_FADE_SECONDS = 3.0f;
         private static GamingCouch instance = null;
         public static GamingCouch Instance => instance;
@@ -56,6 +55,9 @@ namespace DSB.GC
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
+#if UNITY_EDITOR
+        private GCEditorPlayCaptureResult editorPlayCapture;
+#endif
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
@@ -136,8 +138,7 @@ namespace DSB.GC
             }
 
 #if UNITY_EDITOR
-            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
-            setupOptions = GetEditorSetupOptions();
+            CaptureEditorPlaySettings();
 #endif
         }
 
@@ -157,8 +158,11 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (!onlineMultiplayerSupport)
             {
-                GamingCouchSetup();
-                SendProjectInfo();
+                if (TryRequireSetupOptions("Editor setup"))
+                {
+                    GamingCouchSetup();
+                    SendProjectInfo();
+                }
             }
 #else
             if (!onlineMultiplayerSupport)
@@ -167,12 +171,6 @@ namespace DSB.GC
                 SendProjectInfo();
             }
 #endif
-        }
-
-        private void OnValidate()
-        {
-            OnValidatePlayerDataField();
-            OnValidateNumberOfPlayersField();
         }
 
         private void Update()
@@ -197,6 +195,18 @@ namespace DSB.GC
         {
             GCLog.LogInfo("GamingCouchSetupOptions: " + optionsJson);
 
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (TryGetValidEditorPlayCapture(out var playCapture))
+                {
+                    setupOptions = playCapture.setupOptions;
+                }
+
+                return;
+            }
+#endif
+
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
             setupOptions = GCSetupOptions.CreateFromJSON(optionsJson);
@@ -212,14 +222,44 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchSetup()
         {
-            if (setupOptions == null)
+            if (!TryRequireSetupOptions("GamingCouchSetup"))
             {
-                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
+                return;
             }
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!TryGetValidEditorPlayCapture(out var playCapture))
+                {
+                    return;
+                }
+
+                setupOptions = playCapture.setupOptions;
+            }
+#endif
 
             mode = setupOptions.mode;
 
             listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+        }
+
+        private bool TryRequireSetupOptions(string source)
+        {
+            if (setupOptions != null)
+            {
+                return true;
+            }
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                Debug.LogError("[GamingCouch] " + source + " blocked because root gc.dev.json did not produce valid editor setup options. Fix gc.dev.json and re-enter Play Mode.");
+                return false;
+            }
+#endif
+
+            throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
         }
 
         /// <summary>
@@ -229,6 +269,19 @@ namespace DSB.GC
         private void GamingCouchPlay(string optionsJson)
         {
             GCLog.LogInfo("GamingCouchPlay: " + optionsJson);
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!TryGetValidEditorPlayCapture(out var playCapture))
+                {
+                    return;
+                }
+
+                Play(playCapture.playOptions, playCapture.seatIdentities);
+                return;
+            }
+#endif
 
             GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
@@ -285,13 +338,19 @@ namespace DSB.GC
 #endif
         }
 
+#if UNITY_EDITOR
         private IEnumerator _EditorPlay()
         {
             GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
-            var playCapture = GetEditorPlayCapture();
+            if (!TryGetValidEditorPlayCapture(out var playCapture))
+            {
+                yield break;
+            }
+
             Play(playCapture.playOptions, playCapture.seatIdentities);
         }
+#endif
 
         /// <summary>
         /// Triggers GamingCouchPlay and sets the status to Playing.
@@ -413,7 +472,11 @@ namespace DSB.GC
         /// </summary>
         public void OnlineMultiplayerServerReady()
         {
-            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            if (!TryRequireSetupOptions("OnlineMultiplayerServerReady"))
+            {
+                return;
+            }
+
             Assert.IsTrue(setupOptions.isServer, "[GamingCouch] ServerReady should only be called by the server.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ServerReady should only be called once.");
 
@@ -431,7 +494,11 @@ namespace DSB.GC
         /// </summary>
         public void OnlineMultiplayerClientReady()
         {
-            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+            if (!TryRequireSetupOptions("OnlineMultiplayerClientReady"))
+            {
+                return;
+            }
+
             Assert.IsFalse(setupOptions.isServer, "[GamingCouch] ClientReady should only be called by the client.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ClientReady should only be called once.");
 
@@ -452,12 +519,22 @@ namespace DSB.GC
         {
             GCLog.LogDebug("SetupDone");
 
+#if UNITY_EDITOR
+            if (!TryGetValidEditorPlayCapture(out _))
+            {
+                return;
+            }
+#endif
+
             StartCoroutine(_FadeVolume(AudioListener.volume, 1.0f));
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
-#else
+#elif UNITY_EDITOR
             StartCoroutine(_EditorPlay());
+#else
+            Debug.LogError("[GamingCouch] Local editor play callbacks are only available in the Unity editor.");
+            return;
 #endif
             status = GCStatus.SetupDone;
         }
@@ -715,45 +792,63 @@ namespace DSB.GC
         #endregion
 
         #region Development settings for editor and inspector
-        private void OnValidatePlayerDataField()
+#if UNITY_EDITOR
+        private void CaptureEditorPlaySettings()
         {
-            // Initialize
-            if (playerData.Length == 0)
-            {
-                Array.Resize(ref playerData, MAX_PLAYERS);
+            editorPlayCapture = GCEditorPlayCapture.Capture();
+            LogEditorPlayCaptureIssues(editorPlayCapture);
+            setupOptions = editorPlayCapture.success ? editorPlayCapture.setupOptions : null;
+        }
 
-                for (int i = 0; i < MAX_PLAYERS; i++)
+        private bool TryGetValidEditorPlayCapture(out GCEditorPlayCaptureResult playCapture)
+        {
+            playCapture = editorPlayCapture;
+            if (playCapture.success && playCapture.playOptions != null && playCapture.setupOptions != null)
+            {
+                return true;
+            }
+
+            Debug.LogError("[GamingCouch] Editor play blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates. Fix gc.dev.json and re-enter Play Mode.");
+            return false;
+        }
+
+        private static void LogEditorPlayCaptureIssues(GCEditorPlayCaptureResult capture)
+        {
+            var loggedIssue = false;
+            var issues = capture.validation != null ? capture.validation.issues : null;
+            if (issues != null)
+            {
+                for (var index = 0; index < issues.Length; index++)
                 {
-                    playerData[i].color = (GCPlayerColor)i;
+                    var issue = issues[index];
+                    if (issue == null)
+                    {
+                        continue;
+                    }
+
+                    loggedIssue = true;
+                    if (issue.severity == GCDevJsonIssueSeverity.Warning)
+                    {
+                        Debug.LogWarning(FormatDevJsonIssue(issue));
+                    }
+                    else
+                    {
+                        Debug.LogError(FormatDevJsonIssue(issue));
+                    }
                 }
             }
 
-            if (playerData.Length != MAX_PLAYERS)
+            if (!capture.success && !loggedIssue)
             {
-                Array.Resize(ref playerData, MAX_PLAYERS);
-            }
-
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (playerData[i].name == null || playerData[i].name == "")
-                {
-                    playerData[i].name = $"Player {i + 1}"[..MAX_NAME_LENGTH];
-                }
+                Debug.LogError("[GamingCouch] Editor play capture failed. Fix root gc.dev.json and re-enter Play Mode.");
             }
         }
 
-        private void OnValidateNumberOfPlayersField()
+        private static string FormatDevJsonIssue(GCDevJsonIssue issue)
         {
-            if (numberOfPlayers > MAX_PLAYERS)
-            {
-                numberOfPlayers = MAX_PLAYERS;
-            }
+            return "[GamingCouch] " + issue.message;
         }
-
-        [SerializeField]
-        [Header("Editor game settings")]
-        [Tooltip("The game mode ID to be played in editor play mode.")]
-        private string gameModeId;
+#endif
 
         [Serializable]
         private struct PlayerEditorData
@@ -763,57 +858,21 @@ namespace DSB.GC
             public bool isBot;
         }
 
-        [SerializeField]
-        [Header("Editor player settings")]
+        // Obsolete serialized editor play fields are kept only so old scenes deserialize.
+        // Root gc.dev.json is the functional source for editor setup and play capture.
+#pragma warning disable 0169, 0414
+        [SerializeField, HideInInspector]
+        private string gameModeId;
+
+        [SerializeField, HideInInspector]
         private PlayerEditorData[] playerData = new PlayerEditorData[0];
 
-        [SerializeField]
-        [Tooltip("Number of players to instantiate on editor play mode.")]
+        [SerializeField, HideInInspector]
         private int numberOfPlayers = MAX_PLAYERS;
 
-        [SerializeField]
-        [Tooltip("Randomize player ID's to better replicate real use case where ID's comes from the platform. If false, player ID's will be assigned in order starting from 1. (RECOMMENDED TO KEEP THIS ENABLED)")]
+        [SerializeField, HideInInspector]
         private bool randomizePlayerIds = true;
-
-        private GCEditorPlaySettingsSnapshot CreateEditorPlaySettingsSnapshot()
-        {
-            GCEditorPlayPlayerSettings[] players = null;
-            if (playerData != null)
-            {
-                players = new GCEditorPlayPlayerSettings[playerData.Length];
-                for (int i = 0; i < playerData.Length; i++)
-                {
-                    players[i] = new GCEditorPlayPlayerSettings
-                    {
-                        name = playerData[i].name,
-                        color = playerData[i].color,
-                        isBot = playerData[i].isBot,
-                        sourceSeatIndex = i + 1,
-                    };
-                }
-            }
-
-            return new GCEditorPlaySettingsSnapshot
-            {
-                gameModeId = gameModeId,
-                playerData = players,
-                numberOfPlayers = numberOfPlayers,
-                randomizePlayerIds = randomizePlayerIds,
-            };
-        }
-
-        private GCSetupOptions GetEditorSetupOptions()
-        {
-            return GCEditorPlayCapture.CreateSetupOptions(new GCEditorPlaySettingsSnapshot
-            {
-                gameModeId = gameModeId,
-            });
-        }
-
-        private GCEditorPlayCaptureResult GetEditorPlayCapture()
-        {
-            return GCEditorPlayCapture.CreatePlayCapture(CreateEditorPlaySettingsSnapshot());
-        }
+#pragma warning restore 0169, 0414
         #endregion
 
         [Header("Editor keyboard controls (Unity Input System map)")]

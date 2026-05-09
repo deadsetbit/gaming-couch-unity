@@ -1,88 +1,131 @@
+#if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 
 namespace DSB.GC.Dev
 {
-    internal struct GCEditorPlayPlayerSettings
-    {
-        public string name;
-        public GCPlayerColor color;
-        public bool isBot;
-        public int sourceSeatIndex;
-    }
-
-    internal struct GCEditorPlaySettingsSnapshot
-    {
-        public string gameModeId;
-        public GCEditorPlayPlayerSettings[] playerData;
-        public int numberOfPlayers;
-        public bool randomizePlayerIds;
-    }
-
     internal struct GCEditorPlayCaptureResult
     {
+        public bool success;
+        public GCSetupOptions setupOptions;
         public GCPlayOptions playOptions;
         public GCSeatIdentity[] seatIdentities;
+        public GCDevJsonValidationResult validation;
+        public string path;
     }
 
     internal static class GCEditorPlayCapture
     {
-        internal static GCSetupOptions CreateSetupOptions(GCEditorPlaySettingsSnapshot snapshot)
+        private static readonly GCPlayerColor[] SeatColors =
+        {
+            GCPlayerColor.blue,
+            GCPlayerColor.red,
+            GCPlayerColor.green,
+            GCPlayerColor.yellow,
+            GCPlayerColor.purple,
+            GCPlayerColor.pink,
+            GCPlayerColor.cyan,
+            GCPlayerColor.brown,
+        };
+
+        internal static GCEditorPlayCaptureResult Capture()
+        {
+            return Capture(new GCDevJsonStore().Read());
+        }
+
+        internal static GCEditorPlayCaptureResult Capture(GCDevJsonReadResult readResult)
+        {
+            if (readResult == null)
+            {
+                return Failed(
+                    null,
+                    GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
+                        GCDevJsonIssueCode.ReadError,
+                        "gc.dev.json could not be read because the read result was missing.",
+                        null
+                    ))
+                );
+            }
+
+            if (!readResult.IsValid)
+            {
+                return Failed(GetPath(readResult), readResult.validation);
+            }
+
+            var data = readResult.data;
+            int seed;
+            if (!TryResolveSeed(data.seed, out seed))
+            {
+                return Failed(
+                    GetPath(readResult),
+                    GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
+                        GCDevJsonIssueCode.InvalidSeed,
+                        "gc.dev.json seed must be \"random\" or an integer string from " + GCDevJsonFile.MinSeed + " to " + GCDevJsonFile.MaxSeed + ".",
+                        GetPath(readResult)
+                    ))
+                );
+            }
+
+            var setupOptions = CreateSetupOptions(data);
+            var playCapture = CreatePlayCapture(data, seed);
+            playCapture.success = true;
+            playCapture.setupOptions = setupOptions;
+            playCapture.validation = readResult.validation;
+            playCapture.path = GetPath(readResult);
+            return playCapture;
+        }
+
+        private static GCSetupOptions CreateSetupOptions(GCDevJsonFile data)
         {
             return new GCSetupOptions
             {
                 isServer = true,
-                gameModeId = snapshot.gameModeId,
+                gameModeId = data.entryKey,
                 mode = GCMode.Development,
             };
         }
 
-        internal static GCPlayOptions CreatePlayOptions(GCEditorPlaySettingsSnapshot snapshot)
+        private static GCEditorPlayCaptureResult CreatePlayCapture(GCDevJsonFile data, int seed)
         {
-            return CreatePlayCapture(snapshot).playOptions;
-        }
-
-        internal static GCEditorPlayCaptureResult CreatePlayCapture(GCEditorPlaySettingsSnapshot snapshot)
-        {
-            GCPlayOptions options = new GCPlayOptions
+            var activePlayerCount = data.EnabledSeatCount;
+            var options = new GCPlayOptions
             {
-                players = new GCPlayerOptions[snapshot.numberOfPlayers],
-                seed = UnityEngine.Random.Range(1, 999999),
+                players = new GCPlayerOptions[activePlayerCount],
+                seed = seed,
             };
-            var seatIdentities = new GCSeatIdentity[snapshot.numberOfPlayers];
+            var seatIdentities = new GCSeatIdentity[activePlayerCount];
 
-            var usedColors = new List<GCPlayerColor>();
-
-            for (int i = 0; i < snapshot.numberOfPlayers; i++)
+            var activePlayerIndex = 0;
+            for (var sourceSeatIndex = 0; sourceSeatIndex < data.seats.Length; sourceSeatIndex++)
             {
-                var player = snapshot.playerData[i];
-                if (usedColors.Contains(player.color))
+                var seat = data.seats[sourceSeatIndex];
+                if (!seat.enabled)
                 {
-                    throw new Exception("[GamingCouch] Player color '" + player.color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
+                    continue;
                 }
 
-                usedColors.Add(player.color);
+                var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
+                var playerColor = SeatColors[sourceSeatIndex];
+                var playerId = activePlayerIndex + 1;
+                var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
 
-                var sourceSeatIndex = ResolveSourceSeatIndex(player.sourceSeatIndex, i);
-                var playerType = player.isBot ? GCPlayerType.bot : GCPlayerType.player;
-                var playerId = snapshot.randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1;
-
-                options.players[i] = new GCPlayerOptions
+                options.players[activePlayerIndex] = new GCPlayerOptions
                 {
                     type = playerType.ToString(),
                     playerId = playerId,
-                    name = player.name,
-                    color = player.color.ToString(),
+                    name = seat.name,
+                    color = playerColor.ToString(),
                 };
 
-                seatIdentities[i] = new GCSeatIdentity
+                seatIdentities[activePlayerIndex] = new GCSeatIdentity
                 {
                     playerId = playerId,
-                    sourceSeatIndex = sourceSeatIndex,
-                    label = "Seat " + sourceSeatIndex,
+                    sourceSeatIndex = oneBasedSourceSeatIndex,
+                    label = "Seat " + oneBasedSourceSeatIndex,
                     playerType = playerType,
-                    playerColor = player.color,
+                    playerColor = playerColor,
                 };
+
+                activePlayerIndex++;
             }
 
             return new GCEditorPlayCaptureResult
@@ -92,9 +135,36 @@ namespace DSB.GC.Dev
             };
         }
 
-        private static int ResolveSourceSeatIndex(int sourceSeatIndex, int activePlayerIndex)
+        private static bool TryResolveSeed(string seed, out int value)
         {
-            return sourceSeatIndex > 0 ? sourceSeatIndex : activePlayerIndex + 1;
+            if (seed == GCDevJsonFile.RandomSeed)
+            {
+                value = UnityEngine.Random.Range(GCDevJsonFile.MinSeed, GCDevJsonFile.MaxSeed + 1);
+                return true;
+            }
+
+            return int.TryParse(seed, out value) &&
+                   value >= GCDevJsonFile.MinSeed &&
+                   value <= GCDevJsonFile.MaxSeed;
+        }
+
+        private static GCEditorPlayCaptureResult Failed(string path, GCDevJsonValidationResult validation)
+        {
+            return new GCEditorPlayCaptureResult
+            {
+                success = false,
+                setupOptions = null,
+                playOptions = null,
+                seatIdentities = Array.Empty<GCSeatIdentity>(),
+                validation = validation,
+                path = path,
+            };
+        }
+
+        private static string GetPath(GCDevJsonReadResult readResult)
+        {
+            return readResult?.parsedFile != null ? readResult.parsedFile.path : null;
         }
     }
 }
+#endif

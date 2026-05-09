@@ -33,15 +33,15 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: In progress
 
-Current task: Task 3
+Current task: Task 4
 
-Next action: Commit Task 2, then start Task 3 with a GPT-5.5 xhigh implementation subagent.
+Next action: Run Task 4 implementation with a GPT-5.5 xhigh subagent.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor JSON dependency and `gc.dev.json` store | Done | GPT-5.5 xhigh subagent | Editor-only JSON dependency and preserving `gc.dev.json` store complete; second review-and-patch pass complete; parent validation passed. |
 | 2. `gc.metadata.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Metadata light-read and validation gates complete; both review passes complete; parent validation passed. |
-| 3. File-backed editor play capture | Pending | Unassigned subagent | Replaces serialized editor play source with validated `gc.dev.json` capture while keeping public payloads unchanged. |
+| 3. File-backed editor play capture | Done | GPT-5.5 xhigh subagent | File-backed editor capture complete; callback bypass patched in review pass 2; parent validation passed. |
 | 4. Active custom inspector and Apply/Revert draft | Pending | Unassigned subagent | Activates inspector UI for file-backed local play settings and hides obsolete serialized settings. |
 | 5. External reload, dirty draft, conflict, and pending play state | Pending | Unassigned subagent | Adds polling, conflict actions, metadata refresh, and play-mode pending-change status. |
 | 6. Play Mode and Gaming Couch restart gates | Pending | Unassigned subagent | Auto-applies valid drafts before capture and blocks invalid/conflicted Play or restart. |
@@ -491,6 +491,106 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 4 if complete.
+
+### Task 3 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Runtime/GamingCouch.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- Serialized editor play source inspection: `GamingCouch` no longer creates editor setup/play snapshots from `gameModeId`, `playerData`, `numberOfPlayers`, or `randomizePlayerIds`; those fields remain only as hidden deserialization remnants and are not read by setup/play capture.
+- File-backed setup inspection: `GCEditorPlayCapture.Capture()` reads through `GCDevJsonStore.Read()`, so Task 2 metadata gates are applied when metadata is valid; setup options are built with `mode = GCMode.Development`, `isServer = true`, and `gameModeId = data.entryKey`.
+- File-backed play inspection: enabled seats are the only players; `activePlayerIndex + 1` creates dense runtime player IDs from sparse seats while `GCSeatIdentity.sourceSeatIndex` preserves the original one-based seat slot.
+- Color mapping inspection: source seat slots map through the fixed order `blue`, `red`, `green`, `yellow`, `purple`, `pink`, `cyan`, `brown`; disabled seats do not compress the color source slot.
+- Seed inspection: `seed: "random"` resolves once during `GCEditorPlayCapture.Capture()` with `UnityEngine.Random.Range(1, 1000000)`; fixed seed strings are parsed after existing `gc.dev.json` validation.
+- Invalid capture inspection: missing or invalid `gc.dev.json`, or valid-metadata gate errors, produce `success = false`; `GamingCouch` logs clear errors and returns before `listener.SendMessage("GamingCouchSetup", ...)` or `Play(...)` can call the listener with invalid options.
+- Warning-only metadata inspection: missing or invalid metadata issues are logged as warnings and do not block capture because `GCDevJsonReadResult.IsValid` only requires zero errors.
+- Public DTO shape inspection: `Runtime/GCSetupOptions.cs` and `Runtime/GCPlayOptions.cs` were not changed; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` public fields remain unchanged.
+- Custom inspector inspection: no `Editor/` files, `CustomEditor`, or `OnInspectorGUI` changes were added.
+- `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`; no Unity editor/CI command is available in this shell.
+
+Decisions:
+
+- The editor capture is cached at `Awake` for the current Play Mode entry so setup and play use the same captured data and random seed. Restart-time recapture and draft auto-apply remain Task 6 scope.
+- Obsolete serialized editor play fields are hidden with `HideInInspector` and retained only to let old scenes deserialize without migration or fallback.
+
+Review pass 1 findings:
+
+- No blocking Task 3 code defects found.
+- `GCEditorPlayCapture.Capture()` reads through validated `GCDevJsonStore.Read()` and fails capture for missing or invalid `gc.dev.json` and for valid-metadata gate errors.
+- Missing or invalid metadata stays warning-only because capture success follows `GCDevJsonReadResult.IsValid`, which allows warnings and blocks only errors.
+- Scoped old-field inspection found `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds` only as hidden deserialization fields; setup/play capture no longer reads them as input.
+- Sparse enabled seats map to dense runtime player IDs while `GCSeatIdentity.sourceSeatIndex` preserves one-based source seat slots; player colors use fixed source seat order.
+- `seed: "random"` resolves once in the cached editor capture with the inclusive `1..999999` range; fixed seed strings pass through after existing validation.
+
+Review pass 1 patches:
+
+- Updated this task record and top-level status to keep Task 3 in review until pass 2 and parent validation complete.
+- No code changes were made in pass 1.
+
+Review pass 1 validation:
+
+- `git diff --check`: passed.
+- Scoped grep for old serialized fields in `Runtime/GamingCouch.cs` and `Runtime/Dev/GCEditorPlayCapture.cs`: only hidden field declarations remain, plus `gameModeId = data.entryKey` when building the public setup DTO.
+- Public DTO shape inspection: `Runtime/GCSetupOptions.cs` and `Runtime/GCPlayOptions.cs` remain unchanged.
+- Custom inspector inspection: no active `CustomEditor`, `OnInspectorGUI`, or `GamingCouchEditor` source changes are present.
+- `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Review pass 1 skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found` and `which UnityHub` returned `UnityHub not found`; no Unity editor/CI command is available in this shell.
+
+Review pass 2 findings:
+
+- Found and patched an editor-only callback bypass: direct `GamingCouchSetupOptions`, `GamingCouchSetup`, or `GamingCouchPlay` platform-style callbacks could otherwise use externally supplied options in the Unity editor instead of the cached file-backed capture.
+- Missing or invalid `gc.dev.json`, and valid-metadata gate failures, now block direct editor setup/play callback paths as well as the normal editor setup and `_EditorPlay` coroutine paths.
+- Setup and play remain tied to the same cached capture for one Play Mode entry; direct editor setup/play callbacks now reuse `editorPlayCapture.setupOptions`, `editorPlayCapture.playOptions`, and `editorPlayCapture.seatIdentities`.
+- `SetupDone` still returns before fade, `_EditorPlay`, and `status = GCStatus.SetupDone` when editor capture is invalid, so a setup-blocked session cannot advance through play accidentally.
+- Online multiplayer editor server readiness still uses the file-backed setup path; invalid capture returns before setup, while the existing client-ready assertion behavior remains unchanged because editor file-backed setup is server-authoritative for this task.
+- Obsolete serialized editor play fields remain hidden declarations only and are not read as functional setup/play input.
+- Public DTO shapes and custom inspector scope remain untouched.
+
+Review pass 2 patches:
+
+- Updated `Runtime/GamingCouch.cs` so editor `GamingCouchSetupOptions` ignores external setup JSON and keeps `setupOptions` sourced from the valid cached file-backed capture only.
+- Updated editor `GamingCouchSetup` to re-check the cached capture immediately before sending `GamingCouchSetup` to the listener and to refresh `setupOptions` from that capture.
+- Updated editor `GamingCouchPlay` to ignore external play JSON and call `Play` only with the cached file-backed play options and seat identities.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- Scoped grep for old serialized fields in `Runtime/GamingCouch.cs` and `Runtime/Dev/GCEditorPlayCapture.cs`: only hidden field declarations remain, plus `gameModeId = data.entryKey` when building the public setup DTO.
+- Scoped editor-only reference inspection: `GCEditorPlayCapture`, `GCEditorPlayCaptureResult`, `GCDevJsonValidationResult`, and `GCDevJsonIssue` references in `Runtime/GamingCouch.cs` are under `#if UNITY_EDITOR`; JSON/Newtonsoft metadata and dev-file types remain in `Runtime/Dev` files that start with `#if UNITY_EDITOR`.
+- Public DTO shape inspection: `Runtime/GCSetupOptions.cs` and `Runtime/GCPlayOptions.cs` have no diff.
+- Custom inspector inspection: no `Editor/` files, `CustomEditor`, `OnInspectorGUI`, or `GamingCouchEditor` changes are present.
+- `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Review pass 2 skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found` and `which UnityHub` returned `UnityHub not found`; no Unity editor/CI command is available in this shell.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- Public DTO inspection: `git diff -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs` produced no diff; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` shapes remain unchanged.
+- Scoped old serialized field inspection: `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds` remain only as hidden deserialization fields; setup/play capture reads `gc.dev.json` data instead.
+- Callback bypass inspection: editor `GamingCouchSetupOptions`, `GamingCouchSetup`, `_EditorPlay`, `GamingCouchPlay`, and `SetupDone` all require the cached file-backed capture before listener setup/play callbacks can run.
+- Dense sparse-seat inspection: `GCEditorPlayCapture` counts enabled seats, assigns runtime `playerId = activePlayerIndex + 1`, and stores one-based source seat slots in `GCSeatIdentity.sourceSeatIndex`.
+- Seed inspection: `seed: "random"` resolves once in `GCEditorPlayCapture.Capture()` with `UnityEngine.Random.Range(1, 1000000)`; fixed seeds pass existing validation and parse into the same captured `GCPlayOptions`.
+- Custom inspector inspection: no active `CustomEditor`, `OnInspectorGUI`, `GamingCouchEditor`, or `Editor/` source changes were added in Task 3.
+- `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found` and `which UnityHub` returned `UnityHub not found`; no Unity editor/CI command is available in this shell.
 
 ## Task 4: Active Custom Inspector And Apply/Revert Draft
 
