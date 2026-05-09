@@ -43,11 +43,11 @@ Out of scope for this roadmap:
 
 ## Status Tracking
 
-Overall status: Prep implementation in progress.
+Overall status: Prep implementation complete.
 
-Current phase: Task 5 ready.
+Current phase: Prep tasks complete.
 
-Next action: Implement Task 5 after the Task 4 commit.
+Next action: Begin the PRD implementation only after explicit approval.
 
 | Task | Status | Notes |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ Next action: Implement Task 5 after the Task 4 commit.
 | 2. Seat Identity module | Done | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Done | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 4. Editor assembly and inspector host prep | Done | Editor-only asmdef and inactive inspector host prep complete; second review-and-patch pass complete; parent validation passed. |
-| 5. Package metadata hygiene | Not started | Defer dependency/version changes unless a prior slice needs structure. |
+| 5. Package metadata hygiene | Done | Placeholder package keywords replaced; dependency/version/release/license changes deferred. |
 
 ## Refactor Sequence
 
@@ -154,6 +154,12 @@ Completion criteria:
 
 - Any package structure needed by the prep modules is in place.
 - PRD dependency and release changes remain deferred to the PRD implementation.
+
+Task 5 implementation note, 2026-05-09: Done.
+
+- Changed paths: `package.json`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: `git diff --check` passed. `package.json` parsed as JSON. Version remained `0.0.1`, dependencies remained `{}`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added the editor-only asmdef and the runtime asmdef remains runtime-only. Unity 2022.3 compile/import was not run in this environment.
+- Scope remained prep-only; no JSON sync, metadata parsing, public docs, changelog, license URL, package version/dependency, release/tag, runtime asmdef, Task 4 editor asmdef, `VERSIONING_PLAN.md`, or main-repo files were changed.
 
 ## Compatibility Rules
 

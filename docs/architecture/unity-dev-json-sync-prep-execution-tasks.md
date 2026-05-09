@@ -1,6 +1,6 @@
 # Unity `gc.dev.json` Sync Prep Execution Tasks
 
-Status: Ready for execution
+Status: Prep tasks complete
 Last updated: 2026-05-09
 Owner: Gaming Couch Unity package team
 
@@ -49,11 +49,11 @@ Repos:
 
 ## Status
 
-Overall status: In progress
+Overall status: Prep tasks complete
 
-Current task: Task 5
+Current task: None
 
-Next action: Implement Task 5 with a GPT-5.5 xhigh subagent after the Task 4 commit.
+Next action: Begin the PRD implementation only after explicit approval.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -61,7 +61,7 @@ Next action: Implement Task 5 with a GPT-5.5 xhigh subagent after the Task 4 com
 | 2. Seat Identity module | Done | GPT-5.5 xhigh subagent | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Done | GPT-5.5 xhigh subagent | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 4. Editor assembly and inspector host prep | Done | GPT-5.5 xhigh subagent | Editor-only asmdef and inactive inspector host prep complete; second review-and-patch pass complete; parent validation passed. |
-| 5. Package metadata hygiene | Not started | GPT-5.5 xhigh subagent | No Newtonsoft, version, release, or license changes. |
+| 5. Package metadata hygiene | Done | GPT-5.5 xhigh subagent | Placeholder package keywords replaced; no Newtonsoft, version, dependency, release, or license changes. |
 
 ## Task 1: Editor Play Capture Module
 
@@ -353,6 +353,12 @@ After implementation:
 - Mark Task 5 as `Done` or `Blocked` in both task files.
 - Record files changed and verification run.
 - Leave next action as: begin the PRD implementation only after explicit approval.
+
+Task 5 implementation result, 2026-05-09: Done.
+
+- Changed paths: `package.json`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: `git diff --check` passed. `package.json` parsed as JSON. Parent validation confirmed `package.json` version remained `0.0.1`, dependencies remained `{}`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added an editor-only `Editor/dsb.gamingcouch.editor.asmdef` referencing the runtime asmdef GUID and left `Runtime/dsb.gamingcouch.runtime.asmdef` runtime-only. Unity 2022.3 compile/import was not run in this environment.
+- Scope notes: Replaced unambiguous placeholder keywords with `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`. No editor asmdef patch was needed. No runtime editor references, JSON sync behavior, package version/dependency changes, license URL changes, changelog updates, public docs, `LICENSE.md`, `VERSIONING_PLAN.md`, or main-repo files were changed.
 
 ## Deferred Decisions
 

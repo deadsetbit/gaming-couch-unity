@@ -10,9 +10,10 @@
           "licensesUrl": "https://example.com/licensing.html",
           "dependencies": {},
           "keywords": [
-                    "keyword1",
-                    "keyword2",
-                    "keyword3"
+                    "gaming-couch",
+                    "unity",
+                    "webgl",
+                    "local-multiplayer"
           ],
           "author": {
                     "name": "DSB",
