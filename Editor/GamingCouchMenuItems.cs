@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using DSB.GC;
 
-public class GamingCouchEditor
+public class GamingCouchMenuItems
 {
   [MenuItem("GameObject/GamingCouch", false, 0)]
   [MenuItem("Assets/Create/GamingCouch", false, 0)]

@@ -13,6 +13,7 @@ using DSB.GC.Dev;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Gaming Couch - Netcode for GameObjects")]
+[assembly: InternalsVisibleTo("GamingCouch.Editor")]
 
 namespace DSB.GC
 {

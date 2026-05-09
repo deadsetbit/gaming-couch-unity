@@ -45,16 +45,16 @@ Out of scope for this roadmap:
 
 Overall status: Prep implementation in progress.
 
-Current phase: Task 4 ready.
+Current phase: Task 5 ready.
 
-Next action: Implement Task 4 after the Task 3 commit.
+Next action: Implement Task 5 after the Task 4 commit.
 
 | Task | Status | Notes |
 | --- | --- | --- |
 | 1. Editor Play Capture module | Done | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 2. Seat Identity module | Done | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Done | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
-| 4. Editor assembly and inspector host prep | Not started | Prep only; no `gc.dev.json` UI. |
+| 4. Editor assembly and inspector host prep | Done | Editor-only asmdef and inactive inspector host prep complete; second review-and-patch pass complete; parent validation passed. |
 | 5. Package metadata hygiene | Not started | Defer dependency/version changes unless a prior slice needs structure. |
 
 ## Refactor Sequence
@@ -134,6 +134,13 @@ Completion criteria:
 - Menu item code and future inspector host code have separate modules.
 - There is a clear seam for a later custom inspector.
 - Existing inspector behavior remains acceptable until the PRD implementation replaces it.
+
+Task 4 implementation note, 2026-05-09: Done.
+
+- Changed paths: `Editor/dsb.gamingcouch.editor.asmdef`, `Editor/dsb.gamingcouch.editor.asmdef.meta`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchMenuItems.cs.meta`, `Editor/GamingCouchInspectorHost.cs`, `Editor/GamingCouchInspectorHost.cs.meta`, `Runtime/GamingCouch.cs`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: implementation, first review-and-patch pass, second review-and-patch pass, and parent validation ran `git diff --check`. The second pass and parent validation parsed the editor asmdef JSON and confirmed its runtime asmdef GUID reference matches `Runtime/dsb.gamingcouch.runtime.asmdef.meta`. Static inspection confirmed menu item paths and GameObject creation behavior remain unchanged, no active `[CustomEditor]` is registered, and the inactive inspector host adds no `gc.dev.json` UI, file I/O, polling, draft/conflict state, play-mode hooks, or Apply/Revert behavior. Unity 2022.3 compile/import was not run in this environment.
+- Scope remained prep-only; the editor asmdef is editor-only, runtime internals are exposed only to `GamingCouch.Editor`, the existing menu script GUID was preserved through `.meta` rename, `Editor/Utils/WebBuildOptimizer.cs` was inspected but not edited, and no runtime serialized fields, package metadata, JSON sync behavior, Task 5 work, or main-repo files were changed.
+- Remaining Task 4 gates: none.
 
 ### 5. Package Metadata Hygiene
 

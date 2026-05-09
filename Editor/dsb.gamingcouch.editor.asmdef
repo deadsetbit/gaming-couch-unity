@@ -1,0 +1,18 @@
+{
+    "name": "GamingCouch.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:277ccca428f76479b82ed36f333abb18"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

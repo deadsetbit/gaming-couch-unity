@@ -51,16 +51,16 @@ Repos:
 
 Overall status: In progress
 
-Current task: Task 4
+Current task: Task 5
 
-Next action: Implement Task 4 with a GPT-5.5 xhigh subagent after the Task 3 commit.
+Next action: Implement Task 5 with a GPT-5.5 xhigh subagent after the Task 4 commit.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor Play Capture module | Done | GPT-5.5 xhigh subagent | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 2. Seat Identity module | Done | GPT-5.5 xhigh subagent | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Done | GPT-5.5 xhigh subagent | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
-| 4. Editor assembly and inspector host prep | Not started | GPT-5.5 xhigh subagent | Keep host inactive. |
+| 4. Editor assembly and inspector host prep | Done | GPT-5.5 xhigh subagent | Editor-only asmdef and inactive inspector host prep complete; second review-and-patch pass complete; parent validation passed. |
 | 5. Package metadata hygiene | Not started | GPT-5.5 xhigh subagent | No Newtonsoft, version, release, or license changes. |
 
 ## Task 1: Editor Play Capture Module
@@ -297,6 +297,13 @@ After implementation:
 - Mark Task 4 as `Done` or `Blocked` in both task files.
 - Record files changed and verification run.
 - Set current task to Task 5 if complete.
+
+Task 4 implementation result, 2026-05-09: Done.
+
+- Changed paths: `Editor/dsb.gamingcouch.editor.asmdef`, `Editor/dsb.gamingcouch.editor.asmdef.meta`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchMenuItems.cs.meta`, `Editor/GamingCouchInspectorHost.cs`, `Editor/GamingCouchInspectorHost.cs.meta`, `Runtime/GamingCouch.cs`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: implementation, first review-and-patch pass, second review-and-patch pass, and parent validation ran `git diff --check`. The second pass and parent validation parsed the editor asmdef JSON and confirmed its runtime asmdef GUID reference matches `Runtime/dsb.gamingcouch.runtime.asmdef.meta`. Static inspection confirmed the existing `GamingCouch` menu item paths and GameObject creation behavior remain unchanged, no active `[CustomEditor]` is registered, and the inactive inspector host adds no `gc.dev.json` UI, file I/O, polling, draft/conflict state, play-mode hooks, or Apply/Revert behavior. Unity 2022.3 compile/import was not run in this environment.
+- Scope notes: The editor assembly is editor-only and references the runtime `GamingCouch` assembly by asmdef GUID. The menu script and `.meta` were renamed to preserve the existing script GUID. The inactive inspector helper draws serialized `GamingCouch` fields while excluding `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`. `Editor/Utils/WebBuildOptimizer.cs`, runtime serialized field names, package metadata, JSON sync behavior, and main-repo files were left unchanged.
+- Remaining Task 4 gates: none.
 
 ## Task 5: Package Metadata Hygiene
 
