@@ -86,7 +86,9 @@ internal static class GCDevJsonEditorPlayModeGate
     {
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        GCEditorPlayCapture.RegisterCaptureHandler(GCEditorPlayJsonCapture.Capture);
         GCEditorPlayPreflight.RegisterPreflightHandler(RunPreflight);
+        GCEditorPlayPreflight.RegisterRootValidationHandler(GCEditorPlayJsonCapture.ValidateRootJson);
         GCEditorPlayPreflight.RegisterCaptureSucceededHandler(MarkPlayChangesCaptured);
     }
 

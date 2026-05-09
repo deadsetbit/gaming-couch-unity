@@ -15,137 +15,53 @@ namespace DSB.GC.Dev
 
     internal static class GCEditorPlayCapture
     {
-        private static readonly GCPlayerColor[] SeatColors =
+        private static Func<GCEditorPlayCaptureResult> captureHandler;
+
+        internal static void RegisterCaptureHandler(Func<GCEditorPlayCaptureResult> handler)
         {
-            GCPlayerColor.blue,
-            GCPlayerColor.red,
-            GCPlayerColor.green,
-            GCPlayerColor.yellow,
-            GCPlayerColor.purple,
-            GCPlayerColor.pink,
-            GCPlayerColor.cyan,
-            GCPlayerColor.brown,
-        };
+            captureHandler = handler;
+        }
 
         internal static GCEditorPlayCaptureResult Capture()
         {
-            return Capture(new GCDevJsonStore().Read());
-        }
-
-        internal static GCEditorPlayCaptureResult Capture(GCDevJsonReadResult readResult)
-        {
-            if (readResult == null)
+            if (captureHandler == null)
             {
                 return Failed(
                     null,
                     GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
                         GCDevJsonIssueCode.ReadError,
-                        "gc.dev.json could not be read because the read result was missing.",
+                        "gc.dev.json could not be read because the editor JSON capture handler is not available.",
                         null
                     ))
                 );
             }
 
-            if (!readResult.IsValid)
+            try
             {
-                return Failed(GetPath(readResult), readResult.validation);
-            }
-
-            var data = readResult.data;
-            int seed;
-            if (!TryResolveSeed(data.seed, out seed))
-            {
-                return Failed(
-                    GetPath(readResult),
-                    GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
-                        GCDevJsonIssueCode.InvalidSeed,
-                        "gc.dev.json seed must be \"random\" or an integer string from " + GCDevJsonFile.MinSeed + " to " + GCDevJsonFile.MaxSeed + ".",
-                        GetPath(readResult)
-                    ))
-                );
-            }
-
-            var setupOptions = CreateSetupOptions(data);
-            var playCapture = CreatePlayCapture(data, seed);
-            playCapture.success = true;
-            playCapture.setupOptions = setupOptions;
-            playCapture.validation = readResult.validation;
-            playCapture.path = GetPath(readResult);
-            return playCapture;
-        }
-
-        private static GCSetupOptions CreateSetupOptions(GCDevJsonFile data)
-        {
-            return new GCSetupOptions
-            {
-                isServer = true,
-                gameModeId = data.entryKey,
-                mode = GCMode.Development,
-            };
-        }
-
-        private static GCEditorPlayCaptureResult CreatePlayCapture(GCDevJsonFile data, int seed)
-        {
-            var activePlayerCount = data.EnabledSeatCount;
-            var options = new GCPlayOptions
-            {
-                players = new GCPlayerOptions[activePlayerCount],
-                seed = seed,
-            };
-            var seatIdentities = new GCSeatIdentity[activePlayerCount];
-
-            var activePlayerIndex = 0;
-            for (var sourceSeatIndex = 0; sourceSeatIndex < data.seats.Length; sourceSeatIndex++)
-            {
-                var seat = data.seats[sourceSeatIndex];
-                if (!seat.enabled)
+                var result = captureHandler();
+                if (result.success)
                 {
-                    continue;
+                    return result;
                 }
 
-                var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
-                var playerColor = SeatColors[sourceSeatIndex];
-                var playerId = activePlayerIndex + 1;
-                var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
-
-                options.players[activePlayerIndex] = new GCPlayerOptions
+                if (result.validation != null)
                 {
-                    type = playerType.ToString(),
-                    playerId = playerId,
-                    name = seat.name,
-                    color = playerColor.ToString(),
-                };
-
-                seatIdentities[activePlayerIndex] = new GCSeatIdentity
-                {
-                    playerId = playerId,
-                    sourceSeatIndex = oneBasedSourceSeatIndex,
-                    label = "Seat " + oneBasedSourceSeatIndex,
-                    playerType = playerType,
-                    playerColor = playerColor,
-                };
-
-                activePlayerIndex++;
+                    return result;
+                }
+            }
+            catch (Exception exception)
+            {
+                return FailedForException(exception);
             }
 
-            return new GCEditorPlayCaptureResult
-            {
-                playOptions = options,
-                seatIdentities = seatIdentities,
-            };
-        }
-
-        private static bool TryResolveSeed(string seed, out int value)
-        {
-            if (seed == GCDevJsonFile.RandomSeed)
-            {
-                value = UnityEngine.Random.Range(GCDevJsonFile.MinSeed, GCDevJsonFile.MaxSeed + 1);
-                return true;
-            }
-
-            return int.TryParse(seed, out value) &&
-                   value >= GCDevJsonFile.MinSeed &&
-                   value <= GCDevJsonFile.MaxSeed;
+            return Failed(
+                null,
+                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
+                    GCDevJsonIssueCode.ReadError,
+                    "gc.dev.json could not be read because the editor JSON capture handler returned an invalid result.",
+                    null
+                ))
+            );
         }
 
         private static GCEditorPlayCaptureResult Failed(string path, GCDevJsonValidationResult validation)
@@ -161,9 +77,13 @@ namespace DSB.GC.Dev
             };
         }
 
-        private static string GetPath(GCDevJsonReadResult readResult)
+        private static GCEditorPlayCaptureResult FailedForException(Exception exception)
         {
-            return readResult?.parsedFile != null ? readResult.parsedFile.path : null;
+            var message = "gc.dev.json could not be read because editor JSON capture failed: " + exception.Message;
+            return Failed(
+                null,
+                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
+            );
         }
     }
 
@@ -202,6 +122,7 @@ namespace DSB.GC.Dev
     internal static class GCEditorPlayPreflight
     {
         private static Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> preflightHandler;
+        private static Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> rootValidationHandler;
         private static Action captureSucceededHandler;
 
         internal static void RegisterPreflightHandler(Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> handler)
@@ -212,6 +133,11 @@ namespace DSB.GC.Dev
         internal static void RegisterCaptureSucceededHandler(Action handler)
         {
             captureSucceededHandler = handler;
+        }
+
+        internal static void RegisterRootValidationHandler(Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> handler)
+        {
+            rootValidationHandler = handler;
         }
 
         internal static GCEditorPlayPreflightResult Run(GCEditorPlayPreflightContext context)
@@ -237,29 +163,27 @@ namespace DSB.GC.Dev
 
         internal static GCEditorPlayPreflightResult ValidateRootJson(GCEditorPlayPreflightContext context)
         {
-            GCDevJsonReadResult readResult;
-            try
+            if (rootValidationHandler != null)
             {
-                readResult = new GCDevJsonStore().Read();
-            }
-            catch (Exception exception)
-            {
-                return FailedForException(context, exception);
+                try
+                {
+                    var result = rootValidationHandler(context);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    return FailedForException(context, exception);
+                }
             }
 
-            if (readResult != null && readResult.IsValid)
-            {
-                return GCEditorPlayPreflightResult.Succeeded();
-            }
-
+            var message = GetBoundaryDisplayName(context) + " blocked because the editor JSON preflight handler is not available.";
             return GCEditorPlayPreflightResult.Failed(
-                GetBoundaryDisplayName(context) + " blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates.",
-                GetPath(readResult),
-                readResult != null ? readResult.validation : GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
-                    GCDevJsonIssueCode.ReadError,
-                    "gc.dev.json could not be read because the read result was missing.",
-                    null
-                ))
+                message,
+                null,
+                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
             );
         }
 
@@ -295,11 +219,6 @@ namespace DSB.GC.Dev
                 null,
                 GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
             );
-        }
-
-        private static string GetPath(GCDevJsonReadResult readResult)
-        {
-            return readResult?.parsedFile != null ? readResult.parsedFile.path : null;
         }
     }
 }
