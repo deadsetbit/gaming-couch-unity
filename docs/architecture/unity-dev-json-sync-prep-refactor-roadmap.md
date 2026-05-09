@@ -43,15 +43,15 @@ Out of scope for this roadmap:
 
 ## Status Tracking
 
-Overall status: Roadmap saved; implementation not started.
+Overall status: Prep implementation in progress.
 
-Current phase: Ready to plan and execute Task 1.
+Current phase: Task 2 ready.
 
-Next action: Open a focused task for the Editor Play Capture module.
+Next action: Implement Task 2 after the Task 1 commit.
 
 | Task | Status | Notes |
 | --- | --- | --- |
-| 1. Editor Play Capture module | Not started | Highest-value first slice. |
+| 1. Editor Play Capture module | Done | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 2. Seat Identity module | Not started | Can follow capture or be included if Task 1 exposes the natural seam. |
 | 3. Local Project Root module | Not started | Small shared extraction from DevApp integration. |
 | 4. Editor assembly and inspector host prep | Not started | Prep only; no `gc.dev.json` UI. |
@@ -73,6 +73,12 @@ Completion criteria:
 - `GamingCouch` no longer owns the detailed editor play option construction.
 - Current editor play setup and play still work from serialized settings.
 - The module can later accept a `gc.dev.json` adapter without redesigning the call sites.
+
+Task 1 implementation note, 2026-05-09:
+
+- Changed paths: `Runtime/GamingCouch.cs`, `Runtime/Dev/GCEditorPlayCapture.cs`, `Runtime/Dev/GCEditorPlayCapture.cs.meta`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: `git diff --check` passed during implementation, first review, second review-and-patch pass, and parent validation. Unity 2022.3 compile/import was not run in this environment.
+- Scope remained prep-only; no JSON sync, metadata parsing, custom inspector UI, seat identity, dependency, version, or main-repo changes were made. The second pass kept setup option creation from touching play-only serialized fields and normalized the new script `.meta`.
 
 ### 2. Seat Identity Module
 

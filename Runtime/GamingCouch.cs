@@ -688,46 +688,43 @@ namespace DSB.GC
         [Tooltip("Randomize player ID's to better replicate real use case where ID's comes from the platform. If false, player ID's will be assigned in order starting from 1. (RECOMMENDED TO KEEP THIS ENABLED)")]
         private bool randomizePlayerIds = true;
 
+        private GCEditorPlaySettingsSnapshot CreateEditorPlaySettingsSnapshot()
+        {
+            GCEditorPlayPlayerSettings[] players = null;
+            if (playerData != null)
+            {
+                players = new GCEditorPlayPlayerSettings[playerData.Length];
+                for (int i = 0; i < playerData.Length; i++)
+                {
+                    players[i] = new GCEditorPlayPlayerSettings
+                    {
+                        name = playerData[i].name,
+                        color = playerData[i].color,
+                        isBot = playerData[i].isBot,
+                    };
+                }
+            }
+
+            return new GCEditorPlaySettingsSnapshot
+            {
+                gameModeId = gameModeId,
+                playerData = players,
+                numberOfPlayers = numberOfPlayers,
+                randomizePlayerIds = randomizePlayerIds,
+            };
+        }
+
         private GCSetupOptions GetEditorSetupOptions()
         {
-            return new GCSetupOptions
+            return GCEditorPlayCapture.CreateSetupOptions(new GCEditorPlaySettingsSnapshot
             {
-                isServer = true,
                 gameModeId = gameModeId,
-                mode = GCMode.Development,
-            };
+            });
         }
 
         private GCPlayOptions GetEditorPlayOptions()
         {
-            GCPlayOptions options = new GCPlayOptions
-            {
-                players = new GCPlayerOptions[numberOfPlayers],
-                seed = UnityEngine.Random.Range(1, 999999),
-            };
-
-            var usedColors = new List<GCPlayerColor>();
-
-            for (int i = 0; i < numberOfPlayers; i++)
-            {
-                if (usedColors.Contains(playerData[i].color))
-                {
-                    throw new Exception("[GamingCouch] Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
-                }
-
-                usedColors.Add(playerData[i].color);
-
-
-                options.players[i] = new GCPlayerOptions
-                {
-                    type = playerData[i].isBot ? GCPlayerType.bot.ToString() : GCPlayerType.player.ToString(),
-                    playerId = randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
-                    name = playerData[i].name,
-                    color = playerData[i].color.ToString(),
-                };
-            }
-
-            return options;
+            return GCEditorPlayCapture.CreatePlayOptions(CreateEditorPlaySettingsSnapshot());
         }
         #endregion
 
