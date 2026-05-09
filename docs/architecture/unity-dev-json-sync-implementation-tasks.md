@@ -1,6 +1,6 @@
 # Unity `gc.dev.json` Sync Implementation Tasks
 
-Status: Ready for implementation
+Status: In progress
 Last updated: 2026-05-09
 Owner: Gaming Couch Unity package team
 
@@ -31,15 +31,15 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Not started
+Overall status: In progress
 
-Current task: None
+Current task: Task 2
 
-Next action: After explicit implementation approval, run the implement-tasks workflow starting with Task 1.
+Next action: Implement Task 2 with a GPT-5.5 xhigh subagent after the Task 1 commit.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| 1. Editor JSON dependency and `gc.dev.json` store | Pending | Unassigned subagent | Adds editor-only JSON models, parsing, validation primitives, required-file behavior, and preserving writes. |
+| 1. Editor JSON dependency and `gc.dev.json` store | Done | GPT-5.5 xhigh subagent | Editor-only JSON dependency and preserving `gc.dev.json` store complete; second review-and-patch pass complete; parent validation passed. |
 | 2. `gc.metadata.json` light read and validation gates | Pending | Unassigned subagent | Adds metadata parser, warning-only missing/invalid behavior, and valid-metadata gates. |
 | 3. File-backed editor play capture | Pending | Unassigned subagent | Replaces serialized editor play source with validated `gc.dev.json` capture while keeping public payloads unchanged. |
 | 4. Active custom inspector and Apply/Revert draft | Pending | Unassigned subagent | Activates inspector UI for file-backed local play settings and hides obsolete serialized settings. |
@@ -222,6 +222,81 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 2 if complete.
+
+### Task 1 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `package.json`
+- `Runtime/Dev/GCDevJsonFile.cs`
+- `Runtime/Dev/GCDevJsonFile.cs.meta`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `Runtime/Dev/GCDevJsonStore.cs.meta`
+- `Runtime/Dev/GCDevJsonValidation.cs`
+- `Runtime/Dev/GCDevJsonValidation.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null <new-file>`: no whitespace output for new Task 1 files; command exits non-zero because `/dev/null` differs from each new file.
+- `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"`: passed.
+- `package.json` dependency check: `com.unity.nuget.newtonsoft-json` present at `3.2.1`.
+- Store inspection: missing `gc.dev.json` returns `GCDevJsonIssueCode.MissingFile` for read and write; no bootstrap path is implemented.
+- Writer inspection: write path loads current `gc.dev.json` with `JToken.Parse`, requires a `JObject`, replaces only `devVersion`, `entryKey`, `seed`, and `seats`, writes `Formatting.Indented` plus a trailing newline, and does not reference or write `gc.metadata.json`.
+- `git status --short`: only Task 1 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`; no Unity editor/CI command is available in this shell.
+
+Decisions:
+
+- Missing `gc.dev.json` is treated as an error for both read and write.
+- Parsed file state is represented separately from validated `GCDevJsonFile` data so later tasks can distinguish missing file, invalid JSON/root, unsupported `devVersion`, invalid seed, invalid seat count, invalid seat fields, and no enabled seats.
+- Public runtime DTOs and existing editor play flow were left unchanged.
+
+Review pass 1 patches:
+
+- Moved Task 1 back to `In review`; Task 2 must wait for review pass 2 and parent validation.
+- Made `GCDevJsonFile` construction, cloning, and enabled-seat counting tolerate invalid seat arrays so `ValidateData` can return structured issues instead of constructor exceptions.
+- Hardened validation result/read-result handling for null issues, missing parser state, and null parsed root objects.
+- Tightened `entryKey` validation to reject empty or whitespace-only strings.
+
+Review pass 1 validation:
+
+- `git diff --check`: passed.
+- `node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); const v=pkg.dependencies && pkg.dependencies['com.unity.nuget.newtonsoft-json']; if (v !== '3.2.1') throw new Error('missing com.unity.nuget.newtonsoft-json 3.2.1');"`: passed.
+- `rg -n "[ \t]+$" <Task 1 scoped files>`: no trailing whitespace matches.
+- `which Unity`: Unity not found; Unity 2022.3 compile/import remains skipped in this shell.
+
+Review pass 2 findings:
+
+- No blocking Task 1 implementation defects found.
+- `GCDevJsonFile` now tolerates invalid seat arrays only as validation input; validated read results still expose `data` only when `ValidateData` succeeds, and the writer validates before serializing seats.
+- `ValidateData` catches null, wrong-length, null-entry, invalid-name, and no-enabled-seat rosters without throwing.
+- The writer refuses missing `gc.dev.json` and does not bootstrap the file.
+
+Review pass 2 patches:
+
+- Updated this task record to show second review complete while leaving parent validation/commit pending.
+- No code changes were made in pass 2.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- `node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); const deps=pkg.dependencies||{}; if (deps['com.unity.nuget.newtonsoft-json'] !== '3.2.1') throw new Error('missing dependency');"`: passed.
+- Scoped inspection confirmed Newtonsoft/JObject references are inside `#if UNITY_EDITOR` files, missing `gc.dev.json` remains an error for read/write, writes load the current file as `JObject`, and no `gc.metadata.json` write path exists.
+- `which Unity`: Unity not found; Unity 2022.3 compile/import remains skipped in this shell.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); if(p.dependencies['com.unity.nuget.newtonsoft-json']!=='3.2.1') throw new Error('missing newtonsoft');"`: passed.
+- Parent inspection confirmed no `gc.metadata.json` writes, no `GamingCouch` editor play flow changes, and no public DTO changes in Task 1.
+- Unity 2022.3 compile/import skipped because Unity is unavailable in this shell.
 
 ## Task 2: `gc.metadata.json` Light Read And Validation Gates
 

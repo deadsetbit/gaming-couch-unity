@@ -8,7 +8,9 @@
           "documentationUrl": "https://example.com/",
           "changelogUrl": "https://example.com/changelog.html",
           "licensesUrl": "https://example.com/licensing.html",
-          "dependencies": {},
+          "dependencies": {
+                    "com.unity.nuget.newtonsoft-json": "3.2.1"
+          },
           "keywords": [
                     "gaming-couch",
                     "unity",
