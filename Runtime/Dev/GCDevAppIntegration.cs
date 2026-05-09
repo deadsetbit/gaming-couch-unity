@@ -2,7 +2,6 @@ using UnityEngine;
 #if UNITY_EDITOR
 using System;
 using System.Collections;
-using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -80,50 +79,6 @@ namespace DSB.GC.Dev
             return Guid.NewGuid().ToString("N");
         }
 
-        static bool IsWindowsPath(string value)
-        {
-            return value.Length >= 3 && char.IsLetter(value[0]) && value[1] == ':' && value[2] == '/';
-        }
-
-        static string NormalizeProjectRootPath(string value)
-        {
-            var fullPath = Path.GetFullPath(value);
-            var normalizedSlashes = fullPath.Replace("\\", "/");
-            var trimmedPath = normalizedSlashes.TrimEnd('/');
-            if (string.IsNullOrEmpty(trimmedPath))
-            {
-                trimmedPath = "/";
-            }
-
-            if (IsWindowsPath(trimmedPath) || trimmedPath.StartsWith("//", StringComparison.Ordinal))
-            {
-                return trimmedPath.ToLowerInvariant();
-            }
-
-            return trimmedPath;
-        }
-
-        static string ResolveProjectRootPath()
-        {
-            var projectRootPath = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrWhiteSpace(projectRootPath))
-            {
-                return NormalizeProjectRootPath(Application.dataPath);
-            }
-
-            return NormalizeProjectRootPath(projectRootPath);
-        }
-
-        static string ResolveProjectName()
-        {
-            if (!string.IsNullOrWhiteSpace(Application.productName))
-            {
-                return Application.productName.Trim();
-            }
-
-            return new DirectoryInfo(ResolveProjectRootPath()).Name;
-        }
-
         static string ResolveSeatType(GCPlayerType playerType)
         {
             return playerType == GCPlayerType.bot ? "bot" : "player";
@@ -131,13 +86,15 @@ namespace DSB.GC.Dev
 
         RuntimeRegisterMessage BuildRuntimeRegisterMessage()
         {
+            IGCLocalProjectRootResolver projectRootResolver = new GCUnityLocalProjectRootResolver();
+
             return new RuntimeRegisterMessage
             {
                 type = "runtime_register",
                 timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 runtimeKind = "unity_editor",
-                projectRootPath = ResolveProjectRootPath(),
-                projectName = ResolveProjectName(),
+                projectRootPath = projectRootResolver.ResolveProjectRootPath(),
+                projectName = projectRootResolver.ResolveProjectName(),
                 platform = "unity",
                 rendererMode = "external",
                 displayName = "Unity Editor",

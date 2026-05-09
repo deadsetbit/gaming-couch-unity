@@ -51,15 +51,15 @@ Repos:
 
 Overall status: In progress
 
-Current task: Task 3
+Current task: Task 4
 
-Next action: Implement Task 3 with a GPT-5.5 xhigh subagent after the Task 2 commit.
+Next action: Implement Task 4 with a GPT-5.5 xhigh subagent after the Task 3 commit.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor Play Capture module | Done | GPT-5.5 xhigh subagent | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 2. Seat Identity module | Done | GPT-5.5 xhigh subagent | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
-| 3. Local Project Root module | Not started | GPT-5.5 xhigh subagent | Behavior-neutral extraction from DevApp integration. |
+| 3. Local Project Root module | Done | GPT-5.5 xhigh subagent | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 4. Editor assembly and inspector host prep | Not started | GPT-5.5 xhigh subagent | Keep host inactive. |
 | 5. Package metadata hygiene | Not started | GPT-5.5 xhigh subagent | No Newtonsoft, version, release, or license changes. |
 
@@ -232,6 +232,13 @@ After implementation:
 - Mark Task 3 as `Done` or `Blocked` in both task files.
 - Record files changed and verification run.
 - Set current task to Task 4 if complete.
+
+Task 3 implementation result, 2026-05-09: Done.
+
+- Changed paths: `Runtime/Dev/GCDevAppIntegration.cs`, `Runtime/Dev/GCLocalProjectRootResolver.cs`, `Runtime/Dev/GCLocalProjectRootResolver.cs.meta`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: first and second review-and-patch passes confirmed by inspection that normalization preserves `Path.GetFullPath`, slash normalization, trailing slash trimming with `/` preservation, Windows drive and UNC lower-casing, root fallback, and project-name fallback behavior from the extracted source. `git diff --check` passed in both review passes and parent validation. Parent validation also confirmed resolver references remain in the editor-only path. Unity 2022.3 compile/import was not run in this environment.
+- Scope notes: Project-root path normalization and project-name resolution now live in the editor-only resolver and DevApp runtime registration delegates to it. WebSocket, runtime snapshot, seat, public DTO, JSON sync, metadata parsing, inspector UI, package metadata, and main-repo files were left unchanged.
+- Remaining Task 3 gates: none.
 
 ## Task 4: Editor Assembly And Inspector Host Prep
 

@@ -45,15 +45,15 @@ Out of scope for this roadmap:
 
 Overall status: Prep implementation in progress.
 
-Current phase: Task 3 ready.
+Current phase: Task 4 ready.
 
-Next action: Implement Task 3 after the Task 2 commit.
+Next action: Implement Task 4 after the Task 3 commit.
 
 | Task | Status | Notes |
 | --- | --- | --- |
 | 1. Editor Play Capture module | Done | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 2. Seat Identity module | Done | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
-| 3. Local Project Root module | Not started | Small shared extraction from DevApp integration. |
+| 3. Local Project Root module | Done | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 4. Editor assembly and inspector host prep | Not started | Prep only; no `gc.dev.json` UI. |
 | 5. Package metadata hygiene | Not started | Defer dependency/version changes unless a prior slice needs structure. |
 
@@ -113,6 +113,13 @@ Completion criteria:
 - Project-root resolution has one interface and one implementation.
 - `GCDevAppIntegration` delegates to the shared module.
 - The module is testable without WebSocket behavior.
+
+Task 3 implementation note, 2026-05-09: Done.
+
+- Changed paths: `Runtime/Dev/GCDevAppIntegration.cs`, `Runtime/Dev/GCLocalProjectRootResolver.cs`, `Runtime/Dev/GCLocalProjectRootResolver.cs.meta`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: first and second review-and-patch passes confirmed by inspection that normalization and project-name behavior match the extracted source behavior. `git diff --check` passed in both review passes and parent validation. Parent validation also confirmed resolver references remain in the editor-only path. Unity 2022.3 compile/import was not run in this environment.
+- Scope remained prep-only; no JSON sync, metadata parsing, inspector UI, package dependency/version, future Task 4/5 work, or main-repo changes were made.
+- Remaining Task 3 gates: none.
 
 ### 4. Editor Assembly And Inspector Host Prep
 
