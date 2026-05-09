@@ -45,14 +45,14 @@ Out of scope for this roadmap:
 
 Overall status: Prep implementation in progress.
 
-Current phase: Task 2 ready.
+Current phase: Task 3 ready.
 
-Next action: Implement Task 2 after the Task 1 commit.
+Next action: Implement Task 3 after the Task 2 commit.
 
 | Task | Status | Notes |
 | --- | --- | --- |
 | 1. Editor Play Capture module | Done | Behavior-neutral extraction complete; second review-and-patch pass complete; parent validation passed. |
-| 2. Seat Identity module | Not started | Can follow capture or be included if Task 1 exposes the natural seam. |
+| 2. Seat Identity module | Done | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Not started | Small shared extraction from DevApp integration. |
 | 4. Editor assembly and inspector host prep | Not started | Prep only; no `gc.dev.json` UI. |
 | 5. Package metadata hygiene | Not started | Defer dependency/version changes unless a prior slice needs structure. |
@@ -93,6 +93,12 @@ Completion criteria:
 - Sparse enabled seats can be represented internally without changing public play payloads.
 - DevApp snapshot seat indexes come from captured editor play state.
 - Dense player IDs remain compatible with current runtime behavior.
+
+Task 2 implementation note, 2026-05-09: Done.
+
+- Changed paths: `Runtime/GamingCouch.cs`, `Runtime/Dev/GCEditorPlayCapture.cs`, `Runtime/Dev/GCSeatIdentity.cs`, `Runtime/Dev/GCSeatIdentity.cs.meta`, `Runtime/Dev/GCDevAppIntegration.cs`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
+- Verification: `git diff --check` passed during implementation, parent review, replacement second review-and-patch pass, and parent validation. Parent validation also confirmed no `UnityEditor` references in the Task 2 runtime/dev path. Unity 2022.3 compile/import was not run in this environment.
+- Scope remained prep-only; the replacement second pass kept null seat identities on the private play path compatible with dense fallback seats and prevented default identities from emitting invalid snapshot seat indexes. Public setup/play/player option DTOs, player setup index, spawn indexing, `GCPlayer.Id`, package metadata, JSON sync, metadata parsing, inspector UI, Task 3+, and main-repo files were left unchanged.
 
 ### 3. Local Project Root Module
 

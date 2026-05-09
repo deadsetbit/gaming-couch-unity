@@ -54,6 +54,7 @@ namespace DSB.GC
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
+        private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
@@ -287,7 +288,8 @@ namespace DSB.GC
         {
             GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
-            Play(GetEditorPlayOptions());
+            var playCapture = GetEditorPlayCapture();
+            Play(playCapture.playOptions, playCapture.seatIdentities);
         }
 
         /// <summary>
@@ -295,9 +297,93 @@ namespace DSB.GC
         /// </summary>
         private void Play(GCPlayOptions options)
         {
-            playOptions = options;
+            Play(options, CreateFallbackSeatIdentities(options));
+        }
+
+        /// <summary>
+        /// Triggers GamingCouchPlay and sets the status to Playing.
+        /// </summary>
+        private void Play(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
+        {
+            var playerCount = options?.players?.Length ?? 0;
+            var resolvedSeatIdentities = seatIdentities ?? CreateFallbackSeatIdentities(options);
+            if (resolvedSeatIdentities.Length != playerCount)
+            {
+                throw new ArgumentException("[GamingCouch] Seat identity count must match play player count.");
+            }
+
+            playOptions = CopyPlayOptions(options);
+            playSeatIdentities = CopySeatIdentities(resolvedSeatIdentities);
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
+        }
+
+        private static GCPlayOptions CopyPlayOptions(GCPlayOptions options)
+        {
+            if (options == null)
+            {
+                return null;
+            }
+
+            GCPlayerOptions[] players = null;
+            if (options.players != null)
+            {
+                players = new GCPlayerOptions[options.players.Length];
+                Array.Copy(options.players, players, options.players.Length);
+            }
+
+            return new GCPlayOptions
+            {
+                players = players,
+                seed = options.seed,
+            };
+        }
+
+        private static GCSeatIdentity[] CopySeatIdentities(GCSeatIdentity[] seatIdentities)
+        {
+            if (seatIdentities == null || seatIdentities.Length == 0)
+            {
+                return Array.Empty<GCSeatIdentity>();
+            }
+
+            var copiedSeatIdentities = new GCSeatIdentity[seatIdentities.Length];
+            Array.Copy(seatIdentities, copiedSeatIdentities, seatIdentities.Length);
+            return copiedSeatIdentities;
+        }
+
+        private static GCSeatIdentity[] CreateFallbackSeatIdentities(GCPlayOptions options)
+        {
+            if (options?.players == null)
+            {
+                return Array.Empty<GCSeatIdentity>();
+            }
+
+            var seatIdentities = new GCSeatIdentity[options.players.Length];
+            for (var index = 0; index < options.players.Length; index++)
+            {
+                var playerOption = options.players[index];
+                var sourceSeatIndex = index + 1;
+                seatIdentities[index] = new GCSeatIdentity
+                {
+                    playerId = playerOption.playerId,
+                    sourceSeatIndex = sourceSeatIndex,
+                    label = "Seat " + sourceSeatIndex,
+                    playerType = ResolvePlayerType(playerOption.type),
+                    playerColor = ResolvePlayerColor(playerOption.color),
+                };
+            }
+
+            return seatIdentities;
+        }
+
+        private static GCPlayerType ResolvePlayerType(string value)
+        {
+            return string.Equals(value, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? GCPlayerType.bot : GCPlayerType.player;
+        }
+
+        private static GCPlayerColor ResolvePlayerColor(string value)
+        {
+            return !string.IsNullOrEmpty(value) && Enum.TryParse(value, true, out GCPlayerColor playerColor) ? playerColor : GCPlayerColor.blue;
         }
 
         /// <summary>
@@ -701,6 +787,7 @@ namespace DSB.GC
                         name = playerData[i].name,
                         color = playerData[i].color,
                         isBot = playerData[i].isBot,
+                        sourceSeatIndex = i + 1,
                     };
                 }
             }
@@ -722,9 +809,9 @@ namespace DSB.GC
             });
         }
 
-        private GCPlayOptions GetEditorPlayOptions()
+        private GCEditorPlayCaptureResult GetEditorPlayCapture()
         {
-            return GCEditorPlayCapture.CreatePlayOptions(CreateEditorPlaySettingsSnapshot());
+            return GCEditorPlayCapture.CreatePlayCapture(CreateEditorPlaySettingsSnapshot());
         }
         #endregion
 
@@ -863,6 +950,11 @@ namespace DSB.GC
             var playerOptions = new GCPlayerOptions[playOptions.players.Length];
             Array.Copy(playOptions.players, playerOptions, playOptions.players.Length);
             return playerOptions;
+        }
+
+        internal GCSeatIdentity[] GetCurrentPlaySeatIdentities()
+        {
+            return CopySeatIdentities(playSeatIdentities);
         }
 
         public void ApplyDevPause(bool nextPaused)

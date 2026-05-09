@@ -124,9 +124,9 @@ namespace DSB.GC.Dev
             return new DirectoryInfo(ResolveProjectRootPath()).Name;
         }
 
-        static string ResolveSeatType(string playerType)
+        static string ResolveSeatType(GCPlayerType playerType)
         {
-            return string.Equals(playerType, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? "bot" : "player";
+            return playerType == GCPlayerType.bot ? "bot" : "player";
         }
 
         RuntimeRegisterMessage BuildRuntimeRegisterMessage()
@@ -162,22 +162,23 @@ namespace DSB.GC.Dev
                 return Array.Empty<RuntimeSeatMessage>();
             }
 
-            var playerOptions = gamingCouch.GetCurrentPlayPlayerOptions();
-            if (playerOptions.Length == 0)
+            var seatIdentities = gamingCouch.GetCurrentPlaySeatIdentities();
+            if (seatIdentities.Length == 0)
             {
                 return Array.Empty<RuntimeSeatMessage>();
             }
 
-            var seats = new RuntimeSeatMessage[playerOptions.Length];
-            for (var index = 0; index < playerOptions.Length; index++)
+            var seats = new RuntimeSeatMessage[seatIdentities.Length];
+            for (var index = 0; index < seatIdentities.Length; index++)
             {
-                var playerOption = playerOptions[index];
+                var seatIdentity = seatIdentities[index];
+                var sourceSeatIndex = seatIdentity.sourceSeatIndex > 0 ? seatIdentity.sourceSeatIndex : index + 1;
                 seats[index] = new RuntimeSeatMessage
                 {
-                    playerId = playerOption.playerId,
-                    seatIndex = index + 1,
-                    label = $"Seat {index + 1}",
-                    type = ResolveSeatType(playerOption.type),
+                    playerId = seatIdentity.playerId,
+                    seatIndex = sourceSeatIndex,
+                    label = string.IsNullOrWhiteSpace(seatIdentity.label) ? $"Seat {sourceSeatIndex}" : seatIdentity.label,
+                    type = ResolveSeatType(seatIdentity.playerType),
                 };
             }
 

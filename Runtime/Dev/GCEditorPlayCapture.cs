@@ -8,6 +8,7 @@ namespace DSB.GC.Dev
         public string name;
         public GCPlayerColor color;
         public bool isBot;
+        public int sourceSeatIndex;
     }
 
     internal struct GCEditorPlaySettingsSnapshot
@@ -16,6 +17,12 @@ namespace DSB.GC.Dev
         public GCEditorPlayPlayerSettings[] playerData;
         public int numberOfPlayers;
         public bool randomizePlayerIds;
+    }
+
+    internal struct GCEditorPlayCaptureResult
+    {
+        public GCPlayOptions playOptions;
+        public GCSeatIdentity[] seatIdentities;
     }
 
     internal static class GCEditorPlayCapture
@@ -32,11 +39,17 @@ namespace DSB.GC.Dev
 
         internal static GCPlayOptions CreatePlayOptions(GCEditorPlaySettingsSnapshot snapshot)
         {
+            return CreatePlayCapture(snapshot).playOptions;
+        }
+
+        internal static GCEditorPlayCaptureResult CreatePlayCapture(GCEditorPlaySettingsSnapshot snapshot)
+        {
             GCPlayOptions options = new GCPlayOptions
             {
                 players = new GCPlayerOptions[snapshot.numberOfPlayers],
                 seed = UnityEngine.Random.Range(1, 999999),
             };
+            var seatIdentities = new GCSeatIdentity[snapshot.numberOfPlayers];
 
             var usedColors = new List<GCPlayerColor>();
 
@@ -50,16 +63,38 @@ namespace DSB.GC.Dev
 
                 usedColors.Add(player.color);
 
+                var sourceSeatIndex = ResolveSourceSeatIndex(player.sourceSeatIndex, i);
+                var playerType = player.isBot ? GCPlayerType.bot : GCPlayerType.player;
+                var playerId = snapshot.randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1;
+
                 options.players[i] = new GCPlayerOptions
                 {
-                    type = player.isBot ? GCPlayerType.bot.ToString() : GCPlayerType.player.ToString(),
-                    playerId = snapshot.randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
+                    type = playerType.ToString(),
+                    playerId = playerId,
                     name = player.name,
                     color = player.color.ToString(),
                 };
+
+                seatIdentities[i] = new GCSeatIdentity
+                {
+                    playerId = playerId,
+                    sourceSeatIndex = sourceSeatIndex,
+                    label = "Seat " + sourceSeatIndex,
+                    playerType = playerType,
+                    playerColor = player.color,
+                };
             }
 
-            return options;
+            return new GCEditorPlayCaptureResult
+            {
+                playOptions = options,
+                seatIdentities = seatIdentities,
+            };
+        }
+
+        private static int ResolveSourceSeatIndex(int sourceSeatIndex, int activePlayerIndex)
+        {
+            return sourceSeatIndex > 0 ? sourceSeatIndex : activePlayerIndex + 1;
         }
     }
 }
