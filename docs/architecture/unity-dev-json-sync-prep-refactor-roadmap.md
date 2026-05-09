@@ -55,7 +55,7 @@ Next action: Begin the PRD implementation only after explicit approval.
 | 2. Seat Identity module | Done | Runtime-safe identity module complete; replacement second review-and-patch pass complete; parent validation passed. |
 | 3. Local Project Root module | Done | Behavior-neutral resolver extraction complete; second review-and-patch pass complete; parent validation passed. |
 | 4. Editor assembly and inspector host prep | Done | Editor-only asmdef and inactive inspector host prep complete; second review-and-patch pass complete; parent validation passed. |
-| 5. Package metadata hygiene | Done | Placeholder package keywords replaced; dependency/version/release/license changes deferred. |
+| 5. Package metadata hygiene | Done | Placeholder package keywords replaced; second review-and-patch pass complete; parent validation passed; dependency/version/release/license changes deferred. |
 
 ## Refactor Sequence
 
@@ -158,7 +158,7 @@ Completion criteria:
 Task 5 implementation note, 2026-05-09: Done.
 
 - Changed paths: `package.json`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
-- Verification: `git diff --check` passed. `package.json` parsed as JSON. Version remained `0.0.1`, dependencies remained `{}`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added the editor-only asmdef and the runtime asmdef remains runtime-only. Unity 2022.3 compile/import was not run in this environment.
+- Verification: second review-and-patch pass and parent validation ran `git diff --check`, parsed `package.json` as JSON, and confirmed version remained `0.0.1`, dependencies remained `{}`, `licensesUrl` remained `https://example.com/licensing.html`, keywords are exactly `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added the editor-only asmdef and the runtime asmdef remains runtime-only. Unity 2022.3 compile/import was not run in this environment.
 - Scope remained prep-only; no JSON sync, metadata parsing, public docs, changelog, license URL, package version/dependency, release/tag, runtime asmdef, Task 4 editor asmdef, `VERSIONING_PLAN.md`, or main-repo files were changed.
 
 ## Compatibility Rules
