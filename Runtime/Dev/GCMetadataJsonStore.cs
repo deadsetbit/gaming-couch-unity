@@ -31,6 +31,11 @@ namespace DSB.GC.Dev
             return Path.Combine(projectRootResolver.ResolveProjectRootPath(), GCMetadataJsonFile.FileName);
         }
 
+        internal GCRootJsonFileStamp ReadFileStamp()
+        {
+            return GCRootJsonFileStamp.Read(ResolveFilePath());
+        }
+
         internal GCMetadataJsonReadResult Read()
         {
             return GCMetadataJsonValidation.BuildReadResult(ReadParsedFile(ResolveFilePath()));

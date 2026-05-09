@@ -31,6 +31,7 @@ internal sealed class GCDevJsonInspectorView
         EditorGUILayout.LabelField("Local Play Settings", EditorStyles.boldLabel);
         EditorGUILayout.LabelField("File", state.DevJsonPath);
         DrawMetadataSummary(state);
+        DrawStateMessages(state);
         DrawIssues(state.GetDisplayIssues());
 
         if (!state.HasDraft)
@@ -66,6 +67,25 @@ internal sealed class GCDevJsonInspectorView
 
         EditorGUILayout.LabelField("Game", metadata.gameName + " (" + metadata.gameKey + ")");
         EditorGUILayout.LabelField("Platform", metadata.platformId);
+    }
+
+    private static void DrawStateMessages(GCDevJsonInspectorState state)
+    {
+        if (state.HasConflict)
+        {
+            EditorGUILayout.HelpBox(
+                "gc.dev.json changed on disk while this draft has unsaved edits. Reload from disk or write the draft to resolve the conflict.",
+                MessageType.Warning
+            );
+        }
+
+        if (state.HasPendingPlayChange)
+        {
+            EditorGUILayout.HelpBox(
+                "JSON changed during active Play Mode. These changes apply after a Gaming Couch restart or the next Play Mode entry.",
+                MessageType.Info
+            );
+        }
     }
 
     private static void DrawEntry(GCDevJsonInspectorState state)
@@ -212,8 +232,27 @@ internal sealed class GCDevJsonInspectorView
         EditorGUILayout.Space();
         using (new EditorGUILayout.HorizontalScope())
         {
-            GUILayout.Label(state.IsDirty ? "Dirty" : "Clean", EditorStyles.miniLabel);
+            GUILayout.Label(GetStateLabel(state), EditorStyles.miniLabel);
             GUILayout.FlexibleSpace();
+
+            if (state.HasConflict)
+            {
+                if (GUILayout.Button("Reload from disk", GUILayout.Width(116)))
+                {
+                    state.Reload();
+                }
+
+                using (new EditorGUI.DisabledScope(!state.CanWriteDraft))
+                {
+                    if (GUILayout.Button("Write draft", GUILayout.Width(88)))
+                    {
+                        state.WriteDraft();
+                    }
+                }
+
+                return;
+            }
+
             using (new EditorGUI.DisabledScope(!state.CanApply))
             {
                 if (GUILayout.Button("Apply", GUILayout.Width(80)))
@@ -227,6 +266,21 @@ internal sealed class GCDevJsonInspectorView
                 state.Reload();
             }
         }
+    }
+
+    private static string GetStateLabel(GCDevJsonInspectorState state)
+    {
+        if (state.HasConflict)
+        {
+            return "Conflict";
+        }
+
+        if (state.IsDirty)
+        {
+            return state.HasPendingPlayChange ? "Dirty, pending play" : "Dirty";
+        }
+
+        return state.HasPendingPlayChange ? "Pending play" : "Clean";
     }
 
     private static void DrawIssues(GCDevJsonIssue[] issues)

@@ -33,9 +33,9 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: In progress
 
-Current task: Task 5
+Current task: Task 6
 
-Next action: Run Task 5 implementation with a GPT-5.5 xhigh subagent.
+Next action: Run Task 6 implementation with a GPT-5.5 xhigh subagent.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -43,7 +43,7 @@ Next action: Run Task 5 implementation with a GPT-5.5 xhigh subagent.
 | 2. `gc.metadata.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Metadata light-read and validation gates complete; both review passes complete; parent validation passed. |
 | 3. File-backed editor play capture | Done | GPT-5.5 xhigh subagent | File-backed editor capture complete; callback bypass patched in review pass 2; parent validation passed. |
 | 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, metadata-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
-| 5. External reload, dirty draft, conflict, and pending play state | Pending | Unassigned subagent | Adds polling, conflict actions, metadata refresh, and play-mode pending-change status. |
+| 5. External reload, dirty draft, conflict, and pending play state | Done | GPT-5.5 xhigh subagent | Polling, conflict actions, metadata refresh, and play-mode pending-change status complete; parent validation passed. |
 | 6. Play Mode and Gaming Couch restart gates | Pending | Unassigned subagent | Auto-applies valid drafts before capture and blocks invalid/conflicted Play or restart. |
 | 7. Documentation, package release metadata, and final validation | Pending | Unassigned subagent | Updates docs, dependency notes, changelog, package version, and manual validation record. |
 
@@ -779,6 +779,114 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 6 if complete.
+
+### Task 5 Review Record
+
+Status: Done
+
+Review pass 1 findings:
+
+- No blocking code defects found.
+- The Task 5 record was prematurely marked done and advanced the plan to Task 6 before review pass 2 and parent validation. The record now keeps Task 5 in review.
+
+Review pass 1 patches:
+
+- Updated this task record and top-level status to keep Task 5 in review until pass 2 and parent validation complete.
+
+Changed paths:
+
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GCDevJsonInspectorView.cs`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- Clean external `gc.dev.json` edit inspection: `GamingCouchEditor` polls through `EditorApplication.update`, `GCDevJsonInspectorState.PollForExternalChanges()` detects root-file stamp changes, and edit-mode clean dev-file changes call `ReloadFromDisk(false)` to replace the inspector draft from disk.
+- Dirty external `gc.dev.json` edit inspection: when `IsDirty` or an existing conflict is present, dev-file stamp changes call `EnterConflict()` without calling `ReloadFromDisk`, preserving inspector draft values.
+- `Reload from disk` inspection: the conflict button calls `GCDevJsonInspectorState.Reload()`, which discards the draft, clears conflict state, reads current `gc.metadata.json`, reads current `gc.dev.json`, rebuilds the clean draft, and refreshes file stamps.
+- `Write draft` inspection: the conflict button calls `GCDevJsonInspectorState.WriteDraft()`, which validates the current draft and writes through `GCDevJsonStore.Write()`, preserving unrelated top-level `gc.dev.json` fields through the existing `JObject` writer.
+- Metadata refresh inspection: metadata-file stamp changes call `RefreshMetadata()`, re-read `gc.metadata.json`, keep any existing draft in memory, and re-run draft validation so metadata-derived labels and errors update without discarding dirty edits.
+- Active Play Mode pending inspection: play-mode file changes set `HasPendingPlayChange`; clean `gc.dev.json` changes during active Play Mode are deferred as unloaded disk changes until edit mode returns, dirty/pending edits enter conflict before writing, and no play capture, auto-apply, or blocking code was added.
+- Polling implementation inspection: root file stamps use path, existence, `LastWriteTimeUtc`, byte length, and SHA-256 content hash; no `FileSystemWatcher` code was added.
+- `git status --short`: only Task 5 owned files were modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`, `/Applications/Unity/Hub/Editor` only listed `6000.2.7f2`, and this package repo has no Unity project `ProjectSettings` or `Packages/manifest.json` to import directly in this shell.
+
+Review pass 1 validation:
+
+- `git diff --check`: passed.
+- Polling lifecycle inspection: `GamingCouchEditor.OnEnable()` removes then adds `EditorApplication.update` and `EditorApplication.playModeStateChanged` handlers for the inspector instance; `OnDisable()` and destroyed-target handling both unsubscribe through `DisposeDevJsonState()`.
+- File stamp inspection: root JSON polling uses `GCRootJsonFileStamp` with path, existence, `LastWriteTimeUtc`, byte length, and SHA-256 content hash. No `FileSystemWatcher` references are present.
+- Clean edit-mode `gc.dev.json` inspection: when the dev-file stamp changes with no dirty draft or conflict, `PollForExternalChanges()` calls `ReloadFromDisk(false)`, rebuilding the inspector draft from disk and refreshing file stamps.
+- Dirty edit-mode `gc.dev.json` inspection: when the dev-file stamp changes with `IsDirty` or an existing conflict, `EnterConflict()` is called without reloading, preserving the draft values.
+- Conflict action inspection: `Reload from disk` calls `Reload()` and discards the draft by reading current `gc.metadata.json` and `gc.dev.json`; `Write draft` calls `WriteDraft()`, validates `Draft.ToFile()`, and writes through `GCDevJsonStore.Write()`.
+- Preserving writer inspection: the only Task 5 write path still delegates to `GCDevJsonStore.Write()`, which loads the current file as a `JObject`, replaces canonical fields, and writes indented JSON plus a trailing newline.
+- Metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep an existing draft in memory, and re-run validation so dirty drafts stay dirty while labels and metadata-derived errors refresh.
+- Active Play Mode inspection: Play Mode dev-file changes set pending state and do not call `ReloadFromDisk()` for clean changes until edit mode returns; no Task 6 auto-apply, Play Mode entry blocking, or restart-gate code was added.
+- Task 6 scope inspection: `Runtime/GamingCouch.cs` and `Runtime/Dev/GCEditorPlayCapture.cs` have no Task 5 diff; scoped search for Play Mode entry blocking, restart gates, auto-apply, and cancellation terms in Task 5 files matched only the pending-state user-facing message.
+- Static write/path inspection: `rg -n "FileSystemWatcher|File.WriteAllText|WriteDraft|Apply\\(|EnterConflict|ReloadFromDisk|HandlePlayModeStateChanged" Editor Runtime/Dev` matched only the expected polling, conflict, preserving write, and existing store-write paths.
+- `git status --short`: only Task 5 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Review pass 1 skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`, `/Applications/Unity/Hub/Editor` only listed `6000.2.7f2`, and this package repo has no Unity project `ProjectSettings` or `Packages/manifest.json` to import directly in this shell.
+
+Review pass 2 findings:
+
+- No concrete code defects found.
+- Own write inspection: `Apply()` and conflict `WriteDraft()` both write through `WriteDraftToDisk()`, which delegates to the preserving `GCDevJsonStore.Write()` path and then calls `ReloadFromDisk(...)`; that reload clears conflict state, rebuilds clean data from current disk, and refreshes file stamps so the next poll does not treat the just-written file as an external edit.
+- Dirty metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep an existing draft in memory, and re-run `ValidateDraft()`, so dirty drafts remain dirty while new metadata-derived validation errors can appear.
+- Clean edit-mode dev-file inspection: clean `gc.dev.json` stamp changes outside Play Mode call `ReloadFromDisk(false)` and replace the inspector draft with current disk state.
+- Play-mode pending inspection: active Play Mode dev-file changes set pending state and either defer clean disk reloads through `hasUnloadedPlayDevJsonChange` or enter conflict for dirty drafts; no active setup/play capture objects are mutated by the inspector poll path.
+- Conflict action inspection: `Reload from disk` calls `Reload()` and clears conflict through `ReloadFromDisk(...)`; `Write draft` validates, overwrites current disk through `GCDevJsonStore.Write()`, then reloads and clears conflict after a successful write.
+- Polling lifecycle inspection: `GamingCouchEditor.OnEnable()` removes then adds update/play-mode callbacks, and both `OnDisable()` and destroyed-target handling unsubscribe through `DisposeDevJsonState()`, avoiding duplicate callbacks for the same inspector instance.
+- Task 6 scope inspection: no Play Mode entry blocking, auto-apply, Gaming Couch restart gate, or cancellation path was added; Task 5 play-mode handling is limited to pending-state UI/poll bookkeeping.
+
+Review pass 2 patches:
+
+- No code patches required.
+- Updated this Task 5 review record with pass 2 findings and validation while keeping Task 5 `In review` for parent validation.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- `rg -n "FileSystemWatcher" Editor/GCDevJsonInspectorState.cs Editor/GCDevJsonInspectorView.cs Editor/GamingCouchEditor.cs Runtime/Dev/GCDevJsonStore.cs Runtime/Dev/GCMetadataJsonStore.cs`: no matches.
+- Expected write path inspection: `rg -n "File\\.WriteAllText|devStore\\.Write|WriteDraftToDisk|WriteDraft\\(|Apply\\(" Editor/GCDevJsonInspectorState.cs Editor/GCDevJsonInspectorView.cs Runtime/Dev/GCDevJsonStore.cs` matched only the inspector Apply/WriteDraft calls, `WriteDraftToDisk()`, `devStore.Write(...)`, and the preserving store's existing `File.WriteAllText(...)`.
+- Task 6 scope inspection: scoped search for Play Mode blocking, auto-apply, restart gates, cancellation, and play-mode entry terms in Task 5 files matched only `playModeStateChanged`, `EnteredPlayMode` bookkeeping, and the pending-state user-facing message.
+- `git diff -- Runtime/GamingCouch.cs Runtime/Dev/GCEditorPlayCapture.cs`: no output.
+- Compile/API hazard inspection: `SHA256.Create()` is used inside the file-stamp read try/catch and serialized with Base64 output, `FileInfo.LastWriteTimeUtc` and file length are paired with a content hash, `EditorApplication.timeSinceStartup` is used as a double poll throttle, and IMGUI controls remain inside normal `BeginChangeCheck`/`EndChangeCheck` and disabled-scope patterns.
+- `git diff --name-only`: only Task 5 owned files and this task plan are modified.
+- `git status --short`: only Task 5 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Review pass 2 skipped validation:
+
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`, `/Applications/Unity/Hub/Editor` listed only `6000.2.7f2`, `ProjectSettings/` is absent, and `Packages/manifest.json` is absent, so this package repo is not directly importable as a Unity project from this shell.
+
+Notes:
+
+- Task 6 auto-apply and Play Mode/Gaming Couch restart blocking remain unimplemented by design.
+- `Editor/GamingCouchInspectorHost.cs` was inspected as an owned Task 5 file but did not require changes.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `rg -n "FileSystemWatcher" <Task 5 files>`: no matches.
+- Write-path inspection: inspector `Apply` and `Write draft` both flow through `WriteDraftToDisk()`, `GCDevJsonStore.Write(...)`, and the existing preserving `File.WriteAllText(...)` path only.
+- Clean edit-mode external dev-file inspection: stamp changes with no dirty draft or conflict call `ReloadFromDisk(false)` and rebuild the inspector draft from current disk state.
+- Dirty external dev-file inspection: stamp changes with `IsDirty` or conflict call `EnterConflict()` without reloading, preserving draft values.
+- Conflict action inspection: `Reload from disk` calls `Reload()` and clears conflict through `ReloadFromDisk(...)`; `Write draft` validates then overwrites current disk through `GCDevJsonStore.Write()` and reloads after successful write.
+- Metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep any existing draft, and re-run validation so metadata-derived labels and errors update without discarding dirty edits.
+- Active Play Mode inspection: file changes set pending state and defer clean disk reloads until edit mode returns; Task 5 files do not call play capture, auto-apply, block Play Mode entry, or add restart gates.
+- Task 6 scope inspection: `git diff -- Runtime/GamingCouch.cs Runtime/Dev/GCEditorPlayCapture.cs` produced no diff.
+- `git diff --name-only`: only Task 5 owned files and this task plan are modified.
+- `git status --short`: only Task 5 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+- Unity 2022.3 compile/import skipped because `which Unity` returned `Unity not found`, `/Applications/Unity/Hub/Editor` listed only `6000.2.7f2`, and this package repo has no `ProjectSettings/` or `Packages/manifest.json`.
 
 ## Task 6: Play Mode And Gaming Couch Restart Gates
 
