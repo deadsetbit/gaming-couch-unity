@@ -1,3 +1,6 @@
 {
-	"name": "GamingCouch"
+    "name": "GamingCouch",
+    "references": [
+        "Unity.Newtonsoft.Json"
+    ]
 }
