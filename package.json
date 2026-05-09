@@ -1,6 +1,6 @@
 {
           "name": "com.dsb.gamingcouch",
-          "version": "0.0.1",
+          "version": "0.1.0-alpha.2",
           "displayName": "Gaming Couch",
           "description": "Integrate Unity game with Gaming Couch platform.",
           "unity": "2022.3",

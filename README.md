@@ -13,6 +13,25 @@ Follow the integration steps below to get started.
 - From _Build Settings_, switch the platform to "WebGL"
 - fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
 
+# Configure local editor play settings
+
+Unity editor play settings are read from the root `gc.dev.json` file in your Unity project. The package uses this file as the source of truth for local play entry, seed, and the eight-seat player roster, matching the Gaming Couch DevApp local project format.
+
+The root `gc.dev.json` file must already exist. Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.metadata.json`; create or update those files through DevApp before using editor play. The `GamingCouch` inspector edits only the canonical `gc.dev.json` fields:
+
+- `devVersion`
+- `entryKey`
+- `seed`
+- `seats`
+
+Inspector writes preserve unrelated top-level `gc.dev.json` fields. Local play settings are no longer stored in scene-serialized editor fields, so changing entry, seed, or seats should not dirty the scene.
+
+When `gc.metadata.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When metadata is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must fit the selected entry's player limits. Enabled bot seats on an entry without bot support are warning-only.
+
+Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a valid, non-conflicted draft before capture. Invalid or conflicted drafts block Play Mode or restart until you apply, revert, reload from disk, or fix validation errors. Changes made to root JSON files during active Play Mode apply after a Gaming Couch restart or the next Play Mode entry.
+
+The package declares `com.unity.nuget.newtonsoft-json` for editor-only JSON sync and unknown-field-preserving `gc.dev.json` writes. Runtime and WebGL play behavior do not depend on this editor sync path.
+
 # Basic integration
 
 ## 1) Add GamingCouch game object

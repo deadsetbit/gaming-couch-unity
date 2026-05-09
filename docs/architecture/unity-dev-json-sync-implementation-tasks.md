@@ -1,6 +1,6 @@
 # Unity `gc.dev.json` Sync Implementation Tasks
 
-Status: In progress
+Status: Done
 Last updated: 2026-05-09
 Owner: Gaming Couch Unity package team
 
@@ -31,11 +31,11 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: In progress
+Overall status: Done
 
-Current task: Task 7
+Current task: None
 
-Next action: Run Task 7 documentation, release metadata, and final validation with a GPT-5.5 xhigh subagent.
+Next action: Release/tag follow-up only if explicitly requested.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -45,7 +45,7 @@ Next action: Run Task 7 documentation, release metadata, and final validation wi
 | 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, metadata-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
 | 5. External reload, dirty draft, conflict, and pending play state | Done | GPT-5.5 xhigh subagent | Polling, conflict actions, metadata refresh, and play-mode pending-change status complete; parent validation passed. |
 | 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
-| 7. Documentation, package release metadata, and final validation | Pending | Unassigned subagent | Updates docs, dependency notes, changelog, package version, and manual validation record. |
+| 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
 
 ## Blocker Log
 
@@ -1043,6 +1043,57 @@ After implementation and both review-and-patch passes:
 - Add validation results and skipped validation gaps.
 - Set current task to None if complete.
 - Set next action to release/tag follow-up only if user explicitly asks for release publishing.
+
+### Task 7 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `README.md`
+- `Documentation~/README.md`
+- `CHANGELOG.md`
+- `package.json`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Review pass 1 inspected the existing Task 7 docs/package diff and patched this task record to keep Task 7 in review until pass 2 and parent validation complete.
+- Review pass 2 inspected the current Task 7 docs/package diff and found no concrete docs, changelog, or package metadata defects requiring product-file changes; Task 7 remains `In review` for parent validation.
+- `git diff --check`: passed.
+- Pass 2 `git diff --check`: passed.
+- `node -e "const p=require('./package.json'); if (p.version !== '0.1.0-alpha.2') throw new Error('version '+p.version); const d=p.dependencies && p.dependencies['com.unity.nuget.newtonsoft-json']; if (!d) throw new Error('missing newtonsoft dependency'); console.log('version='+p.version); console.log('com.unity.nuget.newtonsoft-json='+d);"`: passed with `version=0.1.0-alpha.2` and `com.unity.nuget.newtonsoft-json=3.2.1`.
+- Pass 2 package metadata check: `node -e "const fs=require('fs'); const text=fs.readFileSync('package.json','utf8'); const p=JSON.parse(text); if (p.version !== '0.1.0-alpha.2') throw new Error('version '+p.version); const deps=p.dependencies || {}; const names=Object.keys(deps).filter(k=>k==='com.unity.nuget.newtonsoft-json'); if (names.length !== 1) throw new Error('dependency count '+names.length); if (deps['com.unity.nuget.newtonsoft-json'] !== '3.2.1') throw new Error('newtonsoft '+deps['com.unity.nuget.newtonsoft-json']); console.log('package.json parses'); console.log('version='+p.version); console.log('com.unity.nuget.newtonsoft-json='+deps['com.unity.nuget.newtonsoft-json']);"` passed with `package.json parses`, `version=0.1.0-alpha.2`, and `com.unity.nuget.newtonsoft-json=3.2.1`.
+- Documentation sync-behavior check: `rg -n "gc\\.dev\\.json|gc\\.metadata\\.json|newtonsoft|sync|0\\.1\\.0-alpha\\.2" README.md Documentation~/README.md CHANGELOG.md` confirmed the root `gc.dev.json` sync behavior, metadata warning/gate behavior, editor-only Newtonsoft dependency, and changelog release entry are documented.
+- Pass 2 documentation sync-behavior check: `rg -n "gc\\.dev\\.json|gc\\.metadata\\.json|bootstrap|repair|metadata|Play Mode|restart|newtonsoft|Newtonsoft|sync|0\\.1\\.0-alpha\\.2|validated|manual" README.md Documentation~/README.md CHANGELOG.md` confirmed the required root `gc.dev.json`, no bootstrap/repair, metadata warning/gate behavior, Play Mode/restart gates, editor-only Newtonsoft dependency, and changelog release entry remain documented. `rg -n "validated|verified|Unity 2022\\.3|manual Unity|manual scenarios|scenario [0-9]|scenarios [0-9]" README.md Documentation~/README.md CHANGELOG.md` returned no matches, so the public docs/changelog do not overclaim manual Unity validation.
+- `git diff --name-only`: only Task 7 owned tracked files are modified.
+- Pass 2 changed-file check: `git diff --name-only` showed only `CHANGELOG.md`, `Documentation~/README.md`, `README.md`, `docs/architecture/unity-dev-json-sync-implementation-tasks.md`, and `package.json`.
+- Pass 2 `.meta` diff check: `git diff --name-only | rg '\\.meta$'` returned no matches, confirming no tracked `.meta` files are modified.
+- Protected-file diff check: `git diff --name-only -- VERSIONING_PLAN.md VERSIONING_PLAN.md.meta docs.meta docs/architecture.meta docs/architecture/unity-dev-json-sync-prep-execution-tasks.md.meta docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md.meta` produced no output. Their existing untracked status remains unchanged from the initial worktree status.
+- Pass 2 protected-file status check: `git status --short -- VERSIONING_PLAN.md VERSIONING_PLAN.md.meta docs.meta docs/architecture.meta docs/architecture/unity-dev-json-sync-prep-execution-tasks.md.meta docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md.meta` still shows those protected files only as pre-existing untracked files.
+- Main repo status check: `git -C /Users/anttil/dev/dsb/gamingcouch/client status --short` shows that the main repo is already dirty with unrelated modified/untracked files, including `docs/architecture/dev-flow-todo.md`, several docs, and game-local JSON files. Task 7 performed no writes outside `/Users/anttil/dev/dsb/gaming-couch-unity`.
+- Pass 2 main-repo status check: `git -C /Users/anttil/dev/dsb/gamingcouch/client status --short` still shows only unrelated pre-existing main-repo changes; no main-repo files were edited by Task 7 pass 2.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `node -e "const p=require('./package.json'); if (p.version !== '0.1.0-alpha.2') throw new Error('version '+p.version); const d=p.dependencies && p.dependencies['com.unity.nuget.newtonsoft-json']; if (d !== '3.2.1') throw new Error('newtonsoft '+d); console.log('ok version='+p.version+' newtonsoft='+d);"`: passed with `ok version=0.1.0-alpha.2 newtonsoft=3.2.1`.
+- Documentation grep confirmed `README.md`, `Documentation~/README.md`, and `CHANGELOG.md` mention root `gc.dev.json`, `gc.metadata.json`, editor-only Newtonsoft JSON sync, no bootstrap/repair behavior, Play Mode/restart gates, and release version `0.1.0-alpha.2`.
+- `git diff --name-only`: only Task 7 owned tracked files are modified.
+- Protected-file diff check produced no output; the protected files remain untouched.
+- Main repo status check still shows only unrelated pre-existing main-repo changes; Task 7 made no writes outside `/Users/anttil/dev/dsb/gaming-couch-unity`.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import and manual Unity scenarios were not runnable in this shell: `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings` directory or `Packages/manifest.json` for a safe package-local import run.
+
+Final manual scenario status:
+
+- Manual Unity 2022.3 scenarios 1-23 remain not run in this shell because Unity 2022.3 is unavailable. This includes inspector read/write, unknown-field preservation, external reload/conflict actions, metadata refresh/gates, missing/invalid `gc.dev.json` behavior, UPM dependency resolution, Play Mode/restart gates, active Play Mode deferral, and DevApp readback after Unity writes.
+
+Non-blocking follow-up:
+
+- DevApp package target bump to `unity-0.1.0-alpha.2` and DevApp Unity seed-range alignment remain separate main-repo follow-ups. No main-repo files were edited.
 
 ## Handoff Protocol
 
