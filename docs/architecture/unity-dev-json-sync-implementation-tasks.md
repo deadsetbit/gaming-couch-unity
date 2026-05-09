@@ -33,16 +33,16 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: In progress
 
-Current task: Task 4
+Current task: Task 5
 
-Next action: Run Task 4 implementation with a GPT-5.5 xhigh subagent.
+Next action: Run Task 5 implementation with a GPT-5.5 xhigh subagent.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor JSON dependency and `gc.dev.json` store | Done | GPT-5.5 xhigh subagent | Editor-only JSON dependency and preserving `gc.dev.json` store complete; second review-and-patch pass complete; parent validation passed. |
 | 2. `gc.metadata.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Metadata light-read and validation gates complete; both review passes complete; parent validation passed. |
 | 3. File-backed editor play capture | Done | GPT-5.5 xhigh subagent | File-backed editor capture complete; callback bypass patched in review pass 2; parent validation passed. |
-| 4. Active custom inspector and Apply/Revert draft | Pending | Unassigned subagent | Activates inspector UI for file-backed local play settings and hides obsolete serialized settings. |
+| 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, metadata-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
 | 5. External reload, dirty draft, conflict, and pending play state | Pending | Unassigned subagent | Adds polling, conflict actions, metadata refresh, and play-mode pending-change status. |
 | 6. Play Mode and Gaming Couch restart gates | Pending | Unassigned subagent | Auto-applies valid drafts before capture and blocks invalid/conflicted Play or restart. |
 | 7. Documentation, package release metadata, and final validation | Pending | Unassigned subagent | Updates docs, dependency notes, changelog, package version, and manual validation record. |
@@ -654,6 +654,80 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 5 if complete.
+
+### Task 4 Review Record
+
+Status: Done
+
+Review pass 1 findings:
+
+- No code defects found.
+- Plan status was corrected to keep Task 4 in review until pass 2 and parent validation complete.
+
+Review pass 2 findings:
+
+- No code defects found.
+- Task 4 remains in review for parent validation.
+
+Changed paths:
+
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GamingCouchEditor.cs.meta`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GCDevJsonInspectorState.cs.meta`
+- `Editor/GCDevJsonInspectorView.cs`
+- `Editor/GCDevJsonInspectorView.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- `rg -n "[ \t]+$" <new Task 4 editor files and metas>`: no trailing whitespace matches.
+- Active inspector inspection: `Editor/GamingCouchEditor.cs` registers `[CustomEditor(typeof(GamingCouch))]` and implements `OnInspectorGUI`.
+- Serialized field inspection: `GamingCouchEditor.OnInspectorGUI` calls `GamingCouchInspectorHost.DrawSerializedFields(serializedObject)` before drawing file-backed local play settings, so normal component fields remain visible.
+- Obsolete field inspection: `GamingCouchInspectorHost` still excludes `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`.
+- Apply inspection: editor Apply calls only `GCDevJsonStore.Write(Draft.ToFile(), metadataReadResult)`; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
+- Revert inspection: the Revert button calls `GCDevJsonInspectorState.Reload()`, which re-reads project-root `gc.metadata.json` and `gc.dev.json` from disk and rebuilds the clean draft.
+- Missing/invalid `gc.dev.json` inspection: when `GCDevJsonStore.Read()` cannot produce data, the inspector has no draft, displays structured issues, and `CanApply` is false.
+- Missing/invalid metadata inspection: invalid metadata makes the view use raw `Entry Key` editing; draft validation copies metadata warnings, but `CanApply` follows `GCDevJsonValidationResult.IsValid`, which blocks only errors.
+- Valid metadata gate inspection: draft validation calls `GCDevJsonValidation.ValidateData(Draft.ToFile(), DevJsonPath, metadataReadResult)`, so valid metadata platform, entry existence, and enabled-seat count gates disable Apply through validation errors.
+- Local play setting serialization inspection: file-backed controls mutate only the editor draft after `serializedObject.ApplyModifiedProperties()` has already run for normal component fields; no obsolete serialized editor play settings are written by the inspector.
+- Task 5 scope inspection: no `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, external timestamp polling, conflict state, or pending-play hooks are present in the Task 4 editor files.
+- `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+- Pass 2 `git diff --check`: passed.
+- Pass 2 trailing whitespace inspection: `rg -n "[ \t]+$" <Task 4 editor files, metas, and task record>` returned no matches.
+- Pass 2 editor assembly inspection: runtime assembly internals are exposed to `GamingCouch.Editor` through `InternalsVisibleTo("GamingCouch.Editor")`, and `Editor/dsb.gamingcouch.editor.asmdef` names the editor assembly `GamingCouch.Editor`.
+- Pass 2 `.meta` inspection: new Task 4 script `.meta` files use `fileFormatVersion: 2`, `MonoImporter`, and unique 32-character hex GUIDs not duplicated elsewhere in repo `.meta` files.
+- Pass 2 IMGUI inspection: Task 4 editor UI uses Unity 2022.3-safe IMGUI calls (`EditorGUILayout.Popup`, `EditorGUILayout.IntField`, `EditorGUILayout.GetControlRect`, `EditorGUI.DrawRect`, `EditorGUI.DisabledScope`, and `EditorGUILayout.HorizontalScope`) without unavailable overloads.
+- Pass 2 draft read-state inspection: `GCDevJsonDraft.FromFile` is called only when `GCDevJsonStore.Read()` produced non-null parsed data; invalid read states leave the inspector without a draft and cannot throw through draft construction.
+- Pass 2 apply/revert inspection: Apply is disabled without a dirty valid draft, delegates to `GCDevJsonStore.Write`, and the store rejects missing `gc.dev.json`; Revert calls `Reload()` to re-read both root JSON files and rebuild the clean draft.
+- Pass 2 metadata behavior inspection: missing or invalid metadata remains warning-only and uses raw entry-key editing, while valid metadata still gates Apply through platform, entry existence, and enabled-seat count validation errors.
+- Pass 2 Task 5 scope inspection: no polling, conflict state, pending-play state, `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, `LastWriteTime`, or timestamp tracking exists in the Task 4 editor files.
+- Pass 2 `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `command -v Unity` and `command -v UnityHub` both returned not found in this shell.
+- Pass 2 Unity compile/import skipped because no Unity 2022.3 editor is installed under `/Applications/Unity/Hub/Editor`; only Unity `6000.2.7f2` was found, and this package repo has no Unity project `ProjectSettings` or `Assets` directory to import without creating unrelated project files.
+
+Decisions:
+
+- No `Runtime/Dev/GCDevJsonStore.cs` or `Runtime/Dev/GCDevJsonValidation.cs` helper changes were needed.
+- `Runtime/Dev/GCDevJsonFile.cs` and `Runtime/Dev/GCMetadataJsonFile.cs` were left unchanged because existing internal models exposed enough data for safe editor draft cloning and display.
+- External polling, conflict state, metadata refresh on disk changes, and pending play state were left for Task 5.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `rg -n "[ \t]+$" <Task 4 editor files, metas, and task record>`: no trailing whitespace matches.
+- Write-path inspection: Task 4 editor code calls `GCDevJsonStore.Write(Draft.ToFile(), metadataReadResult)` only; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
+- Revert inspection: `GCDevJsonInspectorState.Reload()` re-reads root `gc.metadata.json` and `gc.dev.json` and rebuilds the clean draft from disk.
+- Obsolete serialized field inspection: `GamingCouchEditor` draws normal fields through `GamingCouchInspectorHost`, which still excludes `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`; local play controls mutate only the in-memory draft.
+- Metadata behavior inspection: missing or invalid metadata uses raw entry-key editing and warning-only validation, while valid metadata gates Apply through existing platform, entry existence, and enabled-seat-count errors.
+- Task 5 scope inspection: no polling, conflict state, pending-play state, `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, `LastWriteTime`, or timestamp tracking exists in the Task 4 editor files.
+- `.meta` inspection: new Task 4 script GUIDs are present once each in the repository.
+- `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
+- Unity 2022.3 compile/import skipped because no Unity 2022.3 editor is installed under `/Applications/Unity/Hub/Editor`; only Unity `6000.2.7f2` is present, and this package repo has no Unity project `ProjectSettings` or `Assets` directory to import without creating unrelated files.
 
 ## Task 5: External Reload, Dirty Draft, Conflict, And Pending Play State
 
