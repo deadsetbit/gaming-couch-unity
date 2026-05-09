@@ -33,9 +33,9 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: In progress
 
-Current task: Task 6
+Current task: Task 7
 
-Next action: Run Task 6 implementation with a GPT-5.5 xhigh subagent.
+Next action: Run Task 7 documentation, release metadata, and final validation with a GPT-5.5 xhigh subagent.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -44,7 +44,7 @@ Next action: Run Task 6 implementation with a GPT-5.5 xhigh subagent.
 | 3. File-backed editor play capture | Done | GPT-5.5 xhigh subagent | File-backed editor capture complete; callback bypass patched in review pass 2; parent validation passed. |
 | 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, metadata-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
 | 5. External reload, dirty draft, conflict, and pending play state | Done | GPT-5.5 xhigh subagent | Polling, conflict actions, metadata refresh, and play-mode pending-change status complete; parent validation passed. |
-| 6. Play Mode and Gaming Couch restart gates | Pending | Unassigned subagent | Auto-applies valid drafts before capture and blocks invalid/conflicted Play or restart. |
+| 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
 | 7. Documentation, package release metadata, and final validation | Pending | Unassigned subagent | Updates docs, dependency notes, changelog, package version, and manual validation record. |
 
 ## Blocker Log
@@ -939,6 +939,60 @@ After implementation and both review-and-patch passes:
 - Add changed paths.
 - Add validation results and skipped validation gaps.
 - Set current task to Task 7 if complete.
+
+### Task 6 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Runtime/GamingCouch.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs`
+- `Runtime/Dev/GCDevJsonValidation.cs`
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GCDevJsonInspectorState.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Review-and-patch pass 1: no source defects patched; task status record corrected to keep Task 6 in review until pass 2 and parent validation.
+- Review-and-patch pass 2: patched multi-inspector preflight ordering so all registered inspectors validate before any dirty draft is auto-applied, and Play Mode/restart is blocked when multiple inspectors have unsaved drafts; also stopped `EnteredPlayMode` from advancing JSON file stamps after capture so post-capture changes remain detectable as pending play changes.
+- `git diff --check`: passed.
+- Play Mode entry auto-apply inspection: `GCDevJsonEditorPlayModeGate` runs on `PlayModeStateChange.ExitingEditMode`, registered inspector states call `PrepareForPlayBoundary(...)`, and valid non-conflicted dirty drafts write through the existing preserving `GCDevJsonStore.Write()` path before root validation.
+- Play Mode entry blocking inspection: conflicted inspector drafts return a failed preflight before Play Mode entry, invalid dirty drafts return draft validation failures, and root `gc.dev.json` read/metadata gate failures cancel entry via `EditorApplication.isPlaying = false`.
+- Multiple-inspector determinism inspection: preflight snapshots registered states, polls and validates each with `ValidateForPlayBoundary(...)` before writing, permits only a single dirty inspector draft to auto-apply, and fails deterministically before disk mutation when multiple inspectors have unsaved drafts.
+- Setup/play shared capture inspection: `GamingCouch` still captures once into `editorPlayCapture` at `Awake`, and editor setup/play callbacks continue to reuse the cached setup/play options and seat identities for the same editor run.
+- Active Play Mode mutation inspection: inspector polling still records pending/unloaded play changes without recapturing or mutating `editorPlayCapture`, `setupOptions`, `playOptions`, players, seed, or game mode during active Play Mode.
+- Capture notification inspection: `NotifyCaptureSucceeded()` reloads inspector state only when it is clean and non-conflicted, preserves dirty/conflicted drafts by updating stamps only, and `EnteredPlayMode` no longer masks a JSON edit that lands after capture notification.
+- Gaming Couch restart auto-apply and recapture inspection: restart paths call the editor preflight bridge before resetting/reloading, valid dirty drafts are written first, public `Restart()` recaptures before calling `Start()`, and scene-reload restart relies on the new `Awake` capture before setup/play callbacks run.
+- Gaming Couch restart blocking inspection: restart preflight returns without clearing state, reloading the scene, or calling setup/play when the active draft is conflicted, invalid, or root `gc.dev.json` fails read/metadata validation.
+- Logging inspection: blocked Play Mode entry, blocked restart, missing/invalid `gc.dev.json`, and valid metadata gate failures log boundary-specific errors plus formatted issue code/path/field details.
+- Editor-only guard and assembly inspection: Task 6 runtime-dev preflight/capture/formatter types are guarded by `#if UNITY_EDITOR`, `Runtime/GamingCouch.cs` calls them only inside `#if UNITY_EDITOR`, `Runtime/dsb.gamingcouch.runtime.asmdef` has no editor assembly reference, and `Editor/dsb.gamingcouch.editor.asmdef` references the runtime assembly.
+- Production/WebGL inspection: new preflight and capture-notification calls are guarded by `#if UNITY_EDITOR`; non-editor and `UNITY_WEBGL && !UNITY_EDITOR` platform callback behavior remains on existing paths.
+- DTO/package scope inspection: `git diff -- package.json Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs Runtime/GCPlayerOptions.cs` produced no output.
+- `git status --short`: Task 6 owned files are modified; pre-existing unrelated untracked files from the blocker log remain untouched.
+
+Skipped validation:
+
+- Unity 2022.3 compile/import skipped because `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` only contains `6000.2.7f2`, and this package repo has no `ProjectSettings` or `Packages/manifest.json` for a safe package-local import run.
+
+Decisions:
+
+- No new helper file was added. The runtime/editor bridge lives in existing `Runtime/Dev/GCEditorPlayCapture.cs`, while editor Play Mode subscription/inspector-state coordination lives in existing `Editor/GamingCouchEditor.cs`.
+- The runtime assembly does not reference editor assembly types. Runtime restart code calls an editor-only runtime-dev callback bridge, and the editor assembly registers the inspector-state preflight handler through `InternalsVisibleTo("GamingCouch.Editor")`.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- DTO/package/asmdef inspection: `git diff -- package.json Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs Runtime/GCPlayerOptions.cs Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef` produced no output.
+- Runtime editor-API inspection: scoped search for `UnityEditor`, `EditorApplication`, `PlayModeStateChange`, `InitializeOnLoad`, `EditorGUI`, and `EditorGUILayout` under `Runtime/` produced no matches outside files already guarded by `#if UNITY_EDITOR`.
+- Runtime/editor assembly boundary inspection: `Runtime/GamingCouch.cs` calls preflight and capture-notification APIs only inside `#if UNITY_EDITOR`; editor code registers handlers through `GCEditorPlayPreflight`, so the runtime assembly still has no editor assembly dependency.
+- Play Mode entry gate inspection: `GCDevJsonEditorPlayModeGate` runs at `ExitingEditMode`, validates all registered inspectors before any write, auto-applies at most one valid dirty draft, blocks conflicted/invalid/multiple dirty drafts, validates root `gc.dev.json`, and cancels entry with `EditorApplication.isPlaying = false` on failure.
+- Capture timing inspection: `GamingCouch` captures `editorPlayCapture` at `Awake`, editor setup/play callbacks reuse that same capture during the editor run, and `NotifyCaptureSucceeded()` clears pending inspector state without masking later post-capture file changes.
+- Restart gate inspection: public `Restart()` and `_HandleGamePlayModeRestart()` both run restart preflight before clearing state or reloading; successful public restart recaptures before `Start()`, while scene-reload restart relies on the next `Awake` capture.
+- Production/WebGL inspection: non-editor and `UNITY_WEBGL && !UNITY_EDITOR` platform callback paths are unchanged.
+- `git status --short`: only Task 6 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
+- Unity 2022.3 compile/import skipped because `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` only contains `6000.2.7f2`, and this package repo has no `ProjectSettings` or `Packages/manifest.json` for a safe package-local import run.
 
 ## Task 7: Documentation, Package Release Metadata, And Final Validation
 

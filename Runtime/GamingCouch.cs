@@ -798,6 +798,10 @@ namespace DSB.GC
             editorPlayCapture = GCEditorPlayCapture.Capture();
             LogEditorPlayCaptureIssues(editorPlayCapture);
             setupOptions = editorPlayCapture.success ? editorPlayCapture.setupOptions : null;
+            if (editorPlayCapture.success)
+            {
+                GCEditorPlayPreflight.NotifyCaptureSucceeded();
+            }
         }
 
         private bool TryGetValidEditorPlayCapture(out GCEditorPlayCaptureResult playCapture)
@@ -812,10 +816,32 @@ namespace DSB.GC
             return false;
         }
 
+        private bool TryRunEditorRestartPreflight()
+        {
+            var result = GCEditorPlayPreflight.Run(GCEditorPlayPreflightContext.GamingCouchRestart);
+            if (result.success)
+            {
+                return true;
+            }
+
+            Debug.LogError("[GamingCouch] " + result.message);
+            LogDevJsonIssues(result.validation);
+            return false;
+        }
+
         private static void LogEditorPlayCaptureIssues(GCEditorPlayCaptureResult capture)
         {
-            var loggedIssue = false;
-            var issues = capture.validation != null ? capture.validation.issues : null;
+            LogDevJsonIssues(capture.validation);
+
+            if (!capture.success && !HasAnyIssues(capture.validation))
+            {
+                Debug.LogError("[GamingCouch] Editor play capture failed. Fix root gc.dev.json and re-enter Play Mode.");
+            }
+        }
+
+        private static void LogDevJsonIssues(GCDevJsonValidationResult validation)
+        {
+            var issues = validation != null ? validation.issues : null;
             if (issues != null)
             {
                 for (var index = 0; index < issues.Length; index++)
@@ -826,27 +852,21 @@ namespace DSB.GC
                         continue;
                     }
 
-                    loggedIssue = true;
                     if (issue.severity == GCDevJsonIssueSeverity.Warning)
                     {
-                        Debug.LogWarning(FormatDevJsonIssue(issue));
+                        Debug.LogWarning("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
                     }
                     else
                     {
-                        Debug.LogError(FormatDevJsonIssue(issue));
+                        Debug.LogError("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
                     }
                 }
             }
-
-            if (!capture.success && !loggedIssue)
-            {
-                Debug.LogError("[GamingCouch] Editor play capture failed. Fix root gc.dev.json and re-enter Play Mode.");
-            }
         }
 
-        private static string FormatDevJsonIssue(GCDevJsonIssue issue)
+        private static bool HasAnyIssues(GCDevJsonValidationResult validation)
         {
-            return "[GamingCouch] " + issue.message;
+            return validation != null && validation.issues != null && validation.issues.Length > 0;
         }
 #endif
 
@@ -1054,6 +1074,22 @@ namespace DSB.GC
                 throw new Exception("[GamingCouch] Restart can only be called in play mode.");
             }
 
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!TryRunEditorRestartPreflight())
+                {
+                    return;
+                }
+
+                CaptureEditorPlaySettings();
+                if (!TryGetValidEditorPlayCapture(out _))
+                {
+                    return;
+                }
+            }
+#endif
+
             game = null;
 
             Clear();
@@ -1074,6 +1110,13 @@ namespace DSB.GC
             {
                 yield break;
             }
+
+#if UNITY_EDITOR
+            if (!TryRunEditorRestartPreflight())
+            {
+                yield break;
+            }
+#endif
 
             isRestarting = true;
 

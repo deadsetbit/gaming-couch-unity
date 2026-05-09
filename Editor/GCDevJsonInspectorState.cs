@@ -107,8 +107,13 @@ internal sealed class GCDevJsonInspectorState
 
     internal bool PollForExternalChanges()
     {
+        return PollForExternalChanges(false);
+    }
+
+    internal bool PollForExternalChanges(bool force)
+    {
         var now = EditorApplication.timeSinceStartup;
-        if (now < nextPollTime)
+        if (!force && now < nextPollTime)
         {
             return false;
         }
@@ -169,6 +174,80 @@ internal sealed class GCDevJsonInspectorState
         return changedState;
     }
 
+    internal GCEditorPlayPreflightResult PrepareForPlayBoundary(GCEditorPlayPreflightContext context)
+    {
+        var validationResult = ValidateForPlayBoundary(context);
+        if (!validationResult.success)
+        {
+            return validationResult;
+        }
+
+        var boundaryName = GCEditorPlayPreflight.GetBoundaryDisplayName(context);
+        if (!IsDirty)
+        {
+            return GCEditorPlayPreflightResult.Succeeded();
+        }
+
+        if (WriteDraftToDisk())
+        {
+            return GCEditorPlayPreflightResult.Succeeded();
+        }
+
+        return GCEditorPlayPreflightResult.Failed(
+            boundaryName + " blocked because the current gc.dev.json inspector draft could not be auto-applied.",
+            lastWriteResult != null ? lastWriteResult.path : DevJsonPath,
+            lastWriteResult != null ? lastWriteResult.validation : draftValidation
+        );
+    }
+
+    internal GCEditorPlayPreflightResult ValidateForPlayBoundary(GCEditorPlayPreflightContext context)
+    {
+        PollForExternalChanges(true);
+        ValidateDraft();
+
+        var boundaryName = GCEditorPlayPreflight.GetBoundaryDisplayName(context);
+        if (hasConflict)
+        {
+            return GCEditorPlayPreflightResult.Failed(
+                boundaryName + " blocked because the current gc.dev.json inspector draft is conflicted. Reload from disk or write the draft before continuing.",
+                DevJsonPath,
+                draftValidation
+            );
+        }
+
+        if (!IsDirty)
+        {
+            return GCEditorPlayPreflightResult.Succeeded();
+        }
+
+        if (draftValidation == null || !draftValidation.IsValid)
+        {
+            return GCEditorPlayPreflightResult.Failed(
+                boundaryName + " blocked because the current gc.dev.json inspector draft is invalid.",
+                DevJsonPath,
+                draftValidation
+            );
+        }
+
+        return GCEditorPlayPreflightResult.Succeeded();
+    }
+
+    internal bool MarkPlayChangesCaptured()
+    {
+        var changed = hasPendingPlayChange || hasUnloadedPlayDevJsonChange;
+        hasPendingPlayChange = false;
+        hasUnloadedPlayDevJsonChange = false;
+
+        if (!hasConflict && !IsDirty)
+        {
+            ReloadFromDisk(false);
+            return true;
+        }
+
+        UpdateFileStamps();
+        return changed;
+    }
+
     internal bool HandlePlayModeStateChanged(PlayModeStateChange change)
     {
         if (change == PlayModeStateChange.EnteredPlayMode)
@@ -176,7 +255,6 @@ internal sealed class GCDevJsonInspectorState
             var changed = hasPendingPlayChange || hasUnloadedPlayDevJsonChange;
             hasPendingPlayChange = false;
             hasUnloadedPlayDevJsonChange = false;
-            UpdateFileStamps();
             return changed;
         }
 

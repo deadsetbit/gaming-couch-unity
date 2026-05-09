@@ -166,5 +166,141 @@ namespace DSB.GC.Dev
             return readResult?.parsedFile != null ? readResult.parsedFile.path : null;
         }
     }
+
+    internal enum GCEditorPlayPreflightContext
+    {
+        UnityPlayModeEntry,
+        GamingCouchRestart,
+    }
+
+    internal sealed class GCEditorPlayPreflightResult
+    {
+        internal readonly bool success;
+        internal readonly string message;
+        internal readonly string path;
+        internal readonly GCDevJsonValidationResult validation;
+
+        private GCEditorPlayPreflightResult(bool success, string message, string path, GCDevJsonValidationResult validation)
+        {
+            this.success = success;
+            this.message = message;
+            this.path = path;
+            this.validation = validation;
+        }
+
+        internal static GCEditorPlayPreflightResult Succeeded()
+        {
+            return new GCEditorPlayPreflightResult(true, null, null, GCDevJsonValidationResult.Valid());
+        }
+
+        internal static GCEditorPlayPreflightResult Failed(string message, string path, GCDevJsonValidationResult validation)
+        {
+            return new GCEditorPlayPreflightResult(false, message, path, validation);
+        }
+    }
+
+    internal static class GCEditorPlayPreflight
+    {
+        private static Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> preflightHandler;
+        private static Action captureSucceededHandler;
+
+        internal static void RegisterPreflightHandler(Func<GCEditorPlayPreflightContext, GCEditorPlayPreflightResult> handler)
+        {
+            preflightHandler = handler;
+        }
+
+        internal static void RegisterCaptureSucceededHandler(Action handler)
+        {
+            captureSucceededHandler = handler;
+        }
+
+        internal static GCEditorPlayPreflightResult Run(GCEditorPlayPreflightContext context)
+        {
+            if (preflightHandler != null)
+            {
+                try
+                {
+                    var result = preflightHandler(context);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    return FailedForException(context, exception);
+                }
+            }
+
+            return ValidateRootJson(context);
+        }
+
+        internal static GCEditorPlayPreflightResult ValidateRootJson(GCEditorPlayPreflightContext context)
+        {
+            GCDevJsonReadResult readResult;
+            try
+            {
+                readResult = new GCDevJsonStore().Read();
+            }
+            catch (Exception exception)
+            {
+                return FailedForException(context, exception);
+            }
+
+            if (readResult != null && readResult.IsValid)
+            {
+                return GCEditorPlayPreflightResult.Succeeded();
+            }
+
+            return GCEditorPlayPreflightResult.Failed(
+                GetBoundaryDisplayName(context) + " blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates.",
+                GetPath(readResult),
+                readResult != null ? readResult.validation : GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
+                    GCDevJsonIssueCode.ReadError,
+                    "gc.dev.json could not be read because the read result was missing.",
+                    null
+                ))
+            );
+        }
+
+        internal static void NotifyCaptureSucceeded()
+        {
+            if (captureSucceededHandler == null)
+            {
+                return;
+            }
+
+            try
+            {
+                captureSucceededHandler();
+            }
+            catch (Exception exception)
+            {
+                UnityEngine.Debug.LogWarning("[GamingCouch] Could not update editor JSON state after capture: " + exception.Message);
+            }
+        }
+
+        internal static string GetBoundaryDisplayName(GCEditorPlayPreflightContext context)
+        {
+            return context == GCEditorPlayPreflightContext.GamingCouchRestart
+                ? "Gaming Couch restart"
+                : "Unity Play Mode entry";
+        }
+
+        private static GCEditorPlayPreflightResult FailedForException(GCEditorPlayPreflightContext context, Exception exception)
+        {
+            var message = GetBoundaryDisplayName(context) + " blocked because gc.dev.json preflight failed: " + exception.Message;
+            return GCEditorPlayPreflightResult.Failed(
+                message,
+                null,
+                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
+            );
+        }
+
+        private static string GetPath(GCDevJsonReadResult readResult)
+        {
+            return readResult?.parsedFile != null ? readResult.parsedFile.path : null;
+        }
+    }
 }
 #endif

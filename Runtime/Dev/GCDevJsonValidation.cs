@@ -144,6 +144,47 @@ namespace DSB.GC.Dev
         }
     }
 
+    internal static class GCDevJsonIssueFormatter
+    {
+        internal static string Format(GCDevJsonIssue issue)
+        {
+            if (issue == null)
+            {
+                return string.Empty;
+            }
+
+            var message = IsValidMetadataGateIssue(issue.code)
+                ? "Valid metadata gate failed. "
+                : string.Empty;
+
+            message += issue.code + ": " + issue.message;
+            if (issue.seatIndex > 0)
+            {
+                message += " Seat " + issue.seatIndex + ".";
+            }
+
+            if (!string.IsNullOrEmpty(issue.fieldName))
+            {
+                message += " Field: " + issue.fieldName + ".";
+            }
+
+            if (!string.IsNullOrEmpty(issue.path))
+            {
+                message += " Path: " + issue.path + ".";
+            }
+
+            return message;
+        }
+
+        private static bool IsValidMetadataGateIssue(GCDevJsonIssueCode code)
+        {
+            return code == GCDevJsonIssueCode.MetadataPlatformMismatch ||
+                   code == GCDevJsonIssueCode.MetadataEntryMissing ||
+                   code == GCDevJsonIssueCode.MetadataEnabledSeatsBelowMinimum ||
+                   code == GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum;
+        }
+    }
+
     internal static class GCDevJsonValidation
     {
         internal static GCDevJsonReadResult BuildReadResult(GCDevJsonParsedFile parsedFile)
