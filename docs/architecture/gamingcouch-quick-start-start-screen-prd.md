@@ -107,7 +107,7 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 8.
+Next action: Implement Task 9.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -118,7 +118,7 @@ Next action: Implement Task 8.
 | [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
 | [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
 | [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
-| [ ] | TODO | 8. Complete start screen actions and messaging | Connect checklist actions, primary setup action, blocker messages, rerun warnings, and success states. |
+| [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist, primary setup, and quick-start scene actions with pending, blocker, success, reuse, and read-only JSON messaging. |
 | [ ] | TODO | 9. Add editor tests for detection and generation behavior | Cover readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | TODO | 10. Run manual Unity validation | Validate staged compilation, generated scene Play Mode loop, JSON blocker messaging, and rerun safety in Unity 2022.3. |
 
@@ -468,6 +468,42 @@ Verification:
 - Confirm each button maps to the intended setup operation.
 - Confirm JSON blockers are informational and do not write JSON files.
 - Confirm success state appears after setup completes.
+
+Implementation notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchStartScreenWindow.cs`, `Editor/GamingCouchQuickStartSetup.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Replaced disabled placeholder actions with active IMGUI buttons for GamingCouch creation/reuse, listener wiring, player prefab wiring, primary active-scene setup, and quick-start scene creation/opening.
+- Added a staged quick-start action discriminator so individual listener and player prefab buttons resume narrowly after script compilation instead of running the whole active-scene setup.
+- Primary active-scene setup creates/reuses the active-scene `GamingCouch`, generated player prefab, generated listener, and null-only serialized references through existing setup and scene-wiring helpers.
+- Missing or invalid `gc.dev.json` is displayed as Play Mode readiness only, with explicit messaging that the start screen will not create or repair the file.
+- Success messaging now treats scene setup readiness separately from local Play Mode JSON readiness, and action results report reused assets/references or unchanged setup.
+- Multiple active-scene `GamingCouch` components keep active-scene setup actions blocked with manual cleanup messaging; the quick-start scene action remains available.
+- Validation run: `git diff --check`; conflict-marker search; scoped action-wiring search; scoped JSON write API absence search; primary setup path search; pending compilation path search; `git status --short` to confirm no tests or manual scene assets were generated.
+- Unity 2022.3 manual editor validation was not run in this package-only shell.
+
+Review pass 1, 2026-05-10:
+
+- Patched pending setup resume to validate the stored action against the stored intent and fall back to the intent-specific default action. This keeps stale or missing pending action session data from turning a quick-start scene continuation into a no-op after compilation.
+- Patched primary active-scene setup to ensure the active scene has zero-or-one `GamingCouch` before generating quick-start scripts, so invalid scenes and duplicate `GamingCouch` states block without writing script assets first.
+- Patched active-scene action disabled-state handling to block when readiness has no valid active scene, in addition to pending compilation and duplicate `GamingCouch` states.
+- Validation run: `git diff --check`; conflict-marker search; scoped signature/callsite search for `CreateContinuationContext`, `PersistPendingSetup`, and `EnsureQuickStartScripts`; scoped action handler gating search; scoped JSON write API absence search in Task 8 touched editor files; generated asset/test absence check via `git status --short`.
+- Unity 2022.3 manual editor validation was not run in this package-only shell.
+
+Review pass 2, 2026-05-10:
+
+- No additional code defects were found in the Task 8 scoped files.
+- Confirmed all continuation context constructor calls and setup helper callsites use the action-aware signatures, and pending action recovery falls back to the stored intent's valid default action.
+- Confirmed active-scene pending continuations keep primary setup broad while listener and player prefab actions resume only their own references; quick-start scene continuations remain scene-only.
+- Confirmed active-scene actions are blocked only for pending compile, invalid active scene, or duplicate `GamingCouch` state, while the quick-start scene action is blocked only during pending compile.
+- Confirmed Task 8 UI/readiness paths read local play JSON without calling JSON write or repair APIs; file writes remain limited to existing quick-start script/prefab/scene setup code.
+- Decision: no extra multi-window pending-result patch in this pass. The pending state is shown in-window, continuation results are logged after compilation, and the window refreshes through existing focus/project/hierarchy hooks.
+- Validation run: `git diff --check`; conflict-marker search; scoped signature/callsite search for continuation context, pending setup, pending action, quick-start script setup, and setup result usage; scoped action label search; scoped JSON write API absence search in Task 8 touched UI/readiness files; generated asset/test absence check.
+- Unity 2022.3 manual editor validation was not run in this package-only shell.
+
+Parent validation, 2026-05-10:
+
+- Validation run: `git diff --check`; conflict-marker search; scoped signature/callsite search for action-aware continuations, pending setup, pending action, setup handlers, and setup result usage; scoped JSON write API absence search in Task 8 touched UI/readiness files; generated asset/test absence check; `git status --short`.
+- No tests, generated scenes, prefabs, or package-local quick-start assets were created during command-line validation.
 
 ### Task 9: Add editor tests for detection and generation behavior
 

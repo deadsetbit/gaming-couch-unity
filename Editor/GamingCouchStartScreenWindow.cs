@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DSB.GC.Dev;
 using UnityEditor;
 using UnityEngine;
@@ -8,6 +9,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private GCStartScreenReadiness readiness;
     private Vector2 scrollPosition;
+    private string actionMessage;
+    private string[] actionDetails = new string[0];
+    private MessageType actionMessageType = MessageType.Info;
 
     internal static GamingCouchStartScreenWindow Open()
     {
@@ -54,7 +58,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         DrawSceneSummary();
         DrawChecklist();
         DrawLocalPlayJsonDetails();
-        DrawStubActions();
+        DrawPendingSetupStatus();
+        DrawActions();
+        DrawActionResult();
         EditorGUILayout.EndScrollView();
     }
 
@@ -101,7 +107,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
         var messageType = readiness.IsSceneReady ? MessageType.Info : MessageType.Warning;
         var message = readiness.IsSceneReady
-            ? "The active scene has the required GamingCouch object, listener, and player prefab references."
+            ? "Scene setup is ready. The active scene has one GamingCouch object with listener and player prefab references. Local Play JSON readiness is shown separately below."
             : "The active scene is missing required GamingCouch setup.";
 
         if (readiness.gamingCouches.Length > 1)
@@ -130,7 +136,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         EditorGUILayout.Space();
     }
 
-    private static void DrawChecklistItem(GCStartScreenReadinessCheck check)
+    private void DrawChecklistItem(GCStartScreenReadinessCheck check)
     {
         using (new EditorGUILayout.HorizontalScope())
         {
@@ -138,6 +144,18 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             GUILayout.Label(check.label);
             GUILayout.FlexibleSpace();
             GUILayout.Label(GetStateLabel(check.state), EditorStyles.miniLabel, GUILayout.Width(64f));
+
+            var buttonLabel = GetChecklistActionLabel(check.id);
+            if (!string.IsNullOrEmpty(buttonLabel))
+            {
+                using (new EditorGUI.DisabledScope(IsActiveSceneSetupActionBlocked()))
+                {
+                    if (GUILayout.Button(buttonLabel, GUILayout.Width(148f)))
+                    {
+                        RunChecklistAction(check.id);
+                    }
+                }
+            }
         }
 
         if (check.state != GCStartScreenReadinessCheckState.Pass && !string.IsNullOrEmpty(check.message))
@@ -153,7 +171,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return;
         }
 
-        EditorGUILayout.LabelField("Local Play JSON", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Play Mode Readiness", EditorStyles.boldLabel);
         if (!string.IsNullOrEmpty(readiness.localPlayJson.path))
         {
             EditorGUILayout.LabelField("File", readiness.localPlayJson.path);
@@ -163,10 +181,10 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         if (issues.Length == 0)
         {
             var message = readiness.localPlayJson.isValid
-                ? "No gc.dev.json issues detected."
+                ? "gc.dev.json is valid for local Play Mode."
                 : string.IsNullOrEmpty(readiness.localPlayJson.message)
-                    ? "gc.dev.json is missing or invalid for local Play Mode."
-                    : readiness.localPlayJson.message;
+                    ? "Local Play Mode is blocked because gc.dev.json is missing or invalid. The Unity package will not create or repair this file."
+                    : readiness.localPlayJson.message + " The Unity package will not create or repair this file.";
             var messageType = readiness.localPlayJson.isValid ? MessageType.Info : MessageType.Error;
             EditorGUILayout.HelpBox(message, messageType);
             EditorGUILayout.Space();
@@ -182,32 +200,229 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
 
             var messageType = issue.severity == GCDevJsonIssueSeverity.Error ? MessageType.Error : MessageType.Warning;
-            EditorGUILayout.HelpBox(GCDevJsonIssueFormatter.Format(issue), messageType);
+            var message = GCDevJsonIssueFormatter.Format(issue);
+            if (issue.severity == GCDevJsonIssueSeverity.Error)
+            {
+                message += " Local Play Mode remains blocked until DevApp provides valid local play JSON; this screen will not create or repair it.";
+            }
+
+            EditorGUILayout.HelpBox(message, messageType);
         }
 
         EditorGUILayout.Space();
     }
 
-    private static void DrawStubActions()
+    private static void DrawPendingSetupStatus()
+    {
+        if (!GamingCouchQuickStartSetup.HasPendingSetup())
+        {
+            return;
+        }
+
+        EditorGUILayout.HelpBox(
+            "Quick-start setup is waiting for Unity to compile generated scripts. Setup will continue automatically after compilation finishes.",
+            MessageType.Warning
+        );
+        EditorGUILayout.Space();
+    }
+
+    private void DrawActions()
     {
         EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
-        using (new EditorGUI.DisabledScope(true))
+        using (new EditorGUI.DisabledScope(IsActiveSceneSetupActionBlocked()))
         {
-            GUILayout.Button("Set Up Quick Start");
-            using (new EditorGUILayout.HorizontalScope())
+            if (GUILayout.Button("Set up missing pieces"))
             {
-                GUILayout.Button("Create GamingCouch");
-                GUILayout.Button("Create Listener");
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Button("Create Player Prefab");
-                GUILayout.Button("Create Quick Start Scene");
+                RunActiveSceneSetup();
             }
         }
 
-        EditorGUILayout.HelpBox("Setup actions are placeholders for later quick-start tasks.", MessageType.Info);
+        using (new EditorGUI.DisabledScope(GamingCouchQuickStartSetup.HasPendingSetup()))
+        {
+            if (GUILayout.Button("Create new quick-start scene"))
+            {
+                RunCreateOrOpenQuickStartScene();
+            }
+        }
+
+        EditorGUILayout.Space();
+    }
+
+    private bool IsActiveSceneSetupActionBlocked()
+    {
+        if (GamingCouchQuickStartSetup.HasPendingSetup())
+        {
+            return true;
+        }
+
+        if (readiness == null)
+        {
+            return true;
+        }
+
+        return !readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied ||
+               readiness.gamingCouches.Length > 1;
+    }
+
+    private void DrawActionResult()
+    {
+        if (string.IsNullOrEmpty(actionMessage))
+        {
+            return;
+        }
+
+        EditorGUILayout.HelpBox(FormatActionMessage(actionMessage, actionDetails), actionMessageType);
+        EditorGUILayout.Space();
+    }
+
+    private void RunChecklistAction(GCStartScreenReadinessCheckId id)
+    {
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                RunEnsureGamingCouch();
+                break;
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+                RunEnsureGameListener();
+                break;
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                RunEnsurePlayerPrefab();
+                break;
+            default:
+                SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
+                break;
+        }
+    }
+
+    private void RunEnsureGamingCouch()
+    {
+        var result = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
+        if (result.gamingCouch != null)
+        {
+            Selection.activeObject = result.gamingCouch.gameObject;
+        }
+
+        SetActionResult(
+            result.message,
+            result.IsBlocked ? MessageType.Error : MessageType.Info,
+            result.changed ? null : new[] { "No scene changes were needed; the existing GamingCouch object was reused." }
+        );
+        Refresh();
+        Repaint();
+    }
+
+    private void RunEnsurePlayerPrefab()
+    {
+        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartPlayerPrefabReference();
+        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
+    private void RunEnsureGameListener()
+    {
+        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartGameListenerReference();
+        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
+    private void RunActiveSceneSetup()
+    {
+        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartSetup();
+        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
+    private void RunCreateOrOpenQuickStartScene()
+    {
+        var result = GamingCouchQuickStartSetup.CreateOrOpenQuickStartScene();
+        var message = result.message;
+        var details = new List<string>();
+
+        if (!string.IsNullOrEmpty(result.sceneAssetPath))
+        {
+            details.Add("Scene: " + result.sceneAssetPath);
+        }
+
+        for (var index = 0; index < result.blockedReasons.Length; index++)
+        {
+            if (!string.IsNullOrEmpty(result.blockedReasons[index]))
+            {
+                details.Add(result.blockedReasons[index]);
+            }
+        }
+
+        if (result.status == GCQuickStartSceneSetupStatus.Ready && !result.changed)
+        {
+            details.Add("No scene changes were needed; existing quick-start assets and references were reused.");
+        }
+
+        SetActionResult(message, GetSceneResultMessageType(result), details.ToArray());
+        Refresh();
+        Repaint();
+    }
+
+    private void SetActionResult(string message, MessageType messageType, string[] details)
+    {
+        actionMessage = message;
+        actionMessageType = messageType;
+        actionDetails = details ?? new string[0];
+    }
+
+    private static MessageType GetActiveSceneResultMessageType(GCQuickStartActiveSceneSetupResult result)
+    {
+        if (result.IsBlocked)
+        {
+            return MessageType.Error;
+        }
+
+        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static MessageType GetSceneResultMessageType(GCQuickStartSceneSetupResult result)
+    {
+        if (result.IsBlocked)
+        {
+            return MessageType.Error;
+        }
+
+        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static string FormatActionMessage(string message, string[] details)
+    {
+        if (details == null || details.Length == 0)
+        {
+            return message;
+        }
+
+        var formatted = message;
+        for (var index = 0; index < details.Length; index++)
+        {
+            if (!string.IsNullOrEmpty(details[index]))
+            {
+                formatted += "\n- " + details[index];
+            }
+        }
+
+        return formatted;
+    }
+
+    private static string GetChecklistActionLabel(GCStartScreenReadinessCheckId id)
+    {
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                return "Create or Reuse";
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+                return "Wire Listener";
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return "Wire Player Prefab";
+            default:
+                return null;
+        }
     }
 
     private static string GetChecklistMarker(GCStartScreenReadinessCheckState state)
