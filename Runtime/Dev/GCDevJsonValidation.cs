@@ -30,7 +30,6 @@ namespace DSB.GC.Dev
         MetadataReadError,
         MetadataPlatformMismatch,
         MetadataEntryMissing,
-        MetadataEnabledSeatsBelowMinimum,
         MetadataEnabledSeatsAboveMaximum,
         MetadataBotSupportDisabled,
     }
@@ -180,7 +179,6 @@ namespace DSB.GC.Dev
         {
             return code == GCDevJsonIssueCode.MetadataPlatformMismatch ||
                    code == GCDevJsonIssueCode.MetadataEntryMissing ||
-                   code == GCDevJsonIssueCode.MetadataEnabledSeatsBelowMinimum ||
                    code == GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum;
         }
     }
@@ -495,18 +493,7 @@ namespace DSB.GC.Dev
             }
 
             var enabledSeatCount = data.EnabledSeatCount;
-            if (enabledSeatCount < entry.minPlayers)
-            {
-                issues.Add(GCDevJsonIssue.Error(
-                    GCDevJsonIssueCode.MetadataEnabledSeatsBelowMinimum,
-                    "gc.dev.json must enable at least " + entry.minPlayers + " seats for \"" + data.entryKey + "\".",
-                    path,
-                    0,
-                    "seats",
-                    data.entryKey
-                ));
-            }
-
+            // Local editor playtests may run with one enabled seat even when production minPlayers is higher.
             if (enabledSeatCount > entry.maxPlayers)
             {
                 issues.Add(GCDevJsonIssue.Error(

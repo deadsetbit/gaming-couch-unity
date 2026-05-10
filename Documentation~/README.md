@@ -21,7 +21,7 @@ Missing or invalid `gc.metadata.json` is warning-only. In that state, the inspec
 
 - `platform.id` must be `unity`.
 - The selected `entryKey` must exist.
-- Enabled seats must fit the selected entry's `minPlayers` and `maxPlayers`.
+- Enabled seats must include at least one seat and no more than the selected entry's `maxPlayers`. Production `minPlayers` metadata is still displayed and exported unchanged, but local editor playtests may run with one enabled seat.
 
 Enabled bot seats on an entry with `botSupport: false` are warning-only.
 

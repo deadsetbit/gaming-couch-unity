@@ -115,7 +115,8 @@ Do not touch these files unless a later user instruction explicitly changes scop
 - Valid metadata gates Apply and Play:
   - `platform.id` must be `unity`.
   - selected `entryKey` must exist.
-  - enabled-seat count must be within selected entry `minPlayers..maxPlayers`.
+  - enabled-seat count must be at least one and no more than selected entry `maxPlayers`.
+  - production `minPlayers` remains parsed and displayed, but does not raise the local dev seat minimum.
 - Valid metadata with enabled bot seats on an entry where `botSupport: false` is warning-only.
 - External `gc.dev.json` changes auto-reload in edit mode only when the inspector draft is clean.
 - External `gc.dev.json` changes while the inspector draft is dirty must not overwrite inspector values and must enter conflict state.
@@ -161,7 +162,7 @@ Manual Unity scenarios to cover before release:
 11. Missing or invalid metadata allows structurally valid raw `gc.dev.json` Apply with warning.
 12. Valid metadata with non-`unity` platform blocks Apply and Play.
 13. Valid metadata with missing selected entry blocks Apply and Play.
-14. Valid metadata with enabled-seat count outside entry limits blocks Apply and Play.
+14. Valid metadata with zero enabled seats or more than `maxPlayers` enabled seats blocks Apply and Play.
 15. Enabled bot seats warn, but do not block, when selected entry has `botSupport: false`.
 16. Unity Package Manager resolves `com.unity.nuget.newtonsoft-json`.
 17. Entering Play Mode auto-applies a valid non-conflicted draft before capture.
@@ -302,7 +303,7 @@ Parent validation:
 
 ### Objective
 
-Add `gc.metadata.json` parsing and validation context for labels, colors, platform, entry limits, and bot support. Missing or invalid metadata must be warning-only, while valid metadata must gate Apply and Play.
+Add `gc.metadata.json` parsing and validation context for labels, colors, platform, entry `maxPlayers`, and bot support. Missing or invalid metadata must be warning-only, while valid metadata must gate Apply and Play.
 
 ### Owned Files
 
@@ -331,7 +332,7 @@ Add `gc.metadata.json` parsing and validation context for labels, colors, platfo
 4. Keep raw `gc.dev.json` editing possible when metadata is missing or invalid.
 5. When metadata is valid, block Apply and Play if `platform.id` is not `unity`.
 6. When metadata is valid, block Apply and Play if selected `entryKey` is missing.
-7. When metadata is valid, block Apply and Play if enabled seats are outside selected entry limits.
+7. When metadata is valid, block Apply and Play if enabled seats exceed selected entry `maxPlayers`; keep zero-seat blocking in structural `gc.dev.json` validation.
 8. When metadata is valid, warn but do not block if enabled bot seats exist for an entry with `botSupport: false`.
 9. Expose validation output as structured errors and warnings for both inspector and play capture tasks.
 10. Do not add visible inspector UI in this task.
@@ -372,7 +373,7 @@ Validation:
 - `git diff --check --no-index /dev/null <new Task 2 file>`: no whitespace output for new metadata files; command exits non-zero because `/dev/null` differs from each new file.
 - Metadata read inspection: `GCMetadataJsonStore` only reads project-root `gc.metadata.json`; no metadata write path was added.
 - Missing/invalid metadata inspection: metadata missing, invalid JSON, invalid root, read error, or invalid required fields produce `GCDevJsonIssueSeverity.Warning` issues and `GCMetadataJsonReadResult.data == null`; `GCDevJsonValidation` returns before metadata gates unless `metadataReadResult.IsValid`.
-- Apply/Play gate inspection: valid metadata adds blocking errors for `platform.id != "unity"`, missing selected entry, enabled seats below `minPlayers`, and enabled seats above `maxPlayers`; enabled bot seats with `botSupport == false` add a warning only.
+- Apply/Play gate inspection: valid metadata adds blocking errors for `platform.id != "unity"`, missing selected entry, and enabled seats above `maxPlayers`; zero enabled seats remain blocked by structural `gc.dev.json` validation, while enabled seats below production `minPlayers` are allowed for local dev. Enabled bot seats with `botSupport == false` add a warning only.
 - Structurally valid dev-file inspection: `GCDevJsonReadResult.data` remains available after metadata gate errors while `GCDevJsonReadResult.IsValid` is false, so later inspector work can still show raw `gc.dev.json` values.
 - Store inspection: normal `GCDevJsonStore.Read()` and `Write()` read metadata and use combined validation; overloads accept a pre-read metadata result for later inspector/play capture reuse.
 - `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
