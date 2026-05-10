@@ -20,6 +20,12 @@ internal enum GCQuickStartScriptSetupStatus
     Blocked,
 }
 
+internal enum GCQuickStartPlayerPrefabSetupStatus
+{
+    Ready,
+    Blocked,
+}
+
 internal sealed class GCQuickStartScriptSetupResult
 {
     internal readonly GCQuickStartScriptSetupStatus status;
@@ -54,6 +60,35 @@ internal sealed class GCQuickStartScriptSetupResult
     internal bool IsPendingCompilation
     {
         get { return status == GCQuickStartScriptSetupStatus.PendingCompilation; }
+    }
+}
+
+internal sealed class GCQuickStartPlayerPrefabSetupResult
+{
+    internal readonly GCQuickStartPlayerPrefabSetupStatus status;
+    internal readonly bool changed;
+    internal readonly GameObject prefab;
+    internal readonly string message;
+    internal readonly string[] blockedReasons;
+
+    internal GCQuickStartPlayerPrefabSetupResult(
+        GCQuickStartPlayerPrefabSetupStatus status,
+        bool changed,
+        GameObject prefab,
+        string message,
+        string[] blockedReasons
+    )
+    {
+        this.status = status;
+        this.changed = changed;
+        this.prefab = prefab;
+        this.message = message;
+        this.blockedReasons = blockedReasons ?? new string[0];
+    }
+
+    internal bool IsBlocked
+    {
+        get { return status == GCQuickStartPlayerPrefabSetupStatus.Blocked; }
     }
 }
 
@@ -101,17 +136,21 @@ internal static class GamingCouchQuickStartSetup
     internal const string PlayerTypeName = "GCQuickStartPlayer";
     internal const string GameScriptAssetPath = QuickStartFolderAssetPath + "/" + GameTypeName + ".cs";
     internal const string PlayerScriptAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".cs";
+    internal const string PlayerPrefabAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".prefab";
 
     private const string PendingSetupSessionKey = "DSB.GC.QuickStart.PendingSetup.v1";
     private const string PendingIntentSessionKey = "DSB.GC.QuickStart.PendingIntent.v1";
     private const string PendingWarningLoggedSessionKey = "DSB.GC.QuickStart.PendingWarningLogged.v1";
     private const string DefaultIntentValue = "ActiveScene";
+    private const string PlayerVisualName = "Visual";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
     private static Action<GCQuickStartSetupContinuationContext> scriptsReadyHandlers;
 
     static GamingCouchQuickStartSetup()
     {
+        RegisterScriptsReadyHandler(EnsureQuickStartPlayerPrefabOnScriptsReady);
+
         if (HasPendingSetup())
         {
             StartPendingSetupPolling();
@@ -169,8 +208,8 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        EnsureScriptAsset(GameScriptAssetPath, BuildGameScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
-        EnsureScriptAsset(PlayerScriptAssetPath, BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        EnsureScriptAsset(GameScriptAssetPath, GameTypeName, BuildGameScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        EnsureScriptAsset(PlayerScriptAssetPath, PlayerTypeName, BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
         if (blockedReasons.Count > 0)
         {
             if (createdAssetPaths.Count > 0)
@@ -265,6 +304,128 @@ internal static class GamingCouchQuickStartSetup
             createdAssetPaths.ToArray(),
             reusedAssetPaths.ToArray(),
             blockedReasons.ToArray()
+        );
+    }
+
+    internal static GCQuickStartPlayerPrefabSetupResult EnsureQuickStartPlayerPrefab(
+        GCQuickStartSetupContinuationContext context
+    )
+    {
+        var blockedReasons = new List<string>();
+
+        if (context == null)
+        {
+            blockedReasons.Add("Quick-start player prefab generation requires a scripts-ready continuation context.");
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (context.playerType == null)
+        {
+            blockedReasons.Add("Quick-start player prefab generation requires the compiled " + PlayerTypeName + " type.");
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (context.playerType.Name != PlayerTypeName)
+        {
+            blockedReasons.Add("Quick-start player prefab generation requires " + PlayerTypeName + ", but the continuation context provided " + context.playerType.FullName + ".");
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!typeof(GCPlayer).IsAssignableFrom(context.playerType))
+        {
+            blockedReasons.Add("Compiled type " + context.playerType.FullName + " does not inherit from GCPlayer.");
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!AssetDatabase.IsValidFolder(context.quickStartFolderAssetPath))
+        {
+            blockedReasons.Add("Quick-start folder " + context.quickStartFolderAssetPath + " is missing. Run quick-start script setup first.");
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        var existingPrefab = LoadExistingPlayerPrefab(blockedReasons);
+        if (blockedReasons.Count > 0)
+        {
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (existingPrefab != null)
+        {
+            if (existingPrefab.GetComponent(context.playerType) == null)
+            {
+                blockedReasons.Add("Existing prefab " + PlayerPrefabAssetPath + " does not have " + PlayerTypeName + " on its root. Existing prefab assets are never overwritten.");
+                return CreatePlayerPrefabResult(
+                    GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                    false,
+                    existingPrefab,
+                    "Quick-start player prefab generation is blocked.",
+                    blockedReasons
+                );
+            }
+
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Ready,
+                false,
+                existingPrefab,
+                "Reused existing quick-start player prefab.",
+                blockedReasons
+            );
+        }
+
+        var createdPrefab = CreatePlayerPrefab(context, blockedReasons);
+        if (blockedReasons.Count > 0)
+        {
+            return CreatePlayerPrefabResult(
+                GCQuickStartPlayerPrefabSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start player prefab generation is blocked.",
+                blockedReasons
+            );
+        }
+
+        return CreatePlayerPrefabResult(
+            GCQuickStartPlayerPrefabSetupStatus.Ready,
+            true,
+            createdPrefab,
+            "Created quick-start player prefab.",
+            blockedReasons
         );
     }
 
@@ -397,6 +558,165 @@ internal static class GamingCouchQuickStartSetup
         {
             blockedReasons.Add("Could not create " + assetPath + ": " + exception.Message);
         }
+    }
+
+    private static GCQuickStartPlayerPrefabSetupResult CreatePlayerPrefabResult(
+        GCQuickStartPlayerPrefabSetupStatus status,
+        bool changed,
+        GameObject prefab,
+        string message,
+        List<string> blockedReasons
+    )
+    {
+        return new GCQuickStartPlayerPrefabSetupResult(
+            status,
+            changed,
+            prefab,
+            message,
+            blockedReasons.ToArray()
+        );
+    }
+
+    private static GameObject LoadExistingPlayerPrefab(List<string> blockedReasons)
+    {
+        var fullPath = AssetPathToFullPath(PlayerPrefabAssetPath);
+        if (Directory.Exists(fullPath))
+        {
+            blockedReasons.Add("Cannot create player prefab " + PlayerPrefabAssetPath + " because a folder exists at that path.");
+            return null;
+        }
+
+        var existingAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(PlayerPrefabAssetPath);
+        if (existingAsset == null && File.Exists(fullPath))
+        {
+            AssetDatabase.ImportAsset(PlayerPrefabAssetPath, ImportAssetOptions.ForceSynchronousImport);
+            existingAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(PlayerPrefabAssetPath);
+            if (existingAsset == null)
+            {
+                blockedReasons.Add("Cannot create player prefab " + PlayerPrefabAssetPath + " because a file exists at that path but Unity did not import it as a prefab asset.");
+                return null;
+            }
+        }
+
+        if (existingAsset == null)
+        {
+            return null;
+        }
+
+        var prefab = existingAsset as GameObject;
+        if (prefab == null)
+        {
+            blockedReasons.Add("Cannot create player prefab " + PlayerPrefabAssetPath + " because a non-prefab asset already exists at that path.");
+            return null;
+        }
+
+        var prefabAssetType = PrefabUtility.GetPrefabAssetType(prefab);
+        if (prefabAssetType == PrefabAssetType.NotAPrefab)
+        {
+            blockedReasons.Add("Cannot create player prefab " + PlayerPrefabAssetPath + " because a non-prefab asset already exists at that path.");
+            return null;
+        }
+
+        if (prefabAssetType != PrefabAssetType.Regular && prefabAssetType != PrefabAssetType.Variant)
+        {
+            blockedReasons.Add("Cannot create player prefab " + PlayerPrefabAssetPath + " because the existing asset imports as a " + prefabAssetType + " prefab asset. Existing prefab assets are never overwritten.");
+            return null;
+        }
+
+        return prefab;
+    }
+
+    private static GameObject CreatePlayerPrefab(
+        GCQuickStartSetupContinuationContext context,
+        List<string> blockedReasons
+    )
+    {
+        var root = new GameObject(PlayerTypeName);
+        GameObject visual = null;
+        try
+        {
+            var playerComponent = root.AddComponent(context.playerType);
+            visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visual.name = PlayerVisualName;
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localPosition = new Vector3(0.0f, 0.75f, 0.0f);
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = new Vector3(0.7f, 1.0f, 0.7f);
+
+            var renderer = visual.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                var serializedPlayer = new SerializedObject(playerComponent);
+                serializedPlayer.Update();
+                var colorRendererProperty = serializedPlayer.FindProperty("colorRenderer");
+                if (colorRendererProperty != null &&
+                    colorRendererProperty.propertyType == SerializedPropertyType.ObjectReference)
+                {
+                    colorRendererProperty.objectReferenceValue = renderer;
+                    serializedPlayer.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabAssetPath, out var success);
+            if (!success || prefab == null)
+            {
+                blockedReasons.Add("Unity did not save the quick-start player prefab at " + PlayerPrefabAssetPath + ".");
+                return null;
+            }
+
+            return prefab;
+        }
+        catch (Exception exception)
+        {
+            blockedReasons.Add("Could not create quick-start player prefab " + PlayerPrefabAssetPath + ": " + exception.Message);
+            return null;
+        }
+        finally
+        {
+            if (visual != null && visual.transform.parent != root.transform)
+            {
+                UnityEngine.Object.DestroyImmediate(visual);
+            }
+
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    private static void EnsureQuickStartPlayerPrefabOnScriptsReady(
+        GCQuickStartSetupContinuationContext context
+    )
+    {
+        var prefabResult = EnsureQuickStartPlayerPrefab(context);
+        if (prefabResult.IsBlocked)
+        {
+            Debug.LogWarning(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
+            return;
+        }
+
+        if (context.intent != GCQuickStartSetupIntent.ActiveScene)
+        {
+            Debug.Log(prefabResult.message + " GamingCouch player prefab assignment is deferred until quick-start scene wiring.");
+            return;
+        }
+
+        var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
+        if (gamingCouchResult.IsBlocked)
+        {
+            Debug.LogWarning(gamingCouchResult.message);
+            return;
+        }
+
+        var assignResult = GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(
+            gamingCouchResult.gamingCouch,
+            prefabResult.prefab
+        );
+        if (assignResult.IsBlocked)
+        {
+            Debug.LogWarning(assignResult.message);
+            return;
+        }
+
+        Debug.Log(prefabResult.message + " " + assignResult.message);
     }
 
     private static string AssetPathToFullPath(string assetPath)

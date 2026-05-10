@@ -107,7 +107,7 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 5.
+Next action: Implement Task 6.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -115,7 +115,7 @@ Next action: Implement Task 5.
 | [x] | DONE | 2. Add launch entry points and auto-open policy | Added menu and inspector entry points, startup-only auto-open policy, project-level suppression, and skip conditions for ready/play/compile/update/non-normal-scene contexts. |
 | [x] | DONE | 3. Extract shared scene wiring helpers | Added shared scene wiring helpers with Undo-backed object creation and null-only serialized reference assignment. |
 | [x] | DONE | 4. Generate quick-start scripts through staged setup | Added staged no-overwrite script generation, asset refresh, pending compile continuation, path-gated type resolution, and duplicate compiled-type collision blocking. |
-| [ ] | TODO | 5. Generate and wire quick-start player prefab | Create or reuse a `GCQuickStartPlayer` prefab with `GCPlayer` inheritance and a simple 3D placeholder visual. |
+| [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
 | [ ] | TODO | 6. Generate and wire quick-start game listener | Create or reuse a listener object/component that configures versus play, spawns players, runs the timer, assigns scores, and ends the game. |
 | [ ] | TODO | 7. Create quick-start scene flow | Generate, open, save, and add the quick-start scene to Build Settings while preserving unsaved-scene prompts. |
 | [ ] | TODO | 8. Complete start screen actions and messaging | Connect checklist actions, primary setup action, blocker messages, rerun warnings, and success states. |
@@ -310,6 +310,38 @@ Verification:
 - Confirm the prefab includes a `GCPlayer`-derived component.
 - Confirm the prefab has a visible placeholder.
 - Confirm rerun reuses the prefab without overwriting it.
+
+Implementation pass notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added `Assets/GamingCouch/QuickStart/GCQuickStartPlayer.prefab` as the generated prefab target, created only from the scripts-ready continuation after the compiled `GCQuickStartPlayer` type is available.
+- Generated first-run prefabs have `GCQuickStartPlayer` on the root, a built-in capsule child named `Visual`, and the generated player script's `colorRenderer` serialized reference assigned to the child renderer so `ColorBase` can apply at runtime.
+- Existing prefab assets at the target path are reused without modification when their root has `GCQuickStartPlayer`; folder, file import, non-prefab asset, and wrong-root-component collisions block with explicit reasons instead of overwriting.
+- The continuation wires the active scene by reusing Task 3 scene helpers and assigns `GamingCouch.playerPrefab` only through the null-only serialized reference helper, preserving existing non-null, missing, or broken serialized references.
+- Quick-start scene assignment is deferred for the later scene-wiring task; this task did not create listeners, scenes, Build Settings entries, or start-screen action wiring.
+- Validation run: `git diff --check`; scoped static searches for prefab creation/reuse APIs, listener/scene/build-settings exclusions, null-only assignment usage, and generated QuickStart folder absence in the package worktree.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 1, 2026-05-10:
+
+- Patched defensive cleanup for the temporary primitive used during prefab creation, so an exception before parenting cannot leave an unparented generated object in the active scene.
+- Static inspection confirmed prefab generation remains behind the scripts-ready continuation, existing prefab assets are reused without overwrite, wrong-type/collision cases block, ActiveScene assignment uses the Task 3 null-only helper, and QuickStartScene assignment remains deferred.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for listener, scene, Build Settings, and start-screen action APIs.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 2, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `Editor/GamingCouchSceneWiring.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Patched existing prefab collision handling to reuse only regular prefab assets and prefab variants, while blocking non-prefab assets and immutable/model-style prefab imports without overwriting them.
+- Patched the shared null-only scene wiring helper to explicitly mark the owning loaded scene dirty after serialized listener/player prefab assignments, while still preserving existing non-null, missing, or broken serialized references.
+- Static inspection confirmed the built-in player prefab handler is de-duplicated through `RegisterScriptsReadyHandler`, prefab generation remains staged behind the scripts-ready continuation, temporary creation objects are destroyed in `finally`, and Task 5 still does not add listeners, scenes, Build Settings edits, or start-screen action wiring.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden listener/scene/Build Settings/start-screen APIs; scoped signature/call searches for `SaveAsPrefabAsset`, prefab asset type handling, temporary object cleanup, continuation registration, null-only assignment, and scene dirty marking.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Parent validation, 2026-05-10:
+
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden listener/scene/Build Settings/start-screen APIs; scoped signature/call searches for `EnsureScriptAsset`, prefab creation/reuse APIs, continuation registration, null-only assignment, and scene dirty marking; generated QuickStart folder absence check.
+- No package-local `Assets/GamingCouch/QuickStart` directory was created during command-line validation.
 
 ### Task 6: Generate and wire quick-start game listener
 

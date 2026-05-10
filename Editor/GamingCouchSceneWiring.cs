@@ -1,6 +1,7 @@
 using DSB.GC;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -227,6 +228,7 @@ internal static class GamingCouchSceneWiring
         property.objectReferenceValue = reference;
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(gamingCouch);
+        MarkOwningSceneDirty(gamingCouch);
 
         return GamingCouchSceneWiringResult.SucceededResult(
             gamingCouch,
@@ -237,5 +239,19 @@ internal static class GamingCouchSceneWiring
     private static bool HasSerializedObjectReference(SerializedProperty property)
     {
         return property.objectReferenceValue != null || property.objectReferenceInstanceIDValue != 0;
+    }
+
+    private static void MarkOwningSceneDirty(GamingCouch gamingCouch)
+    {
+        if (gamingCouch == null || gamingCouch.gameObject == null)
+        {
+            return;
+        }
+
+        var scene = gamingCouch.gameObject.scene;
+        if (scene.IsValid() && scene.isLoaded)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
     }
 }
