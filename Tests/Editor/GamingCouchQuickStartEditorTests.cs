@@ -21,6 +21,7 @@ public sealed class GamingCouchQuickStartEditorTests
     private string testFolderAssetPath;
     private Scene previousActiveScene;
     private Scene testScene;
+    private bool testSceneWasCreatedAdditively;
 
     [SetUp]
     public void SetUp()
@@ -29,7 +30,17 @@ public sealed class GamingCouchQuickStartEditorTests
         previousBuildSettingsScenes = EditorBuildSettings.scenes;
         testFolderAssetPath = TestFolderAssetPathPrefix + Guid.NewGuid().ToString("N");
         previousActiveScene = SceneManager.GetActiveScene();
-        testScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+
+        if (CanReuseActiveSceneAsTestScene(previousActiveScene))
+        {
+            testScene = previousActiveScene;
+            testSceneWasCreatedAdditively = false;
+        }
+        else
+        {
+            testScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            testSceneWasCreatedAdditively = true;
+        }
 
         Assert.That(SceneManager.SetActiveScene(testScene), Is.True);
     }
@@ -254,6 +265,16 @@ public sealed class GamingCouchQuickStartEditorTests
 
     private void RestoreActiveSceneAndCloseTestScene()
     {
+        if (testScene.IsValid() && testScene.isLoaded)
+        {
+            ClearSceneRootObjects(testScene);
+        }
+
+        if (!testSceneWasCreatedAdditively)
+        {
+            return;
+        }
+
         if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
         {
             SceneManager.SetActiveScene(previousActiveScene);
@@ -266,6 +287,26 @@ public sealed class GamingCouchQuickStartEditorTests
         if (testScene.IsValid() && testScene.isLoaded)
         {
             EditorSceneManager.CloseScene(testScene, true);
+        }
+    }
+
+    private static bool CanReuseActiveSceneAsTestScene(Scene scene)
+    {
+        return scene.IsValid() &&
+               scene.isLoaded &&
+               string.IsNullOrEmpty(scene.path) &&
+               scene.rootCount == 0;
+    }
+
+    private static void ClearSceneRootObjects(Scene scene)
+    {
+        var roots = scene.GetRootGameObjects();
+        for (var index = 0; index < roots.Length; index++)
+        {
+            if (roots[index] != null)
+            {
+                UnityEngine.Object.DestroyImmediate(roots[index]);
+            }
         }
     }
 
