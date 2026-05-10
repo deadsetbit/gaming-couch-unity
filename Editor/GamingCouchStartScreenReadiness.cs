@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using DSB.GC;
 using DSB.GC.Dev;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -327,67 +325,16 @@ internal sealed class GCStartScreenReadiness
 
 internal static class GCStartScreenReadinessService
 {
-    private const string ListenerPropertyName = "listener";
-    private const string PlayerPrefabPropertyName = "playerPrefab";
-
     internal static GCStartScreenReadiness InspectActiveScene()
     {
         var scene = SceneManager.GetActiveScene();
-        var gamingCouches = FindGamingCouchesInScene(scene);
+        var gamingCouches = GamingCouchSceneWiring.FindGamingCouchesInScene(scene);
         var gamingCouch = gamingCouches.Length == 1 ? gamingCouches[0] : null;
-        var listener = ReadObjectReference(gamingCouch, ListenerPropertyName);
-        var playerPrefab = ReadObjectReference(gamingCouch, PlayerPrefabPropertyName);
+        var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
+        var playerPrefab = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
         var localPlayJson = InspectLocalPlayJson();
 
         return new GCStartScreenReadiness(scene, gamingCouches, gamingCouch, listener, playerPrefab, localPlayJson);
-    }
-
-    private static GamingCouch[] FindGamingCouchesInScene(Scene scene)
-    {
-        if (!scene.IsValid() || !scene.isLoaded)
-        {
-            return new GamingCouch[0];
-        }
-
-        var gamingCouches = new List<GamingCouch>();
-        var roots = scene.GetRootGameObjects();
-        for (var rootIndex = 0; rootIndex < roots.Length; rootIndex++)
-        {
-            var root = roots[rootIndex];
-            if (root == null)
-            {
-                continue;
-            }
-
-            var components = root.GetComponentsInChildren<GamingCouch>(true);
-            for (var componentIndex = 0; componentIndex < components.Length; componentIndex++)
-            {
-                var component = components[componentIndex];
-                if (component != null)
-                {
-                    gamingCouches.Add(component);
-                }
-            }
-        }
-
-        return gamingCouches.ToArray();
-    }
-
-    private static UnityEngine.Object ReadObjectReference(GamingCouch gamingCouch, string propertyName)
-    {
-        if (gamingCouch == null)
-        {
-            return null;
-        }
-
-        var serializedObject = new SerializedObject(gamingCouch);
-        var property = serializedObject.FindProperty(propertyName);
-        if (property == null || property.propertyType != SerializedPropertyType.ObjectReference)
-        {
-            return null;
-        }
-
-        return property.objectReferenceValue;
     }
 
     private static GCStartScreenLocalPlayJsonReadiness InspectLocalPlayJson()

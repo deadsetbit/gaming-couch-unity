@@ -107,13 +107,13 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 3.
+Next action: Implement Task 4.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Build editor start screen shell and readiness model | Added the editor window shell, active-scene readiness detection, multiple-instance error state, and local play JSON status display. |
 | [x] | DONE | 2. Add launch entry points and auto-open policy | Added menu and inspector entry points, startup-only auto-open policy, project-level suppression, and skip conditions for ready/play/compile/update/non-normal-scene contexts. |
-| [ ] | TODO | 3. Extract shared scene wiring helpers | Centralize creating a `GamingCouch` object, assigning serialized references safely, preserving existing references, and using Undo. |
+| [x] | DONE | 3. Extract shared scene wiring helpers | Added shared scene wiring helpers with Undo-backed object creation and null-only serialized reference assignment. |
 | [ ] | TODO | 4. Generate quick-start scripts through staged setup | Create missing starter scripts, refresh assets, persist pending setup, and resume after compilation without overwriting existing scripts. |
 | [ ] | TODO | 5. Generate and wire quick-start player prefab | Create or reuse a `GCQuickStartPlayer` prefab with `GCPlayer` inheritance and a simple 3D placeholder visual. |
 | [ ] | TODO | 6. Generate and wire quick-start game listener | Create or reuse a listener object/component that configures versus play, spawns players, runs the timer, assigns scores, and ends the game. |
@@ -220,6 +220,31 @@ Verification:
 - Confirm the existing create menu still creates and selects a `GamingCouch` object.
 - Confirm existing non-null listener and prefab references are preserved.
 - Confirm duplicate instances block automatic setup.
+
+Completion notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchSceneWiring.cs`, `Editor/GamingCouchSceneWiring.cs.meta`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchStartScreenReadiness.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added internal helper APIs for active-scene `GamingCouch` discovery, create-or-reuse behavior, duplicate-instance blocking, serialized reference reads, and null-only listener/player prefab assignment.
+- Routed the existing `GameObject/GamingCouch`, `Assets/Create/GamingCouch`, and `GamingCouch/Create GamingCouch GameObject` menu paths through the shared helper; successful runs select the created or existing active-scene `GamingCouch`, and duplicate active-scene instances report a blocking dialog.
+- Used `Undo.RegisterCreatedObjectUndo` for created scene objects and `Undo.RecordObject` for serialized listener/player prefab reference edits.
+- Left generated scripts, prefab generation, listener generation, scene generation, and start-screen action wiring untouched.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchSceneWiring.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchSceneWiring.cs.meta`; scoped static search for generation/scene/prefab APIs in Task 3 files.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 1, 2026-05-10:
+
+- Patched null-only serialized reference assignment to treat missing/broken Unity object references as occupied serialized slots, so quick-start setup cannot overwrite user-owned listener or player prefab fields that currently resolve to `null`.
+- Static inspection confirmed active-scene-only `GamingCouch` discovery, duplicate active-scene instances remain a blocking state without deletion, menu creation routes through the shared helper, and no generated script, prefab, listener, scene, build-settings, or start-screen action wiring was added.
+- Validation run: `git diff --check`; trailing-whitespace/conflict-marker search across Task 3 files; scoped static searches for later-task generation/action APIs and active-scene-only discovery APIs.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 2, 2026-05-10:
+
+- Patched Undo ordering so created `GamingCouch` scene objects are registered immediately after `GameObject` construction, before adding the `GamingCouch` component.
+- Patched serialized reference assignment to pair the explicit `Undo.RecordObject` call with `SerializedObject.ApplyModifiedPropertiesWithoutUndo()`, keeping listener/player prefab edits in the named Undo operation without adding a second SerializedObject undo registration.
+- Static inspection confirmed active-scene-only `GamingCouch` discovery, duplicate active-scene instances remain a blocking state without deletion, menu creation routes through the shared helper, non-null and missing/broken serialized references remain preserved, and no generated script, prefab, listener, scene, build-settings, or start-screen action wiring was added.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchSceneWiring.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchSceneWiring.cs.meta`; trailing-whitespace/conflict-marker search across Task 3 files; scoped static searches for later-task generation/action APIs and active-scene-only discovery APIs.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
 
 ### Task 4: Generate quick-start scripts through staged setup
 

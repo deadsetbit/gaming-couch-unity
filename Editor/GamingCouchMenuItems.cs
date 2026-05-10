@@ -1,6 +1,4 @@
 using UnityEditor;
-using UnityEngine;
-using DSB.GC;
 
 public class GamingCouchMenuItems
 {
@@ -15,15 +13,16 @@ public class GamingCouchMenuItems
   [MenuItem("GamingCouch/Create GamingCouch GameObject")]
   static void CreatePrefabInstance()
   {
-    GameObject go = new GameObject();
-    go.AddComponent<GamingCouch>();
-    if (go == null)
+    var result = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
+    if (result.IsBlocked)
     {
+      EditorUtility.DisplayDialog("Create GamingCouch", result.message, "OK");
       return;
     }
 
-    go.name = "GamingCouch";
-
-    Selection.activeObject = go;
+    if (result.gamingCouch != null)
+    {
+      Selection.activeObject = result.gamingCouch.gameObject;
+    }
   }
 }
