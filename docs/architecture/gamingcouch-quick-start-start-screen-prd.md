@@ -107,7 +107,7 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 7.
+Next action: Implement Task 8.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ Next action: Implement Task 7.
 | [x] | DONE | 4. Generate quick-start scripts through staged setup | Added staged no-overwrite script generation, asset refresh, pending compile continuation, path-gated type resolution, and duplicate compiled-type collision blocking. |
 | [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
 | [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
-| [ ] | TODO | 7. Create quick-start scene flow | Generate, open, save, and add the quick-start scene to Build Settings while preserving unsaved-scene prompts. |
+| [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
 | [ ] | TODO | 8. Complete start screen actions and messaging | Connect checklist actions, primary setup action, blocker messages, rerun warnings, and success states. |
 | [ ] | TODO | 9. Add editor tests for detection and generation behavior | Cover readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | TODO | 10. Run manual Unity validation | Validate staged compilation, generated scene Play Mode loop, JSON blocker messaging, and rerun safety in Unity 2022.3. |
@@ -415,6 +415,39 @@ Verification:
 - Confirm the generated scene opens after creation.
 - Confirm the scene contains the wired `GamingCouch`, listener, player prefab reference, camera, and light.
 - Confirm Build Settings contains the scene once, not duplicated.
+
+Implementation pass notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added `Assets/GamingCouch/QuickStart/GamingCouchQuickStart.unity` as the quick-start scene target and exposed `CreateOrOpenQuickStartScene()` as an editor service API without wiring start-screen buttons.
+- Added the `QuickStartScene` scripts-ready continuation path: script generation can queue through compilation, then scene setup resumes after compiled `GCQuickStartGame` and `GCQuickStartPlayer` types are available.
+- The scene flow prompts through `EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()` before replacing the active scene, opens/reuses an existing quick-start scene when present, or creates a new empty scene when absent.
+- Newly created scenes get Undo-backed camera and directional light objects; reruns of existing scenes do not add duplicate camera/light objects.
+- Scene wiring reuses the existing helpers for `GamingCouch` creation, quick-start prefab creation/reuse, quick-start listener creation/reuse, and null-only listener/player prefab assignment, preserving non-null, missing, or broken serialized references.
+- Successful setup saves the quick-start scene and appends it to `EditorBuildSettings.scenes` only when the scene path is not already present.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for scene open/new/save APIs, Build Settings insertion, QuickStartScene staged handler, camera/light creation, start-screen button wiring exclusion, and generated QuickStart folder absence.
+- Unity 2022.3 manual editor validation was not run in this package-only command-line environment.
+
+Review pass 1 notes, 2026-05-10:
+
+- Patched the quick-start scene flow so it opens or creates and explicitly activates `Assets/GamingCouch/QuickStart/GamingCouchQuickStart.unity` before creating the player prefab or running active-scene wiring helpers. This keeps prefab temporary objects and `GamingCouch` wiring scoped to the quick-start scene instead of the previously active scene.
+- Left Task 7 `IN PROGRESS`; next action is Task 7 review pass 2.
+
+Review pass 2 notes, 2026-05-10:
+
+- No additional code defects found in the Task 7 scoped scene-service flow.
+- Static inspection confirmed `CreateOrOpenQuickStartScene()` uses the `QuickStartScene` continuation, ActiveScene prefab/listener handlers defer for that intent, and `EnsureQuickStartSceneOnScriptsReady()` performs the scene setup once scripts are available.
+- Static inspection confirmed scene replacement is gated by `EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()` unless the active loaded scene is already `Assets/GamingCouch/QuickStart/GamingCouchQuickStart.unity`, and active-scene helpers run only after the quick-start scene is active.
+- Static inspection confirmed reruns reuse existing scripts, prefab assets, scene assets, non-null or broken serialized references, and Build Settings entries; camera and light creation is limited to newly created scenes.
+- Failure-mode decision: setup may leave the opened or newly created quick-start scene dirty if later prefab/listener/wiring/save blockers occur; this is acceptable for Task 7 because the flow reports a blocking result and avoids overwriting existing assets or serialized references.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for Unity scene APIs, Build Settings insertion, QuickStartScene handler/deferred ActiveScene handlers, camera/light creation, start-screen action wiring exclusion, and generated QuickStart folder absence.
+- Unity 2022.3 manual editor validation was not run in this package-only command-line environment.
+- Left Task 7 `IN PROGRESS`; next action is parent validation for Task 7.
+
+Parent validation, 2026-05-10:
+
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for Unity scene APIs, Build Settings insertion, QuickStartScene handler, deferred ActiveScene handlers, camera/light creation, start-screen action wiring exclusion, `CreateOrOpenQuickStartScene()`, and generated QuickStart folder absence.
+- No package-local `Assets/GamingCouch/QuickStart` directory was created during command-line validation.
 
 ### Task 8: Complete start screen actions and messaging
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -30,6 +31,13 @@ internal enum GCQuickStartPlayerPrefabSetupStatus
 internal enum GCQuickStartGameListenerSetupStatus
 {
     Ready,
+    Blocked,
+}
+
+internal enum GCQuickStartSceneSetupStatus
+{
+    Ready,
+    PendingCompilation,
     Blocked,
 }
 
@@ -128,6 +136,43 @@ internal sealed class GCQuickStartGameListenerSetupResult
     }
 }
 
+internal sealed class GCQuickStartSceneSetupResult
+{
+    internal readonly GCQuickStartSceneSetupStatus status;
+    internal readonly bool changed;
+    internal readonly Scene scene;
+    internal readonly string sceneAssetPath;
+    internal readonly string message;
+    internal readonly string[] blockedReasons;
+
+    internal GCQuickStartSceneSetupResult(
+        GCQuickStartSceneSetupStatus status,
+        bool changed,
+        Scene scene,
+        string sceneAssetPath,
+        string message,
+        string[] blockedReasons
+    )
+    {
+        this.status = status;
+        this.changed = changed;
+        this.scene = scene;
+        this.sceneAssetPath = sceneAssetPath;
+        this.message = message;
+        this.blockedReasons = blockedReasons ?? new string[0];
+    }
+
+    internal bool IsBlocked
+    {
+        get { return status == GCQuickStartSceneSetupStatus.Blocked; }
+    }
+
+    internal bool IsPendingCompilation
+    {
+        get { return status == GCQuickStartSceneSetupStatus.PendingCompilation; }
+    }
+}
+
 internal sealed class GCQuickStartSetupContinuationContext
 {
     internal readonly GCQuickStartSetupIntent intent;
@@ -173,6 +218,7 @@ internal static class GamingCouchQuickStartSetup
     internal const string GameScriptAssetPath = QuickStartFolderAssetPath + "/" + GameTypeName + ".cs";
     internal const string PlayerScriptAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".cs";
     internal const string PlayerPrefabAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".prefab";
+    internal const string QuickStartSceneAssetPath = QuickStartFolderAssetPath + "/GamingCouchQuickStart.unity";
 
     private const string PendingSetupSessionKey = "DSB.GC.QuickStart.PendingSetup.v1";
     private const string PendingIntentSessionKey = "DSB.GC.QuickStart.PendingIntent.v1";
@@ -181,15 +227,19 @@ internal static class GamingCouchQuickStartSetup
     private const string ListenerObjectName = GameTypeName;
     private const string CreateGameListenerUndoName = "Create Quick-Start Game Listener";
     private const string AddGameListenerComponentUndoName = "Add Quick-Start Game Listener";
+    private const string CreateCameraUndoName = "Create Quick-Start Camera";
+    private const string CreateLightUndoName = "Create Quick-Start Light";
     private const string PlayerVisualName = "Visual";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
     private static Action<GCQuickStartSetupContinuationContext> scriptsReadyHandlers;
+    private static GCQuickStartSceneSetupResult lastQuickStartSceneSetupResult;
 
     static GamingCouchQuickStartSetup()
     {
         RegisterScriptsReadyHandler(EnsureQuickStartPlayerPrefabOnScriptsReady);
         RegisterScriptsReadyHandler(EnsureQuickStartGameListenerOnScriptsReady);
+        RegisterScriptsReadyHandler(EnsureQuickStartSceneOnScriptsReady);
 
         if (HasPendingSetup())
         {
@@ -326,6 +376,49 @@ internal static class GamingCouchQuickStartSetup
     internal static bool HasPendingSetup()
     {
         return SessionState.GetBool(PendingSetupSessionKey, false);
+    }
+
+    internal static GCQuickStartSceneSetupResult CreateOrOpenQuickStartScene()
+    {
+        lastQuickStartSceneSetupResult = null;
+        var scriptResult = EnsureQuickStartScripts(GCQuickStartSetupIntent.QuickStartScene);
+        if (scriptResult.IsBlocked)
+        {
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                scriptResult.changed,
+                default(Scene),
+                QuickStartSceneAssetPath,
+                scriptResult.message,
+                new List<string>(scriptResult.blockedReasons)
+            );
+        }
+
+        if (scriptResult.IsPendingCompilation)
+        {
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.PendingCompilation,
+                scriptResult.changed,
+                default(Scene),
+                QuickStartSceneAssetPath,
+                scriptResult.message,
+                new List<string>(scriptResult.blockedReasons)
+            );
+        }
+
+        if (lastQuickStartSceneSetupResult != null)
+        {
+            return lastQuickStartSceneSetupResult;
+        }
+
+        return CreateSceneResult(
+            GCQuickStartSceneSetupStatus.Blocked,
+            scriptResult.changed,
+            default(Scene),
+            QuickStartSceneAssetPath,
+            "Quick-start scene setup did not run after scripts became ready.",
+            new List<string> { "The quick-start scene continuation handler was not available." }
+        );
     }
 
     private static GCQuickStartScriptSetupResult CreateResult(
@@ -758,6 +851,347 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
+    private static GCQuickStartSceneSetupResult CreateSceneResult(
+        GCQuickStartSceneSetupStatus status,
+        bool changed,
+        Scene scene,
+        string sceneAssetPath,
+        string message,
+        List<string> blockedReasons
+    )
+    {
+        return new GCQuickStartSceneSetupResult(
+            status,
+            changed,
+            scene,
+            sceneAssetPath,
+            message,
+            blockedReasons.ToArray()
+        );
+    }
+
+    private static GCQuickStartSceneSetupResult EnsureQuickStartScene(
+        GCQuickStartSetupContinuationContext context
+    )
+    {
+        var blockedReasons = new List<string>();
+        var changed = false;
+
+        if (context == null)
+        {
+            blockedReasons.Add("Quick-start scene setup requires a scripts-ready continuation context.");
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                false,
+                default(Scene),
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        var scene = OpenOrCreateQuickStartScene(blockedReasons, out var createdScene);
+        changed |= createdScene;
+        if (blockedReasons.Count > 0)
+        {
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                changed,
+                scene,
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!EnsureQuickStartSceneIsActive(scene, blockedReasons))
+        {
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                changed,
+                scene,
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        var prefabResult = EnsureQuickStartPlayerPrefab(context);
+        changed |= prefabResult.changed;
+        if (prefabResult.IsBlocked)
+        {
+            blockedReasons.Add(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                changed,
+                scene,
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (createdScene)
+        {
+            CreateDefaultQuickStartSceneObjects(scene);
+        }
+
+        var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
+        if (gamingCouchResult.IsBlocked)
+        {
+            blockedReasons.Add(gamingCouchResult.message);
+        }
+        else
+        {
+            changed |= gamingCouchResult.changed;
+        }
+
+        if (gamingCouchResult.gamingCouch != null)
+        {
+            var assignPlayerResult = GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(
+                gamingCouchResult.gamingCouch,
+                prefabResult.prefab
+            );
+            if (assignPlayerResult.IsBlocked)
+            {
+                blockedReasons.Add(assignPlayerResult.message);
+            }
+            else
+            {
+                changed |= assignPlayerResult.changed;
+            }
+        }
+
+        if (gamingCouchResult.gamingCouch != null)
+        {
+            var listenerResult = EnsureQuickStartGameListener(context, gamingCouchResult.gamingCouch);
+            if (listenerResult.IsBlocked)
+            {
+                blockedReasons.Add(listenerResult.message + " " + string.Join(" ", listenerResult.blockedReasons));
+            }
+            else
+            {
+                changed |= listenerResult.changed;
+                if (listenerResult.listenerObject != null)
+                {
+                    var assignListenerResult = GamingCouchSceneWiring.AssignListenerIfMissing(
+                        gamingCouchResult.gamingCouch,
+                        listenerResult.listenerObject
+                    );
+                    if (assignListenerResult.IsBlocked)
+                    {
+                        blockedReasons.Add(assignListenerResult.message);
+                    }
+                    else
+                    {
+                        changed |= assignListenerResult.changed;
+                    }
+                }
+            }
+        }
+
+        if (blockedReasons.Count > 0)
+        {
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                changed,
+                scene,
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!EditorSceneManager.SaveScene(scene, QuickStartSceneAssetPath))
+        {
+            blockedReasons.Add("Unity did not save the quick-start scene at " + QuickStartSceneAssetPath + ".");
+            return CreateSceneResult(
+                GCQuickStartSceneSetupStatus.Blocked,
+                changed,
+                scene,
+                QuickStartSceneAssetPath,
+                "Quick-start scene setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        changed |= AddQuickStartSceneToBuildSettings();
+
+        return CreateSceneResult(
+            GCQuickStartSceneSetupStatus.Ready,
+            changed,
+            scene,
+            QuickStartSceneAssetPath,
+            "Quick-start scene is ready at " + QuickStartSceneAssetPath + ".",
+            blockedReasons
+        );
+    }
+
+    private static Scene OpenOrCreateQuickStartScene(List<string> blockedReasons, out bool createdScene)
+    {
+        createdScene = false;
+
+        var fullPath = AssetPathToFullPath(QuickStartSceneAssetPath);
+        if (Directory.Exists(fullPath))
+        {
+            blockedReasons.Add("Cannot create quick-start scene " + QuickStartSceneAssetPath + " because a folder exists at that path.");
+            return default(Scene);
+        }
+
+        var activeScene = SceneManager.GetActiveScene();
+        if (activeScene.IsValid() &&
+            activeScene.isLoaded &&
+            string.Equals(activeScene.path, QuickStartSceneAssetPath, StringComparison.Ordinal))
+        {
+            return activeScene;
+        }
+
+        var existingSceneAsset = LoadExistingQuickStartSceneAsset(blockedReasons);
+        if (blockedReasons.Count > 0)
+        {
+            return default(Scene);
+        }
+
+        if (!PromptToSaveModifiedScenesBeforeReplacingActiveScene())
+        {
+            blockedReasons.Add("Quick-start scene setup was cancelled before replacing the active scene.");
+            return default(Scene);
+        }
+
+        if (existingSceneAsset != null)
+        {
+            var openedScene = EditorSceneManager.OpenScene(QuickStartSceneAssetPath, OpenSceneMode.Single);
+            if (!openedScene.IsValid() || !openedScene.isLoaded)
+            {
+                blockedReasons.Add("Unity did not open the existing quick-start scene at " + QuickStartSceneAssetPath + ".");
+            }
+
+            return openedScene;
+        }
+
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            blockedReasons.Add("Unity did not create a new quick-start scene.");
+            return scene;
+        }
+
+        createdScene = true;
+        return scene;
+    }
+
+    private static bool EnsureQuickStartSceneIsActive(Scene scene, List<string> blockedReasons)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            blockedReasons.Add("No loaded quick-start scene is available for scene wiring.");
+            return false;
+        }
+
+        var activeScene = SceneManager.GetActiveScene();
+        if (activeScene == scene)
+        {
+            return true;
+        }
+
+        if (SceneManager.SetActiveScene(scene))
+        {
+            return true;
+        }
+
+        blockedReasons.Add("Unity did not make " + QuickStartSceneAssetPath + " the active scene for setup.");
+        return false;
+    }
+
+    private static SceneAsset LoadExistingQuickStartSceneAsset(List<string> blockedReasons)
+    {
+        var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(QuickStartSceneAssetPath);
+        if (sceneAsset != null)
+        {
+            return sceneAsset;
+        }
+
+        var existingAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(QuickStartSceneAssetPath);
+        if (existingAsset != null)
+        {
+            blockedReasons.Add("Cannot create quick-start scene " + QuickStartSceneAssetPath + " because a non-scene asset already exists at that path.");
+            return null;
+        }
+
+        var fullPath = AssetPathToFullPath(QuickStartSceneAssetPath);
+        if (!File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        AssetDatabase.ImportAsset(QuickStartSceneAssetPath, ImportAssetOptions.ForceSynchronousImport);
+        sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(QuickStartSceneAssetPath);
+        if (sceneAsset == null)
+        {
+            blockedReasons.Add("Cannot open quick-start scene " + QuickStartSceneAssetPath + " because a file exists there but Unity did not import it as a scene asset.");
+        }
+
+        return sceneAsset;
+    }
+
+    private static bool PromptToSaveModifiedScenesBeforeReplacingActiveScene()
+    {
+        return EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+    }
+
+    private static void CreateDefaultQuickStartSceneObjects(Scene scene)
+    {
+        var cameraObject = new GameObject("Main Camera");
+        Undo.RegisterCreatedObjectUndo(cameraObject, CreateCameraUndoName);
+        if (cameraObject.scene != scene)
+        {
+            SceneManager.MoveGameObjectToScene(cameraObject, scene);
+        }
+
+        cameraObject.tag = "MainCamera";
+        cameraObject.transform.position = new Vector3(0.0f, 1.5f, -6.0f);
+        cameraObject.transform.rotation = Quaternion.Euler(12.0f, 0.0f, 0.0f);
+        cameraObject.AddComponent<Camera>();
+        cameraObject.AddComponent<AudioListener>();
+        GamingCouchSceneWiring.MarkSceneDirty(cameraObject);
+
+        var lightObject = new GameObject("Directional Light");
+        Undo.RegisterCreatedObjectUndo(lightObject, CreateLightUndoName);
+        if (lightObject.scene != scene)
+        {
+            SceneManager.MoveGameObjectToScene(lightObject, scene);
+        }
+
+        lightObject.transform.rotation = Quaternion.Euler(50.0f, -30.0f, 0.0f);
+        var light = lightObject.AddComponent<Light>();
+        light.type = LightType.Directional;
+        light.intensity = 1.0f;
+        GamingCouchSceneWiring.MarkSceneDirty(lightObject);
+    }
+
+    private static bool AddQuickStartSceneToBuildSettings()
+    {
+        var scenes = EditorBuildSettings.scenes;
+        for (var index = 0; index < scenes.Length; index++)
+        {
+            if (scenes[index] != null &&
+                string.Equals(scenes[index].path, QuickStartSceneAssetPath, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        var nextScenes = new EditorBuildSettingsScene[scenes.Length + 1];
+        for (var index = 0; index < scenes.Length; index++)
+        {
+            nextScenes[index] = scenes[index];
+        }
+
+        nextScenes[nextScenes.Length - 1] = new EditorBuildSettingsScene(QuickStartSceneAssetPath, true);
+        EditorBuildSettings.scenes = nextScenes;
+        return true;
+    }
+
     private static GameObject EnsureQuickStartGameListenerObject(
         GCQuickStartSetupContinuationContext context,
         Scene scene,
@@ -991,16 +1425,16 @@ internal static class GamingCouchQuickStartSetup
         GCQuickStartSetupContinuationContext context
     )
     {
+        if (context.intent != GCQuickStartSetupIntent.ActiveScene)
+        {
+            Debug.Log("Quick-start player prefab assignment is deferred until quick-start scene wiring.");
+            return;
+        }
+
         var prefabResult = EnsureQuickStartPlayerPrefab(context);
         if (prefabResult.IsBlocked)
         {
             Debug.LogWarning(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
-            return;
-        }
-
-        if (context.intent != GCQuickStartSetupIntent.ActiveScene)
-        {
-            Debug.Log(prefabResult.message + " GamingCouch player prefab assignment is deferred until quick-start scene wiring.");
             return;
         }
 
@@ -1065,6 +1499,25 @@ internal static class GamingCouchQuickStartSetup
         }
 
         Debug.Log(listenerResult.message + " " + assignResult.message);
+    }
+
+    private static void EnsureQuickStartSceneOnScriptsReady(
+        GCQuickStartSetupContinuationContext context
+    )
+    {
+        if (context.intent != GCQuickStartSetupIntent.QuickStartScene)
+        {
+            return;
+        }
+
+        lastQuickStartSceneSetupResult = EnsureQuickStartScene(context);
+        if (lastQuickStartSceneSetupResult.IsBlocked)
+        {
+            Debug.LogWarning(lastQuickStartSceneSetupResult.message + " " + string.Join(" ", lastQuickStartSceneSetupResult.blockedReasons));
+            return;
+        }
+
+        Debug.Log(lastQuickStartSceneSetupResult.message);
     }
 
     private static string AssetPathToFullPath(string assetPath)
