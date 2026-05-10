@@ -42,6 +42,7 @@ public sealed class GamingCouchQuickStartEditorTests
             testSceneWasCreatedAdditively = true;
         }
 
+        ClearSceneRootObjects(testScene);
         Assert.That(SceneManager.SetActiveScene(testScene), Is.True);
     }
 
@@ -294,8 +295,7 @@ public sealed class GamingCouchQuickStartEditorTests
     {
         return scene.IsValid() &&
                scene.isLoaded &&
-               string.IsNullOrEmpty(scene.path) &&
-               scene.rootCount == 0;
+               string.IsNullOrEmpty(scene.path);
     }
 
     private static void ClearSceneRootObjects(Scene scene)
