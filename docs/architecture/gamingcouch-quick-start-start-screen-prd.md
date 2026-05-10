@@ -107,14 +107,14 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 4.
+Next action: Implement Task 5.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Build editor start screen shell and readiness model | Added the editor window shell, active-scene readiness detection, multiple-instance error state, and local play JSON status display. |
 | [x] | DONE | 2. Add launch entry points and auto-open policy | Added menu and inspector entry points, startup-only auto-open policy, project-level suppression, and skip conditions for ready/play/compile/update/non-normal-scene contexts. |
 | [x] | DONE | 3. Extract shared scene wiring helpers | Added shared scene wiring helpers with Undo-backed object creation and null-only serialized reference assignment. |
-| [ ] | TODO | 4. Generate quick-start scripts through staged setup | Create missing starter scripts, refresh assets, persist pending setup, and resume after compilation without overwriting existing scripts. |
+| [x] | DONE | 4. Generate quick-start scripts through staged setup | Added staged no-overwrite script generation, asset refresh, pending compile continuation, path-gated type resolution, and duplicate compiled-type collision blocking. |
 | [ ] | TODO | 5. Generate and wire quick-start player prefab | Create or reuse a `GCQuickStartPlayer` prefab with `GCPlayer` inheritance and a simple 3D placeholder visual. |
 | [ ] | TODO | 6. Generate and wire quick-start game listener | Create or reuse a listener object/component that configures versus play, spawns players, runs the timer, assigns scores, and ends the game. |
 | [ ] | TODO | 7. Create quick-start scene flow | Generate, open, save, and add the quick-start scene to Build Settings while preserving unsaved-scene prompts. |
@@ -264,6 +264,33 @@ Verification:
 - Confirm first run creates missing scripts.
 - Confirm rerun does not modify existing script contents.
 - Confirm setup can resume after Unity compiles generated scripts.
+
+Completion notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `Editor/GamingCouchQuickStartSetup.cs.meta`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added an internal staged setup coordinator that creates `Assets/GamingCouch/QuickStart` through `AssetDatabase` when run inside Unity, generates `GCQuickStartGame.cs` and `GCQuickStartPlayer.cs` with `FileMode.CreateNew`, refreshes assets after file creation, and never overwrites existing script assets.
+- Added `SessionState` pending setup persistence plus an `InitializeOnLoad` resume poller that waits for compilation/update to finish and dispatches a scripts-ready continuation hook for later prefab, listener, and scene wiring tasks.
+- Kept start screen setup buttons disabled placeholders; Task 4 only exposes the editor service and does not create prefabs, listeners, scenes, build settings entries, or package-root generated assets.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs.meta`; `find . -maxdepth 3 -path './Assets/GamingCouch/QuickStart' -type d`; scoped static searches for prefab/scene/build APIs, conflict markers, no-overwrite/refresh/session state usage, and disabled start-screen actions.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 1, 2026-05-10:
+
+- Patched quick-start folder creation to import existing on-disk directories, block existing files, verify `AssetDatabase.CreateFolder` created the exact requested `Assets/GamingCouch` or `Assets/GamingCouch/QuickStart` path, and block if Unity cannot import the result as a valid asset folder.
+- Patched staged continuation type resolution to load `MonoScript` assets from the generated script paths and use `MonoScript.GetClass()`, so unrelated same-named compiled types cannot satisfy the scripts-ready gate.
+- Static inspection confirmed generated assets still target project-owned `Assets/GamingCouch/QuickStart`, scripts are written with `FileMode.CreateNew`, existing scripts are reused without overwriting, refresh is only triggered after script file creation, and no prefab, listener, scene, build-settings, or start-screen action wiring was added.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs.meta`; scoped static searches for package-local `Assets` generation, prefab/listener/scene/build-settings/start-screen action APIs, no-overwrite/refresh/session state usage, and generated source API references.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 2, 2026-05-10:
+
+- Patched script reuse to import existing on-disk `.cs` files before the `MonoScript.GetClass()` gate, while still blocking folder and non-script asset collisions at the generated script paths.
+- Patched pending handler registration to restart the resume poller when a handler is registered while setup is pending.
+- Patched script creation to block generation when a compiled same-named type already exists outside the generated script path, avoiding duplicate class compile errors.
+- Patched the script type gate to reject abstract or generic compiled types, added the required `System.Reflection` import for resilient type loading, and added a concrete `GCQuickStartPlayer.GetHudValueText()` override so the generated player remains compatible with this repo's `GCPlayer` HUD contract.
+- Static inspection confirmed generated assets still target project-owned `Assets/GamingCouch/QuickStart`, scripts are written with `FileMode.CreateNew`, existing scripts are not overwritten, `SessionState`/domain-reload continuation remains in place, and no prefab, listener, scene, build-settings, or start-screen action wiring was added.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchQuickStartSetup.cs.meta`; scoped static searches for conflict markers, package-local `Assets` generation, prefab/listener/scene/build-settings/start-screen action APIs, no-overwrite/refresh/session state usage, and generated source API references.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
 
 ### Task 5: Generate and wire quick-start player prefab
 
