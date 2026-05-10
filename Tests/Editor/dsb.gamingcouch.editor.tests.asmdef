@@ -2,9 +2,7 @@
     "name": "GamingCouch.Editor.Tests",
     "references": [
         "GamingCouch",
-        "GamingCouch.Editor",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "GamingCouch.Editor"
     ],
     "includePlatforms": [
         "Editor"
