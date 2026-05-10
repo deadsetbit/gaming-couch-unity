@@ -43,7 +43,7 @@ public sealed class GamingCouchQuickStartEditorTests
         }
 
         ClearSceneRootObjects(testScene);
-        Assert.That(SceneManager.SetActiveScene(testScene), Is.True);
+        EnsureSceneIsActive(testScene);
     }
 
     [TearDown]
@@ -296,6 +296,17 @@ public sealed class GamingCouchQuickStartEditorTests
         return scene.IsValid() &&
                scene.isLoaded &&
                string.IsNullOrEmpty(scene.path);
+    }
+
+    private static void EnsureSceneIsActive(Scene scene)
+    {
+        var activeScene = SceneManager.GetActiveScene();
+        if (activeScene.IsValid() && activeScene.handle == scene.handle)
+        {
+            return;
+        }
+
+        Assert.That(SceneManager.SetActiveScene(scene), Is.True);
     }
 
     private static void ClearSceneRootObjects(Scene scene)
