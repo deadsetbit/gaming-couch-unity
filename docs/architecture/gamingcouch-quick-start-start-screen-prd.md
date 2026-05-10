@@ -103,11 +103,11 @@ The start screen should appear automatically when Unity starts into an active sc
 
 ## Implementation Task Tracker
 
-Overall status: IN PROGRESS
+Overall status: BLOCKED
 
-Current task: None
+Current task: 10. Run manual Unity validation
 
-Next action: Implement Task 10.
+Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes this checkout, then rerun Task 10 manual validation.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -120,7 +120,7 @@ Next action: Implement Task 10.
 | [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
 | [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist, primary setup, and quick-start scene actions with pending, blocker, success, reuse, and read-only JSON messaging. |
 | [x] | DONE | 9. Add editor tests for detection and generation behavior | Added edit-mode coverage for readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
-| [ ] | TODO | 10. Run manual Unity validation | Validate staged compilation, generated scene Play Mode loop, JSON blocker messaging, and rerun safety in Unity 2022.3. |
+| [ ] | BLOCKED | 10. Run manual Unity validation | Blocked: no Unity 2022.3 executable is installed or on PATH, this checkout is a Unity package rather than a Unity project, and nearby 2022.3 projects that consume GamingCouch reference GitHub URLs instead of this checkout. |
 
 ## Task Details
 
@@ -565,3 +565,11 @@ Verification:
 - Record Unity version used.
 - Record pass/fail for each manual scenario.
 - Update this document with final status and any remaining follow-up tasks.
+
+Review pass 1, 2026-05-10:
+
+- Blocker independently verified with read-only shell checks; Unity was not launched.
+- `Unity`, `unity`, `UnityHub`, and `unityhub` were not available on PATH, `/Applications/Unity/Hub/Editor` contained only `6000.2.7f2`, and `/Applications/Unity/Hub/Editor/2022.3.19f1/Unity.app/Contents/MacOS/Unity` was not executable.
+- This checkout is a package-only repo: `package.json` declares `com.dsb.gamingcouch` for Unity `2022.3`, while package-local searches found no `ProjectSettings/`, `ProjectVersion.txt`, or `Packages/manifest.json`.
+- Nearby Unity `2022.3.19f1` projects that consume `com.dsb.gamingcouch` (`piratewars`, `lesheep`, `rockets`, `game-sumo`, and `temp2/gaming-couch-unity-template`) reference `github.com/deadsetbit/gaming-couch-unity.git` or `git@github.com:deadsetbit/gaming-couch-unity.git` in `Packages/manifest.json`, not this checkout.
+- Manual Task 10 validation remains blocked until a Unity 2022.3 environment can open a project whose manifest references this local package checkout.
