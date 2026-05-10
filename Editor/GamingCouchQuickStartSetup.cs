@@ -1225,14 +1225,32 @@ internal static class GamingCouchQuickStartSetup
 
         if (File.Exists(fullPath))
         {
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
-            reusedAssetPaths.Add(assetPath);
+            EnsureGeneratedAssetFileWithoutOverwrite(assetPath, source, createdAssetPaths, reusedAssetPaths, blockedReasons);
             return;
         }
 
         if (FindTypeByName(typeName) != null)
         {
             blockedReasons.Add("Cannot create " + assetPath + " because a compiled type named " + typeName + " already exists outside the generated script path.");
+            return;
+        }
+
+        EnsureGeneratedAssetFileWithoutOverwrite(assetPath, source, createdAssetPaths, reusedAssetPaths, blockedReasons);
+    }
+
+    internal static void EnsureGeneratedAssetFileWithoutOverwrite(
+        string assetPath,
+        string source,
+        List<string> createdAssetPaths,
+        List<string> reusedAssetPaths,
+        List<string> blockedReasons
+    )
+    {
+        var fullPath = AssetPathToFullPath(assetPath);
+        if (File.Exists(fullPath))
+        {
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            reusedAssetPaths.Add(assetPath);
             return;
         }
 
@@ -1610,11 +1628,16 @@ internal static class GamingCouchQuickStartSetup
 
     private static bool AddQuickStartSceneToBuildSettings()
     {
+        return AddSceneToBuildSettingsIfMissing(QuickStartSceneAssetPath);
+    }
+
+    internal static bool AddSceneToBuildSettingsIfMissing(string sceneAssetPath)
+    {
         var scenes = EditorBuildSettings.scenes;
         for (var index = 0; index < scenes.Length; index++)
         {
             if (scenes[index] != null &&
-                string.Equals(scenes[index].path, QuickStartSceneAssetPath, StringComparison.Ordinal))
+                string.Equals(scenes[index].path, sceneAssetPath, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -1626,7 +1649,7 @@ internal static class GamingCouchQuickStartSetup
             nextScenes[index] = scenes[index];
         }
 
-        nextScenes[nextScenes.Length - 1] = new EditorBuildSettingsScene(QuickStartSceneAssetPath, true);
+        nextScenes[nextScenes.Length - 1] = new EditorBuildSettingsScene(sceneAssetPath, true);
         EditorBuildSettings.scenes = nextScenes;
         return true;
     }

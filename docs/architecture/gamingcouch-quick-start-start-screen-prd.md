@@ -107,7 +107,7 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 9.
+Next action: Implement Task 10.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -119,7 +119,7 @@ Next action: Implement Task 9.
 | [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
 | [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
 | [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist, primary setup, and quick-start scene actions with pending, blocker, success, reuse, and read-only JSON messaging. |
-| [ ] | TODO | 9. Add editor tests for detection and generation behavior | Cover readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
+| [x] | DONE | 9. Add editor tests for detection and generation behavior | Added edit-mode coverage for readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | TODO | 10. Run manual Unity validation | Validate staged compilation, generated scene Play Mode loop, JSON blocker messaging, and rerun safety in Unity 2022.3. |
 
 ## Task Details
@@ -522,6 +522,29 @@ Verification:
 - Run the available Unity editor test suite if present.
 - If no automated Unity test runner is available in this environment, record the exact skipped command and manual validation gap.
 - Run `git diff --check`.
+
+Implementation notes, 2026-05-10:
+
+- Added a `Tests/Editor` Unity editor test assembly for readiness detection states, duplicate `GamingCouch` detection, null-only listener/player prefab reference preservation, generated-file no-overwrite behavior, suppression settings, and Build Settings insertion de-duplication.
+- Added `GamingCouch.Editor.Tests` internals access plus narrow internal seams for generated asset file creation without overwrite and build-settings insertion without duplicates.
+- Tests create temporary additive scenes and dynamic test-owned asset folders; they do not call `EnsureQuickStartScripts()` or `CreateOrOpenQuickStartScene()` and do not create `Assets/GamingCouch/QuickStart` content during command-line validation.
+- Validation run: `git diff --check`; static NUnit/Test attribute search; asmdef JSON reference sanity check; scoped search confirmed tests do not invoke quick-start generation APIs or reference the real `Assets/GamingCouch/QuickStart` path; conflict-marker search.
+- Unity editor test run skipped: `/Applications/Unity/Hub/Editor/2022.3.19f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics -projectPath /Users/anttil/dev/dsb/gaming-couch-unity -runTests -testPlatform EditMode -testResults /tmp/gaming-couch-unity-editmode-results.xml -quit` was not run because `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings/` or `Packages/manifest.json` for a safe package-local Unity project import.
+
+Review pass 2, 2026-05-10:
+
+- Patched the edit-mode fixture cleanup so active scene restoration, additive test scene closure, temporary asset deletion, Build Settings restoration, and suppression-setting restoration are each attempted even if another cleanup step fails.
+- Guarded temporary asset deletion to the test-owned `Assets/GamingCouchQuickStartEditorTests_*` prefix and added filesystem fallback cleanup for AssetDatabase import edge cases.
+- Extended the Build Settings insertion test to confirm existing entries are preserved while repeated insertion of the same quick-start test scene does not duplicate it.
+- Static inspection found no Task 9 production regression in `EnsureGeneratedAssetFileWithoutOverwrite` or `AddSceneToBuildSettingsIfMissing`; both remain narrow internal seams for test coverage.
+- Validation run: `git diff --check`; asmdef JSON parse; new-file whitespace checks for the test assembly, test file, and editor assembly-info file; scoped static searches for real quick-start generation calls, `Assets/GamingCouch/QuickStart` references, conflict markers, and trailing whitespace.
+- Unity editor test run still skipped for the same environment reason: no Unity 2022.3 executable or package-local Unity project files are available in this workspace.
+
+Parent validation, 2026-05-10:
+
+- Patched suppression-setting cleanup to restore the raw `EditorUserSettings` config value so the test fixture does not leave a previously absent setting behind.
+- Validation run: `git diff --check`; parsed `package.json`, runtime asmdef, editor asmdef, and test asmdef as JSON; scoped static search confirmed the tests do not call real quick-start generation APIs or reference `Assets/GamingCouch/QuickStart`; conflict-marker search; new-file trailing whitespace check.
+- Unity editor test run skipped: no `Unity` or `UnityHub` executable is on `PATH`, `/Applications/Unity/Hub/Editor` only contains `6000.2.7f2`, and this package workspace has no `ProjectSettings/` or `Packages/manifest.json` for a safe package-local Unity 2022.3 edit-mode test run.
 
 ### Task 10: Run manual Unity validation
 
