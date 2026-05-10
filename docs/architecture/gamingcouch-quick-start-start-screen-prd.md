@@ -107,7 +107,7 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 6.
+Next action: Implement Task 7.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -116,7 +116,7 @@ Next action: Implement Task 6.
 | [x] | DONE | 3. Extract shared scene wiring helpers | Added shared scene wiring helpers with Undo-backed object creation and null-only serialized reference assignment. |
 | [x] | DONE | 4. Generate quick-start scripts through staged setup | Added staged no-overwrite script generation, asset refresh, pending compile continuation, path-gated type resolution, and duplicate compiled-type collision blocking. |
 | [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
-| [ ] | TODO | 6. Generate and wire quick-start game listener | Create or reuse a listener object/component that configures versus play, spawns players, runs the timer, assigns scores, and ends the game. |
+| [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
 | [ ] | TODO | 7. Create quick-start scene flow | Generate, open, save, and add the quick-start scene to Build Settings while preserving unsaved-scene prompts. |
 | [ ] | TODO | 8. Complete start screen actions and messaging | Connect checklist actions, primary setup action, blocker messages, rerun warnings, and success states. |
 | [ ] | TODO | 9. Add editor tests for detection and generation behavior | Cover readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
@@ -362,6 +362,39 @@ Verification:
 - Confirm generated setup/play hook names match GamingCouch `SendMessage` calls.
 - Confirm the listener object is assigned to `GamingCouch.listener`.
 - Confirm rerun preserves an existing listener assignment.
+
+Implementation pass notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `Editor/GamingCouchSceneWiring.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added a scripts-ready `GCQuickStartGame` listener continuation beside the Task 5 player prefab continuation, registered through the same de-duplicating handler API.
+- Active-scene setup now creates or reuses a `GCQuickStartGame` listener object only after the compiled `context.gameType` is available, uses Undo for created scene objects and existing-object component additions, marks the scene dirty, and assigns `GamingCouch.listener` only through the existing null-only serialized reference helper.
+- Existing non-null, missing, or broken listener references are treated as occupied serialized references before any listener object is created, preserving user-owned wiring.
+- QuickStartScene listener assignment remains deferred to the later scene flow; this task did not create scenes, Build Settings entries, start-screen actions, tests, or package-local generated `Assets/GamingCouch/QuickStart` content during command-line validation.
+- The generated `GCQuickStartGame` source already configures versus play with a points HUD, calls `SetupPlayers<GCQuickStartPlayer>()`, runs the serialized timer, assigns random scores, marks players finished, and calls `GameOver()`.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden scene/Build Settings/start-screen APIs, scripts-ready handler registration, listener null-only assignment, generated setup/play hook names, points HUD, player spawning, random scores, `GameOver()`, Undo usage, scene dirty marking, and generated QuickStart folder absence.
+- Unity 2022.3 manual editor validation was not run in this package-only command-line environment.
+
+Review pass 1, 2026-05-10:
+
+- Patched listener reuse to block when a scene contains multiple `GCQuickStartGame` components, avoiding nondeterministic assignment of an arbitrary generated listener when `GamingCouch.listener` is empty.
+- Patched new listener object creation so the dynamic `GCQuickStartGame` component is added before `Undo.RegisterCreatedObjectUndo`, allowing failed component creation to destroy the temporary object without leaving a registered half-created listener behind.
+- Static inspection confirmed existing serialized listener references, including missing or broken object references, still prevent auto-assignment; a single existing `GCQuickStartGame` component is reused by assigning its owning GameObject; QuickStartScene work remains deferred to Task 7.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden scene/Build Settings/start-screen APIs, listener null-only assignment, Undo usage, scene dirty marking, scripts-ready handler registration, generated setup/play hook names, `SetupDone`, `SetupPlayers`, random score assignment, `GameOver`, and generated QuickStart folder absence.
+- Unity 2022.3 manual editor validation was not run in this package-only command-line environment.
+
+Review pass 2, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchQuickStartSetup.cs`, `Editor/GamingCouchSceneWiring.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Patched listener setup to verify the `GamingCouch.listener` serialized object-reference slot exists before creating or mutating any `GCQuickStartGame` scene object, preventing an orphan listener object if assignment would be blocked by a missing or incompatible serialized field.
+- Static inspection confirmed Unity 2022.3 dynamic component APIs are used with `Component` results, existing serialized listener references still short-circuit before creation, duplicate `GCQuickStartGame` components still block rerun assignment, and ActiveScene scripts-ready handlers can independently converge on `GamingCouch`, player prefab, and listener references when those serialized slots are empty.
+- Static inspection confirmed generated `GamingCouchSetup`/`GamingCouchPlay` hook names match `SendMessage(..., RequireReceiver)`, `SetupDone()` happens before `SetupPlayers<GCQuickStartPlayer>()`, the points HUD config has a positive `maxScore`, the round timer assigns random scores and finished state, and `GameOver()` is called after the timer.
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden scene open/save/create, Build Settings, and start-screen action APIs; scoped searches for listener null-only assignment, scripts-ready registration, Undo/component creation, scene dirty marking, generated setup/play hook names, points HUD, timer, random scores, `SetupDone`, `SetupPlayers`, and `GameOver`.
+- Unity 2022.3 manual editor validation was not run in this package-only command-line environment.
+
+Parent validation, 2026-05-10:
+
+- Validation run: `git diff --check`; conflict-marker search; scoped static searches for forbidden scene open/save/create, Build Settings, and start-screen action APIs; scoped searches for listener reference-slot checks, null-only listener assignment, scripts-ready registration, Undo/component creation, scene dirty marking, generated setup/play hook names, points HUD, timer, random scores, `SetupDone`, `SetupPlayers`, `GameOver`, and generated QuickStart folder absence.
+- No package-local `Assets/GamingCouch/QuickStart` directory was created during command-line validation.
 
 ### Task 7: Create quick-start scene flow
 

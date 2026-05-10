@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 internal enum GCQuickStartSetupIntent
 {
@@ -21,6 +22,12 @@ internal enum GCQuickStartScriptSetupStatus
 }
 
 internal enum GCQuickStartPlayerPrefabSetupStatus
+{
+    Ready,
+    Blocked,
+}
+
+internal enum GCQuickStartGameListenerSetupStatus
 {
     Ready,
     Blocked,
@@ -92,6 +99,35 @@ internal sealed class GCQuickStartPlayerPrefabSetupResult
     }
 }
 
+internal sealed class GCQuickStartGameListenerSetupResult
+{
+    internal readonly GCQuickStartGameListenerSetupStatus status;
+    internal readonly bool changed;
+    internal readonly GameObject listenerObject;
+    internal readonly string message;
+    internal readonly string[] blockedReasons;
+
+    internal GCQuickStartGameListenerSetupResult(
+        GCQuickStartGameListenerSetupStatus status,
+        bool changed,
+        GameObject listenerObject,
+        string message,
+        string[] blockedReasons
+    )
+    {
+        this.status = status;
+        this.changed = changed;
+        this.listenerObject = listenerObject;
+        this.message = message;
+        this.blockedReasons = blockedReasons ?? new string[0];
+    }
+
+    internal bool IsBlocked
+    {
+        get { return status == GCQuickStartGameListenerSetupStatus.Blocked; }
+    }
+}
+
 internal sealed class GCQuickStartSetupContinuationContext
 {
     internal readonly GCQuickStartSetupIntent intent;
@@ -142,6 +178,9 @@ internal static class GamingCouchQuickStartSetup
     private const string PendingIntentSessionKey = "DSB.GC.QuickStart.PendingIntent.v1";
     private const string PendingWarningLoggedSessionKey = "DSB.GC.QuickStart.PendingWarningLogged.v1";
     private const string DefaultIntentValue = "ActiveScene";
+    private const string ListenerObjectName = GameTypeName;
+    private const string CreateGameListenerUndoName = "Create Quick-Start Game Listener";
+    private const string AddGameListenerComponentUndoName = "Add Quick-Start Game Listener";
     private const string PlayerVisualName = "Visual";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
@@ -150,6 +189,7 @@ internal static class GamingCouchQuickStartSetup
     static GamingCouchQuickStartSetup()
     {
         RegisterScriptsReadyHandler(EnsureQuickStartPlayerPrefabOnScriptsReady);
+        RegisterScriptsReadyHandler(EnsureQuickStartGameListenerOnScriptsReady);
 
         if (HasPendingSetup())
         {
@@ -429,6 +469,130 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
+    internal static GCQuickStartGameListenerSetupResult EnsureQuickStartGameListener(
+        GCQuickStartSetupContinuationContext context,
+        GamingCouch gamingCouch
+    )
+    {
+        var blockedReasons = new List<string>();
+
+        if (context == null)
+        {
+            blockedReasons.Add("Quick-start game listener setup requires a scripts-ready continuation context.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (context.gameType == null)
+        {
+            blockedReasons.Add("Quick-start game listener setup requires the compiled " + GameTypeName + " type.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (context.gameType.Name != GameTypeName)
+        {
+            blockedReasons.Add("Quick-start game listener setup requires " + GameTypeName + ", but the continuation context provided " + context.gameType.FullName + ".");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!typeof(MonoBehaviour).IsAssignableFrom(context.gameType))
+        {
+            blockedReasons.Add("Compiled type " + context.gameType.FullName + " does not inherit from MonoBehaviour.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (gamingCouch == null)
+        {
+            blockedReasons.Add("A GamingCouch object is required before creating the quick-start game listener.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
+        {
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Ready,
+                false,
+                null,
+                "The GamingCouch listener reference already contains a serialized reference.",
+                blockedReasons
+            );
+        }
+
+        if (!GamingCouchSceneWiring.HasObjectReferenceSlot(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
+        {
+            blockedReasons.Add("The GamingCouch listener serialized field could not be found.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        var scene = gamingCouch.gameObject.scene;
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            blockedReasons.Add("The GamingCouch object is not in a loaded scene.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        var listenerObject = EnsureQuickStartGameListenerObject(context, scene, blockedReasons, out var changed);
+        if (blockedReasons.Count > 0)
+        {
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                changed,
+                listenerObject,
+                "Quick-start game listener setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        return CreateGameListenerResult(
+            GCQuickStartGameListenerSetupStatus.Ready,
+            changed,
+            listenerObject,
+            changed ? "Created quick-start game listener object." : "Reused existing quick-start game listener object.",
+            blockedReasons
+        );
+    }
+
     private static void EnsureProjectFolder(
         string assetPath,
         string parentFolderAssetPath,
@@ -577,6 +741,147 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
+    private static GCQuickStartGameListenerSetupResult CreateGameListenerResult(
+        GCQuickStartGameListenerSetupStatus status,
+        bool changed,
+        GameObject listenerObject,
+        string message,
+        List<string> blockedReasons
+    )
+    {
+        return new GCQuickStartGameListenerSetupResult(
+            status,
+            changed,
+            listenerObject,
+            message,
+            blockedReasons.ToArray()
+        );
+    }
+
+    private static GameObject EnsureQuickStartGameListenerObject(
+        GCQuickStartSetupContinuationContext context,
+        Scene scene,
+        List<string> blockedReasons,
+        out bool changed
+    )
+    {
+        changed = false;
+
+        var existingComponents = FindComponentsInScene(scene, context.gameType);
+        if (existingComponents.Length > 1)
+        {
+            blockedReasons.Add("The scene contains multiple " + GameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning quick-start setup.");
+            return null;
+        }
+
+        if (existingComponents.Length == 1)
+        {
+            return existingComponents[0].gameObject;
+        }
+
+        var existingObject = FindRootGameObjectInScene(scene, ListenerObjectName);
+        if (existingObject != null)
+        {
+            try
+            {
+                Undo.SetCurrentGroupName(AddGameListenerComponentUndoName);
+                var listenerComponent = Undo.AddComponent(existingObject, context.gameType);
+                if (listenerComponent == null)
+                {
+                    blockedReasons.Add("Unity did not add " + GameTypeName + " to existing scene object " + ListenerObjectName + ".");
+                    return existingObject;
+                }
+
+                EditorUtility.SetDirty(listenerComponent);
+                EditorUtility.SetDirty(existingObject);
+                GamingCouchSceneWiring.MarkSceneDirty(existingObject);
+                changed = true;
+                return existingObject;
+            }
+            catch (Exception exception)
+            {
+                blockedReasons.Add("Could not add " + GameTypeName + " to existing scene object " + ListenerObjectName + ": " + exception.Message);
+                return existingObject;
+            }
+        }
+
+        GameObject listenerObject = null;
+        try
+        {
+            Undo.SetCurrentGroupName(CreateGameListenerUndoName);
+            listenerObject = new GameObject(ListenerObjectName);
+            if (listenerObject.scene != scene)
+            {
+                SceneManager.MoveGameObjectToScene(listenerObject, scene);
+            }
+
+            var listenerComponent = listenerObject.AddComponent(context.gameType);
+            if (listenerComponent == null)
+            {
+                blockedReasons.Add("Unity did not add " + GameTypeName + " to the new quick-start game listener object.");
+                UnityEngine.Object.DestroyImmediate(listenerObject);
+                return null;
+            }
+
+            Undo.RegisterCreatedObjectUndo(listenerObject, CreateGameListenerUndoName);
+            EditorUtility.SetDirty(listenerComponent);
+            EditorUtility.SetDirty(listenerObject);
+            GamingCouchSceneWiring.MarkSceneDirty(listenerObject);
+            changed = true;
+            return listenerObject;
+        }
+        catch (Exception exception)
+        {
+            blockedReasons.Add("Could not create quick-start game listener object " + ListenerObjectName + ": " + exception.Message);
+            if (listenerObject != null)
+            {
+                UnityEngine.Object.DestroyImmediate(listenerObject);
+            }
+
+            return null;
+        }
+    }
+
+    private static Component[] FindComponentsInScene(Scene scene, Type componentType)
+    {
+        var foundComponents = new List<Component>();
+        var roots = scene.GetRootGameObjects();
+        for (var rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+        {
+            var root = roots[rootIndex];
+            if (root == null)
+            {
+                continue;
+            }
+
+            var components = root.GetComponentsInChildren(componentType, true);
+            for (var componentIndex = 0; componentIndex < components.Length; componentIndex++)
+            {
+                if (components[componentIndex] != null)
+                {
+                    foundComponents.Add(components[componentIndex]);
+                }
+            }
+        }
+
+        return foundComponents.ToArray();
+    }
+
+    private static GameObject FindRootGameObjectInScene(Scene scene, string objectName)
+    {
+        var roots = scene.GetRootGameObjects();
+        for (var rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+        {
+            var root = roots[rootIndex];
+            if (root != null && root.name == objectName)
+            {
+                return root;
+            }
+        }
+
+        return null;
+    }
+
     private static GameObject LoadExistingPlayerPrefab(List<string> blockedReasons)
     {
         var fullPath = AssetPathToFullPath(PlayerPrefabAssetPath);
@@ -717,6 +1022,49 @@ internal static class GamingCouchQuickStartSetup
         }
 
         Debug.Log(prefabResult.message + " " + assignResult.message);
+    }
+
+    private static void EnsureQuickStartGameListenerOnScriptsReady(
+        GCQuickStartSetupContinuationContext context
+    )
+    {
+        if (context.intent != GCQuickStartSetupIntent.ActiveScene)
+        {
+            Debug.Log("Quick-start game listener assignment is deferred until quick-start scene wiring.");
+            return;
+        }
+
+        var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
+        if (gamingCouchResult.IsBlocked)
+        {
+            Debug.LogWarning(gamingCouchResult.message);
+            return;
+        }
+
+        var listenerResult = EnsureQuickStartGameListener(context, gamingCouchResult.gamingCouch);
+        if (listenerResult.IsBlocked)
+        {
+            Debug.LogWarning(listenerResult.message + " " + string.Join(" ", listenerResult.blockedReasons));
+            return;
+        }
+
+        if (listenerResult.listenerObject == null)
+        {
+            Debug.Log(listenerResult.message);
+            return;
+        }
+
+        var assignResult = GamingCouchSceneWiring.AssignListenerIfMissing(
+            gamingCouchResult.gamingCouch,
+            listenerResult.listenerObject
+        );
+        if (assignResult.IsBlocked)
+        {
+            Debug.LogWarning(assignResult.message);
+            return;
+        }
+
+        Debug.Log(listenerResult.message + " " + assignResult.message);
     }
 
     private static string AssetPathToFullPath(string assetPath)

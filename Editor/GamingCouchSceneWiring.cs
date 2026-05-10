@@ -181,6 +181,51 @@ internal static class GamingCouchSceneWiring
         return property.objectReferenceValue;
     }
 
+    internal static bool HasObjectReference(GamingCouch gamingCouch, string propertyName)
+    {
+        if (gamingCouch == null)
+        {
+            return false;
+        }
+
+        var serializedObject = new SerializedObject(gamingCouch);
+        serializedObject.Update();
+        var property = serializedObject.FindProperty(propertyName);
+        if (property == null || property.propertyType != SerializedPropertyType.ObjectReference)
+        {
+            return false;
+        }
+
+        return HasSerializedObjectReference(property);
+    }
+
+    internal static bool HasObjectReferenceSlot(GamingCouch gamingCouch, string propertyName)
+    {
+        if (gamingCouch == null)
+        {
+            return false;
+        }
+
+        var serializedObject = new SerializedObject(gamingCouch);
+        serializedObject.Update();
+        var property = serializedObject.FindProperty(propertyName);
+        return property != null && property.propertyType == SerializedPropertyType.ObjectReference;
+    }
+
+    internal static void MarkSceneDirty(GameObject gameObject)
+    {
+        if (gameObject == null)
+        {
+            return;
+        }
+
+        var scene = gameObject.scene;
+        if (scene.IsValid() && scene.isLoaded)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+    }
+
     private static GamingCouchSceneWiringResult AssignObjectReferenceIfMissing(
         GamingCouch gamingCouch,
         string propertyName,
@@ -228,7 +273,7 @@ internal static class GamingCouchSceneWiring
         property.objectReferenceValue = reference;
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(gamingCouch);
-        MarkOwningSceneDirty(gamingCouch);
+        MarkSceneDirty(gamingCouch.gameObject);
 
         return GamingCouchSceneWiringResult.SucceededResult(
             gamingCouch,
@@ -239,19 +284,5 @@ internal static class GamingCouchSceneWiring
     private static bool HasSerializedObjectReference(SerializedProperty property)
     {
         return property.objectReferenceValue != null || property.objectReferenceInstanceIDValue != 0;
-    }
-
-    private static void MarkOwningSceneDirty(GamingCouch gamingCouch)
-    {
-        if (gamingCouch == null || gamingCouch.gameObject == null)
-        {
-            return;
-        }
-
-        var scene = gamingCouch.gameObject.scene;
-        if (scene.IsValid() && scene.isLoaded)
-        {
-            EditorSceneManager.MarkSceneDirty(scene);
-        }
     }
 }
