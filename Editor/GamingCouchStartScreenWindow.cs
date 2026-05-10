@@ -50,6 +50,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
         DrawHeader();
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+        DrawAutoOpenSettings();
         DrawSceneSummary();
         DrawChecklist();
         DrawLocalPlayJsonDetails();
@@ -67,6 +68,19 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         EditorGUILayout.Space();
         EditorGUILayout.LabelField(WindowTitle, EditorStyles.boldLabel);
         EditorGUILayout.LabelField("Quick-start readiness for the active scene.", EditorStyles.miniLabel);
+        EditorGUILayout.Space();
+    }
+
+    private static void DrawAutoOpenSettings()
+    {
+        EditorGUILayout.LabelField("Startup", EditorStyles.boldLabel);
+        var suppressed = GCStartScreenSettings.SuppressAutoOpen;
+        var nextSuppressed = EditorGUILayout.ToggleLeft("Suppress automatic opening for this project", suppressed);
+        if (nextSuppressed != suppressed)
+        {
+            GCStartScreenSettings.SuppressAutoOpen = nextSuppressed;
+        }
+
         EditorGUILayout.Space();
     }
 

@@ -107,12 +107,12 @@ Overall status: IN PROGRESS
 
 Current task: None
 
-Next action: Implement Task 2.
+Next action: Implement Task 3.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Build editor start screen shell and readiness model | Added the editor window shell, active-scene readiness detection, multiple-instance error state, and local play JSON status display. |
-| [ ] | TODO | 2. Add launch entry points and auto-open policy | Add menu entry, inspector button, startup check, project-level suppression, and skip conditions for Play Mode and non-startup reloads. |
+| [x] | DONE | 2. Add launch entry points and auto-open policy | Added menu and inspector entry points, startup-only auto-open policy, project-level suppression, and skip conditions for ready/play/compile/update/non-normal-scene contexts. |
 | [ ] | TODO | 3. Extract shared scene wiring helpers | Centralize creating a `GamingCouch` object, assigning serialized references safely, preserving existing references, and using Undo. |
 | [ ] | TODO | 4. Generate quick-start scripts through staged setup | Create missing starter scripts, refresh assets, persist pending setup, and resume after compilation without overwriting existing scripts. |
 | [ ] | TODO | 5. Generate and wire quick-start player prefab | Create or reuse a `GCQuickStartPlayer` prefab with `GCPlayer` inheritance and a simple 3D placeholder visual. |
@@ -176,6 +176,31 @@ Verification:
 - Confirm auto-open triggers for an incomplete startup scene.
 - Confirm auto-open does not trigger for a ready startup scene.
 - Confirm suppression prevents future auto-open but does not hide menu access.
+
+Completion notes, 2026-05-10:
+
+- Changed paths: `Editor/GamingCouchEditor.cs`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchStartScreenLauncher.cs`, `Editor/GamingCouchStartScreenLauncher.cs.meta`, `Editor/GamingCouchStartScreenWindow.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
+- Added `GamingCouch/Start Screen` and the `Open Start Screen` inspector button, both routed to `GamingCouchStartScreenWindow.Open()`.
+- Added a one-shot editor-session startup launcher using the Task 1 readiness model; it skips auto-open when the active scene is ready, auto-open is suppressed, Play Mode is active or changing, or the active context is not a normal scene, and waits while the editor is compiling/updating.
+- Added a per-project auto-open suppression toggle in the start screen through `EditorUserSettings`.
+- Left setup/generation actions as disabled placeholders and kept the existing create-GamingCouch menu action unchanged.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs.meta`; scoped static search for later-task setup/generation APIs in Task 2 files, which matched only the pre-existing create-GamingCouch object creation.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
+
+Review pass 1, 2026-05-10:
+
+- No code defects found in the Task 2 scoped files.
+- Static inspection confirmed the menu item and inspector button open the same start screen window, auto-open is one-shot per editor session through `SessionState`, suppression persists through `EditorUserSettings`, and auto-open skips ready scenes, suppressed projects, Play Mode or pending Play Mode, compiling/updating editors, prefab stages, and preview scenes.
+- Static inspection confirmed setup/generation buttons remain disabled placeholders and the existing create-GamingCouch menu behavior was not changed.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs.meta`; scoped static search for later-task setup/generation APIs in Task 2 files.
+
+Review pass 2, 2026-05-10:
+
+- Patched `GCStartScreenStartupLauncher` so compiling/updating states do not consume the one-shot startup check before the editor can make the auto-open decision.
+- Static inspection confirmed menu and inspector entry points still route to `GamingCouchStartScreenWindow.Open()`, suppression remains project-scoped through `EditorUserSettings`, and setup/generation actions remain disabled placeholders.
+- Static inspection confirmed the existing create-GamingCouch menu behavior was not changed.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchStartScreenLauncher.cs.meta`; trailing-whitespace search; scoped static search for later-task setup/generation APIs in Task 2 files.
+- Unity 2022.3 manual editor validation was not run in this package-only environment.
 
 ### Task 3: Extract shared scene wiring helpers
 

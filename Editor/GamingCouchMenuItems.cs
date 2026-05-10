@@ -4,6 +4,12 @@ using DSB.GC;
 
 public class GamingCouchMenuItems
 {
+  [MenuItem("GamingCouch/Start Screen")]
+  static void OpenStartScreen()
+  {
+    GamingCouchStartScreenWindow.Open();
+  }
+
   [MenuItem("GameObject/GamingCouch", false, 0)]
   [MenuItem("Assets/Create/GamingCouch", false, 0)]
   [MenuItem("GamingCouch/Create GamingCouch GameObject")]

@@ -3,6 +3,7 @@ using DSB.GC.Dev;
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 [CustomEditor(typeof(GamingCouch))]
 internal sealed class GamingCouchEditor : Editor
@@ -37,6 +38,12 @@ internal sealed class GamingCouchEditor : Editor
         serializedObject.Update();
         GamingCouchInspectorHost.DrawSerializedFields(serializedObject);
         serializedObject.ApplyModifiedProperties();
+
+        EditorGUILayout.Space();
+        if (GUILayout.Button("Open Start Screen"))
+        {
+            GamingCouchStartScreenWindow.Open();
+        }
 
         EditorGUILayout.Space();
         if (devJsonView != null)
