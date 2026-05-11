@@ -8,6 +8,10 @@ You can import this package by using Unity's _Package manager's_ import from git
 
 Follow the integration steps below to get started.
 
+# Compatibility
+
+This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can remove Unity splash/logo branding.
+
 # Configure the Editor
 
 - From _Build Settings_, switch the platform to "WebGL"

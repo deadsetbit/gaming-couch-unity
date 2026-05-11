@@ -2,6 +2,10 @@
 
 This package integrates a Unity game with the Gaming Couch platform.
 
+## Compatibility
+
+This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can remove Unity splash/logo branding.
+
 ## Local Editor Play Settings
 
 Unity editor play settings are file-backed. The `GamingCouch` inspector reads and writes the root `gc.dev.json` file in the Unity project, and uses it as the source of truth for local play entry, seed, and the eight-seat player roster.

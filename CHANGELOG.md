@@ -13,6 +13,7 @@
 
 ### Changed
 
+- This development line now targets Unity 6 for clean WebGL export setup and splash/logo removal.
 - Unity editor local play settings now use root `gc.dev.json` as the source of truth instead of old scene-serialized entry/player settings.
 - Unity requires an existing root `gc.dev.json`; it does not create, bootstrap, or repair local project JSON files.
 - Unity editor local playtests may run with one enabled seat even when production metadata declares a higher `minPlayers`.
