@@ -1,7 +1,7 @@
 # GamingCouch Quick Start Start Screen PRD
 
 Status: Ready for implementation
-Last updated: 2026-05-10
+Last updated: 2026-05-11
 Owner: Gaming Couch Unity package team
 
 This document is the local Markdown source of truth for the feature. Do not publish these tasks to GitHub issues, Linear, or any external backlog unless a later instruction explicitly changes that.
@@ -62,7 +62,10 @@ The start screen should appear automatically when Unity starts into an active sc
 - Auto-open the start screen once on Unity editor startup when the active scene is incomplete.
 - Do not auto-open on later scene changes, every domain reload, or while entering Play Mode.
 - Add a persistent per-project setting to suppress automatic opening.
+- Keep the start screen title in the EditorWindow tab only; the content starts with active-scene readiness.
+- Place the auto-open suppression control at the bottom of the window with the label `Never open this again on startup`.
 - Keep manual entry points through the GamingCouch top menu and the `GamingCouch` inspector.
+- Show setup actions only for missing checklist rows; ready scene/listener/prefab rows offer focus actions for the resolved scene object or asset.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.

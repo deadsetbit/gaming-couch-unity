@@ -52,16 +52,19 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             Refresh();
         }
 
-        DrawHeader();
-        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-        DrawAutoOpenSettings();
-        DrawSceneSummary();
-        DrawChecklist();
-        DrawLocalPlayJsonDetails();
-        DrawPendingSetupStatus();
-        DrawActions();
-        DrawActionResult();
-        EditorGUILayout.EndScrollView();
+        using (new EditorGUILayout.VerticalScope())
+        {
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
+            DrawSceneSummary();
+            DrawChecklist();
+            DrawLocalPlayJsonDetails();
+            DrawPendingSetupStatus();
+            DrawActions();
+            DrawActionResult();
+            EditorGUILayout.EndScrollView();
+
+            DrawAutoOpenSettings();
+        }
     }
 
     private void Refresh()
@@ -69,19 +72,11 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         readiness = GCStartScreenReadinessService.InspectActiveScene();
     }
 
-    private static void DrawHeader()
-    {
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField(WindowTitle, EditorStyles.boldLabel);
-        EditorGUILayout.LabelField("Quick-start readiness for the active scene.", EditorStyles.miniLabel);
-        EditorGUILayout.Space();
-    }
-
     private static void DrawAutoOpenSettings()
     {
-        EditorGUILayout.LabelField("Startup", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
         var suppressed = GCStartScreenSettings.SuppressAutoOpen;
-        var nextSuppressed = EditorGUILayout.ToggleLeft("Suppress automatic opening for this project", suppressed);
+        var nextSuppressed = EditorGUILayout.ToggleLeft("Never open this again on startup", suppressed);
         if (nextSuppressed != suppressed)
         {
             GCStartScreenSettings.SuppressAutoOpen = nextSuppressed;
@@ -145,14 +140,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             GUILayout.FlexibleSpace();
             GUILayout.Label(GetStateLabel(check.state), EditorStyles.miniLabel, GUILayout.Width(64f));
 
-            var buttonLabel = GetChecklistActionLabel(check.id);
+            var buttonLabel = GetChecklistActionLabel(check);
             if (!string.IsNullOrEmpty(buttonLabel))
             {
-                using (new EditorGUI.DisabledScope(IsActiveSceneSetupActionBlocked()))
+                using (new EditorGUI.DisabledScope(IsChecklistActionDisabled(check)))
                 {
                     if (GUILayout.Button(buttonLabel, GUILayout.Width(148f)))
                     {
-                        RunChecklistAction(check.id);
+                        RunChecklistAction(check);
                     }
                 }
             }
@@ -275,9 +270,21 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         EditorGUILayout.Space();
     }
 
-    private void RunChecklistAction(GCStartScreenReadinessCheckId id)
+    private void RunChecklistAction(GCStartScreenReadinessCheck check)
     {
-        switch (id)
+        if (check == null)
+        {
+            SetActionResult("No checklist item is available for this action.", MessageType.Warning, null);
+            return;
+        }
+
+        if (check.state == GCStartScreenReadinessCheckState.Pass)
+        {
+            FocusChecklistTarget(check.id);
+            return;
+        }
+
+        switch (check.id)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 RunEnsureGamingCouch();
@@ -292,6 +299,64 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
                 break;
         }
+    }
+
+    private bool IsChecklistActionDisabled(GCStartScreenReadinessCheck check)
+    {
+        if (check == null)
+        {
+            return true;
+        }
+
+        if (check.state == GCStartScreenReadinessCheckState.Pass)
+        {
+            return GetChecklistFocusTarget(check.id) == null;
+        }
+
+        return IsChecklistSetupActionBlocked(check.id);
+    }
+
+    private bool IsChecklistSetupActionBlocked(GCStartScreenReadinessCheckId id)
+    {
+        if (GamingCouchQuickStartSetup.HasPendingSetup())
+        {
+            return true;
+        }
+
+        if (readiness == null)
+        {
+            return true;
+        }
+
+        if (!readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied)
+        {
+            return true;
+        }
+
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                return readiness.gamingCouches.Length > 1;
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return readiness.gamingCouch == null;
+            default:
+                return true;
+        }
+    }
+
+    private void FocusChecklistTarget(GCStartScreenReadinessCheckId id)
+    {
+        var target = GetChecklistFocusTarget(id);
+        if (target == null)
+        {
+            SetActionResult("No checklist target is available to select.", MessageType.Warning, null);
+            return;
+        }
+
+        Selection.activeObject = target;
+        EditorGUIUtility.PingObject(target);
+        SetActionResult("Focused " + target.name + ".", MessageType.Info, null);
     }
 
     private void RunEnsureGamingCouch()
@@ -410,12 +475,37 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         return formatted;
     }
 
-    private static string GetChecklistActionLabel(GCStartScreenReadinessCheckId id)
+    private string GetChecklistActionLabel(GCStartScreenReadinessCheck check)
     {
-        switch (id)
+        if (check == null)
+        {
+            return null;
+        }
+
+        if (check.state == GCStartScreenReadinessCheckState.Pass)
+        {
+            if (GetChecklistFocusTarget(check.id) == null)
+            {
+                return null;
+            }
+
+            switch (check.id)
+            {
+                case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                    return "Focus Scene Object";
+                case GCStartScreenReadinessCheckId.ListenerAssigned:
+                    return "Focus Listener";
+                case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                    return "Focus Prefab";
+                default:
+                    return null;
+            }
+        }
+
+        switch (check.id)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
-                return "Create or Reuse";
+                return "Create GamingCouch";
             case GCStartScreenReadinessCheckId.ListenerAssigned:
                 return "Wire Listener";
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
@@ -423,6 +513,79 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             default:
                 return null;
         }
+    }
+
+    private UnityEngine.Object GetChecklistFocusTarget(GCStartScreenReadinessCheckId id)
+    {
+        if (readiness == null)
+        {
+            return null;
+        }
+
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                if (readiness.gamingCouch != null)
+                {
+                    return GetSelectionTarget(readiness.gamingCouch);
+                }
+
+                for (var index = 0; index < readiness.gamingCouches.Length; index++)
+                {
+                    var gamingCouch = readiness.gamingCouches[index];
+                    if (gamingCouch != null)
+                    {
+                        return GetSelectionTarget(gamingCouch);
+                    }
+                }
+
+                return null;
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+                return GetSelectionTarget(readiness.listener);
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return GetPrefabSelectionTarget(readiness.playerPrefab);
+            default:
+                return null;
+        }
+    }
+
+    private static UnityEngine.Object GetPrefabSelectionTarget(UnityEngine.Object target)
+    {
+        var selectionTarget = GetSelectionTarget(target);
+        if (selectionTarget == null)
+        {
+            return null;
+        }
+
+        if (AssetDatabase.Contains(selectionTarget))
+        {
+            return selectionTarget;
+        }
+
+        var gameObject = selectionTarget as GameObject;
+        if (gameObject == null)
+        {
+            return selectionTarget;
+        }
+
+        var prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+        return prefabAsset != null ? prefabAsset : selectionTarget;
+    }
+
+    private static UnityEngine.Object GetSelectionTarget(UnityEngine.Object target)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        var component = target as Component;
+        if (component != null && component.gameObject != null)
+        {
+            return component.gameObject;
+        }
+
+        return target;
     }
 
     private static string GetChecklistMarker(GCStartScreenReadinessCheckState state)
