@@ -54,12 +54,16 @@ The start screen should appear automatically when Unity starts into an active sc
 23. As a Unity user inspecting a `GamingCouch` component, I want an inspector button for the start screen, so that setup help is available where missing references are visible.
 24. As a GamingCouch developer, I want multiple `GamingCouch` objects to be reported as an error state instead of auto-fixed, so that destructive cleanup is not hidden behind onboarding.
 25. As a package maintainer, I want quick-start setup split into testable editor services, so that readiness detection and generation behavior can be verified without relying only on manual Unity testing.
+26. As a Unity user preparing a WebGL or local preview build, I want the start screen to show whether the active scene is the first enabled Build Settings scene, so that Play Mode and build launch use the scene I just configured.
+27. As a Unity user testing the generated quick-start flow, I want the start screen to show whether the Game View is using a 16:9 preview aspect, so that the editor preview matches the expected GamingCouch web embed shape.
+28. As a new Unity package user, I want the main setup action to fix all safe automatable readiness issues, so that I can get from an incomplete scene to a launch-ready scene with minimal manual steps.
+29. As a Unity user, I want checklist rows that cannot be fixed safely to show clear manual guidance, so that I understand what remains without the package making risky editor changes.
 
 ## Implementation Decisions
 
 - Build an editor-only GamingCouch start screen using the package's existing IMGUI editor style.
 - Treat an active scene as GamingCouch-ready only when it has exactly one `GamingCouch` component and that component has both listener and player prefab references assigned.
-- Auto-open the start screen once on Unity editor startup when the active scene is incomplete.
+- Auto-open the start screen once on Unity editor startup when any blocking visible checklist row is incomplete.
 - Do not auto-open on later scene changes, every domain reload, or while entering Play Mode.
 - Add a persistent per-project setting to suppress automatic opening.
 - Keep the start screen title in the EditorWindow tab only; the content starts with active-scene readiness.
@@ -67,10 +71,13 @@ The start screen should appear automatically when Unity starts into an active sc
 - Keep manual entry points through the GamingCouch top menu and the `GamingCouch` inspector.
 - Show setup actions only for missing checklist rows; ready GamingCouch/listener/prefab rows offer focus actions for the resolved scene object or asset.
 - Use one visible checklist row labeled `Exactly one GamingCouch in scene` for active-scene `GamingCouch` count: missing is an actionable create state, exactly one is ready and focusable, and more than one is a red manual-cleanup error with no setup or focus action on that row.
-- Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup checklist rows have actionable setup work, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window. Occupied serialized listener/player references, including broken or missing-object references, are not actionable for no-overwrite setup. The primary active-scene setup entry point should also no-op before script generation when active-scene wiring is already complete.
+- Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while checklist rows have actionable setup work, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window. Occupied serialized listener/player references, including broken or missing-object references, are not actionable for no-overwrite setup. The Task 11 launch-readiness scope extends this action so it can still fix safe Build Settings and Game View readiness work when active-scene wiring is already complete.
 - Polish update, 2026-05-11: keep active-scene validity as an internal readiness/action guard while excluding the active-scene guard from the visible checklist. If no usable active scene is loaded, show that issue as a standalone help box before the readiness summary/checklist. Keep the scene summary to name/path only; do not show ready or generic setup summary boxes because the checklist already communicates readiness.
 - Polish update, 2026-05-11: reserve action-result help boxes for warning and error outcomes only. Normal successful, focus, reuse, and no-op action confirmations stay silent because the checklist already reflects current setup state.
 - Polish update, 2026-05-11: represent each checklist row state with one left-side colored indicator and tooltip. Do not show text markers such as `[x]`, warning/error marker text, or a duplicate right-side status indicator.
+- Follow-up scope, 2026-05-11: add active-scene Build Settings readiness to the same checklist, not a separate section. The row passes only when the active scene has a saved scene path and is the first enabled entry in `EditorBuildSettings.scenes`. Missing, disabled, later, duplicate, and unsaved active-scene states should be clear checklist failures or blockers.
+- Follow-up scope, 2026-05-11: add Game View 16:9 readiness to the same checklist. A confirmed 16:9 Game View passes, a confirmed non-16:9 Game View fails, and an uninspectable Game View state is a yellow non-blocking warning. Unknown Game View state must not trigger startup auto-open by itself.
+- Follow-up scope, 2026-05-11: make `Set up missing pieces` fix all safe automatable checklist failures. It should keep existing scene wiring behavior, prompt to save an unsaved active scene when needed for Build Settings setup, make the active scene first and enabled in Build Settings, and select an existing 16:9 Game View entry when that can be done safely. It must not create custom Game View sizes and must not create or repair `gc.dev.json`.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.
@@ -90,9 +97,12 @@ The start screen should appear automatically when Unity starts into an active sc
 - Test behavior at the editor service boundary rather than testing private IMGUI layout details.
 - Include tests for incomplete scenes, fully wired scenes, missing listener, missing player prefab, multiple `GamingCouch` objects, and suppressed auto-open settings.
 - Include tests that prove setup does not overwrite existing generated files or non-null serialized references.
+- Include tests for active-scene Build Settings readiness: saved scene first and enabled, unsaved active scene, missing from Build Settings, present but disabled, present but not first, duplicate entries, and setup preserving unrelated scenes while moving/enabling the active scene.
+- Include tests or static coverage proving setup actions remain available when only Build Settings or Game View readiness is incomplete.
 - Include manual Unity validation for the staged compile flow, because generated scripts must compile before components can be attached.
 - Include manual Play Mode validation with a valid local play JSON file: setup runs, players spawn, a 10-second round assigns scores, and `GameOver()` is called.
 - Include manual validation that missing or invalid local play JSON is reported clearly and is not repaired by Unity.
+- Include manual Unity 2022.3 validation for Game View 16:9 detection and any optional aspect-selection action, because the relevant editor APIs are internal and version-sensitive.
 
 ## Out of Scope
 
@@ -100,6 +110,7 @@ The start screen should appear automatically when Unity starts into an active sc
 - Adding a full sample game or controller-input mini-game.
 - Changing public runtime payload shapes or platform message contracts.
 - Automatically deleting duplicate `GamingCouch` objects.
+- Creating custom Game View sizes or changing runtime resolution, WebGL template layout, or build output sizing as part of the 16:9 checklist item.
 - Publishing any backlog ticket to GitHub or another external service.
 - Moving generated content into package samples.
 
@@ -114,9 +125,9 @@ The start screen should appear automatically when Unity starts into an active sc
 
 Overall status: BLOCKED
 
-Current task: 10. Run manual Unity validation
+Current task: 11. Add launch-readiness checklist rows
 
-Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes this checkout, then rerun Task 10 manual validation.
+Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes this checkout, then run Task 11 edit-mode tests and manual Game View validation. Task 10 manual validation remains blocked on the same environment gap.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
@@ -130,6 +141,7 @@ Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes th
 | [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist and primary active-scene setup actions with pending, blocker, checklist readiness, reuse-safe setup, and read-only JSON messaging. |
 | [x] | DONE | 9. Add editor tests for detection and generation behavior | Added edit-mode coverage for readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | BLOCKED | 10. Run manual Unity validation | Blocked: no Unity 2022.3 executable is installed or on PATH, this checkout is a Unity package rather than a Unity project, and nearby 2022.3 projects that consume GamingCouch reference GitHub URLs instead of this checkout. |
+| [ ] | BLOCKED | 11. Add launch-readiness checklist rows | Implementation and review passes are complete, but Unity 2022.3 edit-mode tests and manual Game View validation are blocked by the local environment. |
 
 ## Task Details
 
@@ -582,3 +594,49 @@ Review pass 1, 2026-05-10:
 - This checkout is a package-only repo: `package.json` declares `com.dsb.gamingcouch` for Unity `2022.3`, while package-local searches found no `ProjectSettings/`, `ProjectVersion.txt`, or `Packages/manifest.json`.
 - Nearby Unity `2022.3.19f1` projects that consume `com.dsb.gamingcouch` (`piratewars`, `lesheep`, `rockets`, `game-sumo`, and `temp2/gaming-couch-unity-template`) reference `github.com/deadsetbit/gaming-couch-unity.git` or `git@github.com:deadsetbit/gaming-couch-unity.git` in `Packages/manifest.json`, not this checkout.
 - Manual Task 10 validation remains blocked until a Unity 2022.3 environment can open a project whose manifest references this local package checkout.
+
+### Task 11: Add launch-readiness checklist rows
+
+Objective: Extend the unified start-screen checklist so it catches launch-preview readiness issues before users enter Play Mode or make a WebGL build.
+
+Implementation steps:
+
+1. Add an active-scene Build Settings readiness row to the existing checklist.
+2. Treat the Build Settings row as passing only when the active scene has a saved scene path and `EditorBuildSettings.scenes[0]` is enabled with that exact path.
+3. Report clear non-ready states for unsaved active scenes, missing Build Settings entries, disabled entries, duplicate entries, and active scenes present later than index 0.
+4. Add a `Set First Build Scene` row action that prompts to save an unsaved active scene when needed, inserts or moves the active scene to index 0, enables it, removes duplicate entries for the same scene path, and preserves the relative order and enabled state of all other scene entries.
+5. Add a Game View 16:9 readiness row to the existing checklist.
+6. Treat confirmed 16:9 Game View state as pass, confirmed non-16:9 state as fail, and uninspectable Game View state as a non-blocking warning.
+7. Implement Game View inspection and selection behind a narrowly scoped editor service so Unity internal API use is isolated.
+8. Add a Game View row action only for selecting an existing 16:9 Game View entry. If no existing 16:9 entry can be found, or if Unity internal API access fails, show manual guidance instead of creating custom Game View sizes.
+9. Update the primary `Set up missing pieces` action so it fixes all safe automatable checklist failures: current scene wiring, Build Settings first-scene readiness, and existing-entry 16:9 Game View selection.
+10. Keep `gc.dev.json` read-only: invalid or missing local play JSON remains a blocking checklist row and can trigger startup auto-open, but setup actions show DevApp/manual guidance instead of creating or repairing the file.
+11. Update startup auto-open to use blocking checklist readiness. Warning-only states, including unknown Game View state, must not trigger auto-open by themselves.
+
+Verification:
+
+- Run `git diff --check`.
+- Add editor tests for active scene Build Settings states: saved active scene first and enabled, unsaved active scene, missing entry, disabled entry, entry not first, and duplicate active-scene entries.
+- Add editor tests for the `Set First Build Scene` action preserving unrelated scenes while moving/enabling the active scene and removing duplicates for that one path.
+- Add tests or static coverage proving active-scene setup actions remain available when only Build Settings or Game View readiness is incomplete.
+- Add Game View helper coverage where the logic can be tested without relying on Unity internal editor windows.
+- Manually validate the Game View 16:9 row in Unity 2022.3, including pass, fail, unknown fallback, and existing-entry selection behavior.
+- Do not mark this task `DONE` until the Game View internal API path has been manually validated or the row is deliberately shipped as inspect-only/manual-guidance behavior.
+
+Implementation notes, 2026-05-11:
+
+- Added active-scene Build Settings readiness to the unified checklist. The row passes only when the active scene has a saved path and is the first enabled `EditorBuildSettings.scenes` entry; unsaved, missing, disabled, later, and duplicate active-scene entries are reported as non-ready states.
+- Added a Build Settings setup service and row action that saves an unsaved active scene through Unity's normal save flow, inserts or moves the active scene to index 0, enables it, removes duplicate entries for the same scene path, and preserves unrelated Build Settings entries.
+- Added a Game View 16:9 editor service that isolates Unity internal API reflection, reports confirmed 16:9 as ready, confirmed non-16:9 as failed, and uninspectable state as a warning. The only automatic Game View action selects an existing 16:9 entry when reflection finds one; it does not create custom Game View sizes.
+- Updated `Set up missing pieces` so it still performs existing active-scene wiring, but no longer no-ops when scene wiring is already complete and Build Settings or safe Game View setup remains. It does not create or repair `gc.dev.json`.
+- Updated startup auto-open to use blocking visible checklist readiness, so warning-only states such as unknown Game View aspect do not trigger auto-open by themselves.
+- Added focused editor tests for Build Settings readiness states, Build Settings normalization, blocking-checklist warning handling, safe action availability for Build Settings/Game View-only launch readiness gaps, and pure Game View aspect helper logic.
+- Validation run: `git diff --check`; `git diff --check --no-index /dev/null Editor/GamingCouchBuildSettingsReadiness.cs`; `git diff --check --no-index /dev/null Editor/GamingCouchGameViewAspect.cs`; conflict-marker search; JSON parse for `package.json`, editor asmdef, test asmdef, and runtime asmdef.
+- Unity edit-mode tests and Game View manual validation were not run because no Unity 2022.3 executable was found on PATH or under `/Applications/Unity/Hub/Editor`.
+
+Review pass 2, 2026-05-11:
+
+- Patched primary setup ordering so safe Build Settings and Game View readiness work runs before returning a manual scene-wiring blocker such as duplicate `GamingCouch` objects.
+- Added regression coverage for duplicate `GamingCouch` objects still allowing Build Settings normalization before the setup result blocks on manual scene cleanup.
+- Validation run: `git diff --check`; conflict-marker search; JSON parse for `package.json` and asmdefs; static search confirmed the Game View service does not create custom sizes.
+- Task 11 remains blocked because Unity 2022.3 edit-mode tests and manual Game View validation could not be run in this package-only workspace.

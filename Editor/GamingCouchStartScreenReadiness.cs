@@ -1,6 +1,7 @@
 using System;
 using DSB.GC;
 using DSB.GC.Dev;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,6 +20,8 @@ internal enum GCStartScreenReadinessCheckId
     SingleGamingCouchInstance,
     ListenerAssigned,
     PlayerPrefabAssigned,
+    ActiveSceneFirstBuildSettingsScene,
+    GameViewAspect16By9,
     LocalPlayJsonValid,
 }
 
@@ -86,6 +89,8 @@ internal sealed class GCStartScreenReadiness
     internal readonly UnityEngine.Object listener;
     internal readonly UnityEngine.Object playerPrefab;
     internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
+    internal readonly GCActiveSceneBuildSettingsReadiness buildSettings;
+    internal readonly GCGameViewAspectReadiness gameViewAspect;
     internal readonly GCStartScreenReadinessCheck activeSceneCheck;
     internal readonly GCStartScreenReadinessCheck[] checklist;
 
@@ -95,7 +100,9 @@ internal sealed class GCStartScreenReadiness
         GamingCouch gamingCouch,
         UnityEngine.Object listener,
         UnityEngine.Object playerPrefab,
-        GCStartScreenLocalPlayJsonReadiness localPlayJson
+        GCStartScreenLocalPlayJsonReadiness localPlayJson,
+        GCActiveSceneBuildSettingsReadiness buildSettings = null,
+        GCGameViewAspectReadiness gameViewAspect = null
     )
     {
         this.scene = scene;
@@ -107,6 +114,8 @@ internal sealed class GCStartScreenReadiness
         this.listener = listener;
         this.playerPrefab = playerPrefab;
         this.localPlayJson = localPlayJson;
+        this.buildSettings = buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
+        this.gameViewAspect = gameViewAspect ?? GamingCouchGameViewAspect.InspectSizeEntries(null, -1, false, null);
         activeSceneCheck = BuildActiveSceneCheck();
         checklist = BuildChecklist();
     }
@@ -125,6 +134,23 @@ internal sealed class GCStartScreenReadiness
     internal bool IsLocalPlayReady
     {
         get { return IsSceneReady && GetCheck(GCStartScreenReadinessCheckId.LocalPlayJsonValid).IsSatisfied; }
+    }
+
+    internal bool HasBlockingVisibleChecklistIssues
+    {
+        get { return HasBlockingChecklistIssues(checklist); }
+    }
+
+    internal bool HasSafeAutomatableSetupActions
+    {
+        get
+        {
+            return DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance) ||
+                   DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned) ||
+                   DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned) ||
+                   DoesBuildSettingsNeedSetup() ||
+                   DoesGameViewNeedSetup();
+        }
     }
 
     internal GCStartScreenReadinessCheck GetCheck(GCStartScreenReadinessCheckId id)
@@ -167,6 +193,25 @@ internal sealed class GCStartScreenReadiness
             : id;
     }
 
+    internal static bool HasBlockingChecklistIssues(GCStartScreenReadinessCheck[] checks)
+    {
+        for (var index = 0; checks != null && index < checks.Length; index++)
+        {
+            if (checks[index] == null)
+            {
+                continue;
+            }
+
+            if (checks[index].state == GCStartScreenReadinessCheckState.Fail ||
+                checks[index].state == GCStartScreenReadinessCheckState.Blocked)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private GCStartScreenReadinessCheck[] BuildChecklist()
     {
         return new[]
@@ -174,6 +219,8 @@ internal sealed class GCStartScreenReadiness
             BuildGamingCouchInstanceCheck(),
             BuildListenerAssignedCheck(),
             BuildPlayerPrefabAssignedCheck(),
+            BuildActiveSceneFirstBuildSettingsSceneCheck(),
+            BuildGameViewAspect16By9Check(),
             BuildLocalPlayJsonValidCheck(),
         };
     }
@@ -330,6 +377,115 @@ internal sealed class GCStartScreenReadiness
                 : localPlayJson.message
         );
     }
+
+    private GCStartScreenReadinessCheck BuildActiveSceneFirstBuildSettingsSceneCheck()
+    {
+        if (buildSettings == null)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
+                "Active scene is first Build Settings scene",
+                GCStartScreenReadinessCheckState.Fail,
+                "Build Settings readiness could not be inspected."
+            );
+        }
+
+        if (buildSettings.IsReady)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
+                "Active scene is first Build Settings scene",
+                GCStartScreenReadinessCheckState.Pass,
+                buildSettings.message
+            );
+        }
+
+        return new GCStartScreenReadinessCheck(
+            GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
+            "Active scene is first Build Settings scene",
+            buildSettings.status == GCActiveSceneBuildSettingsStatus.NoActiveScene
+                ? GCStartScreenReadinessCheckState.Blocked
+                : GCStartScreenReadinessCheckState.Fail,
+            buildSettings.message
+        );
+    }
+
+    private GCStartScreenReadinessCheck BuildGameViewAspect16By9Check()
+    {
+        if (gameViewAspect == null)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.GameViewAspect16By9,
+                "Game View uses 16:9 preview",
+                GCStartScreenReadinessCheckState.Warning,
+                "Game View aspect could not be inspected. Choose a 16:9 Game View entry manually if needed."
+            );
+        }
+
+        var state = GCStartScreenReadinessCheckState.Fail;
+        if (gameViewAspect.status == GCGameViewAspectStatus.Ready)
+        {
+            state = GCStartScreenReadinessCheckState.Pass;
+        }
+        else if (gameViewAspect.status == GCGameViewAspectStatus.Unknown)
+        {
+            state = GCStartScreenReadinessCheckState.Warning;
+        }
+
+        return new GCStartScreenReadinessCheck(
+            GCStartScreenReadinessCheckId.GameViewAspect16By9,
+            "Game View uses 16:9 preview",
+            state,
+            gameViewAspect.message
+        );
+    }
+
+    private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
+    {
+        id = NormalizeCheckId(id);
+        GCStartScreenReadinessCheck check;
+        if (!TryGetCheck(id, out check) || check.state != GCStartScreenReadinessCheckState.Fail)
+        {
+            return false;
+        }
+
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                return gamingCouches != null && gamingCouches.Length == 0;
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName);
+            default:
+                return false;
+        }
+    }
+
+    private bool DoesBuildSettingsNeedSetup()
+    {
+        GCStartScreenReadinessCheck check;
+        return buildSettings != null &&
+               buildSettings.CanSetFirst &&
+               TryGetCheck(GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene, out check) &&
+               !check.IsSatisfied;
+    }
+
+    private bool DoesGameViewNeedSetup()
+    {
+        GCStartScreenReadinessCheck check;
+        return gameViewAspect != null &&
+               gameViewAspect.HasSafeSelectionAction &&
+               TryGetCheck(GCStartScreenReadinessCheckId.GameViewAspect16By9, out check) &&
+               !check.IsSatisfied;
+    }
+
+    private bool CanAssignMissingActiveSceneReference(string propertyName)
+    {
+        return gamingCouch != null &&
+               GamingCouchSceneWiring.HasObjectReferenceSlot(gamingCouch, propertyName) &&
+               !GamingCouchSceneWiring.HasObjectReference(gamingCouch, propertyName);
+    }
 }
 
 internal static class GCStartScreenReadinessService
@@ -342,8 +498,19 @@ internal static class GCStartScreenReadinessService
         var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
         var playerPrefab = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
         var localPlayJson = InspectLocalPlayJson();
+        var buildSettings = GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
+        var gameViewAspect = GamingCouchGameViewAspect.Inspect();
 
-        return new GCStartScreenReadiness(scene, gamingCouches, gamingCouch, listener, playerPrefab, localPlayJson);
+        return new GCStartScreenReadiness(
+            scene,
+            gamingCouches,
+            gamingCouch,
+            listener,
+            playerPrefab,
+            localPlayJson,
+            buildSettings,
+            gameViewAspect
+        );
     }
 
     private static GCStartScreenLocalPlayJsonReadiness InspectLocalPlayJson()

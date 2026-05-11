@@ -383,44 +383,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return false;
         }
 
-        if (GetGamingCouchCount() > 1)
-        {
-            return false;
-        }
-
-        return DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance) ||
-               DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned) ||
-               DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
-    }
-
-    private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
-    {
-        id = GCStartScreenReadiness.NormalizeCheckId(id);
-        var check = FindReadinessCheck(id);
-        if (check == null || check.state != GCStartScreenReadinessCheckState.Fail)
-        {
-            return false;
-        }
-
-        switch (id)
-        {
-            case GCStartScreenReadinessCheckId.GamingCouchInstance:
-                return GetGamingCouchCount() == 0;
-            case GCStartScreenReadinessCheckId.ListenerAssigned:
-                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
-            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName);
-            default:
-                return false;
-        }
-    }
-
-    private bool CanAssignMissingActiveSceneReference(string propertyName)
-    {
-        return readiness != null &&
-               readiness.gamingCouch != null &&
-               GamingCouchSceneWiring.HasObjectReferenceSlot(readiness.gamingCouch, propertyName) &&
-               !GamingCouchSceneWiring.HasObjectReference(readiness.gamingCouch, propertyName);
+        return readiness.HasSafeAutomatableSetupActions;
     }
 
     private bool IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId id)
@@ -458,7 +421,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         return !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene) ||
-               GetGamingCouchCount() > 1;
+               !readiness.HasSafeAutomatableSetupActions;
     }
 
     private void DrawActionResult()
@@ -520,6 +483,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 RunEnsurePlayerPrefab();
                 break;
+            case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
+                RunEnsureActiveSceneFirstBuildSettingsScene();
+                break;
+            case GCStartScreenReadinessCheckId.GameViewAspect16By9:
+                RunEnsureGameViewAspect16By9();
+                break;
             default:
                 SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
                 break;
@@ -554,7 +523,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return true;
         }
 
-        if (!IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
+        if (id != GCStartScreenReadinessCheckId.GameViewAspect16By9 &&
+            !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
         {
             return true;
         }
@@ -566,6 +536,10 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.ListenerAssigned:
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 return readiness.gamingCouch == null;
+            case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
+                return readiness.buildSettings == null || !readiness.buildSettings.CanSetFirst;
+            case GCStartScreenReadinessCheckId.GameViewAspect16By9:
+                return readiness.gameViewAspect == null || !readiness.gameViewAspect.HasSafeSelectionAction;
             default:
                 return true;
         }
@@ -626,6 +600,22 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         Repaint();
     }
 
+    private void RunEnsureActiveSceneFirstBuildSettingsScene()
+    {
+        var result = GamingCouchBuildSettingsReadiness.EnsureActiveSceneFirstEnabled();
+        SetActionResult(result.message, GetBuildSettingsResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
+    private void RunEnsureGameViewAspect16By9()
+    {
+        var result = GamingCouchGameViewAspect.SelectExisting16By9Size();
+        SetActionResult(result.message, GetGameViewAspectResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
     private void SetActionResult(string message, MessageType messageType, string[] details)
     {
         if (!ShouldShowActionResult(messageType))
@@ -659,6 +649,16 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static MessageType GetBuildSettingsResultMessageType(GCActiveSceneBuildSettingsSetupResult result)
+    {
+        return result.IsBlocked ? MessageType.Error : MessageType.Info;
+    }
+
+    private static MessageType GetGameViewAspectResultMessageType(GCGameViewAspectSetupResult result)
+    {
+        return result.IsBlocked ? MessageType.Warning : MessageType.Info;
     }
 
     private static string FormatActionMessage(string message, string[] details)
@@ -716,6 +716,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 return "Wire Listener";
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 return "Wire Player Prefab";
+            case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
+                return readiness != null && readiness.buildSettings != null && readiness.buildSettings.CanSetFirst
+                    ? "Set First Build Scene"
+                    : null;
+            case GCStartScreenReadinessCheckId.GameViewAspect16By9:
+                return readiness != null && readiness.gameViewAspect != null && readiness.gameViewAspect.HasSafeSelectionAction
+                    ? "Select 16:9"
+                    : null;
             default:
                 return null;
         }

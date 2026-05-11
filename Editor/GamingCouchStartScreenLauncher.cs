@@ -87,7 +87,7 @@ internal static class GCStartScreenStartupLauncher
         }
 
         var readiness = GCStartScreenReadinessService.InspectActiveScene();
-        if (readiness == null || readiness.IsSceneReady)
+        if (readiness == null || !readiness.HasBlockingVisibleChecklistIssues)
         {
             return;
         }

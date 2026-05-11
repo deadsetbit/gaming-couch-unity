@@ -15,6 +15,7 @@ public sealed class GamingCouchQuickStartEditorTests
     private const string TestFolderAssetPathPrefix = "Assets/GamingCouchQuickStartEditorTests_";
     private const string ExistingSceneBuildPath = "Assets/GamingCouchExistingScene.unity";
     private const string TestSceneBuildPath = "Assets/GamingCouchQuickStartEditorTestScene.unity";
+    private const string OtherSceneBuildPath = "Assets/GamingCouchOtherScene.unity";
 
     private string previousSuppressAutoOpenConfigValue;
     private EditorBuildSettingsScene[] previousBuildSettingsScenes;
@@ -239,6 +240,283 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(existingScenes[0].enabled, Is.False);
     }
 
+    [Test]
+    public void BuildSettingsReadinessReportsActiveSceneFirstEnabledState()
+    {
+        var readiness = GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+        );
+
+        Assert.That(readiness.IsReady, Is.True);
+        Assert.That(readiness.status, Is.EqualTo(GCActiveSceneBuildSettingsStatus.Ready));
+        Assert.That(readiness.firstMatchingIndex, Is.EqualTo(0));
+        Assert.That(readiness.matchingEntryCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void BuildSettingsReadinessReportsNonReadyStates()
+    {
+        Assert.That(
+            GamingCouchBuildSettingsReadiness.InspectScenePath(true, null, Array.Empty<EditorBuildSettingsScene>()).status,
+            Is.EqualTo(GCActiveSceneBuildSettingsStatus.UnsavedActiveScene)
+        );
+        Assert.That(
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(ExistingSceneBuildPath, true) }
+            ).status,
+            Is.EqualTo(GCActiveSceneBuildSettingsStatus.Missing)
+        );
+        Assert.That(
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, false) }
+            ).status,
+            Is.EqualTo(GCActiveSceneBuildSettingsStatus.Disabled)
+        );
+        Assert.That(
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[]
+                {
+                    new EditorBuildSettingsScene(ExistingSceneBuildPath, true),
+                    new EditorBuildSettingsScene(TestSceneBuildPath, true),
+                }
+            ).status,
+            Is.EqualTo(GCActiveSceneBuildSettingsStatus.NotFirst)
+        );
+        Assert.That(
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[]
+                {
+                    new EditorBuildSettingsScene(TestSceneBuildPath, true),
+                    new EditorBuildSettingsScene(OtherSceneBuildPath, true),
+                    new EditorBuildSettingsScene(TestSceneBuildPath, false),
+                }
+            ).status,
+            Is.EqualTo(GCActiveSceneBuildSettingsStatus.Duplicate)
+        );
+    }
+
+    [Test]
+    public void BuildSettingsSetupMovesActiveSceneFirstEnabledAndPreservesUnrelatedScenes()
+    {
+        EditorBuildSettings.scenes = new[]
+        {
+            new EditorBuildSettingsScene(ExistingSceneBuildPath, false),
+            new EditorBuildSettingsScene(TestSceneBuildPath, false),
+            new EditorBuildSettingsScene(OtherSceneBuildPath, true),
+            new EditorBuildSettingsScene(TestSceneBuildPath, true),
+        };
+
+        var result = GamingCouchBuildSettingsReadiness.SetSceneFirstEnabled(TestSceneBuildPath);
+        var scenes = EditorBuildSettings.scenes;
+
+        Assert.That(result.IsBlocked, Is.False);
+        Assert.That(result.changed, Is.True);
+        Assert.That(scenes.Select(scene => scene.path).ToArray(), Is.EqualTo(new[]
+        {
+            TestSceneBuildPath,
+            ExistingSceneBuildPath,
+            OtherSceneBuildPath,
+        }));
+        Assert.That(scenes.Select(scene => scene.enabled).ToArray(), Is.EqualTo(new[]
+        {
+            true,
+            false,
+            true,
+        }));
+    }
+
+    [Test]
+    public void ActiveSceneSetupStillNormalizesBuildSettingsWhenGamingCouchWiringBlocked()
+    {
+        EnsureTestAssetFolder();
+        var sceneAssetPath = testFolderAssetPath + "/DuplicateGamingCouchScene.unity";
+        var previousScene = SceneManager.GetActiveScene();
+        var launchScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+
+        try
+        {
+            EnsureSceneIsActive(launchScene);
+            Assert.That(EditorSceneManager.SaveScene(launchScene, sceneAssetPath), Is.True);
+            CreateGamingCouch("GamingCouch A");
+            CreateGamingCouch("GamingCouch B");
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(ExistingSceneBuildPath, false),
+                new EditorBuildSettingsScene(sceneAssetPath, false),
+                new EditorBuildSettingsScene(OtherSceneBuildPath, true),
+                new EditorBuildSettingsScene(sceneAssetPath, true),
+            };
+
+            var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartSetup();
+            var scenes = EditorBuildSettings.scenes;
+
+            Assert.That(result.IsBlocked, Is.True);
+            Assert.That(result.changed, Is.True);
+            Assert.That(
+                result.details.Any(detail => detail != null && detail.IndexOf("multiple GamingCouch", StringComparison.Ordinal) >= 0),
+                Is.True
+            );
+            Assert.That(scenes.Select(scene => scene.path).ToArray(), Is.EqualTo(new[]
+            {
+                sceneAssetPath,
+                ExistingSceneBuildPath,
+                OtherSceneBuildPath,
+            }));
+            Assert.That(scenes.Select(scene => scene.enabled).ToArray(), Is.EqualTo(new[]
+            {
+                true,
+                false,
+                true,
+            }));
+        }
+        finally
+        {
+            if (previousScene.IsValid() && previousScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(previousScene);
+            }
+            else if (launchScene.IsValid() && launchScene.isLoaded)
+            {
+                SetAnyLoadedSceneActiveExcept(launchScene);
+            }
+
+            if (launchScene.IsValid() && launchScene.isLoaded)
+            {
+                ClearSceneRootObjects(launchScene);
+                EditorSceneManager.CloseScene(launchScene, true);
+            }
+        }
+    }
+
+    [Test]
+    public void GameViewAspectLogicReportsReadyMismatchAndUnknownStates()
+    {
+        var entries = new[]
+        {
+            new GCGameViewSizeEntry(0, "Free Aspect", 0, 0, false),
+            new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+            new GCGameViewSizeEntry(2, "1920x1080", 0, 0, false),
+        };
+
+        var ready = GamingCouchGameViewAspect.InspectSizeEntries(entries, 1, true, null);
+        var mismatch = GamingCouchGameViewAspect.InspectSizeEntries(entries, 0, true, null);
+        var unknown = GamingCouchGameViewAspect.InspectSizeEntries(entries, -1, true, "Game View is closed.");
+        var mismatchWithoutExisting16By9 = GamingCouchGameViewAspect.InspectSizeEntries(
+            new[] { new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true) },
+            0,
+            true,
+            null
+        );
+
+        Assert.That(ready.status, Is.EqualTo(GCGameViewAspectStatus.Ready));
+        Assert.That(ready.HasSafeSelectionAction, Is.False);
+        Assert.That(mismatch.status, Is.EqualTo(GCGameViewAspectStatus.Mismatch));
+        Assert.That(mismatch.HasSafeSelectionAction, Is.True);
+        Assert.That(mismatch.existing16By9Entry.index, Is.EqualTo(1));
+        Assert.That(unknown.status, Is.EqualTo(GCGameViewAspectStatus.Unknown));
+        Assert.That(unknown.HasSafeSelectionAction, Is.True);
+        Assert.That(mismatchWithoutExisting16By9.status, Is.EqualTo(GCGameViewAspectStatus.Mismatch));
+        Assert.That(mismatchWithoutExisting16By9.HasSafeSelectionAction, Is.False);
+        Assert.That(GamingCouchGameViewAspect.Is16By9(entries[2]), Is.True);
+    }
+
+    [Test]
+    public void BlockingChecklistReadinessIgnoresWarningRows()
+    {
+        var warningOnly = new[]
+        {
+            new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.GameViewAspect16By9,
+                "Game View uses 16:9 preview",
+                GCStartScreenReadinessCheckState.Warning,
+                "Game View could not be inspected."
+            ),
+        };
+        var blocking = new[]
+        {
+            new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
+                "Active scene is first Build Settings scene",
+                GCStartScreenReadinessCheckState.Fail,
+                "The active scene is not in Build Settings."
+            ),
+        };
+
+        Assert.That(GCStartScreenReadiness.HasBlockingChecklistIssues(warningOnly), Is.False);
+        Assert.That(GCStartScreenReadiness.HasBlockingChecklistIssues(blocking), Is.True);
+    }
+
+    [Test]
+    public void SetupActionAvailabilityIncludesLaunchReadinessRows()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var buildSettingsMissing = GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            Array.Empty<EditorBuildSettingsScene>()
+        );
+        var gameViewReady = GamingCouchGameViewAspect.InspectSizeEntries(
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            0,
+            true,
+            null
+        );
+        var buildSettingsOnlyReadiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null,
+            buildSettingsMissing,
+            gameViewReady
+        );
+
+        var buildSettingsReady = GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+        );
+        var gameViewMismatch = GamingCouchGameViewAspect.InspectSizeEntries(
+            new[]
+            {
+                new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true),
+                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+            },
+            0,
+            true,
+            null
+        );
+        var gameViewOnlyReadiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null,
+            buildSettingsReady,
+            gameViewMismatch
+        );
+
+        Assert.That(buildSettingsOnlyReadiness.HasSafeAutomatableSetupActions, Is.True);
+        Assert.That(gameViewOnlyReadiness.HasSafeAutomatableSetupActions, Is.True);
+    }
+
     private static GamingCouch CreateGamingCouch(string name)
     {
         var gameObject = new GameObject(name);
@@ -287,7 +565,7 @@ public sealed class GamingCouchQuickStartEditorTests
 
     private static bool HasActiveSceneChecklistLabel(string[] checklistLabels)
     {
-        return checklistLabels.Any(label => label != null && label.StartsWith("Active scene", StringComparison.Ordinal));
+        return checklistLabels.Any(label => string.Equals(label, "Active scene is available", StringComparison.Ordinal));
     }
 
     private void EnsureTestAssetFolder()

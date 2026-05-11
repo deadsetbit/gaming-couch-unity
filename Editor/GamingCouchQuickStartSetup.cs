@@ -447,12 +447,39 @@ internal static class GamingCouchQuickStartSetup
         var details = new List<string>();
         var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
         details.Add(gamingCouchResult.message);
+
+        var changed = gamingCouchResult.changed;
+        var buildSettingsResult = EnsureActiveSceneFirstBuildSettingsScene(details);
+        changed |= buildSettingsResult.changed;
+        var gameViewResult = EnsureGameView16By9IfSafe(details);
+        changed |= gameViewResult.changed;
+
         if (gamingCouchResult.IsBlocked)
         {
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
-                gamingCouchResult.changed,
+                changed,
                 "Active-scene quick-start setup is blocked.",
+                details
+            );
+        }
+
+        if (buildSettingsResult.IsBlocked)
+        {
+            return CreateActiveSceneResult(
+                GCQuickStartActiveSceneSetupStatus.Blocked,
+                changed,
+                buildSettingsResult.message,
+                details
+            );
+        }
+
+        if (gameViewResult.IsBlocked)
+        {
+            return CreateActiveSceneResult(
+                GCQuickStartActiveSceneSetupStatus.Blocked,
+                changed,
+                gameViewResult.message,
                 details
             );
         }
@@ -463,8 +490,10 @@ internal static class GamingCouchQuickStartSetup
             details.Add("The GamingCouch player prefab reference already contains a serialized reference.");
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Ready,
-                false,
-                "Active-scene quick-start setup was already complete; existing scene references were reused.",
+                changed,
+                changed
+                    ? "Active-scene quick-start setup completed."
+                    : "Active-scene quick-start setup was already complete; existing scene references were reused.",
                 details
             );
         }
@@ -480,7 +509,7 @@ internal static class GamingCouchQuickStartSetup
         {
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
-                gamingCouchResult.changed || scriptResult.changed,
+                changed || scriptResult.changed,
                 scriptResult.message,
                 details
             );
@@ -490,7 +519,7 @@ internal static class GamingCouchQuickStartSetup
         {
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.PendingCompilation,
-                gamingCouchResult.changed || scriptResult.changed,
+                changed || scriptResult.changed,
                 scriptResult.message,
                 details
             );
@@ -502,7 +531,7 @@ internal static class GamingCouchQuickStartSetup
             false
         );
 
-        var changed = scriptResult.changed || gamingCouchResult.changed;
+        changed |= scriptResult.changed;
         var prefabResult = EnsureQuickStartPlayerPrefabReference(context, gamingCouchResult.gamingCouch, details);
         changed |= prefabResult.changed;
         if (prefabResult.IsBlocked)
@@ -850,6 +879,57 @@ internal static class GamingCouchQuickStartSetup
     {
         return GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) &&
                GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
+    }
+
+    private static GCActiveSceneBuildSettingsSetupResult EnsureActiveSceneFirstBuildSettingsScene(
+        List<string> details
+    )
+    {
+        var readiness = GamingCouchBuildSettingsReadiness.InspectActiveScene();
+        if (readiness == null || readiness.IsReady)
+        {
+            return new GCActiveSceneBuildSettingsSetupResult(
+                GCActiveSceneBuildSettingsSetupStatus.Ready,
+                false,
+                "The active scene is already the first enabled Build Settings scene.",
+                new string[0]
+            );
+        }
+
+        if (!readiness.CanSetFirst)
+        {
+            details.Add(readiness.message);
+            return new GCActiveSceneBuildSettingsSetupResult(
+                GCActiveSceneBuildSettingsSetupStatus.Blocked,
+                false,
+                "Build Settings setup is blocked.",
+                new[] { readiness.message }
+            );
+        }
+
+        var result = GamingCouchBuildSettingsReadiness.EnsureActiveSceneFirstEnabled();
+        details.Add(result.message);
+        AddDetails(result.details, details);
+        return result;
+    }
+
+    private static GCGameViewAspectSetupResult EnsureGameView16By9IfSafe(List<string> details)
+    {
+        var readiness = GamingCouchGameViewAspect.Inspect();
+        if (readiness == null || readiness.IsReady || !readiness.HasSafeSelectionAction)
+        {
+            return new GCGameViewAspectSetupResult(
+                GCGameViewAspectSetupStatus.Ready,
+                false,
+                "No safe Game View 16:9 setup action is available.",
+                new string[0]
+            );
+        }
+
+        var result = GamingCouchGameViewAspect.SelectExisting16By9Size();
+        details.Add(result.message);
+        AddDetails(result.details, details);
+        return result;
     }
 
     private static void AddScriptResultDetails(GCQuickStartScriptSetupResult result, List<string> details)
