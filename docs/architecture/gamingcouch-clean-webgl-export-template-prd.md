@@ -102,16 +102,16 @@ The v1 template is only a clean production/upload shell. It should not emulate t
 
 Overall status: IN PROGRESS
 
-Current task: None. Task 3 complete; Task 4 pending.
+Current task: Task 5
 
-Next action: Refactor WebGL build settings helpers.
+Next action: Add menu entry for clean WebGL export setup.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Add Unity 6 package compatibility metadata | `package.json` now requires Unity `6000.0`, removes the old `unityRelease` floor, keeps version `0.1.0-alpha.2`, and adds concise public docs/changelog notes for the Unity 6 clean WebGL export development line. |
 | [x] | DONE | 2. Add clean WebGL template source | Added package-owned source template at `Editor/WebGLTemplates/GamingCouch/index.html` with inline neutral loading/error UI, Unity WebGL build/config macros, and no extra support assets. |
 | [x] | DONE | 3. Build WebGL export setup service | Added editor-only setup/readiness/result service with no-overwrite project template install, explicit collision blockers, `PROJECT:GamingCouch` selection, release export defaults, splash/logo setting application, accepted-setting inspection, non-WebGL warning state, and testable filesystem-path overloads. |
-| [ ] | TODO | 4. Refactor WebGL build settings helpers | Make existing release/dev menu items delegate to shared profile helpers without changing the dev profile's intent. |
+| [x] | DONE | 4. Refactor WebGL build settings helpers | Added shared release/dev WebGL build setting profile helpers; existing release/dev menu items delegate to them, and clean export setup uses the shared release profile before applying template and splash/logo setup. |
 | [ ] | TODO | 5. Add menu entry for clean WebGL export setup | Add a GamingCouch menu item that runs the setup service and reports blockers or warnings clearly. |
 | [ ] | TODO | 6. Add start-screen WebGL export checklist row | Surface WebGL export readiness and setup as a dedicated checklist row/action, separate from scene setup. |
 | [ ] | TODO | 7. Add editor tests for setup and readiness | Cover install/reuse/collision behavior, readiness states, release setting drift, splash/logo values, and checklist action routing. |
@@ -210,6 +210,13 @@ Verification:
 - Inspect release profile for upload-oriented settings.
 - Inspect dev profile for fast/debug-oriented settings.
 - Run `git diff --check`.
+
+Task 4 notes:
+
+- Changed paths: `Editor/GamingCouchWebGLBuildSettingsProfiles.cs`, `Editor/GamingCouchWebGLBuildSettingsProfiles.cs.meta`, `Editor/GamingCouchWebGLExportSetup.cs`, `Editor/Utils/WebBuildOptimizer.cs`, `docs/architecture/gamingcouch-clean-webgl-export-template-prd.md`.
+- Release profile is centralized with disabled compression, enabled data caching, non-development build, debug symbols off, high managed stripping, unused mesh component stripping, IL2CPP optimize size, WebAssembly 2023 where available, disk-size LTO, and explicit exceptions only.
+- Dev profile is centralized with development build enabled, embedded debug symbols, full stacktraces, disabled managed stripping, unused mesh stripping off, IL2CPP optimize speed, build-times code optimization, disabled compression, and data caching off.
+- Verification: inspected the shared release/dev profile helper and delegating menu methods. `git diff --check` passed.
 
 ### Task 5: Add Menu Entry For Clean WebGL Export Setup
 
