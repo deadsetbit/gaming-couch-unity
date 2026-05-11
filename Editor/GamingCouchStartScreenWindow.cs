@@ -400,6 +400,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
     {
+        id = GCStartScreenReadiness.NormalizeCheckId(id);
         var check = FindReadinessCheck(id);
         if (check == null || check.state != GCStartScreenReadinessCheckState.Fail)
         {
@@ -440,6 +441,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return null;
         }
 
+        id = GCStartScreenReadiness.NormalizeCheckId(id);
         for (var index = 0; index < readiness.checklist.Length; index++)
         {
             var check = readiness.checklist[index];
@@ -492,15 +494,32 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return;
         }
 
+        var checkId = GCStartScreenReadiness.NormalizeCheckId(check.id);
         if (check.state == GCStartScreenReadinessCheckState.Pass)
         {
-            FocusChecklistTarget(check.id);
+            FocusChecklistTarget(checkId);
             return;
         }
 
-        switch (check.id)
+        switch (checkId)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                if (GetGamingCouchCount() > 1)
+                {
+                    SetActionResult(
+                        "Multiple GamingCouch objects require manual cleanup before setup can continue.",
+                        MessageType.Error,
+                        null
+                    );
+                    return;
+                }
+
+                if (GetGamingCouchCount() != 0)
+                {
+                    SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
+                    return;
+                }
+
                 RunEnsureGamingCouch();
                 break;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
@@ -532,6 +551,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private bool IsChecklistSetupActionBlocked(GCStartScreenReadinessCheckId id)
     {
+        id = GCStartScreenReadiness.NormalizeCheckId(id);
         if (GamingCouchQuickStartSetup.HasPendingSetup())
         {
             return true;
@@ -657,14 +677,15 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return null;
         }
 
+        var checkId = GCStartScreenReadiness.NormalizeCheckId(check.id);
         if (check.state == GCStartScreenReadinessCheckState.Pass)
         {
-            if (GetChecklistFocusTarget(check.id) == null)
+            if (GetChecklistFocusTarget(checkId) == null)
             {
                 return null;
             }
 
-            switch (check.id)
+            switch (checkId)
             {
                 case GCStartScreenReadinessCheckId.GamingCouchInstance:
                     return "Focus Scene Object";
@@ -677,10 +698,10 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
-        switch (check.id)
+        switch (checkId)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
-                return "Create GamingCouch";
+                return GetGamingCouchCount() == 0 ? "Create GamingCouch" : null;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
                 return "Wire Listener";
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
@@ -697,21 +718,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return null;
         }
 
+        id = GCStartScreenReadiness.NormalizeCheckId(id);
         switch (id)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 if (readiness.gamingCouch != null)
                 {
                     return GetSelectionTarget(readiness.gamingCouch);
-                }
-
-                for (var index = 0; index < readiness.gamingCouches.Length; index++)
-                {
-                    var gamingCouch = readiness.gamingCouches[index];
-                    if (gamingCouch != null)
-                    {
-                        return GetSelectionTarget(gamingCouch);
-                    }
                 }
 
                 return null;
@@ -880,7 +893,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckState.Blocked:
                 return "Blocked";
             case GCStartScreenReadinessCheckState.Fail:
-                return "Missing";
+                return "Error";
             default:
                 return "Unknown";
         }

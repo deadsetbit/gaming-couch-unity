@@ -70,9 +70,10 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(readiness.gamingCouches, Has.Length.EqualTo(0));
         AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Pass);
         AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Fail);
-        AssertCheck(readiness, GCStartScreenReadinessCheckId.SingleGamingCouchInstance, GCStartScreenReadinessCheckState.Blocked);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance).message, Does.Contain("Create a GamingCouch object"));
         AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Blocked);
         AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCollapsedGamingCouchChecklist(readiness);
     }
 
     [Test]
@@ -85,9 +86,9 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(readiness.IsSceneReady, Is.False);
         Assert.That(readiness.gamingCouches, Has.Length.EqualTo(1));
         AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Pass);
-        AssertCheck(readiness, GCStartScreenReadinessCheckId.SingleGamingCouchInstance, GCStartScreenReadinessCheckState.Pass);
         AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
         AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Fail);
+        AssertCollapsedGamingCouchChecklist(readiness);
     }
 
     [Test]
@@ -108,8 +109,10 @@ public sealed class GamingCouchQuickStartEditorTests
 
         var ready = GCStartScreenReadinessService.InspectActiveScene();
         Assert.That(ready.IsSceneReady, Is.True);
+        AssertCheck(ready, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Pass);
         AssertCheck(ready, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
         AssertCheck(ready, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Pass);
+        AssertCollapsedGamingCouchChecklist(ready);
     }
 
     [Test]
@@ -123,9 +126,11 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(readiness.IsSceneReady, Is.False);
         Assert.That(readiness.gamingCouches, Has.Length.EqualTo(2));
         Assert.That(readiness.gamingCouch, Is.Null);
-        AssertCheck(readiness, GCStartScreenReadinessCheckId.SingleGamingCouchInstance, GCStartScreenReadinessCheckState.Fail);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance).message, Does.Contain("multiple GamingCouch"));
         AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Blocked);
         AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCollapsedGamingCouchChecklist(readiness);
     }
 
     [Test]
@@ -236,6 +241,26 @@ public sealed class GamingCouchQuickStartEditorTests
     )
     {
         Assert.That(readiness.GetCheck(id).state, Is.EqualTo(state));
+    }
+
+    private static void AssertCollapsedGamingCouchChecklist(GCStartScreenReadiness readiness)
+    {
+        var checklistIds = readiness.checklist.Select(check => check.id).ToArray();
+        var gamingCouchRows = readiness.checklist
+            .Where(check => check.id == GCStartScreenReadinessCheckId.GamingCouchInstance)
+            .ToArray();
+        var checklistLabels = readiness.checklist.Select(check => check.label).ToArray();
+
+        Assert.That(gamingCouchRows, Has.Length.EqualTo(1));
+        Assert.That(gamingCouchRows[0].label, Is.EqualTo(GCStartScreenReadiness.GamingCouchInstanceCheckLabel));
+        Assert.That(checklistIds, Does.Contain(GCStartScreenReadinessCheckId.GamingCouchInstance));
+        Assert.That(checklistIds, Does.Not.Contain(GCStartScreenReadinessCheckId.SingleGamingCouchInstance));
+        Assert.That(checklistLabels, Does.Not.Contain("GamingCouch object exists"));
+        Assert.That(checklistLabels, Does.Not.Contain("Exactly one GamingCouch object exists"));
+        Assert.That(
+            readiness.GetCheck(GCStartScreenReadinessCheckId.SingleGamingCouchInstance),
+            Is.SameAs(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance))
+        );
     }
 
     private void EnsureTestAssetFolder()

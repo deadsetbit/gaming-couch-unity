@@ -76,6 +76,8 @@ internal sealed class GCStartScreenLocalPlayJsonReadiness
 
 internal sealed class GCStartScreenReadiness
 {
+    internal const string GamingCouchInstanceCheckLabel = "Exactly one GamingCouch in scene";
+
     internal readonly Scene scene;
     internal readonly string sceneName;
     internal readonly string scenePath;
@@ -112,7 +114,6 @@ internal sealed class GCStartScreenReadiness
         {
             return GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied &&
                    GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance).IsSatisfied &&
-                   GetCheck(GCStartScreenReadinessCheckId.SingleGamingCouchInstance).IsSatisfied &&
                    GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned).IsSatisfied &&
                    GetCheck(GCStartScreenReadinessCheckId.PlayerPrefabAssigned).IsSatisfied;
         }
@@ -125,6 +126,8 @@ internal sealed class GCStartScreenReadiness
 
     internal GCStartScreenReadinessCheck GetCheck(GCStartScreenReadinessCheckId id)
     {
+        id = NormalizeCheckId(id);
+
         for (var index = 0; index < checklist.Length; index++)
         {
             if (checklist[index].id == id)
@@ -136,13 +139,19 @@ internal sealed class GCStartScreenReadiness
         throw new ArgumentException("Unknown readiness check: " + id, nameof(id));
     }
 
+    internal static GCStartScreenReadinessCheckId NormalizeCheckId(GCStartScreenReadinessCheckId id)
+    {
+        return id == GCStartScreenReadinessCheckId.SingleGamingCouchInstance
+            ? GCStartScreenReadinessCheckId.GamingCouchInstance
+            : id;
+    }
+
     private GCStartScreenReadinessCheck[] BuildChecklist()
     {
         return new[]
         {
             BuildActiveSceneCheck(),
             BuildGamingCouchInstanceCheck(),
-            BuildSingleGamingCouchInstanceCheck(),
             BuildListenerAssignedCheck(),
             BuildPlayerPrefabAssignedCheck(),
             BuildLocalPlayJsonValidCheck(),
@@ -175,45 +184,25 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.GamingCouchInstance,
-                "GamingCouch object exists",
+                GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
-                "The active scene does not contain a GamingCouch component."
-            );
-        }
-
-        return new GCStartScreenReadinessCheck(
-            GCStartScreenReadinessCheckId.GamingCouchInstance,
-            "GamingCouch object exists",
-            GCStartScreenReadinessCheckState.Pass,
-            "Found " + gamingCouches.Length + " GamingCouch component" + (gamingCouches.Length == 1 ? string.Empty : "s") + " in the active scene."
-        );
-    }
-
-    private GCStartScreenReadinessCheck BuildSingleGamingCouchInstanceCheck()
-    {
-        if (gamingCouches.Length == 0)
-        {
-            return new GCStartScreenReadinessCheck(
-                GCStartScreenReadinessCheckId.SingleGamingCouchInstance,
-                "Exactly one GamingCouch object exists",
-                GCStartScreenReadinessCheckState.Blocked,
-                "Add a GamingCouch object before duplicate detection can pass."
+                "Create a GamingCouch object to continue active-scene setup."
             );
         }
 
         if (gamingCouches.Length > 1)
         {
             return new GCStartScreenReadinessCheck(
-                GCStartScreenReadinessCheckId.SingleGamingCouchInstance,
-                "Exactly one GamingCouch object exists",
+                GCStartScreenReadinessCheckId.GamingCouchInstance,
+                GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
                 "The active scene contains multiple GamingCouch components. Remove duplicates manually before running quick-start setup."
             );
         }
 
         return new GCStartScreenReadinessCheck(
-            GCStartScreenReadinessCheckId.SingleGamingCouchInstance,
-            "Exactly one GamingCouch object exists",
+            GCStartScreenReadinessCheckId.GamingCouchInstance,
+            GamingCouchInstanceCheckLabel,
             GCStartScreenReadinessCheckState.Pass,
             "The active scene has one GamingCouch component."
         );
