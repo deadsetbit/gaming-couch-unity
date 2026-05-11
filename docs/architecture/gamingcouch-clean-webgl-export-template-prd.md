@@ -102,14 +102,14 @@ The v1 template is only a clean production/upload shell. It should not emulate t
 
 Overall status: IN PROGRESS
 
-Current task: None. Task 1 complete; Task 2 pending.
+Current task: None. Task 2 complete; Task 3 pending.
 
-Next action: Add clean WebGL template source.
+Next action: Build WebGL export setup service.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Add Unity 6 package compatibility metadata | `package.json` now requires Unity `6000.0`, removes the old `unityRelease` floor, keeps version `0.1.0-alpha.2`, and adds concise public docs/changelog notes for the Unity 6 clean WebGL export development line. |
-| [ ] | TODO | 2. Add clean WebGL template source | Add the neutral template source used by the installer, with no branding, controls, PWA assets, or platform playtest shims. |
+| [x] | DONE | 2. Add clean WebGL template source | Added package-owned source template at `Editor/WebGLTemplates/GamingCouch/index.html` with inline neutral loading/error UI, Unity WebGL build/config macros, and no extra support assets. |
 | [ ] | TODO | 3. Build WebGL export setup service | Add editor-only install/readiness/result logic for template files, selected template, release defaults, splash/logo settings, and active-build-target warning. |
 | [ ] | TODO | 4. Refactor WebGL build settings helpers | Make existing release/dev menu items delegate to shared profile helpers without changing the dev profile's intent. |
 | [ ] | TODO | 5. Add menu entry for clean WebGL export setup | Add a GamingCouch menu item that runs the setup service and reports blockers or warnings clearly. |
@@ -160,6 +160,12 @@ Verification:
 - Inspect template source for Unity logo asset references and visible branding strings.
 - Inspect template source for no browser playtest or platform shim behavior.
 - Run `git diff --check`.
+
+Task 2 notes:
+
+- Changed paths: `Editor/WebGLTemplates.meta`, `Editor/WebGLTemplates/GamingCouch.meta`, `Editor/WebGLTemplates/GamingCouch/index.html`, `Editor/WebGLTemplates/GamingCouch/index.html.meta`, `docs/architecture/gamingcouch-clean-webgl-export-template-prd.md`.
+- Template source uses Unity WebGL macros for loader, data, framework, code, optional memory, optional symbols, company name, product name, and product version.
+- Verification: inspected the template for branding/control/PWA/playtest terms. The only `Unity` match is the required `createUnityInstance` loader API call. `git diff --check` passed.
 
 ### Task 3: Build WebGL Export Setup Service
 
