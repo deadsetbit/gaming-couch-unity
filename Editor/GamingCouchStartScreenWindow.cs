@@ -7,7 +7,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     internal const string WindowTitle = "GamingCouch Start Screen";
     private const float ChecklistRowHeight = 28f;
     private const float ChecklistRowPaddingX = 8f;
-    private const float ChecklistMarkerWidth = 28f;
     private const float ChecklistStatusWidth = 28f;
     private const float ChecklistMinimumButtonWidth = 96f;
     private const float ChecklistButtonWidth = 148f;
@@ -165,15 +164,15 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         );
 
         var buttonLabel = GetChecklistActionLabel(check);
-        var markerRect = new Rect(
+        var statusRect = new Rect(
             contentRect.x,
             contentRect.y,
-            Mathf.Min(ChecklistMarkerWidth, contentRect.width),
+            Mathf.Min(ChecklistStatusWidth, contentRect.width),
             contentRect.height
         );
 
-        var contentLeft = markerRect.width > 0f
-            ? markerRect.xMax + ChecklistColumnSpacing
+        var contentLeft = statusRect.width > 0f
+            ? statusRect.xMax + ChecklistColumnSpacing
             : contentRect.x;
         var contentRight = contentRect.xMax;
         var buttonRect = Rect.zero;
@@ -193,19 +192,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
-        var statusRect = Rect.zero;
-        if (contentRight - contentLeft >= ChecklistStatusWidth)
-        {
-            statusRect = new Rect(
-                contentRight - ChecklistStatusWidth,
-                contentRect.y,
-                ChecklistStatusWidth,
-                contentRect.height
-            );
-            contentRight = statusRect.x - ChecklistColumnSpacing;
-        }
-
-        DrawChecklistMarker(markerRect, check.state);
+        DrawChecklistStatusIndicator(statusRect, check.state);
 
         var labelRect = new Rect(
             contentLeft,
@@ -218,7 +205,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             GUI.Label(labelRect, check.label, GetChecklistLabelStyle());
         }
 
-        DrawChecklistStatusIndicator(statusRect, check.state);
         if (HasVisibleRect(buttonRect))
         {
             using (new EditorGUI.DisabledScope(IsChecklistActionDisabled(check)))
@@ -784,21 +770,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         return target;
     }
 
-    private static string GetChecklistMarker(GCStartScreenReadinessCheckState state)
-    {
-        switch (state)
-        {
-            case GCStartScreenReadinessCheckState.Pass:
-                return "[x]";
-            case GCStartScreenReadinessCheckState.Warning:
-                return "[!]";
-            case GCStartScreenReadinessCheckState.Blocked:
-                return "[-]";
-            default:
-                return "[ ]";
-        }
-    }
-
     private static void DrawChecklistRowBackground(Rect rowRect, int index)
     {
         EditorGUI.DrawRect(rowRect, GetChecklistRowColor(index));
@@ -821,19 +792,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         return index % 2 == 0
             ? new Color(0f, 0f, 0f, 0.045f)
             : new Color(0f, 0f, 0f, 0.02f);
-    }
-
-    private static void DrawChecklistMarker(Rect markerRect, GCStartScreenReadinessCheckState state)
-    {
-        if (!HasVisibleRect(markerRect))
-        {
-            return;
-        }
-
-        var originalColor = GUI.contentColor;
-        GUI.contentColor = GetChecklistStateColor(state);
-        GUI.Label(markerRect, GetChecklistMarker(state), GetChecklistMarkerStyle());
-        GUI.contentColor = originalColor;
     }
 
     private static void DrawChecklistStatusIndicator(Rect statusRect, GCStartScreenReadinessCheckState state)
@@ -905,14 +863,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             default:
                 return "Unknown";
         }
-    }
-
-    private static GUIStyle GetChecklistMarkerStyle()
-    {
-        return new GUIStyle(EditorStyles.miniBoldLabel)
-        {
-            alignment = TextAnchor.MiddleCenter
-        };
     }
 
     private static GUIStyle GetChecklistLabelStyle()
