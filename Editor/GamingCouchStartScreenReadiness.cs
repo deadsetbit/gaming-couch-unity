@@ -86,6 +86,7 @@ internal sealed class GCStartScreenReadiness
     internal readonly UnityEngine.Object listener;
     internal readonly UnityEngine.Object playerPrefab;
     internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
+    internal readonly GCStartScreenReadinessCheck activeSceneCheck;
     internal readonly GCStartScreenReadinessCheck[] checklist;
 
     internal GCStartScreenReadiness(
@@ -98,13 +99,15 @@ internal sealed class GCStartScreenReadiness
     )
     {
         this.scene = scene;
-        sceneName = string.IsNullOrEmpty(scene.name) ? "Untitled" : scene.name;
-        scenePath = scene.path;
+        var hasLoadedScene = scene.IsValid() && scene.isLoaded;
+        sceneName = hasLoadedScene && !string.IsNullOrEmpty(scene.name) ? scene.name : "Untitled";
+        scenePath = hasLoadedScene ? scene.path : null;
         this.gamingCouches = gamingCouches ?? new GamingCouch[0];
         this.gamingCouch = gamingCouch;
         this.listener = listener;
         this.playerPrefab = playerPrefab;
         this.localPlayJson = localPlayJson;
+        activeSceneCheck = BuildActiveSceneCheck();
         checklist = BuildChecklist();
     }
 
@@ -126,17 +129,35 @@ internal sealed class GCStartScreenReadiness
 
     internal GCStartScreenReadinessCheck GetCheck(GCStartScreenReadinessCheckId id)
     {
-        id = NormalizeCheckId(id);
-
-        for (var index = 0; index < checklist.Length; index++)
+        GCStartScreenReadinessCheck check;
+        if (TryGetCheck(id, out check))
         {
-            if (checklist[index].id == id)
-            {
-                return checklist[index];
-            }
+            return check;
         }
 
         throw new ArgumentException("Unknown readiness check: " + id, nameof(id));
+    }
+
+    internal bool TryGetCheck(GCStartScreenReadinessCheckId id, out GCStartScreenReadinessCheck check)
+    {
+        id = NormalizeCheckId(id);
+        if (id == GCStartScreenReadinessCheckId.ActiveScene)
+        {
+            check = activeSceneCheck;
+            return check != null;
+        }
+
+        for (var index = 0; checklist != null && index < checklist.Length; index++)
+        {
+            if (checklist[index] != null && checklist[index].id == id)
+            {
+                check = checklist[index];
+                return true;
+            }
+        }
+
+        check = null;
+        return false;
     }
 
     internal static GCStartScreenReadinessCheckId NormalizeCheckId(GCStartScreenReadinessCheckId id)
@@ -150,7 +171,6 @@ internal sealed class GCStartScreenReadiness
     {
         return new[]
         {
-            BuildActiveSceneCheck(),
             BuildGamingCouchInstanceCheck(),
             BuildListenerAssignedCheck(),
             BuildPlayerPrefabAssignedCheck(),
@@ -164,7 +184,7 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.ActiveScene,
-                "Active scene is loaded",
+                "Active scene is available",
                 GCStartScreenReadinessCheckState.Fail,
                 "No loaded active scene is available for GamingCouch setup inspection."
             );
@@ -172,7 +192,7 @@ internal sealed class GCStartScreenReadiness
 
         return new GCStartScreenReadinessCheck(
             GCStartScreenReadinessCheckId.ActiveScene,
-            "Active scene is loaded",
+            "Active scene is available",
             GCStartScreenReadinessCheckState.Pass,
             "Inspecting active scene: " + sceneName + "."
         );

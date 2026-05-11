@@ -77,6 +77,25 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void ReadinessKeepsActiveSceneGuardOutOfDisplayedChecklist()
+    {
+        var readiness = new GCStartScreenReadiness(default(Scene), null, null, null, null, null);
+        GCStartScreenReadinessCheck activeSceneCheck;
+        var checklistIds = readiness.checklist.Select(check => check.id).ToArray();
+        var checklistLabels = readiness.checklist.Select(check => check.label).ToArray();
+
+        Assert.That(readiness.IsSceneReady, Is.False);
+        Assert.That(readiness.sceneName, Is.EqualTo("Untitled"));
+        Assert.That(readiness.scenePath, Is.Null);
+        Assert.That(readiness.TryGetCheck(GCStartScreenReadinessCheckId.ActiveScene, out activeSceneCheck), Is.True);
+        Assert.That(activeSceneCheck, Is.SameAs(readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene)));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).message, Does.Contain("No loaded active scene"));
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.ActiveScene));
+        Assert.That(HasActiveSceneChecklistLabel(checklistLabels), Is.False);
+    }
+
+    [Test]
     public void ReadinessReportsMissingReferencesOnBareGamingCouch()
     {
         CreateGamingCouch("GamingCouch");
@@ -253,14 +272,22 @@ public sealed class GamingCouchQuickStartEditorTests
 
         Assert.That(gamingCouchRows, Has.Length.EqualTo(1));
         Assert.That(gamingCouchRows[0].label, Is.EqualTo(GCStartScreenReadiness.GamingCouchInstanceCheckLabel));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.ActiveScene));
         Assert.That(checklistIds, Has.Member(GCStartScreenReadinessCheckId.GamingCouchInstance));
         Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.SingleGamingCouchInstance));
+        Assert.That(HasActiveSceneChecklistLabel(checklistLabels), Is.False);
         Assert.That(checklistLabels, Does.Not.Contain("GamingCouch object exists"));
         Assert.That(checklistLabels, Does.Not.Contain("Exactly one GamingCouch object exists"));
         Assert.That(
             readiness.GetCheck(GCStartScreenReadinessCheckId.SingleGamingCouchInstance),
             Is.SameAs(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance))
         );
+    }
+
+    private static bool HasActiveSceneChecklistLabel(string[] checklistLabels)
+    {
+        return checklistLabels.Any(label => label != null && label.StartsWith("Active scene", StringComparison.Ordinal));
     }
 
     private void EnsureTestAssetFolder()

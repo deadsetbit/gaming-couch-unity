@@ -65,9 +65,10 @@ The start screen should appear automatically when Unity starts into an active sc
 - Keep the start screen title in the EditorWindow tab only; the content starts with active-scene readiness.
 - Place the auto-open suppression control at the bottom of the window with the label `Never open this again on startup`.
 - Keep manual entry points through the GamingCouch top menu and the `GamingCouch` inspector.
-- Show setup actions only for missing checklist rows; ready scene/listener/prefab rows offer focus actions for the resolved scene object or asset.
+- Show setup actions only for missing checklist rows; ready GamingCouch/listener/prefab rows offer focus actions for the resolved scene object or asset.
 - Use one visible checklist row labeled `Exactly one GamingCouch in scene` for active-scene `GamingCouch` count: missing is an actionable create state, exactly one is ready and focusable, and more than one is a red manual-cleanup error with no setup or focus action on that row.
 - Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup checklist rows have actionable setup work, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window. Occupied serialized listener/player references, including broken or missing-object references, are not actionable for no-overwrite setup. The primary active-scene setup entry point should also no-op before script generation when active-scene wiring is already complete.
+- Polish update, 2026-05-11: keep active-scene validity as an internal readiness/action guard while excluding the active-scene guard from the visible checklist. If no usable active scene is loaded, show that issue as a standalone help box before the readiness summary/checklist. Keep the scene summary to name/path only; do not show ready or generic setup summary boxes because the checklist already communicates readiness.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.
@@ -139,7 +140,7 @@ Implementation steps:
 1. Add an editor window titled `GamingCouch Start Screen`.
 2. Add a readiness service that inspects only the active scene.
 3. Report missing `GamingCouch`, missing listener, missing player prefab, multiple `GamingCouch` instances, and local play JSON validity.
-4. Draw a checklist that maps directly to the readiness model.
+4. Draw a visible setup checklist from the displayable readiness rows.
 5. Keep all action buttons disabled or stubbed until later tasks wire behavior.
 
 Verification:

@@ -62,6 +62,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         using (new EditorGUILayout.VerticalScope())
         {
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
+            DrawActiveSceneIssue();
             DrawSceneSummary();
             DrawChecklist();
             DrawLocalPlayJsonDetails();
@@ -77,6 +78,26 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void Refresh()
     {
         readiness = GCStartScreenReadinessService.InspectActiveScene();
+    }
+
+    private void DrawActiveSceneIssue()
+    {
+        if (readiness == null)
+        {
+            return;
+        }
+
+        var check = FindReadinessCheck(GCStartScreenReadinessCheckId.ActiveScene);
+        if (check == null || check.IsSatisfied)
+        {
+            return;
+        }
+
+        var message = string.IsNullOrEmpty(check.message)
+            ? "No loaded active scene is available for GamingCouch setup inspection."
+            : check.message;
+        EditorGUILayout.HelpBox(message, GetMessageType(check.state));
+        EditorGUILayout.Space();
     }
 
     private static void DrawAutoOpenSettings()
@@ -107,18 +128,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             EditorGUILayout.LabelField("Path", readiness.scenePath);
         }
 
-        var messageType = readiness.IsSceneReady ? MessageType.Info : MessageType.Warning;
-        var message = readiness.IsSceneReady
-            ? "Scene setup is ready. The active scene has one GamingCouch object with listener and player prefab references."
-            : "The active scene is missing required GamingCouch setup.";
-
-        if (readiness.gamingCouches.Length > 1)
-        {
-            messageType = MessageType.Error;
-            message = "The active scene has multiple GamingCouch components. Resolve this manually before setup actions are enabled.";
-        }
-
-        EditorGUILayout.HelpBox(message, messageType);
         EditorGUILayout.Space();
     }
 
@@ -436,22 +445,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private GCStartScreenReadinessCheck FindReadinessCheck(GCStartScreenReadinessCheckId id)
     {
-        if (readiness == null || readiness.checklist == null)
+        if (readiness == null)
         {
             return null;
         }
 
-        id = GCStartScreenReadiness.NormalizeCheckId(id);
-        for (var index = 0; index < readiness.checklist.Length; index++)
-        {
-            var check = readiness.checklist[index];
-            if (check != null && check.id == id)
-            {
-                return check;
-            }
-        }
-
-        return null;
+        GCStartScreenReadinessCheck check;
+        return readiness.TryGetCheck(id, out check) ? check : null;
     }
 
     private int GetGamingCouchCount()
