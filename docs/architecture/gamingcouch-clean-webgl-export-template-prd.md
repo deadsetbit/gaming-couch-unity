@@ -102,15 +102,15 @@ The v1 template is only a clean production/upload shell. It should not emulate t
 
 Overall status: IN PROGRESS
 
-Current task: None. Task 2 complete; Task 3 pending.
+Current task: None. Task 3 complete; Task 4 pending.
 
-Next action: Build WebGL export setup service.
+Next action: Refactor WebGL build settings helpers.
 
 | Done | Status | Task | Notes |
 | --- | --- | --- | --- |
 | [x] | DONE | 1. Add Unity 6 package compatibility metadata | `package.json` now requires Unity `6000.0`, removes the old `unityRelease` floor, keeps version `0.1.0-alpha.2`, and adds concise public docs/changelog notes for the Unity 6 clean WebGL export development line. |
 | [x] | DONE | 2. Add clean WebGL template source | Added package-owned source template at `Editor/WebGLTemplates/GamingCouch/index.html` with inline neutral loading/error UI, Unity WebGL build/config macros, and no extra support assets. |
-| [ ] | TODO | 3. Build WebGL export setup service | Add editor-only install/readiness/result logic for template files, selected template, release defaults, splash/logo settings, and active-build-target warning. |
+| [x] | DONE | 3. Build WebGL export setup service | Added editor-only setup/readiness/result service with no-overwrite project template install, explicit collision blockers, `PROJECT:GamingCouch` selection, release export defaults, splash/logo setting application, accepted-setting inspection, non-WebGL warning state, and testable filesystem-path overloads. |
 | [ ] | TODO | 4. Refactor WebGL build settings helpers | Make existing release/dev menu items delegate to shared profile helpers without changing the dev profile's intent. |
 | [ ] | TODO | 5. Add menu entry for clean WebGL export setup | Add a GamingCouch menu item that runs the setup service and reports blockers or warnings clearly. |
 | [ ] | TODO | 6. Add start-screen WebGL export checklist row | Surface WebGL export readiness and setup as a dedicated checklist row/action, separate from scene setup. |
@@ -186,6 +186,13 @@ Verification:
 - Confirm no setup path switches active build target.
 - Confirm rerun behavior is no-overwrite.
 - Run `git diff --check`.
+
+Task 3 notes:
+
+- Changed paths: `Editor/GamingCouchWebGLExportSetup.cs`, `Editor/GamingCouchWebGLExportSetup.cs.meta`, `docs/architecture/gamingcouch-clean-webgl-export-template-prd.md`.
+- The setup service copies only runtime template files from the package-owned source into `Assets/WebGLTemplates/GamingCouch`; Unity can generate project-local `.meta` files and package-owned source `.meta` GUIDs are not copied into consuming projects.
+- The service exposes filesystem-path overloads for install/setup/readiness so Task 7 can exercise fresh install, rerun reuse, and wrong-kind collision behavior without relying on a mounted package.
+- Pass 2 tightened install preflight so source files and destination wrong-kind collisions are validated before creating project-local folders or copying template files.
 
 ### Task 4: Refactor WebGL Build Settings Helpers
 
