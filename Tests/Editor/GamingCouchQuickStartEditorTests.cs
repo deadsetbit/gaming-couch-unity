@@ -253,8 +253,8 @@ public sealed class GamingCouchQuickStartEditorTests
 
         Assert.That(gamingCouchRows, Has.Length.EqualTo(1));
         Assert.That(gamingCouchRows[0].label, Is.EqualTo(GCStartScreenReadiness.GamingCouchInstanceCheckLabel));
-        Assert.That(checklistIds, Does.Contain(GCStartScreenReadinessCheckId.GamingCouchInstance));
-        Assert.That(checklistIds, Does.Not.Contain(GCStartScreenReadinessCheckId.SingleGamingCouchInstance));
+        Assert.That(checklistIds, Has.Member(GCStartScreenReadinessCheckId.GamingCouchInstance));
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.SingleGamingCouchInstance));
         Assert.That(checklistLabels, Does.Not.Contain("GamingCouch object exists"));
         Assert.That(checklistLabels, Does.Not.Contain("Exactly one GamingCouch object exists"));
         Assert.That(
