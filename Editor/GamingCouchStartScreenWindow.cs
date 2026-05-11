@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DSB.GC.Dev;
 using UnityEditor;
 using UnityEngine;
@@ -6,6 +5,14 @@ using UnityEngine;
 internal sealed class GamingCouchStartScreenWindow : EditorWindow
 {
     internal const string WindowTitle = "GamingCouch Start Screen";
+    private const float ChecklistRowHeight = 28f;
+    private const float ChecklistRowPaddingX = 8f;
+    private const float ChecklistMarkerWidth = 28f;
+    private const float ChecklistStatusWidth = 28f;
+    private const float ChecklistMinimumButtonWidth = 96f;
+    private const float ChecklistButtonWidth = 148f;
+    private const float ChecklistColumnSpacing = 6f;
+    private const float ChecklistStatusIndicatorSize = 10f;
 
     private GCStartScreenReadiness readiness;
     private Vector2 scrollPosition;
@@ -125,30 +132,91 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         EditorGUILayout.LabelField("Checklist", EditorStyles.boldLabel);
         for (var index = 0; index < readiness.checklist.Length; index++)
         {
-            DrawChecklistItem(readiness.checklist[index]);
+            DrawChecklistItem(readiness.checklist[index], index);
         }
 
         EditorGUILayout.Space();
     }
 
-    private void DrawChecklistItem(GCStartScreenReadinessCheck check)
+    private void DrawChecklistItem(GCStartScreenReadinessCheck check, int index)
     {
-        using (new EditorGUILayout.HorizontalScope())
+        if (check == null)
         {
-            GUILayout.Label(GetChecklistMarker(check.state), GUILayout.Width(28f));
-            GUILayout.Label(check.label);
-            GUILayout.FlexibleSpace();
-            GUILayout.Label(GetStateLabel(check.state), EditorStyles.miniLabel, GUILayout.Width(64f));
+            return;
+        }
 
-            var buttonLabel = GetChecklistActionLabel(check);
-            if (!string.IsNullOrEmpty(buttonLabel))
+        var rowRect = EditorGUILayout.GetControlRect(false, ChecklistRowHeight);
+        DrawChecklistRowBackground(rowRect, index);
+
+        var contentRect = new Rect(
+            rowRect.x + ChecklistRowPaddingX,
+            rowRect.y + 4f,
+            Mathf.Max(0f, rowRect.width - ChecklistRowPaddingX * 2f),
+            EditorGUIUtility.singleLineHeight
+        );
+
+        var buttonLabel = GetChecklistActionLabel(check);
+        var markerRect = new Rect(
+            contentRect.x,
+            contentRect.y,
+            Mathf.Min(ChecklistMarkerWidth, contentRect.width),
+            contentRect.height
+        );
+
+        var contentLeft = markerRect.width > 0f
+            ? markerRect.xMax + ChecklistColumnSpacing
+            : contentRect.x;
+        var contentRight = contentRect.xMax;
+        var buttonRect = Rect.zero;
+        if (!string.IsNullOrEmpty(buttonLabel))
+        {
+            var availableButtonWidth = contentRight - contentLeft;
+            if (availableButtonWidth >= ChecklistMinimumButtonWidth)
             {
-                using (new EditorGUI.DisabledScope(IsChecklistActionDisabled(check)))
+                var buttonWidth = Mathf.Min(ChecklistButtonWidth, availableButtonWidth);
+                buttonRect = new Rect(
+                    contentRight - buttonWidth,
+                    contentRect.y,
+                    buttonWidth,
+                    contentRect.height
+                );
+                contentRight = buttonRect.x - ChecklistColumnSpacing;
+            }
+        }
+
+        var statusRect = Rect.zero;
+        if (contentRight - contentLeft >= ChecklistStatusWidth)
+        {
+            statusRect = new Rect(
+                contentRight - ChecklistStatusWidth,
+                contentRect.y,
+                ChecklistStatusWidth,
+                contentRect.height
+            );
+            contentRight = statusRect.x - ChecklistColumnSpacing;
+        }
+
+        DrawChecklistMarker(markerRect, check.state);
+
+        var labelRect = new Rect(
+            contentLeft,
+            contentRect.y,
+            Mathf.Max(0f, contentRight - contentLeft),
+            contentRect.height
+        );
+        if (HasVisibleRect(labelRect))
+        {
+            GUI.Label(labelRect, check.label, GetChecklistLabelStyle());
+        }
+
+        DrawChecklistStatusIndicator(statusRect, check.state);
+        if (HasVisibleRect(buttonRect))
+        {
+            using (new EditorGUI.DisabledScope(IsChecklistActionDisabled(check)))
+            {
+                if (GUI.Button(buttonRect, buttonLabel))
                 {
-                    if (GUILayout.Button(buttonLabel, GUILayout.Width(148f)))
-                    {
-                        RunChecklistAction(check);
-                    }
+                    RunChecklistAction(check);
                 }
             }
         }
@@ -291,6 +359,11 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void DrawActions()
     {
+        if (!ShouldShowActiveSceneSetupAction())
+        {
+            return;
+        }
+
         EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
         using (new EditorGUI.DisabledScope(IsActiveSceneSetupActionBlocked()))
         {
@@ -300,15 +373,22 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
-        using (new EditorGUI.DisabledScope(GamingCouchQuickStartSetup.HasPendingSetup()))
+        EditorGUILayout.Space();
+    }
+
+    private bool ShouldShowActiveSceneSetupAction()
+    {
+        if (readiness == null || readiness.IsSceneReady)
         {
-            if (GUILayout.Button("Create new quick-start scene"))
-            {
-                RunCreateOrOpenQuickStartScene();
-            }
+            return false;
         }
 
-        EditorGUILayout.Space();
+        if (!readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied)
+        {
+            return false;
+        }
+
+        return readiness.gamingCouches.Length <= 1;
     }
 
     private bool IsActiveSceneSetupActionBlocked()
@@ -468,35 +548,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         Repaint();
     }
 
-    private void RunCreateOrOpenQuickStartScene()
-    {
-        var result = GamingCouchQuickStartSetup.CreateOrOpenQuickStartScene();
-        var message = result.message;
-        var details = new List<string>();
-
-        if (!string.IsNullOrEmpty(result.sceneAssetPath))
-        {
-            details.Add("Scene: " + result.sceneAssetPath);
-        }
-
-        for (var index = 0; index < result.blockedReasons.Length; index++)
-        {
-            if (!string.IsNullOrEmpty(result.blockedReasons[index]))
-            {
-                details.Add(result.blockedReasons[index]);
-            }
-        }
-
-        if (result.status == GCQuickStartSceneSetupStatus.Ready && !result.changed)
-        {
-            details.Add("No scene changes were needed; existing quick-start assets and references were reused.");
-        }
-
-        SetActionResult(message, GetSceneResultMessageType(result), details.ToArray());
-        Refresh();
-        Repaint();
-    }
-
     private void SetActionResult(string message, MessageType messageType, string[] details)
     {
         actionMessage = message;
@@ -505,16 +556,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     }
 
     private static MessageType GetActiveSceneResultMessageType(GCQuickStartActiveSceneSetupResult result)
-    {
-        if (result.IsBlocked)
-        {
-            return MessageType.Error;
-        }
-
-        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
-    }
-
-    private static MessageType GetSceneResultMessageType(GCQuickStartSceneSetupResult result)
     {
         if (result.IsBlocked)
         {
@@ -671,7 +712,98 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
     }
 
-    private static string GetStateLabel(GCStartScreenReadinessCheckState state)
+    private static void DrawChecklistRowBackground(Rect rowRect, int index)
+    {
+        EditorGUI.DrawRect(rowRect, GetChecklistRowColor(index));
+
+        var dividerColor = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, 0.06f)
+            : new Color(0f, 0f, 0f, 0.08f);
+        EditorGUI.DrawRect(new Rect(rowRect.x, rowRect.yMax - 1f, rowRect.width, 1f), dividerColor);
+    }
+
+    private static Color GetChecklistRowColor(int index)
+    {
+        if (EditorGUIUtility.isProSkin)
+        {
+            return index % 2 == 0
+                ? new Color(1f, 1f, 1f, 0.045f)
+                : new Color(1f, 1f, 1f, 0.025f);
+        }
+
+        return index % 2 == 0
+            ? new Color(0f, 0f, 0f, 0.045f)
+            : new Color(0f, 0f, 0f, 0.02f);
+    }
+
+    private static void DrawChecklistMarker(Rect markerRect, GCStartScreenReadinessCheckState state)
+    {
+        if (!HasVisibleRect(markerRect))
+        {
+            return;
+        }
+
+        var originalColor = GUI.contentColor;
+        GUI.contentColor = GetChecklistStateColor(state);
+        GUI.Label(markerRect, GetChecklistMarker(state), GetChecklistMarkerStyle());
+        GUI.contentColor = originalColor;
+    }
+
+    private static void DrawChecklistStatusIndicator(Rect statusRect, GCStartScreenReadinessCheckState state)
+    {
+        if (!HasVisibleRect(statusRect))
+        {
+            return;
+        }
+
+        var indicatorSize = Mathf.Min(ChecklistStatusIndicatorSize, Mathf.Min(statusRect.width, statusRect.height));
+        if (indicatorSize <= 0f)
+        {
+            return;
+        }
+
+        var indicatorRect = new Rect(
+            statusRect.x + (statusRect.width - indicatorSize) * 0.5f,
+            statusRect.y + (statusRect.height - indicatorSize) * 0.5f,
+            indicatorSize,
+            indicatorSize
+        );
+        var outlineColor = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, 0.22f)
+            : new Color(0f, 0f, 0f, 0.18f);
+
+        EditorGUI.DrawRect(
+            new Rect(indicatorRect.x - 1f, indicatorRect.y - 1f, indicatorRect.width + 2f, indicatorRect.height + 2f),
+            outlineColor
+        );
+        EditorGUI.DrawRect(indicatorRect, GetChecklistStateColor(state));
+        GUI.Label(statusRect, new GUIContent(string.Empty, GetStateTooltip(state)), GUIStyle.none);
+    }
+
+    private static bool HasVisibleRect(Rect rect)
+    {
+        return rect.width > 0f && rect.height > 0f;
+    }
+
+    private static Color GetChecklistStateColor(GCStartScreenReadinessCheckState state)
+    {
+        switch (state)
+        {
+            case GCStartScreenReadinessCheckState.Pass:
+                return new Color(0.22f, 0.72f, 0.34f, 1f);
+            case GCStartScreenReadinessCheckState.Warning:
+            case GCStartScreenReadinessCheckState.Blocked:
+                return new Color(0.95f, 0.62f, 0.18f, 1f);
+            case GCStartScreenReadinessCheckState.Fail:
+                return new Color(0.86f, 0.26f, 0.24f, 1f);
+            default:
+                return EditorGUIUtility.isProSkin
+                    ? new Color(0.72f, 0.72f, 0.72f, 1f)
+                    : new Color(0.38f, 0.38f, 0.38f, 1f);
+        }
+    }
+
+    private static string GetStateTooltip(GCStartScreenReadinessCheckState state)
     {
         switch (state)
         {
@@ -681,9 +813,27 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 return "Warning";
             case GCStartScreenReadinessCheckState.Blocked:
                 return "Blocked";
-            default:
+            case GCStartScreenReadinessCheckState.Fail:
                 return "Missing";
+            default:
+                return "Unknown";
         }
+    }
+
+    private static GUIStyle GetChecklistMarkerStyle()
+    {
+        return new GUIStyle(EditorStyles.miniBoldLabel)
+        {
+            alignment = TextAnchor.MiddleCenter
+        };
+    }
+
+    private static GUIStyle GetChecklistLabelStyle()
+    {
+        return new GUIStyle(EditorStyles.label)
+        {
+            alignment = TextAnchor.MiddleLeft
+        };
     }
 
     private static MessageType GetMessageType(GCStartScreenReadinessCheckState state)

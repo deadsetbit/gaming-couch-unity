@@ -66,6 +66,7 @@ The start screen should appear automatically when Unity starts into an active sc
 - Place the auto-open suppression control at the bottom of the window with the label `Never open this again on startup`.
 - Keep manual entry points through the GamingCouch top menu and the `GamingCouch` inspector.
 - Show setup actions only for missing checklist rows; ready scene/listener/prefab rows offer focus actions for the resolved scene object or asset.
+- Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup is incomplete, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.
@@ -122,7 +123,7 @@ Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes th
 | [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
 | [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
 | [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
-| [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist, primary setup, and quick-start scene actions with pending, blocker, success, reuse, and read-only JSON messaging. |
+| [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist and primary active-scene setup actions with pending, blocker, success, reuse, and read-only JSON messaging. |
 | [x] | DONE | 9. Add editor tests for detection and generation behavior | Added edit-mode coverage for readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | BLOCKED | 10. Run manual Unity validation | Blocked: no Unity 2022.3 executable is installed or on PATH, this checkout is a Unity package rather than a Unity project, and nearby 2022.3 projects that consume GamingCouch reference GitHub URLs instead of this checkout. |
 
@@ -461,7 +462,7 @@ Implementation steps:
 
 1. Wire individual checklist actions.
 2. Wire the primary `Set up missing pieces` action.
-3. Wire the `Create new quick-start scene` action.
+3. Keep quick-start scene creation out of the start screen.
 4. Show clear warnings for missing or invalid local play JSON without repairing it.
 5. Show a success state when the scene is ready.
 6. Show rerun messages when existing assets are reused.
@@ -476,12 +477,12 @@ Verification:
 Implementation notes, 2026-05-10:
 
 - Changed paths: `Editor/GamingCouchStartScreenWindow.cs`, `Editor/GamingCouchQuickStartSetup.cs`, `docs/architecture/gamingcouch-quick-start-start-screen-prd.md`.
-- Replaced disabled placeholder actions with active IMGUI buttons for GamingCouch creation/reuse, listener wiring, player prefab wiring, primary active-scene setup, and quick-start scene creation/opening.
+- Replaced disabled placeholder actions with active IMGUI buttons for GamingCouch creation/reuse, listener wiring, player prefab wiring, and primary active-scene setup.
 - Added a staged quick-start action discriminator so individual listener and player prefab buttons resume narrowly after script compilation instead of running the whole active-scene setup.
 - Primary active-scene setup creates/reuses the active-scene `GamingCouch`, generated player prefab, generated listener, and null-only serialized references through existing setup and scene-wiring helpers.
 - Missing or invalid `gc.dev.json` is displayed as Play Mode readiness only, with explicit messaging that the start screen will not create or repair the file.
 - Success messaging now treats scene setup readiness separately from local Play Mode JSON readiness, and action results report reused assets/references or unchanged setup.
-- Multiple active-scene `GamingCouch` components keep active-scene setup actions blocked with manual cleanup messaging; the quick-start scene action remains available.
+- Multiple active-scene `GamingCouch` components keep active-scene setup actions blocked with manual cleanup messaging; quick-start scene creation remains outside this window.
 - Validation run: `git diff --check`; conflict-marker search; scoped action-wiring search; scoped JSON write API absence search; primary setup path search; pending compilation path search; `git status --short` to confirm no tests or manual scene assets were generated.
 - Unity 2022.3 manual editor validation was not run in this package-only shell.
 
@@ -498,7 +499,7 @@ Review pass 2, 2026-05-10:
 - No additional code defects were found in the Task 8 scoped files.
 - Confirmed all continuation context constructor calls and setup helper callsites use the action-aware signatures, and pending action recovery falls back to the stored intent's valid default action.
 - Confirmed active-scene pending continuations keep primary setup broad while listener and player prefab actions resume only their own references; quick-start scene continuations remain scene-only.
-- Confirmed active-scene actions are blocked only for pending compile, invalid active scene, or duplicate `GamingCouch` state, while the quick-start scene action is blocked only during pending compile.
+- Confirmed active-scene actions are blocked only for pending compile, invalid active scene, or duplicate `GamingCouch` state, while no global quick-start scene action is shown in this window.
 - Confirmed Task 8 UI/readiness paths read local play JSON without calling JSON write or repair APIs; file writes remain limited to existing quick-start script/prefab/scene setup code.
 - Decision: no extra multi-window pending-result patch in this pass. The pending state is shown in-window, continuation results are logged after compilation, and the window refreshes through existing focus/project/hierarchy hooks.
 - Validation run: `git diff --check`; conflict-marker search; scoped signature/callsite search for continuation context, pending setup, pending action, quick-start script setup, and setup result usage; scoped action label search; scoped JSON write API absence search in Task 8 touched UI/readiness files; generated asset/test absence check.
