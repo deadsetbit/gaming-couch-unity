@@ -66,7 +66,7 @@ The start screen should appear automatically when Unity starts into an active sc
 - Place the auto-open suppression control at the bottom of the window with the label `Never open this again on startup`.
 - Keep manual entry points through the GamingCouch top menu and the `GamingCouch` inspector.
 - Show setup actions only for missing checklist rows; ready scene/listener/prefab rows offer focus actions for the resolved scene object or asset.
-- Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup is incomplete, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window.
+- Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup checklist rows have actionable setup work, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window. Occupied serialized listener/player references, including broken or missing-object references, are not actionable for no-overwrite setup. The primary active-scene setup entry point should also no-op before script generation when active-scene wiring is already complete.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.

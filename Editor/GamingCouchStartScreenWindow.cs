@@ -378,17 +378,83 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private bool ShouldShowActiveSceneSetupAction()
     {
-        if (readiness == null || readiness.IsSceneReady)
+        if (readiness == null)
         {
             return false;
         }
 
-        if (!readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied)
+        if (!IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
         {
             return false;
         }
 
-        return readiness.gamingCouches.Length <= 1;
+        if (GetGamingCouchCount() > 1)
+        {
+            return false;
+        }
+
+        return DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance) ||
+               DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned) ||
+               DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
+    }
+
+    private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
+    {
+        var check = FindReadinessCheck(id);
+        if (check == null || check.state != GCStartScreenReadinessCheckState.Fail)
+        {
+            return false;
+        }
+
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+                return GetGamingCouchCount() == 0;
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName);
+            default:
+                return false;
+        }
+    }
+
+    private bool CanAssignMissingActiveSceneReference(string propertyName)
+    {
+        return readiness != null &&
+               readiness.gamingCouch != null &&
+               GamingCouchSceneWiring.HasObjectReferenceSlot(readiness.gamingCouch, propertyName) &&
+               !GamingCouchSceneWiring.HasObjectReference(readiness.gamingCouch, propertyName);
+    }
+
+    private bool IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId id)
+    {
+        var check = FindReadinessCheck(id);
+        return check != null && check.IsSatisfied;
+    }
+
+    private GCStartScreenReadinessCheck FindReadinessCheck(GCStartScreenReadinessCheckId id)
+    {
+        if (readiness == null || readiness.checklist == null)
+        {
+            return null;
+        }
+
+        for (var index = 0; index < readiness.checklist.Length; index++)
+        {
+            var check = readiness.checklist[index];
+            if (check != null && check.id == id)
+            {
+                return check;
+            }
+        }
+
+        return null;
+    }
+
+    private int GetGamingCouchCount()
+    {
+        return readiness != null && readiness.gamingCouches != null ? readiness.gamingCouches.Length : 0;
     }
 
     private bool IsActiveSceneSetupActionBlocked()
@@ -403,8 +469,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return true;
         }
 
-        return !readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied ||
-               readiness.gamingCouches.Length > 1;
+        return !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene) ||
+               GetGamingCouchCount() > 1;
     }
 
     private void DrawActionResult()
@@ -476,7 +542,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return true;
         }
 
-        if (!readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).IsSatisfied)
+        if (!IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
         {
             return true;
         }
@@ -484,7 +550,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         switch (id)
         {
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
-                return readiness.gamingCouches.Length > 1;
+                return GetGamingCouchCount() > 1;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 return readiness.gamingCouch == null;

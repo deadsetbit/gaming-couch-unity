@@ -457,6 +457,18 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
+        if (IsActiveSceneQuickStartWiringReady(gamingCouchResult.gamingCouch))
+        {
+            details.Add("The GamingCouch listener reference already contains a serialized reference.");
+            details.Add("The GamingCouch player prefab reference already contains a serialized reference.");
+            return CreateActiveSceneResult(
+                GCQuickStartActiveSceneSetupStatus.Ready,
+                false,
+                "Active-scene quick-start setup was already complete; existing scene references were reused.",
+                details
+            );
+        }
+
         var scriptResult = EnsureQuickStartScripts(
             GCQuickStartSetupIntent.ActiveScene,
             GCQuickStartSetupAction.ActiveSceneMissingPieces,
@@ -832,6 +844,12 @@ internal static class GamingCouchQuickStartSetup
 
         details.Add("Reused the active scene GamingCouch object.");
         return gamingCouches[0];
+    }
+
+    private static bool IsActiveSceneQuickStartWiringReady(GamingCouch gamingCouch)
+    {
+        return GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) &&
+               GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
     }
 
     private static void AddScriptResultDetails(GCQuickStartScriptSetupResult result, List<string> details)
