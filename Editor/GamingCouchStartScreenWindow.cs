@@ -463,6 +463,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void DrawActionResult()
     {
+        if (!ShouldShowActionResult(actionMessageType))
+        {
+            ClearActionResult();
+            return;
+        }
+
         if (string.IsNullOrEmpty(actionMessage))
         {
             return;
@@ -622,17 +628,27 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void SetActionResult(string message, MessageType messageType, string[] details)
     {
-        if (messageType != MessageType.Warning && messageType != MessageType.Error)
+        if (!ShouldShowActionResult(messageType))
         {
-            actionMessage = null;
-            actionMessageType = MessageType.Info;
-            actionDetails = new string[0];
+            ClearActionResult();
             return;
         }
 
         actionMessage = message;
         actionMessageType = messageType;
         actionDetails = details ?? new string[0];
+    }
+
+    private void ClearActionResult()
+    {
+        actionMessage = null;
+        actionMessageType = MessageType.Info;
+        actionDetails = new string[0];
+    }
+
+    private static bool ShouldShowActionResult(MessageType messageType)
+    {
+        return messageType == MessageType.Warning || messageType == MessageType.Error;
     }
 
     private static MessageType GetActiveSceneResultMessageType(GCQuickStartActiveSceneSetupResult result)
