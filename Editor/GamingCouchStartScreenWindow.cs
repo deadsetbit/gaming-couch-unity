@@ -102,7 +102,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
         var messageType = readiness.IsSceneReady ? MessageType.Info : MessageType.Warning;
         var message = readiness.IsSceneReady
-            ? "Scene setup is ready. The active scene has one GamingCouch object with listener and player prefab references. Local Play JSON readiness is shown separately below."
+            ? "Scene setup is ready. The active scene has one GamingCouch object with listener and player prefab references."
             : "The active scene is missing required GamingCouch setup.";
 
         if (readiness.gamingCouches.Length > 1)
@@ -161,31 +161,41 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void DrawLocalPlayJsonDetails()
     {
-        if (readiness == null || readiness.localPlayJson == null)
+        if (readiness == null)
+        {
+            return;
+        }
+
+        var localPlayJson = readiness.localPlayJson;
+        if (!ShouldShowLocalPlayJsonDetails(localPlayJson))
         {
             return;
         }
 
         EditorGUILayout.LabelField("Play Mode Readiness", EditorStyles.boldLabel);
-        if (!string.IsNullOrEmpty(readiness.localPlayJson.path))
+        if (!string.IsNullOrEmpty(localPlayJson.path))
         {
-            EditorGUILayout.LabelField("File", readiness.localPlayJson.path);
+            EditorGUILayout.LabelField("File", localPlayJson.path);
         }
 
-        var issues = readiness.localPlayJson.Issues;
-        if (issues.Length == 0)
+        var issues = localPlayJson.Issues;
+        if (!HasDisplayableIssues(issues))
         {
-            var message = readiness.localPlayJson.isValid
-                ? "gc.dev.json is valid for local Play Mode."
-                : string.IsNullOrEmpty(readiness.localPlayJson.message)
-                    ? "Local Play Mode is blocked because gc.dev.json is missing or invalid. The Unity package will not create or repair this file."
-                    : readiness.localPlayJson.message + " The Unity package will not create or repair this file.";
-            var messageType = readiness.localPlayJson.isValid ? MessageType.Info : MessageType.Error;
-            EditorGUILayout.HelpBox(message, messageType);
+            if (localPlayJson.isValid)
+            {
+                var warningCount = GetWarningCount(localPlayJson);
+                var warningMessage = "gc.dev.json is valid with " + warningCount + " warning" + (warningCount == 1 ? string.Empty : "s") + ".";
+                EditorGUILayout.HelpBox(warningMessage, MessageType.Warning);
+                EditorGUILayout.Space();
+                return;
+            }
+
+            EditorGUILayout.HelpBox(GetLocalPlayJsonBlockedMessage(localPlayJson), MessageType.Error);
             EditorGUILayout.Space();
             return;
         }
 
+        var displayedError = false;
         for (var index = 0; index < issues.Length; index++)
         {
             var issue = issues[index];
@@ -196,15 +206,73 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
             var messageType = issue.severity == GCDevJsonIssueSeverity.Error ? MessageType.Error : MessageType.Warning;
             var message = GCDevJsonIssueFormatter.Format(issue);
+            if (string.IsNullOrEmpty(message))
+            {
+                message = issue.severity == GCDevJsonIssueSeverity.Error
+                    ? "gc.dev.json has a validation error."
+                    : "gc.dev.json has a validation warning.";
+            }
+
             if (issue.severity == GCDevJsonIssueSeverity.Error)
             {
+                displayedError = true;
                 message += " Local Play Mode remains blocked until DevApp provides valid local play JSON; this screen will not create or repair it.";
             }
 
             EditorGUILayout.HelpBox(message, messageType);
         }
 
+        if (!localPlayJson.isValid && !displayedError)
+        {
+            EditorGUILayout.HelpBox(GetLocalPlayJsonBlockedMessage(localPlayJson), MessageType.Error);
+        }
+
         EditorGUILayout.Space();
+    }
+
+    private static bool ShouldShowLocalPlayJsonDetails(GCStartScreenLocalPlayJsonReadiness localPlayJson)
+    {
+        if (localPlayJson == null)
+        {
+            return false;
+        }
+
+        if (!localPlayJson.isValid)
+        {
+            return true;
+        }
+
+        return HasDisplayableIssues(localPlayJson.Issues) || GetWarningCount(localPlayJson) > 0;
+    }
+
+    private static bool HasDisplayableIssues(GCDevJsonIssue[] issues)
+    {
+        if (issues == null)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < issues.Length; index++)
+        {
+            if (issues[index] != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int GetWarningCount(GCStartScreenLocalPlayJsonReadiness localPlayJson)
+    {
+        return localPlayJson != null && localPlayJson.validation != null ? localPlayJson.validation.WarningCount : 0;
+    }
+
+    private static string GetLocalPlayJsonBlockedMessage(GCStartScreenLocalPlayJsonReadiness localPlayJson)
+    {
+        return localPlayJson == null || string.IsNullOrEmpty(localPlayJson.message)
+            ? "Local Play Mode is blocked because gc.dev.json is missing or invalid. The Unity package will not create or repair this file."
+            : localPlayJson.message + " The Unity package will not create or repair this file.";
     }
 
     private static void DrawPendingSetupStatus()

@@ -76,6 +76,7 @@ The start screen should appear automatically when Unity starts into an active sc
 - Create a new quick-start scene that includes the wired `GamingCouch` object, generated listener, generated player prefab, camera, and light.
 - Open the generated quick-start scene after creation and add it to Build Settings if it is not already present.
 - Detect missing or invalid local play JSON and report it as a blocker, but do not create, bootstrap, or repair local project JSON.
+- Hide local play JSON details when the file is valid without warnings so the start screen stays focused on actionable setup.
 - Report multiple active-scene `GamingCouch` instances as a manual cleanup error.
 
 ## Testing Decisions
