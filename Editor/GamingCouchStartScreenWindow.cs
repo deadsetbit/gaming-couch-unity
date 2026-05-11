@@ -636,6 +636,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void SetActionResult(string message, MessageType messageType, string[] details)
     {
+        if (messageType != MessageType.Warning && messageType != MessageType.Error)
+        {
+            actionMessage = null;
+            actionMessageType = MessageType.Info;
+            actionDetails = new string[0];
+            return;
+        }
+
         actionMessage = message;
         actionMessageType = messageType;
         actionDetails = details ?? new string[0];

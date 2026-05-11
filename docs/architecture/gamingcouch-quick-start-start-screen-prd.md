@@ -69,6 +69,7 @@ The start screen should appear automatically when Unity starts into an active sc
 - Use one visible checklist row labeled `Exactly one GamingCouch in scene` for active-scene `GamingCouch` count: missing is an actionable create state, exactly one is ready and focusable, and more than one is a red manual-cleanup error with no setup or focus action on that row.
 - Polish update, 2026-05-11: keep the start screen focused on active-scene setup by showing the global `Set up missing pieces` action only while active-scene setup checklist rows have actionable setup work, hiding the global Actions section once no global actions remain, and not showing a global quick-start scene creation action in this window. Occupied serialized listener/player references, including broken or missing-object references, are not actionable for no-overwrite setup. The primary active-scene setup entry point should also no-op before script generation when active-scene wiring is already complete.
 - Polish update, 2026-05-11: keep active-scene validity as an internal readiness/action guard while excluding the active-scene guard from the visible checklist. If no usable active scene is loaded, show that issue as a standalone help box before the readiness summary/checklist. Keep the scene summary to name/path only; do not show ready or generic setup summary boxes because the checklist already communicates readiness.
+- Polish update, 2026-05-11: reserve action-result help boxes for warning and error outcomes only. Normal successful, focus, reuse, and no-op action confirmations stay silent because the checklist already reflects current setup state.
 - Keep the existing create-GamingCouch menu action, but route object creation through a shared helper with Undo support.
 - Generate editable quick-start assets under a project-owned `Assets/GamingCouch/QuickStart` folder.
 - Generate collision-resistant starter types named `GCQuickStartGame` and `GCQuickStartPlayer`.
@@ -125,7 +126,7 @@ Next action: Provide a Unity 2022.3 editor plus a Unity project that consumes th
 | [x] | DONE | 5. Generate and wire quick-start player prefab | Created/reused `GCQuickStartPlayer` prefab through the scripts-ready continuation and wires the active-scene player prefab only when the serialized reference is empty. |
 | [x] | DONE | 6. Generate and wire quick-start game listener | Added staged active-scene `GCQuickStartGame` listener creation/reuse and null-only `GamingCouch.listener` assignment. |
 | [x] | DONE | 7. Create quick-start scene flow | Added staged quick-start scene creation/opening, scene wiring, saving, and Build Settings insertion. |
-| [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist and primary active-scene setup actions with pending, blocker, success, reuse, and read-only JSON messaging. |
+| [x] | DONE | 8. Complete start screen actions and messaging | Wired checklist and primary active-scene setup actions with pending, blocker, checklist readiness, reuse-safe setup, and read-only JSON messaging. |
 | [x] | DONE | 9. Add editor tests for detection and generation behavior | Added edit-mode coverage for readiness states, no-overwrite behavior, reference preservation, suppression state, and build settings updates. |
 | [ ] | BLOCKED | 10. Run manual Unity validation | Blocked: no Unity 2022.3 executable is installed or on PATH, this checkout is a Unity package rather than a Unity project, and nearby 2022.3 projects that consume GamingCouch reference GitHub URLs instead of this checkout. |
 
@@ -458,7 +459,7 @@ Parent validation, 2026-05-10:
 
 ### Task 8: Complete start screen actions and messaging
 
-Objective: Connect the UI to the setup flows and make success and blocker states clear.
+Objective: Connect the UI to the setup flows and make readiness and blocker states clear.
 
 Implementation steps:
 
@@ -466,15 +467,15 @@ Implementation steps:
 2. Wire the primary `Set up missing pieces` action.
 3. Keep quick-start scene creation out of the start screen.
 4. Show clear warnings for missing or invalid local play JSON without repairing it.
-5. Show a success state when the scene is ready.
-6. Show rerun messages when existing assets are reused.
+5. Rely on the checklist to show the ready state after successful setup.
+6. Keep reruns safe when existing assets are reused without showing normal informational action boxes.
 
 Verification:
 
 - Run `git diff --check`.
 - Confirm each button maps to the intended setup operation.
 - Confirm JSON blockers are informational and do not write JSON files.
-- Confirm success state appears after setup completes.
+- Confirm the checklist reflects readiness after setup completes without showing a normal success action box.
 
 Implementation notes, 2026-05-10:
 
@@ -483,7 +484,7 @@ Implementation notes, 2026-05-10:
 - Added a staged quick-start action discriminator so individual listener and player prefab buttons resume narrowly after script compilation instead of running the whole active-scene setup.
 - Primary active-scene setup creates/reuses the active-scene `GamingCouch`, generated player prefab, generated listener, and null-only serialized references through existing setup and scene-wiring helpers.
 - Missing or invalid `gc.dev.json` is displayed as Play Mode readiness only, with explicit messaging that the start screen will not create or repair the file.
-- Success messaging now treats scene setup readiness separately from local Play Mode JSON readiness, and action results report reused assets/references or unchanged setup.
+- Scene setup readiness is reflected by the checklist separately from local Play Mode JSON readiness, and normal reused/unchanged setup confirmations do not render action-result help boxes.
 - Multiple active-scene `GamingCouch` components keep active-scene setup actions blocked with manual cleanup messaging; quick-start scene creation remains outside this window.
 - Validation run: `git diff --check`; conflict-marker search; scoped action-wiring search; scoped JSON write API absence search; primary setup path search; pending compilation path search; `git status --short` to confirm no tests or manual scene assets were generated.
 - Unity 2022.3 manual editor validation was not run in this package-only shell.
