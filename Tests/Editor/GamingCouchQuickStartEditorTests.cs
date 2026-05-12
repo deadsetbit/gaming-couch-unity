@@ -115,6 +115,19 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void ReadinessProvidesHelpTextForDisplayedChecklistRows()
+    {
+        var readiness = new GCStartScreenReadiness(default(Scene), null, null, null, null, null);
+        var displayableChecks = readiness.checklist.Where(check => check != null).ToArray();
+
+        Assert.That(displayableChecks, Is.Not.Empty);
+        Assert.That(displayableChecks.All(check => !string.IsNullOrEmpty(check.helpText)), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText != check.label), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText != check.message), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText.Length <= 90), Is.True);
+    }
+
+    [Test]
     public void ReadinessReportsMissingReferencesOnBareGamingCouch()
     {
         CreateGamingCouch("GamingCouch");

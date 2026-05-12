@@ -10,6 +10,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private const float ChecklistStatusWidth = 28f;
     private const float ChecklistMinimumButtonWidth = 96f;
     private const float ChecklistButtonWidth = 148f;
+    private const float ChecklistHelpButtonWidth = 22f;
     private const float ChecklistColumnSpacing = 6f;
     private const float ChecklistMessageExtraIndent = 16f;
     private const float ChecklistMessageIndent = ChecklistRowPaddingX + ChecklistStatusWidth + ChecklistColumnSpacing + ChecklistMessageExtraIndent;
@@ -20,6 +21,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private string actionMessage;
     private string[] actionDetails = new string[0];
     private MessageType actionMessageType = MessageType.Info;
+    private bool hasSelectedChecklistHelp;
+    private GCStartScreenReadinessCheckId selectedChecklistHelpId;
 
     internal static GamingCouchStartScreenWindow Open()
     {
@@ -166,6 +169,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         );
 
         var buttonLabel = GetChecklistActionLabel(check);
+        var helpContent = GetChecklistHelpContent(check);
         var statusRect = new Rect(
             contentRect.x,
             contentRect.y,
@@ -177,6 +181,22 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             ? statusRect.xMax + ChecklistColumnSpacing
             : contentRect.x;
         var contentRight = contentRect.xMax;
+        var helpRect = Rect.zero;
+        if (helpContent != null)
+        {
+            var availableHelpWidth = contentRight - contentLeft;
+            if (availableHelpWidth >= ChecklistHelpButtonWidth)
+            {
+                helpRect = new Rect(
+                    contentRight - ChecklistHelpButtonWidth,
+                    contentRect.y,
+                    ChecklistHelpButtonWidth,
+                    contentRect.height
+                );
+                contentRight = helpRect.x - ChecklistColumnSpacing;
+            }
+        }
+
         var buttonRect = Rect.zero;
         if (!string.IsNullOrEmpty(buttonLabel))
         {
@@ -218,9 +238,22 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
+        if (HasVisibleRect(helpRect))
+        {
+            if (GUI.Button(helpRect, helpContent, EditorStyles.iconButton))
+            {
+                ToggleChecklistHelp(check);
+            }
+        }
+
         if (check.state != GCStartScreenReadinessCheckState.Pass && !string.IsNullOrEmpty(check.message))
         {
             DrawChecklistMessage(check.message, GetMessageType(check.state));
+        }
+
+        if (IsChecklistHelpSelected(check))
+        {
+            DrawChecklistMessage(check.helpText, MessageType.Info);
         }
     }
 
@@ -718,6 +751,46 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         return formatted;
+    }
+
+    private static GUIContent GetChecklistHelpContent(GCStartScreenReadinessCheck check)
+    {
+        if (check == null || string.IsNullOrEmpty(check.helpText))
+        {
+            return null;
+        }
+
+        var content = EditorGUIUtility.IconContent("_Help");
+        return new GUIContent(content.image, check.helpText);
+    }
+
+    private void ToggleChecklistHelp(GCStartScreenReadinessCheck check)
+    {
+        if (check == null || string.IsNullOrEmpty(check.helpText))
+        {
+            hasSelectedChecklistHelp = false;
+            return;
+        }
+
+        var checkId = GCStartScreenReadiness.NormalizeCheckId(check.id);
+        if (hasSelectedChecklistHelp && selectedChecklistHelpId == checkId)
+        {
+            hasSelectedChecklistHelp = false;
+            return;
+        }
+
+        selectedChecklistHelpId = checkId;
+        hasSelectedChecklistHelp = true;
+    }
+
+    private bool IsChecklistHelpSelected(GCStartScreenReadinessCheck check)
+    {
+        if (check == null || string.IsNullOrEmpty(check.helpText) || !hasSelectedChecklistHelp)
+        {
+            return false;
+        }
+
+        return selectedChecklistHelpId == GCStartScreenReadiness.NormalizeCheckId(check.id);
     }
 
     private string GetChecklistActionLabel(GCStartScreenReadinessCheck check)

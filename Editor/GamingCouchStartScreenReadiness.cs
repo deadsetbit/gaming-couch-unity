@@ -32,18 +32,21 @@ internal sealed class GCStartScreenReadinessCheck
     internal readonly string label;
     internal readonly GCStartScreenReadinessCheckState state;
     internal readonly string message;
+    internal readonly string helpText;
 
     internal GCStartScreenReadinessCheck(
         GCStartScreenReadinessCheckId id,
         string label,
         GCStartScreenReadinessCheckState state,
-        string message
+        string message,
+        string helpText = null
     )
     {
         this.id = id;
         this.label = label;
         this.state = state;
         this.message = message;
+        this.helpText = string.IsNullOrEmpty(helpText) ? message : helpText;
     }
 
     internal bool IsSatisfied
@@ -81,6 +84,14 @@ internal sealed class GCStartScreenLocalPlayJsonReadiness
 internal sealed class GCStartScreenReadiness
 {
     internal const string GamingCouchInstanceCheckLabel = "GamingCouch game object in scene";
+    private const string ActiveSceneHelpText = "Requires a loaded active scene before setup inspection or changes.";
+    private const string GamingCouchInstanceHelpText = "Requires one GamingCouch component in the active scene for local play wiring.";
+    private const string ListenerAssignedHelpText = "Connects GamingCouch to the scene listener used for game events.";
+    private const string PlayerPrefabAssignedHelpText = "Provides the player prefab GamingCouch spawns for connected players.";
+    private const string LocalPlayJsonValidHelpText = "Validates the DevApp-generated gc.dev.json used to start local Play Mode.";
+    private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
+    private const string GameViewAspectHelpText = "Keeps the Unity Game View preview on a 16:9 aspect ratio.";
+    private const string WebGLExportSetupHelpText = "Checks the WebGL template and release settings for clean Gaming Couch exports.";
 
     internal readonly Scene scene;
     internal readonly string sceneName;
@@ -238,7 +249,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.ActiveScene,
                 "Active scene is available",
                 GCStartScreenReadinessCheckState.Fail,
-                "No loaded active scene is available for GamingCouch setup inspection."
+                "No loaded active scene is available for GamingCouch setup inspection.",
+                ActiveSceneHelpText
             );
         }
 
@@ -246,7 +258,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.ActiveScene,
             "Active scene is available",
             GCStartScreenReadinessCheckState.Pass,
-            "Inspecting active scene: " + sceneName + "."
+            "Inspecting active scene: " + sceneName + ".",
+            ActiveSceneHelpText
         );
     }
 
@@ -258,7 +271,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.GamingCouchInstance,
                 GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
-                "Create a GamingCouch object to continue active-scene setup."
+                "Create a GamingCouch object to continue active-scene setup.",
+                GamingCouchInstanceHelpText
             );
         }
 
@@ -268,7 +282,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.GamingCouchInstance,
                 GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
-                "The active scene contains multiple GamingCouch components. Remove duplicates manually before running quick-start setup."
+                "The active scene contains multiple GamingCouch components. Remove duplicates manually before running quick-start setup.",
+                GamingCouchInstanceHelpText
             );
         }
 
@@ -276,7 +291,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.GamingCouchInstance,
             GamingCouchInstanceCheckLabel,
             GCStartScreenReadinessCheckState.Pass,
-            "The active scene has one GamingCouch component."
+            "The active scene has one GamingCouch component.",
+            GamingCouchInstanceHelpText
         );
     }
 
@@ -288,7 +304,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.ListenerAssigned,
                 "Listener is assigned",
                 GCStartScreenReadinessCheckState.Blocked,
-                "Listener assignment can be checked after the active scene has exactly one GamingCouch component."
+                "Listener assignment can be checked after the active scene has exactly one GamingCouch component.",
+                ListenerAssignedHelpText
             );
         }
 
@@ -298,7 +315,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.ListenerAssigned,
                 "Listener is assigned",
                 GCStartScreenReadinessCheckState.Fail,
-                "The GamingCouch listener reference is missing."
+                "The GamingCouch listener reference is missing.",
+                ListenerAssignedHelpText
             );
         }
 
@@ -306,7 +324,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.ListenerAssigned,
             "Listener is assigned",
             GCStartScreenReadinessCheckState.Pass,
-            "The GamingCouch listener reference points to " + listener.name + "."
+            "The GamingCouch listener reference points to " + listener.name + ".",
+            ListenerAssignedHelpText
         );
     }
 
@@ -318,7 +337,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.PlayerPrefabAssigned,
                 "Player prefab is assigned",
                 GCStartScreenReadinessCheckState.Blocked,
-                "Player prefab assignment can be checked after the active scene has exactly one GamingCouch component."
+                "Player prefab assignment can be checked after the active scene has exactly one GamingCouch component.",
+                PlayerPrefabAssignedHelpText
             );
         }
 
@@ -328,7 +348,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.PlayerPrefabAssigned,
                 "Player prefab is assigned",
                 GCStartScreenReadinessCheckState.Fail,
-                "The GamingCouch player prefab reference is missing."
+                "The GamingCouch player prefab reference is missing.",
+                PlayerPrefabAssignedHelpText
             );
         }
 
@@ -336,7 +357,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.PlayerPrefabAssigned,
             "Player prefab is assigned",
             GCStartScreenReadinessCheckState.Pass,
-            "The GamingCouch player prefab reference points to " + playerPrefab.name + "."
+            "The GamingCouch player prefab reference points to " + playerPrefab.name + ".",
+            PlayerPrefabAssignedHelpText
         );
     }
 
@@ -348,7 +370,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.LocalPlayJsonValid,
                 "Local play JSON is valid",
                 GCStartScreenReadinessCheckState.Fail,
-                "gc.dev.json validation did not produce a result."
+                "gc.dev.json validation did not produce a result.",
+                LocalPlayJsonValidHelpText
             );
         }
 
@@ -361,7 +384,8 @@ internal sealed class GCStartScreenReadiness
                     GCStartScreenReadinessCheckId.LocalPlayJsonValid,
                     "Local play JSON is valid",
                     GCStartScreenReadinessCheckState.Warning,
-                    "gc.dev.json is valid with " + warningCount + " warning" + (warningCount == 1 ? string.Empty : "s") + "."
+                    "gc.dev.json is valid with " + warningCount + " warning" + (warningCount == 1 ? string.Empty : "s") + ".",
+                    LocalPlayJsonValidHelpText
                 );
             }
 
@@ -369,7 +393,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.LocalPlayJsonValid,
                 "Local play JSON is valid",
                 GCStartScreenReadinessCheckState.Pass,
-                "gc.dev.json is valid for local Play Mode."
+                "gc.dev.json is valid for local Play Mode.",
+                LocalPlayJsonValidHelpText
             );
         }
 
@@ -379,7 +404,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckState.Fail,
             string.IsNullOrEmpty(localPlayJson.message)
                 ? "gc.dev.json is missing or invalid for local Play Mode."
-                : localPlayJson.message
+                : localPlayJson.message,
+            LocalPlayJsonValidHelpText
         );
     }
 
@@ -391,7 +417,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
                 "Active scene is first Build Settings scene",
                 GCStartScreenReadinessCheckState.Fail,
-                "Build Settings readiness could not be inspected."
+                "Build Settings readiness could not be inspected.",
+                BuildSettingsHelpText
             );
         }
 
@@ -401,7 +428,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
                 "Active scene is first Build Settings scene",
                 GCStartScreenReadinessCheckState.Pass,
-                buildSettings.message
+                buildSettings.message,
+                BuildSettingsHelpText
             );
         }
 
@@ -411,7 +439,8 @@ internal sealed class GCStartScreenReadiness
             buildSettings.status == GCActiveSceneBuildSettingsStatus.NoActiveScene
                 ? GCStartScreenReadinessCheckState.Blocked
                 : GCStartScreenReadinessCheckState.Fail,
-            buildSettings.message
+            buildSettings.message,
+            BuildSettingsHelpText
         );
     }
 
@@ -423,7 +452,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.GameViewAspect16By9,
                 "Game View uses 16:9 preview",
                 GCStartScreenReadinessCheckState.Warning,
-                "Game View aspect could not be inspected. Choose a 16:9 Game View entry manually if needed."
+                "Game View aspect could not be inspected. Choose a 16:9 Game View entry manually if needed.",
+                GameViewAspectHelpText
             );
         }
 
@@ -441,7 +471,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.GameViewAspect16By9,
             "Game View uses 16:9 preview",
             state,
-            gameViewAspect.message
+            gameViewAspect.message,
+            GameViewAspectHelpText
         );
     }
 
@@ -453,7 +484,8 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.WebGLExportSetup,
                 "Clean WebGL export setup is ready",
                 GCStartScreenReadinessCheckState.Fail,
-                "Clean WebGL export setup readiness could not be inspected."
+                "Clean WebGL export setup readiness could not be inspected.",
+                WebGLExportSetupHelpText
             );
         }
 
@@ -475,7 +507,8 @@ internal sealed class GCStartScreenReadiness
             GCStartScreenReadinessCheckId.WebGLExportSetup,
             "Clean WebGL export setup is ready",
             state,
-            webGLExport.message
+            webGLExport.message,
+            WebGLExportSetupHelpText
         );
     }
 
