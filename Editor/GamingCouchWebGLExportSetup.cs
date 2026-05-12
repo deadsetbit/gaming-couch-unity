@@ -305,6 +305,14 @@ internal static class GamingCouchWebGLExportSetup
 
     internal static GCWebGLExportReadiness InspectReadiness(string destinationTemplateDirectoryFullPath)
     {
+        return InspectReadiness(destinationTemplateDirectoryFullPath, EditorUserBuildSettings.activeBuildTarget);
+    }
+
+    internal static GCWebGLExportReadiness InspectReadiness(
+        string destinationTemplateDirectoryFullPath,
+        BuildTarget activeBuildTarget
+    )
+    {
         var details = new List<string>();
         var templateFolderPathIsEmpty = string.IsNullOrEmpty(destinationTemplateDirectoryFullPath);
         var templateFolderIsWrongKind = !templateFolderPathIsEmpty &&
@@ -351,10 +359,10 @@ internal static class GamingCouchWebGLExportSetup
 
         var releaseSettingsReady = AreReleaseDefaultsApplied(details);
         var splashSettingsReady = AreSplashSettingsApplied(details);
-        var activeBuildTargetIsWebGL = EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL;
+        var activeBuildTargetIsWebGL = activeBuildTarget == BuildTarget.WebGL;
         if (!activeBuildTargetIsWebGL)
         {
-            details.Add("Active build target is " + EditorUserBuildSettings.activeBuildTarget + "; switch to WebGL manually before building.");
+            details.Add("Active build target is " + activeBuildTarget + "; switch to WebGL manually before building.");
         }
 
         var blockingReady = templateFolderReady &&

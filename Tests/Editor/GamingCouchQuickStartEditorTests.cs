@@ -5,6 +5,7 @@ using System.Linq;
 using DSB.GC;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -23,6 +24,21 @@ public sealed class GamingCouchQuickStartEditorTests
     private Scene previousActiveScene;
     private Scene testScene;
     private bool testSceneWasCreatedAdditively;
+    private string previousWebGLTemplate;
+    private WebGLCompressionFormat previousWebGLCompressionFormat;
+    private bool previousWebGLDataCaching;
+    private WebGLExceptionSupport previousWebGLExceptionSupport;
+    private WebGLDebugSymbolMode previousWebGLDebugSymbolMode;
+#if UNITY_2023_1_OR_NEWER
+    private bool previousWebGLWasm2023;
+#endif
+    private UnityEditor.WebGL.WasmCodeOptimization previousWebGLCodeOptimization;
+    private bool previousDevelopmentBuild;
+    private Il2CppCodeGeneration previousIl2CppCodeGeneration;
+    private ManagedStrippingLevel previousManagedStrippingLevel;
+    private bool previousStripUnusedMeshComponents;
+    private bool previousSplashScreenShow;
+    private bool previousSplashScreenShowUnityLogo;
 
     [SetUp]
     public void SetUp()
@@ -31,6 +47,7 @@ public sealed class GamingCouchQuickStartEditorTests
         previousBuildSettingsScenes = EditorBuildSettings.scenes;
         testFolderAssetPath = TestFolderAssetPathPrefix + Guid.NewGuid().ToString("N");
         previousActiveScene = SceneManager.GetActiveScene();
+        SaveWebGLSettings();
 
         if (CanReuseActiveSceneAsTestScene(previousActiveScene))
         {
@@ -56,6 +73,7 @@ public sealed class GamingCouchQuickStartEditorTests
         RunCleanup(DeleteTestAssetFolder, cleanupErrors);
         RunCleanup(RestoreBuildSettings, cleanupErrors);
         RunCleanup(RestoreSuppressAutoOpenSetting, cleanupErrors);
+        RunCleanup(RestoreWebGLSettings, cleanupErrors);
         if (cleanupErrors.Count > 0)
         {
             throw new AggregateException(cleanupErrors);
@@ -580,6 +598,196 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void WebGLTemplateInstallationCreatesMissingProjectTemplateFiles()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("fresh template source");
+        var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
+
+        try
+        {
+            var result = GamingCouchWebGLExportSetup.InstallTemplateFiles(sourceDirectory, destinationDirectory, false);
+
+            Assert.That(result.IsBlocked, Is.False);
+            Assert.That(result.changed, Is.True);
+            Assert.That(Directory.Exists(destinationDirectory), Is.True);
+            Assert.That(File.ReadAllText(Path.Combine(destinationDirectory, "index.html")), Is.EqualTo("fresh template source"));
+            Assert.That(result.createdPaths.Any(path => path.Contains("index.html")), Is.True);
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLTemplateInstallationRerunReusesExistingFilesWithoutOverwriting()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("generated replacement");
+        var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
+
+        try
+        {
+            Directory.CreateDirectory(destinationDirectory);
+            File.WriteAllText(Path.Combine(destinationDirectory, "index.html"), "user edits stay");
+
+            var result = GamingCouchWebGLExportSetup.InstallTemplateFiles(sourceDirectory, destinationDirectory, false);
+
+            Assert.That(result.IsBlocked, Is.False);
+            Assert.That(result.changed, Is.False);
+            Assert.That(File.ReadAllText(Path.Combine(destinationDirectory, "index.html")), Is.EqualTo("user edits stay"));
+            Assert.That(result.reusedPaths.Any(path => path.Contains("index.html")), Is.True);
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLTemplateInstallationBlocksFileAndFolderCollisions()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
+        var destinationAsFile = CreateTemporaryPath("WebGLTemplateDestinationFile");
+        var destinationWithFileParent = CreateTemporaryPath("WebGLTemplateParentCollision");
+        var destinationWithFileCollision = CreateTemporaryPath("WebGLTemplateFileCollision");
+
+        try
+        {
+            File.WriteAllText(destinationAsFile, "not a folder");
+            File.WriteAllText(destinationWithFileParent, "not a parent folder");
+            Directory.CreateDirectory(destinationWithFileCollision);
+            Directory.CreateDirectory(Path.Combine(destinationWithFileCollision, "index.html"));
+
+            var fileDestinationResult = GamingCouchWebGLExportSetup.InstallTemplateFiles(sourceDirectory, destinationAsFile, false);
+            var parentCollisionResult = GamingCouchWebGLExportSetup.InstallTemplateFiles(
+                sourceDirectory,
+                Path.Combine(destinationWithFileParent, "GamingCouch"),
+                false
+            );
+            var fileCollisionResult = GamingCouchWebGLExportSetup.InstallTemplateFiles(sourceDirectory, destinationWithFileCollision, false);
+
+            Assert.That(fileDestinationResult.IsBlocked, Is.True);
+            Assert.That(parentCollisionResult.IsBlocked, Is.True);
+            Assert.That(fileCollisionResult.IsBlocked, Is.True);
+            AssertHasEntryContaining(fileDestinationResult.blockedReasons, "Expected a folder");
+            AssertHasEntryContaining(parentCollisionResult.blockedReasons, "Expected a folder");
+            AssertHasEntryContaining(fileCollisionResult.blockedReasons, "Expected a file");
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationAsFile);
+            DeleteTemporaryPath(destinationWithFileParent);
+            DeleteTemporaryPath(destinationWithFileCollision);
+        }
+    }
+
+    [Test]
+    public void WebGLReadinessReportsSelectedTemplateAndWrongTemplateFailure()
+    {
+        var destinationDirectory = CreateTemporaryInstalledWebGLTemplate("installed template");
+
+        try
+        {
+            ApplyReadyWebGLExportSettings();
+            PlayerSettings.WebGL.template = "PROJECT:OtherTemplate";
+
+            var wrongTemplateReadiness = GamingCouchWebGLExportSetup.InspectReadiness(destinationDirectory);
+
+            Assert.That(wrongTemplateReadiness.IsBlocked, Is.True);
+            Assert.That(wrongTemplateReadiness.templateSelected, Is.False);
+            AssertHasEntryContaining(wrongTemplateReadiness.details, "PROJECT:OtherTemplate");
+
+            PlayerSettings.WebGL.template = GamingCouchWebGLExportSetup.ProjectTemplateIdentifier;
+
+            var selectedTemplateReadiness = GamingCouchWebGLExportSetup.InspectReadiness(destinationDirectory);
+
+            Assert.That(selectedTemplateReadiness.IsBlocked, Is.False);
+            Assert.That(selectedTemplateReadiness.templateSelected, Is.True);
+        }
+        finally
+        {
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLReadinessReportsReleaseSettingDrift()
+    {
+        var destinationDirectory = CreateTemporaryInstalledWebGLTemplate("installed template");
+
+        try
+        {
+            ApplyReadyWebGLExportSettings();
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+
+            var readiness = GamingCouchWebGLExportSetup.InspectReadiness(destinationDirectory);
+
+            Assert.That(readiness.IsBlocked, Is.True);
+            Assert.That(readiness.releaseSettingsReady, Is.False);
+            AssertHasEntryContaining(readiness.details, "WebGL compression is not disabled.");
+        }
+        finally
+        {
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLSetupInspectsAcceptedSplashAndLogoValues()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
+        var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
+
+        try
+        {
+            PlayerSettings.SplashScreen.show = true;
+            PlayerSettings.SplashScreen.showUnityLogo = true;
+
+            var result = GamingCouchWebGLExportSetup.EnsureCleanWebGLExportSetup(sourceDirectory, destinationDirectory, false);
+
+            Assert.That(result.IsBlocked, Is.False);
+            Assert.That(result.readiness.splashSettingsReady, Is.True);
+            Assert.That(PlayerSettings.SplashScreen.show, Is.False);
+            Assert.That(PlayerSettings.SplashScreen.showUnityLogo, Is.False);
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLReadinessWarnsButDoesNotBlockWhenActiveBuildTargetIsNotWebGL()
+    {
+        var destinationDirectory = CreateTemporaryInstalledWebGLTemplate("installed template");
+
+        try
+        {
+            ApplyReadyWebGLExportSettings();
+
+            var readiness = GamingCouchWebGLExportSetup.InspectReadiness(destinationDirectory, BuildTarget.NoTarget);
+
+            Assert.That(readiness.status, Is.EqualTo(GCWebGLExportSetupStatus.Warning));
+            Assert.That(readiness.IsBlocked, Is.False);
+            Assert.That(readiness.activeBuildTargetIsWebGL, Is.False);
+            AssertHasEntryContaining(readiness.details, "switch to WebGL manually");
+            Assert.That(readiness.templateFolderReady, Is.True);
+            Assert.That(readiness.templateFilesReady, Is.True);
+            Assert.That(readiness.templateSelected, Is.True);
+            Assert.That(readiness.releaseSettingsReady, Is.True);
+            Assert.That(readiness.splashSettingsReady, Is.True);
+        }
+        finally
+        {
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
     public void SetupActionAvailabilityIncludesLaunchReadinessRows()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
@@ -665,6 +873,16 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(readiness.GetCheck(id).state, Is.EqualTo(state));
     }
 
+    private static void AssertHasEntryContaining(IEnumerable<string> entries, string expectedSubstring)
+    {
+        Assert.That(
+            entries != null && entries.Any(entry =>
+                entry != null && entry.IndexOf(expectedSubstring, StringComparison.Ordinal) >= 0
+            ),
+            Is.True
+        );
+    }
+
     private static GCStartScreenLocalPlayJsonReadiness CreateValidLocalPlayJsonReadiness()
     {
         return new GCStartScreenLocalPlayJsonReadiness(
@@ -717,6 +935,61 @@ public sealed class GamingCouchQuickStartEditorTests
             "Clean WebGL export setup is ready.",
             Array.Empty<string>()
         );
+    }
+
+    private string CreateTemporaryWebGLTemplateSource(string indexContent)
+    {
+        var sourceDirectory = CreateTemporaryProjectPath("WebGLTemplateSource");
+        Directory.CreateDirectory(sourceDirectory);
+        File.WriteAllText(Path.Combine(sourceDirectory, "index.html"), indexContent);
+        return sourceDirectory;
+    }
+
+    private string CreateTemporaryInstalledWebGLTemplate(string indexContent)
+    {
+        var destinationDirectory = CreateTemporaryProjectPath("WebGLTemplateDestination");
+        Directory.CreateDirectory(destinationDirectory);
+        File.WriteAllText(Path.Combine(destinationDirectory, "index.html"), indexContent);
+        return destinationDirectory;
+    }
+
+    private string CreateTemporaryPath(string prefix)
+    {
+        return CreateTemporaryProjectPath(prefix);
+    }
+
+    private string CreateTemporaryProjectPath(string prefix)
+    {
+        EnsureTestAssetFolder();
+        return Path.Combine(
+            AssetPathToFullPathUnchecked(testFolderAssetPath),
+            prefix + "_" + Guid.NewGuid().ToString("N")
+        );
+    }
+
+    private static void DeleteTemporaryPath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        if (Directory.Exists(path))
+        {
+            Directory.Delete(path, true);
+        }
+        else if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static void ApplyReadyWebGLExportSettings()
+    {
+        PlayerSettings.WebGL.template = GamingCouchWebGLExportSetup.ProjectTemplateIdentifier;
+        GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile();
+        PlayerSettings.SplashScreen.show = false;
+        PlayerSettings.SplashScreen.showUnityLogo = false;
     }
 
     private static void AssertCollapsedGamingCouchChecklist(GCStartScreenReadiness readiness)
@@ -876,6 +1149,46 @@ public sealed class GamingCouchQuickStartEditorTests
     private void RestoreSuppressAutoOpenSetting()
     {
         EditorUserSettings.SetConfigValue(SuppressAutoOpenKey, previousSuppressAutoOpenConfigValue);
+    }
+
+    private void SaveWebGLSettings()
+    {
+        var webGLTarget = NamedBuildTarget.WebGL;
+        previousWebGLTemplate = PlayerSettings.WebGL.template;
+        previousWebGLCompressionFormat = PlayerSettings.WebGL.compressionFormat;
+        previousWebGLDataCaching = PlayerSettings.WebGL.dataCaching;
+        previousWebGLExceptionSupport = PlayerSettings.WebGL.exceptionSupport;
+        previousWebGLDebugSymbolMode = PlayerSettings.WebGL.debugSymbolMode;
+#if UNITY_2023_1_OR_NEWER
+        previousWebGLWasm2023 = PlayerSettings.WebGL.wasm2023;
+#endif
+        previousWebGLCodeOptimization = UnityEditor.WebGL.UserBuildSettings.codeOptimization;
+        previousDevelopmentBuild = EditorUserBuildSettings.development;
+        previousIl2CppCodeGeneration = PlayerSettings.GetIl2CppCodeGeneration(webGLTarget);
+        previousManagedStrippingLevel = PlayerSettings.GetManagedStrippingLevel(webGLTarget);
+        previousStripUnusedMeshComponents = PlayerSettings.stripUnusedMeshComponents;
+        previousSplashScreenShow = PlayerSettings.SplashScreen.show;
+        previousSplashScreenShowUnityLogo = PlayerSettings.SplashScreen.showUnityLogo;
+    }
+
+    private void RestoreWebGLSettings()
+    {
+        var webGLTarget = NamedBuildTarget.WebGL;
+        PlayerSettings.WebGL.template = previousWebGLTemplate;
+        PlayerSettings.WebGL.compressionFormat = previousWebGLCompressionFormat;
+        PlayerSettings.WebGL.dataCaching = previousWebGLDataCaching;
+        PlayerSettings.WebGL.exceptionSupport = previousWebGLExceptionSupport;
+        PlayerSettings.WebGL.debugSymbolMode = previousWebGLDebugSymbolMode;
+#if UNITY_2023_1_OR_NEWER
+        PlayerSettings.WebGL.wasm2023 = previousWebGLWasm2023;
+#endif
+        UnityEditor.WebGL.UserBuildSettings.codeOptimization = previousWebGLCodeOptimization;
+        EditorUserBuildSettings.development = previousDevelopmentBuild;
+        PlayerSettings.SetIl2CppCodeGeneration(webGLTarget, previousIl2CppCodeGeneration);
+        PlayerSettings.SetManagedStrippingLevel(webGLTarget, previousManagedStrippingLevel);
+        PlayerSettings.stripUnusedMeshComponents = previousStripUnusedMeshComponents;
+        PlayerSettings.SplashScreen.show = previousSplashScreenShow;
+        PlayerSettings.SplashScreen.showUnityLogo = previousSplashScreenShowUnityLogo;
     }
 
     private static void RunCleanup(Action cleanup, List<Exception> cleanupErrors)
