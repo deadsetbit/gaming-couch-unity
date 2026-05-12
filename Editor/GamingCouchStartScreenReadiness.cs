@@ -80,7 +80,7 @@ internal sealed class GCStartScreenLocalPlayJsonReadiness
 
 internal sealed class GCStartScreenReadiness
 {
-    internal const string GamingCouchInstanceCheckLabel = "Exactly one GamingCouch in scene";
+    internal const string GamingCouchInstanceCheckLabel = "GamingCouch game object in scene";
 
     internal readonly Scene scene;
     internal readonly string sceneName;
