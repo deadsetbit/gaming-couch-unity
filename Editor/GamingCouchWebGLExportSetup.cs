@@ -404,7 +404,7 @@ internal static class GamingCouchWebGLExportSetup
 
     internal static string LocatePackageTemplatePath()
     {
-        var packageInfo = PackageInfo.FindForAssembly(typeof(GamingCouchWebGLExportSetup).Assembly);
+        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(GamingCouchWebGLExportSetup).Assembly);
         if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
         {
             var packageTemplatePath = Path.Combine(packageInfo.resolvedPath, PackageTemplateAssetPath);
