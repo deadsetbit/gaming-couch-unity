@@ -603,11 +603,15 @@ public sealed class GamingCouchQuickStartEditorTests
             playerPrefab,
             null
         );
+        var readyWebGLCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
+        var uninspectableWebGLCheck = uninspectableReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
 
         AssertCheck(readyReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Pass);
-        Assert.That(readyReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).IsSatisfied, Is.True);
+        Assert.That(readyWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(readyWebGLCheck.IsSatisfied, Is.True);
         AssertCheck(uninspectableReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Fail);
-        Assert.That(uninspectableReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).message, Does.Contain("could not be inspected"));
+        Assert.That(uninspectableWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(uninspectableWebGLCheck.message, Does.Contain("could not be inspected"));
     }
 
     [Test]

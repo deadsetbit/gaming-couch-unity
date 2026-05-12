@@ -482,7 +482,7 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.WebGLExportSetup,
-                "Clean WebGL export setup is ready",
+                "WebGL export settings configured",
                 GCStartScreenReadinessCheckState.Fail,
                 "Clean WebGL export setup readiness could not be inspected.",
                 WebGLExportSetupHelpText
@@ -505,7 +505,7 @@ internal sealed class GCStartScreenReadiness
 
         return new GCStartScreenReadinessCheck(
             GCStartScreenReadinessCheckId.WebGLExportSetup,
-            "Clean WebGL export setup is ready",
+            "WebGL export settings configured",
             state,
             webGLExport.message,
             WebGLExportSetupHelpText
