@@ -283,7 +283,8 @@ internal sealed class GCStartScreenReadiness
     internal const string GamingCouchInstanceCheckLabel = "GamingCouch game object in scene";
     private const string ActiveSceneHelpText = "Requires a loaded active scene before setup inspection or changes.";
     private const string GamingCouchInstanceHelpText = "Requires one GamingCouch component in the active scene for local play wiring.";
-    private const string ListenerAssignedHelpText = "Connects GamingCouch to the scene listener used for game events.";
+    private const string GameScriptReadyCheckLabel = "Game script is ready";
+    private const string GameScriptReadyHelpText = "Tracks the GamingCouch listener field used by your Game script for setup and play.";
     private const string PlayerPrefabAssignedHelpText = "Provides the player prefab GamingCouch spawns for connected players.";
     private const string LocalPlayJsonValidHelpText = "Validates the DevApp-generated gc.dev.json used to start local Play Mode.";
     private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
@@ -529,10 +530,10 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.ListenerAssigned,
-                "Listener is assigned",
+                GameScriptReadyCheckLabel,
                 GCStartScreenReadinessCheckState.Blocked,
-                "Listener assignment can be checked after the active scene has exactly one GamingCouch component.",
-                ListenerAssignedHelpText
+                "Game script readiness can be checked after the active scene has exactly one GamingCouch component.",
+                GameScriptReadyHelpText
             );
         }
 
@@ -540,19 +541,19 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.ListenerAssigned,
-                "Listener is assigned",
+                GameScriptReadyCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
-                "The GamingCouch listener reference is missing.",
-                ListenerAssignedHelpText
+                "Assign a Game script object to the GamingCouch listener field.",
+                GameScriptReadyHelpText
             );
         }
 
         return new GCStartScreenReadinessCheck(
             GCStartScreenReadinessCheckId.ListenerAssigned,
-            "Listener is assigned",
+            GameScriptReadyCheckLabel,
             GCStartScreenReadinessCheckState.Pass,
-            "The GamingCouch listener reference points to " + listener.name + ".",
-            ListenerAssignedHelpText
+            "The GamingCouch Game script reference points to " + listener.name + ".",
+            GameScriptReadyHelpText
         );
     }
 

@@ -486,7 +486,7 @@ internal static class GamingCouchQuickStartSetup
 
         if (IsActiveSceneQuickStartWiringReady(gamingCouchResult.gamingCouch))
         {
-            details.Add("The GamingCouch listener reference already contains a serialized reference.");
+            details.Add("The GamingCouch Game script reference already contains a serialized reference.");
             details.Add("The GamingCouch player prefab reference already contains a serialized reference.");
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Ready,
@@ -614,18 +614,18 @@ internal static class GamingCouchQuickStartSetup
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
                 false,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 details
             );
         }
 
         if (GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
         {
-            details.Add("The GamingCouch listener reference already contains a serialized reference.");
+            details.Add("The GamingCouch Game script reference already contains a serialized reference.");
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Ready,
                 false,
-                "Listener setup was already complete; existing reference was reused.",
+                "Game script setup was already complete; existing reference was reused.",
                 details
             );
         }
@@ -850,8 +850,8 @@ internal static class GamingCouchQuickStartSetup
             GCQuickStartActiveSceneSetupStatus.Ready,
             listenerResult.changed || assignResult.changed,
             listenerResult.changed || assignResult.changed
-                ? "Quick-start listener reference is ready."
-                : "Quick-start listener reference was already ready; existing assets and references were reused.",
+                ? "Game script is ready."
+                : "Game script was already ready; existing assets and references were reused.",
             details
         );
     }
@@ -1108,36 +1108,36 @@ internal static class GamingCouchQuickStartSetup
 
         if (context == null)
         {
-            blockedReasons.Add("Quick-start game listener setup requires a scripts-ready continuation context.");
+            blockedReasons.Add("Game script setup requires a scripts-ready continuation context.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
 
         if (context.gameType == null)
         {
-            blockedReasons.Add("Quick-start game listener setup requires the compiled " + GameTypeName + " type.");
+            blockedReasons.Add("Game script setup requires the compiled " + GameTypeName + " type.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
 
         if (context.gameType.Name != GameTypeName)
         {
-            blockedReasons.Add("Quick-start game listener setup requires " + GameTypeName + ", but the continuation context provided " + context.gameType.FullName + ".");
+            blockedReasons.Add("Game script setup requires " + GameTypeName + ", but the continuation context provided " + context.gameType.FullName + ".");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
@@ -1149,19 +1149,19 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
 
         if (gamingCouch == null)
         {
-            blockedReasons.Add("A GamingCouch object is required before creating the quick-start game listener.");
+            blockedReasons.Add("A GamingCouch object is required before creating the quick-start Game script object.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
@@ -1172,19 +1172,19 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartGameListenerSetupStatus.Ready,
                 false,
                 null,
-                "The GamingCouch listener reference already contains a serialized reference.",
+                "The GamingCouch Game script reference already contains a serialized reference.",
                 blockedReasons
             );
         }
 
         if (!GamingCouchSceneWiring.HasObjectReferenceSlot(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
         {
-            blockedReasons.Add("The GamingCouch listener serialized field could not be found.");
+            blockedReasons.Add("The GamingCouch Game script serialized field could not be found.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
@@ -1197,7 +1197,7 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
@@ -1209,7 +1209,7 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 changed,
                 listenerObject,
-                "Quick-start game listener setup is blocked.",
+                "Game script setup is blocked.",
                 blockedReasons
             );
         }
@@ -1218,7 +1218,7 @@ internal static class GamingCouchQuickStartSetup
             GCQuickStartGameListenerSetupStatus.Ready,
             changed,
             listenerObject,
-            changed ? "Created quick-start game listener object." : "Reused existing quick-start game listener object.",
+            changed ? "Created quick-start Game script object." : "Reused existing quick-start Game script object.",
             blockedReasons
         );
     }
@@ -1812,7 +1812,7 @@ internal static class GamingCouchQuickStartSetup
             var listenerComponent = listenerObject.AddComponent(context.gameType);
             if (listenerComponent == null)
             {
-                blockedReasons.Add("Unity did not add " + GameTypeName + " to the new quick-start game listener object.");
+                blockedReasons.Add("Unity did not add " + GameTypeName + " to the new quick-start Game script object.");
                 UnityEngine.Object.DestroyImmediate(listenerObject);
                 return null;
             }
@@ -1826,7 +1826,7 @@ internal static class GamingCouchQuickStartSetup
         }
         catch (Exception exception)
         {
-            blockedReasons.Add("Could not create quick-start game listener object " + ListenerObjectName + ": " + exception.Message);
+            blockedReasons.Add("Could not create quick-start Game script object " + ListenerObjectName + ": " + exception.Message);
             if (listenerObject != null)
             {
                 UnityEngine.Object.DestroyImmediate(listenerObject);
@@ -2033,7 +2033,7 @@ internal static class GamingCouchQuickStartSetup
         {
             if (context.intent != GCQuickStartSetupIntent.QuickStartScene)
             {
-                Debug.Log("Quick-start game listener assignment is deferred until a listener setup action runs.");
+                Debug.Log("Game script assignment is deferred until a Game script setup action runs.");
             }
 
             return;

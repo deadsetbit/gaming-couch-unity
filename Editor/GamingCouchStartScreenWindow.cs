@@ -813,7 +813,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 case GCStartScreenReadinessCheckId.GamingCouchInstance:
                     return "Focus Scene Object";
                 case GCStartScreenReadinessCheckId.ListenerAssigned:
-                    return "Focus Listener";
+                    return "Focus Game Script";
                 case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                     return "Focus Prefab";
                 default:
@@ -826,7 +826,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 return GetGamingCouchCount() == 0 ? "Create GamingCouch" : null;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
-                return "Wire Listener";
+                return "Create & Wire Game";
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 return "Wire Player Prefab";
             case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
