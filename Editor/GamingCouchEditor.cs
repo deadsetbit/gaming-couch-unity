@@ -35,20 +35,48 @@ internal sealed class GamingCouchEditor : Editor
             return;
         }
 
+        DrawStartScreenControls();
+
+        EditorGUILayout.Space();
         serializedObject.Update();
         GamingCouchInspectorHost.DrawSerializedFields(serializedObject);
         serializedObject.ApplyModifiedProperties();
 
         EditorGUILayout.Space();
+        if (devJsonView != null)
+        {
+            devJsonView.Draw(devJsonState);
+        }
+    }
+
+    private static void DrawStartScreenControls()
+    {
         if (GUILayout.Button("Open Start Screen"))
         {
             GamingCouchStartScreenWindow.Open();
         }
 
-        EditorGUILayout.Space();
-        if (devJsonView != null)
+        var summary = GCStartScreenReadinessService.InspectActiveSceneSummary();
+        if (summary == null || string.IsNullOrEmpty(summary.message))
         {
-            devJsonView.Draw(devJsonState);
+            return;
+        }
+
+        EditorGUILayout.HelpBox(summary.message, GetStartScreenSummaryMessageType(summary.state));
+    }
+
+    private static MessageType GetStartScreenSummaryMessageType(GCStartScreenReadinessSummaryState state)
+    {
+        switch (state)
+        {
+            case GCStartScreenReadinessSummaryState.Ready:
+                return MessageType.Info;
+            case GCStartScreenReadinessSummaryState.Warning:
+            case GCStartScreenReadinessSummaryState.Actionable:
+            case GCStartScreenReadinessSummaryState.PendingCompilation:
+                return MessageType.Warning;
+            default:
+                return MessageType.Error;
         }
     }
 

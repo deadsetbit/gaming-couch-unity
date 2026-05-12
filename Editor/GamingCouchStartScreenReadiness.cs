@@ -13,6 +13,15 @@ internal enum GCStartScreenReadinessCheckState
     Blocked,
 }
 
+internal enum GCStartScreenReadinessSummaryState
+{
+    Ready,
+    Warning,
+    Actionable,
+    Blocked,
+    PendingCompilation,
+}
+
 internal enum GCStartScreenReadinessCheckId
 {
     ActiveScene,
@@ -78,6 +87,194 @@ internal sealed class GCStartScreenLocalPlayJsonReadiness
     internal GCDevJsonIssue[] Issues
     {
         get { return validation != null && validation.issues != null ? validation.issues : new GCDevJsonIssue[0]; }
+    }
+}
+
+internal sealed class GCStartScreenReadinessSummary
+{
+    internal readonly GCStartScreenReadinessSummaryState state;
+    internal readonly bool hasPendingCompilation;
+    internal readonly int blockerCount;
+    internal readonly int warningCount;
+    internal readonly int actionableSetupCount;
+    internal readonly string message;
+
+    private GCStartScreenReadinessSummary(
+        GCStartScreenReadinessSummaryState state,
+        bool hasPendingCompilation,
+        int blockerCount,
+        int warningCount,
+        int actionableSetupCount,
+        string message
+    )
+    {
+        this.state = state;
+        this.hasPendingCompilation = hasPendingCompilation;
+        this.blockerCount = blockerCount;
+        this.warningCount = warningCount;
+        this.actionableSetupCount = actionableSetupCount;
+        this.message = message;
+    }
+
+    internal bool HasPendingItems
+    {
+        get { return hasPendingCompilation || blockerCount > 0 || warningCount > 0 || actionableSetupCount > 0; }
+    }
+
+    internal static GCStartScreenReadinessSummary Create(GCStartScreenReadiness readiness, bool hasPendingCompilation)
+    {
+        if (hasPendingCompilation)
+        {
+            return new GCStartScreenReadinessSummary(
+                GCStartScreenReadinessSummaryState.PendingCompilation,
+                true,
+                0,
+                0,
+                0,
+                "Start Screen: setup is waiting for Unity to finish compiling generated scripts."
+            );
+        }
+
+        if (readiness == null)
+        {
+            return new GCStartScreenReadinessSummary(
+                GCStartScreenReadinessSummaryState.Blocked,
+                false,
+                1,
+                0,
+                0,
+                "Start Screen: readiness state is unavailable."
+            );
+        }
+
+        var blockerCount = CountBlockedChecksWithoutSetupAction(readiness);
+        var warningCount = CountChecks(readiness, GCStartScreenReadinessCheckState.Warning);
+        var actionableSetupCount = readiness.AvailableChecklistSetupActionCount;
+        var state = GetState(blockerCount, warningCount, actionableSetupCount);
+        var message = FormatMessage(blockerCount, warningCount, actionableSetupCount);
+
+        return new GCStartScreenReadinessSummary(
+            state,
+            false,
+            blockerCount,
+            warningCount,
+            actionableSetupCount,
+            message
+        );
+    }
+
+    private static GCStartScreenReadinessSummaryState GetState(
+        int blockerCount,
+        int warningCount,
+        int actionableSetupCount
+    )
+    {
+        if (blockerCount > 0)
+        {
+            return GCStartScreenReadinessSummaryState.Blocked;
+        }
+
+        if (actionableSetupCount > 0)
+        {
+            return GCStartScreenReadinessSummaryState.Actionable;
+        }
+
+        return warningCount > 0
+            ? GCStartScreenReadinessSummaryState.Warning
+            : GCStartScreenReadinessSummaryState.Ready;
+    }
+
+    private static int CountChecks(GCStartScreenReadiness readiness, GCStartScreenReadinessCheckState state)
+    {
+        var count = 0;
+        if (readiness.activeSceneCheck != null && readiness.activeSceneCheck.state == state)
+        {
+            count++;
+        }
+
+        for (var index = 0; readiness.checklist != null && index < readiness.checklist.Length; index++)
+        {
+            if (readiness.checklist[index] != null && readiness.checklist[index].state == state)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountBlockedChecksWithoutSetupAction(GCStartScreenReadiness readiness)
+    {
+        var count = 0;
+        if (IsBlockedWithoutSetupAction(readiness, readiness.activeSceneCheck))
+        {
+            count++;
+        }
+
+        for (var index = 0; readiness.checklist != null && index < readiness.checklist.Length; index++)
+        {
+            if (IsBlockedWithoutSetupAction(readiness, readiness.checklist[index]))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsBlockedWithoutSetupAction(
+        GCStartScreenReadiness readiness,
+        GCStartScreenReadinessCheck check
+    )
+    {
+        if (check == null ||
+            (check.state != GCStartScreenReadinessCheckState.Fail &&
+             check.state != GCStartScreenReadinessCheckState.Blocked))
+        {
+            return false;
+        }
+
+        return !readiness.IsChecklistSetupActionAvailable(check.id);
+    }
+
+    private static string FormatMessage(int blockerCount, int warningCount, int actionableSetupCount)
+    {
+        if (blockerCount == 0 && warningCount == 0 && actionableSetupCount == 0)
+        {
+            return "Start Screen: no pending setup items.";
+        }
+
+        var parts = new[]
+        {
+            FormatCount(blockerCount, "blocker"),
+            FormatCount(actionableSetupCount, "setup action"),
+            FormatCount(warningCount, "warning"),
+        };
+        var message = "Start Screen:";
+        var addedPart = false;
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (string.IsNullOrEmpty(parts[index]))
+            {
+                continue;
+            }
+
+            message += addedPart ? ", " : " ";
+            message += parts[index];
+            addedPart = true;
+        }
+
+        return message + ".";
+    }
+
+    private static string FormatCount(int count, string label)
+    {
+        if (count <= 0)
+        {
+            return null;
+        }
+
+        return count + " " + label + (count == 1 ? string.Empty : "s");
     }
 }
 
@@ -158,13 +355,43 @@ internal sealed class GCStartScreenReadiness
 
     internal bool HasSafeAutomatableSetupActions
     {
+        get { return SafeAutomatableSetupActionCount > 0; }
+    }
+
+    internal int SafeAutomatableSetupActionCount
+    {
         get
         {
-            return DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance) ||
-                   DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned) ||
-                   DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned) ||
-                   DoesBuildSettingsNeedSetup() ||
-                   DoesGameViewNeedSetup();
+            return CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance)) +
+                   CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned)) +
+                   CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned)) +
+                   CountIf(DoesBuildSettingsNeedSetup()) +
+                   CountIf(DoesGameViewNeedSetup());
+        }
+    }
+
+    internal int AvailableChecklistSetupActionCount
+    {
+        get { return SafeAutomatableSetupActionCount + CountIf(DoesWebGLExportNeedSetup()); }
+    }
+
+    internal bool IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId id)
+    {
+        id = NormalizeCheckId(id);
+        switch (id)
+        {
+            case GCStartScreenReadinessCheckId.GamingCouchInstance:
+            case GCStartScreenReadinessCheckId.ListenerAssigned:
+            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
+                return DoesActiveSceneSetupCheckNeedSetup(id);
+            case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
+                return DoesBuildSettingsNeedSetup();
+            case GCStartScreenReadinessCheckId.GameViewAspect16By9:
+                return DoesGameViewNeedSetup();
+            case GCStartScreenReadinessCheckId.WebGLExportSetup:
+                return DoesWebGLExportNeedSetup();
+            default:
+                return false;
         }
     }
 
@@ -552,16 +779,38 @@ internal sealed class GCStartScreenReadiness
                !check.IsSatisfied;
     }
 
+    private bool DoesWebGLExportNeedSetup()
+    {
+        GCStartScreenReadinessCheck check;
+        return webGLExport != null &&
+               webGLExport.IsBlocked &&
+               TryGetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup, out check) &&
+               !check.IsSatisfied;
+    }
+
     private bool CanAssignMissingActiveSceneReference(string propertyName)
     {
         return gamingCouch != null &&
                GamingCouchSceneWiring.HasObjectReferenceSlot(gamingCouch, propertyName) &&
                !GamingCouchSceneWiring.HasObjectReference(gamingCouch, propertyName);
     }
+
+    private static int CountIf(bool value)
+    {
+        return value ? 1 : 0;
+    }
 }
 
 internal static class GCStartScreenReadinessService
 {
+    internal static GCStartScreenReadinessSummary InspectActiveSceneSummary()
+    {
+        return GCStartScreenReadinessSummary.Create(
+            InspectActiveScene(),
+            GamingCouchQuickStartSetup.HasPendingSetup()
+        );
+    }
+
     internal static GCStartScreenReadiness InspectActiveScene()
     {
         var scene = SceneManager.GetActiveScene();

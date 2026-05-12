@@ -488,6 +488,74 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void StartScreenReadinessSummaryReportsNoPendingItemsWhenReady()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+        var readiness = CreateReadyStartScreenReadiness(gamingCouch, listener, playerPrefab);
+
+        var summary = GCStartScreenReadinessSummary.Create(readiness, false);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.Ready));
+        Assert.That(summary.HasPendingItems, Is.False);
+        Assert.That(summary.blockerCount, Is.EqualTo(0));
+        Assert.That(summary.warningCount, Is.EqualTo(0));
+        Assert.That(summary.actionableSetupCount, Is.EqualTo(0));
+        Assert.That(summary.message, Is.EqualTo("Start Screen: no pending setup items."));
+    }
+
+    [Test]
+    public void StartScreenReadinessSummaryCountsBlockersWarningsAndActions()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var warningReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Warning,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            Array.Empty<string>()
+        );
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            null,
+            null,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            warningReadiness
+        );
+
+        var summary = GCStartScreenReadinessSummary.Create(readiness, false);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.Actionable));
+        Assert.That(summary.HasPendingItems, Is.True);
+        Assert.That(summary.blockerCount, Is.EqualTo(0));
+        Assert.That(summary.warningCount, Is.EqualTo(1));
+        Assert.That(summary.actionableSetupCount, Is.EqualTo(2));
+        Assert.That(summary.message, Is.EqualTo("Start Screen: 2 setup actions, 1 warning."));
+    }
+
+    [Test]
+    public void StartScreenReadinessSummaryPrioritizesPendingCompilation()
+    {
+        var summary = GCStartScreenReadinessSummary.Create(null, true);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.PendingCompilation));
+        Assert.That(summary.HasPendingItems, Is.True);
+        Assert.That(summary.hasPendingCompilation, Is.True);
+        Assert.That(summary.message, Does.Contain("waiting for Unity"));
+    }
+
+    [Test]
     public void WebGLExportChecklistRowReportsWarningWithoutSceneSetupAction()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
@@ -580,6 +648,7 @@ public sealed class GamingCouchQuickStartEditorTests
         AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Blocked);
         Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.True);
         Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+        Assert.That(readiness.AvailableChecklistSetupActionCount, Is.EqualTo(1));
     }
 
     [Test]
@@ -936,6 +1005,44 @@ public sealed class GamingCouchQuickStartEditorTests
                 null
             ),
             webGLExport
+        );
+    }
+
+    private GCStartScreenReadiness CreateReadyStartScreenReadiness(
+        GamingCouch gamingCouch,
+        UnityEngine.Object listener,
+        UnityEngine.Object playerPrefab
+    )
+    {
+        return new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            CreateReadyWebGLExportReadiness()
+        );
+    }
+
+    private static GCActiveSceneBuildSettingsReadiness CreateReadyBuildSettingsReadiness()
+    {
+        return GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+        );
+    }
+
+    private static GCGameViewAspectReadiness CreateReadyGameViewAspectReadiness()
+    {
+        return GamingCouchGameViewAspect.InspectSizeEntries(
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            0,
+            true,
+            null
         );
     }
 
