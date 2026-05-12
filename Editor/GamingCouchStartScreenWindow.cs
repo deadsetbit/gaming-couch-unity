@@ -11,6 +11,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private const float ChecklistMinimumButtonWidth = 96f;
     private const float ChecklistButtonWidth = 148f;
     private const float ChecklistColumnSpacing = 6f;
+    private const float ChecklistMessageExtraIndent = 16f;
+    private const float ChecklistMessageIndent = ChecklistRowPaddingX + ChecklistStatusWidth + ChecklistColumnSpacing + ChecklistMessageExtraIndent;
     private const float ChecklistStatusIndicatorSize = 10f;
 
     private GCStartScreenReadiness readiness;
@@ -218,7 +220,16 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
         if (check.state != GCStartScreenReadinessCheckState.Pass && !string.IsNullOrEmpty(check.message))
         {
-            EditorGUILayout.HelpBox(check.message, GetMessageType(check.state));
+            DrawChecklistMessage(check.message, GetMessageType(check.state));
+        }
+    }
+
+    private static void DrawChecklistMessage(string message, MessageType messageType)
+    {
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Space(ChecklistMessageIndent);
+            EditorGUILayout.HelpBox(message, messageType);
         }
     }
 
