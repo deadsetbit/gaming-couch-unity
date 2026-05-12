@@ -10,6 +10,7 @@
 - Added valid metadata gates for Apply and Play, including Unity platform, selected entry, and entry `maxPlayers`.
 - Added editor Play Mode and Gaming Couch restart gates that auto-apply valid non-conflicted drafts and block invalid or conflicted drafts.
 - Added editor-only `com.unity.nuget.newtonsoft-json` dependency for structured JSON parsing and unknown-field-preserving `gc.dev.json` writes.
+- Added clean WebGL export setup documentation for the Unity 6 workflow, project-local template install, release defaults, no-overwrite behavior, warning-only build-target policy, and v1 playtest exclusion.
 
 ### Changed
 

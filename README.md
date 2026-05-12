@@ -17,6 +17,18 @@ This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can
 - From _Build Settings_, switch the platform to "WebGL"
 - fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
 
+# Clean WebGL export setup
+
+Use `GamingCouch/WebGL Build/Setup clean WebGL export` or the WebGL export row in the GamingCouch start screen to prepare a project for clean WebGL builds.
+
+The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned clean template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
+
+Setup also applies upload-oriented release defaults: development build off, WebGL debug symbols off, high managed stripping, unused mesh component stripping on, IL2CPP optimize size, WebAssembly 2023 where available, disk-size LTO, data caching on, and WebGL compression disabled. Unity splash screen and Unity logo visibility are disabled where Unity 6 accepts those settings.
+
+The workflow warns when the active build target is not WebGL, but it does not switch build targets automatically. Switch to WebGL manually before building if you see that warning.
+
+The v1 clean template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
+
 # Configure local editor play settings
 
 Unity editor play settings are read from the root `gc.dev.json` file in your Unity project. The package uses this file as the source of truth for local play entry, seed, and the eight-seat player roster, matching the Gaming Couch DevApp local project format.
@@ -278,10 +290,9 @@ GCPlayer.ColorOffWhite
 
 # Build your project for Gaming Couch
 
-When you are ready to build your project for Gaming Couch, you need to build it as WebGL. You can change this by selecting the WebGL tab from
-"Project Settings > Player".
+When you are ready to build your project for Gaming Couch, switch the project to WebGL manually and run the clean WebGL export setup before creating the build. The setup workflow selects the `PROJECT:GamingCouch` template and applies the recommended release defaults, including disabled WebGL compression.
 
-Under "Project Settings > Player > WebGL" tab's "Publish settings", set the compression format to "Disabled".
+If setup warns that the active build target is not WebGL, switch the project to WebGL manually before building. Setup does not switch build targets automatically.
 
 // TODO: Further instructions on how to build the project for Gaming Couch and integrate it to the platform.
 
