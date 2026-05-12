@@ -489,6 +489,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.GameViewAspect16By9:
                 RunEnsureGameViewAspect16By9();
                 break;
+            case GCStartScreenReadinessCheckId.WebGLExportSetup:
+                RunEnsureWebGLExportSetup();
+                break;
             default:
                 SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
                 break;
@@ -524,6 +527,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         if (id != GCStartScreenReadinessCheckId.GameViewAspect16By9 &&
+            id != GCStartScreenReadinessCheckId.WebGLExportSetup &&
             !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
         {
             return true;
@@ -540,6 +544,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 return readiness.buildSettings == null || !readiness.buildSettings.CanSetFirst;
             case GCStartScreenReadinessCheckId.GameViewAspect16By9:
                 return readiness.gameViewAspect == null || !readiness.gameViewAspect.HasSafeSelectionAction;
+            case GCStartScreenReadinessCheckId.WebGLExportSetup:
+                return readiness.webGLExport == null || !readiness.webGLExport.IsBlocked;
             default:
                 return true;
         }
@@ -616,6 +622,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         Repaint();
     }
 
+    private void RunEnsureWebGLExportSetup()
+    {
+        var result = GamingCouchWebGLExportSetup.EnsureCleanWebGLExportSetup();
+        SetActionResult(result.message, GetWebGLExportSetupResultMessageType(result), result.details);
+        Refresh();
+        Repaint();
+    }
+
     private void SetActionResult(string message, MessageType messageType, string[] details)
     {
         if (!ShouldShowActionResult(messageType))
@@ -659,6 +673,21 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private static MessageType GetGameViewAspectResultMessageType(GCGameViewAspectSetupResult result)
     {
         return result.IsBlocked ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static MessageType GetWebGLExportSetupResultMessageType(GCWebGLExportSetupResult result)
+    {
+        if (result == null)
+        {
+            return MessageType.Error;
+        }
+
+        if (result.IsBlocked)
+        {
+            return MessageType.Error;
+        }
+
+        return result.HasWarning ? MessageType.Warning : MessageType.Info;
     }
 
     private static string FormatActionMessage(string message, string[] details)
@@ -723,6 +752,10 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.GameViewAspect16By9:
                 return readiness != null && readiness.gameViewAspect != null && readiness.gameViewAspect.HasSafeSelectionAction
                     ? "Select 16:9"
+                    : null;
+            case GCStartScreenReadinessCheckId.WebGLExportSetup:
+                return readiness != null && readiness.webGLExport != null && readiness.webGLExport.IsBlocked
+                    ? "Set Up WebGL Export"
                     : null;
             default:
                 return null;

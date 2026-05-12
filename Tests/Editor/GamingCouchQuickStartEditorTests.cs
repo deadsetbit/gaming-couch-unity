@@ -457,6 +457,129 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void WebGLExportChecklistRowReportsWarningWithoutSceneSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var warningReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Warning,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            Array.Empty<string>()
+        );
+
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+            ),
+            GamingCouchGameViewAspect.InspectSizeEntries(
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                0,
+                true,
+                null
+            ),
+            warningReadiness
+        );
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Warning);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).IsSatisfied, Is.True);
+        Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.False);
+        Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+    }
+
+    [Test]
+    public void WebGLExportChecklistRowBlockedDoesNotEnterGlobalSceneSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var blockedReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Blocked,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            "Clean WebGL export setup is incomplete.",
+            Array.Empty<string>()
+        );
+
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+            ),
+            GamingCouchGameViewAspect.InspectSizeEntries(
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                0,
+                true,
+                null
+            ),
+            blockedReadiness
+        );
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Blocked);
+        Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.True);
+        Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+    }
+
+    [Test]
+    public void WebGLExportChecklistRowMapsReadyAndNullReadinessStates()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var readyReadiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateReadyWebGLExportReadiness()
+        );
+        var uninspectableReadiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null
+        );
+
+        AssertCheck(readyReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(readyReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).IsSatisfied, Is.True);
+        AssertCheck(uninspectableReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(uninspectableReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).message, Does.Contain("could not be inspected"));
+    }
+
+    [Test]
     public void SetupActionAvailabilityIncludesLaunchReadinessRows()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
@@ -484,7 +607,8 @@ public sealed class GamingCouchQuickStartEditorTests
             playerPrefab,
             null,
             buildSettingsMissing,
-            gameViewReady
+            gameViewReady,
+            CreateReadyWebGLExportReadiness()
         );
 
         var buildSettingsReady = GamingCouchBuildSettingsReadiness.InspectScenePath(
@@ -510,7 +634,8 @@ public sealed class GamingCouchQuickStartEditorTests
             playerPrefab,
             null,
             buildSettingsReady,
-            gameViewMismatch
+            gameViewMismatch,
+            CreateReadyWebGLExportReadiness()
         );
 
         Assert.That(buildSettingsOnlyReadiness.HasSafeAutomatableSetupActions, Is.True);
@@ -538,6 +663,60 @@ public sealed class GamingCouchQuickStartEditorTests
     )
     {
         Assert.That(readiness.GetCheck(id).state, Is.EqualTo(state));
+    }
+
+    private static GCStartScreenLocalPlayJsonReadiness CreateValidLocalPlayJsonReadiness()
+    {
+        return new GCStartScreenLocalPlayJsonReadiness(
+            true,
+            "Library/GamingCouch/gc.dev.json",
+            "gc.dev.json is valid for local Play Mode.",
+            null
+        );
+    }
+
+    private GCStartScreenReadiness CreateStartScreenReadinessWithWebGL(
+        GamingCouch gamingCouch,
+        UnityEngine.Object listener,
+        UnityEngine.Object playerPrefab,
+        GCWebGLExportReadiness webGLExport
+    )
+    {
+        return new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+            ),
+            GamingCouchGameViewAspect.InspectSizeEntries(
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                0,
+                true,
+                null
+            ),
+            webGLExport
+        );
+    }
+
+    private static GCWebGLExportReadiness CreateReadyWebGLExportReadiness()
+    {
+        return new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Ready,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            "Clean WebGL export setup is ready.",
+            Array.Empty<string>()
+        );
     }
 
     private static void AssertCollapsedGamingCouchChecklist(GCStartScreenReadiness readiness)

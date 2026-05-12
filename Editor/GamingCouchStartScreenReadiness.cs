@@ -22,6 +22,7 @@ internal enum GCStartScreenReadinessCheckId
     PlayerPrefabAssigned,
     ActiveSceneFirstBuildSettingsScene,
     GameViewAspect16By9,
+    WebGLExportSetup,
     LocalPlayJsonValid,
 }
 
@@ -91,6 +92,7 @@ internal sealed class GCStartScreenReadiness
     internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
     internal readonly GCActiveSceneBuildSettingsReadiness buildSettings;
     internal readonly GCGameViewAspectReadiness gameViewAspect;
+    internal readonly GCWebGLExportReadiness webGLExport;
     internal readonly GCStartScreenReadinessCheck activeSceneCheck;
     internal readonly GCStartScreenReadinessCheck[] checklist;
 
@@ -102,7 +104,8 @@ internal sealed class GCStartScreenReadiness
         UnityEngine.Object playerPrefab,
         GCStartScreenLocalPlayJsonReadiness localPlayJson,
         GCActiveSceneBuildSettingsReadiness buildSettings = null,
-        GCGameViewAspectReadiness gameViewAspect = null
+        GCGameViewAspectReadiness gameViewAspect = null,
+        GCWebGLExportReadiness webGLExport = null
     )
     {
         this.scene = scene;
@@ -116,6 +119,7 @@ internal sealed class GCStartScreenReadiness
         this.localPlayJson = localPlayJson;
         this.buildSettings = buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
         this.gameViewAspect = gameViewAspect ?? GamingCouchGameViewAspect.InspectSizeEntries(null, -1, false, null);
+        this.webGLExport = webGLExport;
         activeSceneCheck = BuildActiveSceneCheck();
         checklist = BuildChecklist();
     }
@@ -221,6 +225,7 @@ internal sealed class GCStartScreenReadiness
             BuildPlayerPrefabAssignedCheck(),
             BuildActiveSceneFirstBuildSettingsSceneCheck(),
             BuildGameViewAspect16By9Check(),
+            BuildWebGLExportSetupCheck(),
             BuildLocalPlayJsonValidCheck(),
         };
     }
@@ -440,6 +445,40 @@ internal sealed class GCStartScreenReadiness
         );
     }
 
+    private GCStartScreenReadinessCheck BuildWebGLExportSetupCheck()
+    {
+        if (webGLExport == null)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.WebGLExportSetup,
+                "Clean WebGL export setup is ready",
+                GCStartScreenReadinessCheckState.Fail,
+                "Clean WebGL export setup readiness could not be inspected."
+            );
+        }
+
+        var state = GCStartScreenReadinessCheckState.Fail;
+        switch (webGLExport.status)
+        {
+            case GCWebGLExportSetupStatus.Ready:
+                state = GCStartScreenReadinessCheckState.Pass;
+                break;
+            case GCWebGLExportSetupStatus.Warning:
+                state = GCStartScreenReadinessCheckState.Warning;
+                break;
+            case GCWebGLExportSetupStatus.Blocked:
+                state = GCStartScreenReadinessCheckState.Blocked;
+                break;
+        }
+
+        return new GCStartScreenReadinessCheck(
+            GCStartScreenReadinessCheckId.WebGLExportSetup,
+            "Clean WebGL export setup is ready",
+            state,
+            webGLExport.message
+        );
+    }
+
     private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
     {
         id = NormalizeCheckId(id);
@@ -500,6 +539,7 @@ internal static class GCStartScreenReadinessService
         var localPlayJson = InspectLocalPlayJson();
         var buildSettings = GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
         var gameViewAspect = GamingCouchGameViewAspect.Inspect();
+        var webGLExport = GamingCouchWebGLExportSetup.InspectReadiness();
 
         return new GCStartScreenReadiness(
             scene,
@@ -509,7 +549,8 @@ internal static class GCStartScreenReadinessService
             playerPrefab,
             localPlayJson,
             buildSettings,
-            gameViewAspect
+            gameViewAspect,
+            webGLExport
         );
     }
 
