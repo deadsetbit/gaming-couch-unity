@@ -227,6 +227,7 @@ internal sealed class GCQuickStartScriptSetupSpec
     internal readonly string gameTypeName;
     internal readonly string playerTypeName;
     internal readonly string listenerObjectName;
+    internal readonly bool requiresGeneratedScriptFolder;
     internal readonly bool requiresQuickStartFolders;
     private readonly Func<string> gameScriptSourceFactory;
     private readonly Func<string> playerScriptSourceFactory;
@@ -238,6 +239,7 @@ internal sealed class GCQuickStartScriptSetupSpec
         string gameTypeName,
         string playerTypeName,
         string listenerObjectName,
+        bool requiresGeneratedScriptFolder,
         bool requiresQuickStartFolders,
         Func<string> gameScriptSourceFactory,
         Func<string> playerScriptSourceFactory
@@ -249,6 +251,7 @@ internal sealed class GCQuickStartScriptSetupSpec
         this.gameTypeName = gameTypeName;
         this.playerTypeName = playerTypeName;
         this.listenerObjectName = listenerObjectName;
+        this.requiresGeneratedScriptFolder = requiresGeneratedScriptFolder;
         this.requiresQuickStartFolders = requiresQuickStartFolders;
         this.gameScriptSourceFactory = gameScriptSourceFactory;
         this.playerScriptSourceFactory = playerScriptSourceFactory;
@@ -317,14 +320,15 @@ internal static class GamingCouchQuickStartSetup
 {
     internal const string ProjectFolderAssetPath = "Assets/GamingCouch";
     internal const string QuickStartFolderAssetPath = ProjectFolderAssetPath + "/QuickStart";
+    internal const string ExampleFolderAssetPath = ProjectFolderAssetPath + "/GCExample";
     internal const string GameTypeName = "GCQuickStartGame";
     internal const string PlayerTypeName = "GCQuickStartPlayer";
     internal const string GameScriptAssetPath = QuickStartFolderAssetPath + "/" + GameTypeName + ".cs";
     internal const string PlayerScriptAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".cs";
-    internal const string ActiveSceneGameTypeName = "Game";
-    internal const string ActiveScenePlayerTypeName = "Player";
-    internal const string ActiveSceneGameScriptAssetPath = "Assets/" + ActiveSceneGameTypeName + ".cs";
-    internal const string ActiveScenePlayerScriptAssetPath = "Assets/" + ActiveScenePlayerTypeName + ".cs";
+    internal const string ActiveSceneGameTypeName = "GCGameExample";
+    internal const string ActiveScenePlayerTypeName = "GCPlayerExample";
+    internal const string ActiveSceneGameScriptAssetPath = ExampleFolderAssetPath + "/" + ActiveSceneGameTypeName + ".cs";
+    internal const string ActiveScenePlayerScriptAssetPath = ExampleFolderAssetPath + "/" + ActiveScenePlayerTypeName + ".cs";
     internal const string PlayerPrefabAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".prefab";
     internal const string QuickStartSceneAssetPath = QuickStartFolderAssetPath + "/GamingCouchQuickStart.unity";
 
@@ -335,7 +339,7 @@ internal static class GamingCouchQuickStartSetup
     private const string DefaultIntentValue = "ActiveScene";
     private const string DefaultActionValue = "ActiveSceneMissingPieces";
     private const string ListenerObjectName = GameTypeName;
-    private const string ActiveSceneGameListenerObjectName = ActiveSceneGameTypeName;
+    private const string ActiveSceneGameListenerObjectName = "Game";
     private const string CreateGameListenerUndoName = "Create Quick-Start Game Listener";
     private const string AddGameListenerComponentUndoName = "Add Quick-Start Game Listener";
     private const string CreateCameraUndoName = "Create Quick-Start Camera";
@@ -352,17 +356,19 @@ internal static class GamingCouchQuickStartSetup
             PlayerTypeName,
             ListenerObjectName,
             true,
+            true,
             () => BuildGameScriptSource(GameTypeName, PlayerTypeName),
             () => BuildPlayerScriptSource(PlayerTypeName)
         );
     private static readonly GCQuickStartScriptSetupSpec ActiveSceneGameScriptSetupSpec =
         new GCQuickStartScriptSetupSpec(
-            "Assets",
+            ExampleFolderAssetPath,
             ActiveSceneGameScriptAssetPath,
             ActiveScenePlayerScriptAssetPath,
             ActiveSceneGameTypeName,
             ActiveScenePlayerTypeName,
             ActiveSceneGameListenerObjectName,
+            true,
             false,
             () => BuildGameScriptSource(ActiveSceneGameTypeName, ActiveScenePlayerTypeName),
             () => BuildPlayerScriptSource(ActiveScenePlayerTypeName)
@@ -537,13 +543,18 @@ internal static class GamingCouchQuickStartSetup
         List<string> blockedReasons
     )
     {
-        if (spec == null || !spec.requiresQuickStartFolders)
+        if (spec == null || !spec.requiresGeneratedScriptFolder)
         {
             return;
         }
 
         EnsureProjectFolder(ProjectFolderAssetPath, "Assets", "GamingCouch", blockedReasons);
-        EnsureProjectFolder(QuickStartFolderAssetPath, ProjectFolderAssetPath, "QuickStart", blockedReasons);
+        EnsureProjectFolder(
+            spec.scriptFolderAssetPath,
+            ProjectFolderAssetPath,
+            GetAssetPathName(spec.scriptFolderAssetPath),
+            blockedReasons
+        );
     }
 
     internal static bool HasPendingSetup()
@@ -1429,6 +1440,19 @@ internal static class GamingCouchQuickStartSetup
         {
             blockedReasons.Add("Cannot create folder " + assetPath + " because Unity did not import it as a valid asset folder.");
         }
+    }
+
+    private static string GetAssetPathName(string assetPath)
+    {
+        if (string.IsNullOrEmpty(assetPath))
+        {
+            return string.Empty;
+        }
+
+        var separatorIndex = assetPath.LastIndexOf('/');
+        return separatorIndex >= 0 && separatorIndex + 1 < assetPath.Length
+            ? assetPath.Substring(separatorIndex + 1)
+            : assetPath;
     }
 
     private static void EnsureScriptAsset(
