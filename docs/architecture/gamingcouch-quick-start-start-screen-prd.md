@@ -133,7 +133,7 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 | Task 2 | Validate compatible Game script receivers. | Completed | Assigned listener objects pass readiness when they can receive `GamingCouchSetup(GCSetupOptions)` and `GamingCouchPlay(GCPlayOptions)`, including compatible custom listener objects not named `Game`; unresolved references fail with manual guidance. | Task 1 | Do not require generated asset names for manually assigned compatible listeners. |
 | Task 3 | Implement safe `Create & Wire Game` setup. | Completed | The row action creates or reuses `Assets/GamingCouch/GCExample/GCGameExample.cs`, `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, a scene object named `Game`, and the `GCGameExample` component through the staged compile flow, then assigns the listener only when the serialized field is empty. | Task 2 | Do not overwrite generated or user-authored assets and do not create or assign the player prefab from this action. |
 | Task 4 | Unify generated quick-start Game and Player assets around `GCGameExample` and `GCPlayerExample`. | Completed | Active-scene setup and quick-start scene setup both create or reuse `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`; no new `GCQuickStartGame`, `GCQuickStartPlayer`, or `GCQuickStartPlayer.prefab` assets are generated; the quick-start scene remains `GamingCouchQuickStart.unity` and wires the unified example assets. | Task 3 | `Quick Start` remains workflow and scene language only. |
-| Task 5 | Add focused validation for unified generated asset behavior. | Needs update | Package-local editor tests and static inspection cover receiver compatibility, missing and unresolved listener guidance, staged compile classification, `Assets/GamingCouch/GCExample` script conflict handling, `Create & Wire Game` pending result details, unified generated `GCGameExample` / `GCPlayerExample` source, prefab, and quick-start scene wiring, plus generated-listener player prefab compatibility validation. | Task 1, Task 2, Task 3, Task 4 | Consuming-project Play Mode validation remains pending/manual. |
+| Task 5 | Add focused validation for unified generated asset behavior. | Completed | Package-local editor tests and static inspection cover receiver compatibility, missing and unresolved listener guidance, staged compile classification, `Assets/GamingCouch/GCExample` script conflict handling, `Create & Wire Game` pending result details, unified generated `GCGameExample` / `GCPlayerExample` source, prefab, and quick-start scene wiring, plus generated-listener player prefab compatibility validation. | Task 1, Task 2, Task 3, Task 4 | Consuming-project Play Mode validation remains pending/manual. |
 
 ## Validation
 
@@ -149,11 +149,3 @@ Pending validation requires a consuming Unity project with package import suppor
 
 - Consuming-project Unity edit-mode confirmation that package-local editor tests pass under a real package import, including generated script compile/resume behavior after Unity domain reload.
 - Manual Unity validation for staged compile continuation from newly created `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, `GCPlayerExample.prefab` creation and assignment, `Create & Wire Game` end-to-end success feedback in the Start Screen UI, generated quick-start Play Mode loop with valid local play JSON, missing or invalid local play JSON messaging, Game View 16:9 behavior, and clean WebGL setup interaction from the Start Screen.
-
-## Temporary Update Notes
-
-Remove this section after all listed PRD updates have been reconciled in implementation.
-
-| Task | Type | Summary | Cleanup condition |
-| --- | --- | --- | --- |
-| Task 5: Add focused validation for unified generated asset behavior. | Needs update | Tests must reflect unified `GC*Example` generation, quick-start scene wiring, and generated-listener prefab compatibility. | Remove after package-local tests and static validation cover the unified generated asset model. |
