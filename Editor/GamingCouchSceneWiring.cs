@@ -131,7 +131,20 @@ internal static class GamingCouchSceneWiring
             PlayerPrefabPropertyName,
             playerPrefab,
             AssignPlayerPrefabUndoName,
-            "player prefab"
+            "player prefab",
+            false
+        );
+    }
+
+    internal static GamingCouchSceneWiringResult ReplacePlayerPrefab(GamingCouch gamingCouch, GameObject playerPrefab)
+    {
+        return AssignObjectReferenceIfMissing(
+            gamingCouch,
+            PlayerPrefabPropertyName,
+            playerPrefab,
+            AssignPlayerPrefabUndoName,
+            "player prefab",
+            true
         );
     }
 
@@ -248,7 +261,8 @@ internal static class GamingCouchSceneWiring
         string propertyName,
         GameObject reference,
         string undoName,
-        string displayName
+        string displayName,
+        bool replaceAssigned = false
     )
     {
         if (gamingCouch == null)
@@ -279,7 +293,7 @@ internal static class GamingCouchSceneWiring
         }
 
         var referenceState = GetSerializedObjectReferenceState(property);
-        if (referenceState == GamingCouchObjectReferenceState.Assigned)
+        if (referenceState == GamingCouchObjectReferenceState.Assigned && !replaceAssigned)
         {
             return GamingCouchSceneWiringResult.UnchangedResult(
                 gamingCouch,
@@ -304,7 +318,9 @@ internal static class GamingCouchSceneWiring
 
         return GamingCouchSceneWiringResult.SucceededResult(
             gamingCouch,
-            referenceState == GamingCouchObjectReferenceState.Missing
+            referenceState == GamingCouchObjectReferenceState.Assigned
+                ? "Replaced the GamingCouch " + displayName + " reference."
+                : referenceState == GamingCouchObjectReferenceState.Missing
                 ? "Replaced the missing GamingCouch " + displayName + " reference."
                 : "Assigned the GamingCouch " + displayName + " reference."
         );

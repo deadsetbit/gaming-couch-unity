@@ -622,6 +622,22 @@ internal sealed class GCStartScreenReadiness
             );
         }
 
+        string playerPrefabCompatibilityMessage;
+        if (!GamingCouchQuickStartSetup.IsActiveSceneGeneratedPlayerPrefabCompatible(
+            listener,
+            playerPrefab,
+            out playerPrefabCompatibilityMessage
+        ))
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.PlayerPrefabAssigned,
+                "Player prefab is assigned",
+                GCStartScreenReadinessCheckState.Fail,
+                playerPrefabCompatibilityMessage,
+                PlayerPrefabAssignedHelpText
+            );
+        }
+
         return new GCStartScreenReadinessCheck(
             GCStartScreenReadinessCheckId.PlayerPrefabAssigned,
             "Player prefab is assigned",
@@ -810,7 +826,8 @@ internal sealed class GCStartScreenReadiness
 
                 return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName);
+                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName) ||
+                       GamingCouchQuickStartSetup.CanReplaceActiveSceneGeneratedPlayerPrefab(listener, playerPrefab);
             default:
                 return false;
         }
