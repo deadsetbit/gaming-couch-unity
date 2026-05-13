@@ -372,6 +372,111 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
+    public void GameRowScriptSetupUsesRootGameAndPlayerAssets()
+    {
+        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveSceneGameListener
+        );
+        var playerPrefabSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveScenePlayerPrefab
+        );
+
+        Assert.That(gameSpec.gameScriptAssetPath, Is.EqualTo("Assets/Game.cs"));
+        Assert.That(gameSpec.playerScriptAssetPath, Is.EqualTo("Assets/Player.cs"));
+        Assert.That(gameSpec.gameTypeName, Is.EqualTo("Game"));
+        Assert.That(gameSpec.playerTypeName, Is.EqualTo("Player"));
+        Assert.That(gameSpec.listenerObjectName, Is.EqualTo("Game"));
+        Assert.That(gameSpec.requiresQuickStartFolders, Is.False);
+        Assert.That(playerPrefabSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.GameScriptAssetPath));
+        Assert.That(playerPrefabSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.PlayerScriptAssetPath));
+    }
+
+    [Test]
+    public void GameListenerSetupCreatesNamedGameObjectAndLeavesPlayerPrefabEmpty()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var context = CreateGameListenerTestContext();
+
+        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var assignResult = GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listenerResult.listenerObject);
+
+        Assert.That(listenerResult.IsBlocked, Is.False);
+        Assert.That(listenerResult.changed, Is.True);
+        Assert.That(listenerResult.listenerObject.name, Is.EqualTo("Game"));
+        Assert.That(listenerResult.listenerObject.GetComponent<CompatibleGameScriptReceiver>(), Is.Not.Null);
+        Assert.That(assignResult.status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+        Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.SameAs(listenerResult.listenerObject));
+        Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName), Is.Null);
+    }
+
+    [Test]
+    public void GameListenerSetupReusesNamedGameObjectBeforeAddingComponent()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var existingGame = new GameObject("Game");
+        var context = CreateGameListenerTestContext();
+
+        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+
+        Assert.That(listenerResult.IsBlocked, Is.False);
+        Assert.That(listenerResult.changed, Is.True);
+        Assert.That(listenerResult.listenerObject, Is.SameAs(existingGame));
+        Assert.That(existingGame.GetComponent<CompatibleGameScriptReceiver>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void GameListenerSetupBlocksExistingGameComponentOnWrongObjectName()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var existingListener = CreateCompatibleListener("Existing Listener");
+        var context = CreateGameListenerTestContext();
+
+        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+
+        Assert.That(listenerResult.IsBlocked, Is.True);
+        Assert.That(listenerResult.changed, Is.False);
+        Assert.That(listenerResult.listenerObject, Is.Null);
+        Assert.That(string.Join("\n", listenerResult.blockedReasons), Does.Contain("scene object named Game"));
+        Assert.That(existingListener.GetComponent<CompatibleGameScriptReceiver>(), Is.Not.Null);
+        Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void GameListenerSetupPreservesOccupiedListenerField()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var existingListener = CreateCompatibleListener("Existing Listener");
+        var context = CreateGameListenerTestContext();
+
+        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, existingListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+
+        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+
+        Assert.That(listenerResult.IsBlocked, Is.False);
+        Assert.That(listenerResult.changed, Is.False);
+        Assert.That(listenerResult.listenerObject, Is.Null);
+        Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.SameAs(existingListener));
+        Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void GameListenerSetupBlocksIncompatibleGameComponentType()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var context = CreateGameListenerTestContext(typeof(SetupOnlyGameScriptReceiver));
+
+        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+
+        Assert.That(listenerResult.IsBlocked, Is.True);
+        Assert.That(listenerResult.changed, Is.False);
+        Assert.That(listenerResult.listenerObject, Is.Null);
+        Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.Null);
+        Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
     public void GeneratedAssetCreationReusesExistingFileWithoutOverwriting()
     {
         EnsureTestAssetFolder();
@@ -1121,6 +1226,28 @@ public sealed class GamingCouchQuickStartEditorTests
         var gameObject = new GameObject(name);
         gameObject.AddComponent<GCPlayer>();
         return gameObject;
+    }
+
+    private static GCQuickStartSetupContinuationContext CreateGameListenerTestContext()
+    {
+        return CreateGameListenerTestContext(typeof(CompatibleGameScriptReceiver));
+    }
+
+    private static GCQuickStartSetupContinuationContext CreateGameListenerTestContext(Type gameType)
+    {
+        return new GCQuickStartSetupContinuationContext(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveSceneGameListener,
+            false,
+            "Assets",
+            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
+            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
+            gameType.Name,
+            nameof(GCPlayer),
+            "Game",
+            gameType,
+            typeof(GCPlayer)
+        );
     }
 
     private static void AssertCheck(

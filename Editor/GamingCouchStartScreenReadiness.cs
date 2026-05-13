@@ -889,6 +889,14 @@ internal sealed class GCStartScreenGameScriptReceiverCompatibility
         return component != null ? component.gameObject : null;
     }
 
+    internal static bool CanReceiveSetupAndPlay(Type type)
+    {
+        return type != null &&
+               typeof(Component).IsAssignableFrom(type) &&
+               HasReceiverMethod(type, SetupMethodName, typeof(GCSetupOptions)) &&
+               HasReceiverMethod(type, PlayMethodName, typeof(GCPlayOptions));
+    }
+
     private static bool CanReceiveSetupAndPlay(Component component)
     {
         if (component == null)
@@ -896,9 +904,7 @@ internal sealed class GCStartScreenGameScriptReceiverCompatibility
             return false;
         }
 
-        var type = component.GetType();
-        return HasReceiverMethod(type, SetupMethodName, typeof(GCSetupOptions)) &&
-               HasReceiverMethod(type, PlayMethodName, typeof(GCPlayOptions));
+        return CanReceiveSetupAndPlay(component.GetType());
     }
 
     private static bool HasReceiverMethod(Type type, string methodName, Type parameterType)

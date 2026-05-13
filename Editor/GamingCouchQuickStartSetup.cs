@@ -219,6 +219,52 @@ internal sealed class GCQuickStartActiveSceneSetupResult
     }
 }
 
+internal sealed class GCQuickStartScriptSetupSpec
+{
+    internal readonly string scriptFolderAssetPath;
+    internal readonly string gameScriptAssetPath;
+    internal readonly string playerScriptAssetPath;
+    internal readonly string gameTypeName;
+    internal readonly string playerTypeName;
+    internal readonly string listenerObjectName;
+    internal readonly bool requiresQuickStartFolders;
+    private readonly Func<string> gameScriptSourceFactory;
+    private readonly Func<string> playerScriptSourceFactory;
+
+    internal GCQuickStartScriptSetupSpec(
+        string scriptFolderAssetPath,
+        string gameScriptAssetPath,
+        string playerScriptAssetPath,
+        string gameTypeName,
+        string playerTypeName,
+        string listenerObjectName,
+        bool requiresQuickStartFolders,
+        Func<string> gameScriptSourceFactory,
+        Func<string> playerScriptSourceFactory
+    )
+    {
+        this.scriptFolderAssetPath = scriptFolderAssetPath;
+        this.gameScriptAssetPath = gameScriptAssetPath;
+        this.playerScriptAssetPath = playerScriptAssetPath;
+        this.gameTypeName = gameTypeName;
+        this.playerTypeName = playerTypeName;
+        this.listenerObjectName = listenerObjectName;
+        this.requiresQuickStartFolders = requiresQuickStartFolders;
+        this.gameScriptSourceFactory = gameScriptSourceFactory;
+        this.playerScriptSourceFactory = playerScriptSourceFactory;
+    }
+
+    internal string BuildGameScriptSource()
+    {
+        return gameScriptSourceFactory();
+    }
+
+    internal string BuildPlayerScriptSource()
+    {
+        return playerScriptSourceFactory();
+    }
+}
+
 internal sealed class GCQuickStartSetupContinuationContext
 {
     internal readonly GCQuickStartSetupIntent intent;
@@ -227,6 +273,9 @@ internal sealed class GCQuickStartSetupContinuationContext
     internal readonly string quickStartFolderAssetPath;
     internal readonly string gameScriptAssetPath;
     internal readonly string playerScriptAssetPath;
+    internal readonly string gameTypeName;
+    internal readonly string playerTypeName;
+    internal readonly string listenerObjectName;
     internal readonly Type gameType;
     internal readonly Type playerType;
 
@@ -237,6 +286,9 @@ internal sealed class GCQuickStartSetupContinuationContext
         string quickStartFolderAssetPath,
         string gameScriptAssetPath,
         string playerScriptAssetPath,
+        string gameTypeName,
+        string playerTypeName,
+        string listenerObjectName,
         Type gameType,
         Type playerType
     )
@@ -247,6 +299,9 @@ internal sealed class GCQuickStartSetupContinuationContext
         this.quickStartFolderAssetPath = quickStartFolderAssetPath;
         this.gameScriptAssetPath = gameScriptAssetPath;
         this.playerScriptAssetPath = playerScriptAssetPath;
+        this.gameTypeName = gameTypeName;
+        this.playerTypeName = playerTypeName;
+        this.listenerObjectName = listenerObjectName;
         this.gameType = gameType;
         this.playerType = playerType;
     }
@@ -266,6 +321,10 @@ internal static class GamingCouchQuickStartSetup
     internal const string PlayerTypeName = "GCQuickStartPlayer";
     internal const string GameScriptAssetPath = QuickStartFolderAssetPath + "/" + GameTypeName + ".cs";
     internal const string PlayerScriptAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".cs";
+    internal const string ActiveSceneGameTypeName = "Game";
+    internal const string ActiveScenePlayerTypeName = "Player";
+    internal const string ActiveSceneGameScriptAssetPath = "Assets/" + ActiveSceneGameTypeName + ".cs";
+    internal const string ActiveScenePlayerScriptAssetPath = "Assets/" + ActiveScenePlayerTypeName + ".cs";
     internal const string PlayerPrefabAssetPath = QuickStartFolderAssetPath + "/" + PlayerTypeName + ".prefab";
     internal const string QuickStartSceneAssetPath = QuickStartFolderAssetPath + "/GamingCouchQuickStart.unity";
 
@@ -276,6 +335,7 @@ internal static class GamingCouchQuickStartSetup
     private const string DefaultIntentValue = "ActiveScene";
     private const string DefaultActionValue = "ActiveSceneMissingPieces";
     private const string ListenerObjectName = GameTypeName;
+    private const string ActiveSceneGameListenerObjectName = ActiveSceneGameTypeName;
     private const string CreateGameListenerUndoName = "Create Quick-Start Game Listener";
     private const string AddGameListenerComponentUndoName = "Add Quick-Start Game Listener";
     private const string CreateCameraUndoName = "Create Quick-Start Camera";
@@ -283,6 +343,30 @@ internal static class GamingCouchQuickStartSetup
     private const string PlayerVisualName = "Visual";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
+    private static readonly GCQuickStartScriptSetupSpec QuickStartScriptSetupSpec =
+        new GCQuickStartScriptSetupSpec(
+            QuickStartFolderAssetPath,
+            GameScriptAssetPath,
+            PlayerScriptAssetPath,
+            GameTypeName,
+            PlayerTypeName,
+            ListenerObjectName,
+            true,
+            () => BuildGameScriptSource(GameTypeName, PlayerTypeName),
+            () => BuildPlayerScriptSource(PlayerTypeName)
+        );
+    private static readonly GCQuickStartScriptSetupSpec ActiveSceneGameScriptSetupSpec =
+        new GCQuickStartScriptSetupSpec(
+            "Assets",
+            ActiveSceneGameScriptAssetPath,
+            ActiveScenePlayerScriptAssetPath,
+            ActiveSceneGameTypeName,
+            ActiveScenePlayerTypeName,
+            ActiveSceneGameListenerObjectName,
+            false,
+            () => BuildGameScriptSource(ActiveSceneGameTypeName, ActiveScenePlayerTypeName),
+            () => BuildPlayerScriptSource(ActiveScenePlayerTypeName)
+        );
     private static Action<GCQuickStartSetupContinuationContext> scriptsReadyHandlers;
     private static GCQuickStartSceneSetupResult lastQuickStartSceneSetupResult;
 
@@ -340,12 +424,12 @@ internal static class GamingCouchQuickStartSetup
         bool dispatchWhenReady
     )
     {
+        var spec = GetScriptSetupSpec(intent, action);
         var createdAssetPaths = new List<string>();
         var reusedAssetPaths = new List<string>();
         var blockedReasons = new List<string>();
 
-        EnsureProjectFolder(ProjectFolderAssetPath, "Assets", "GamingCouch", blockedReasons);
-        EnsureProjectFolder(QuickStartFolderAssetPath, ProjectFolderAssetPath, "QuickStart", blockedReasons);
+        EnsureScriptFolders(spec, blockedReasons);
         if (blockedReasons.Count > 0)
         {
             return CreateResult(
@@ -358,8 +442,8 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        EnsureScriptAsset(GameScriptAssetPath, GameTypeName, BuildGameScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
-        EnsureScriptAsset(PlayerScriptAssetPath, PlayerTypeName, BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        EnsureScriptAsset(spec.gameScriptAssetPath, spec.gameTypeName, spec.BuildGameScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        EnsureScriptAsset(spec.playerScriptAssetPath, spec.playerTypeName, spec.BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
         if (blockedReasons.Count > 0)
         {
             if (createdAssetPaths.Count > 0)
@@ -411,7 +495,7 @@ internal static class GamingCouchQuickStartSetup
                 );
             }
 
-            blockedReasons.Add("Quick-start script assets already exist, but compiled types " + GameTypeName + " and " + PlayerTypeName + " are not both available. Existing scripts were left untouched.");
+            blockedReasons.Add("Quick-start script assets already exist, but compiled types " + spec.gameTypeName + " and " + spec.playerTypeName + " are not both available. Existing scripts were left untouched.");
             return CreateResult(
                 GCQuickStartScriptSetupStatus.Blocked,
                 false,
@@ -435,6 +519,31 @@ internal static class GamingCouchQuickStartSetup
             reusedAssetPaths,
             blockedReasons
         );
+    }
+
+    internal static GCQuickStartScriptSetupSpec GetScriptSetupSpec(
+        GCQuickStartSetupIntent intent,
+        GCQuickStartSetupAction action
+    )
+    {
+        return intent == GCQuickStartSetupIntent.ActiveScene &&
+               action == GCQuickStartSetupAction.ActiveSceneGameListener
+            ? ActiveSceneGameScriptSetupSpec
+            : QuickStartScriptSetupSpec;
+    }
+
+    private static void EnsureScriptFolders(
+        GCQuickStartScriptSetupSpec spec,
+        List<string> blockedReasons
+    )
+    {
+        if (spec == null || !spec.requiresQuickStartFolders)
+        {
+            return;
+        }
+
+        EnsureProjectFolder(ProjectFolderAssetPath, "Assets", "GamingCouch", blockedReasons);
+        EnsureProjectFolder(QuickStartFolderAssetPath, ProjectFolderAssetPath, "QuickStart", blockedReasons);
     }
 
     internal static bool HasPendingSetup()
@@ -997,7 +1106,7 @@ internal static class GamingCouchQuickStartSetup
 
         if (context.playerType == null)
         {
-            blockedReasons.Add("Quick-start player prefab generation requires the compiled " + PlayerTypeName + " type.");
+            blockedReasons.Add("Quick-start player prefab generation requires the compiled " + context.playerTypeName + " type.");
             return CreatePlayerPrefabResult(
                 GCQuickStartPlayerPrefabSetupStatus.Blocked,
                 false,
@@ -1007,9 +1116,9 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        if (context.playerType.Name != PlayerTypeName)
+        if (context.playerType.Name != context.playerTypeName)
         {
-            blockedReasons.Add("Quick-start player prefab generation requires " + PlayerTypeName + ", but the continuation context provided " + context.playerType.FullName + ".");
+            blockedReasons.Add("Quick-start player prefab generation requires " + context.playerTypeName + ", but the continuation context provided " + context.playerType.FullName + ".");
             return CreatePlayerPrefabResult(
                 GCQuickStartPlayerPrefabSetupStatus.Blocked,
                 false,
@@ -1059,7 +1168,7 @@ internal static class GamingCouchQuickStartSetup
         {
             if (existingPrefab.GetComponent(context.playerType) == null)
             {
-                blockedReasons.Add("Existing prefab " + PlayerPrefabAssetPath + " does not have " + PlayerTypeName + " on its root. Existing prefab assets are never overwritten.");
+                blockedReasons.Add("Existing prefab " + PlayerPrefabAssetPath + " does not have " + context.playerTypeName + " on its root. Existing prefab assets are never overwritten.");
                 return CreatePlayerPrefabResult(
                     GCQuickStartPlayerPrefabSetupStatus.Blocked,
                     false,
@@ -1120,7 +1229,7 @@ internal static class GamingCouchQuickStartSetup
 
         if (context.gameType == null)
         {
-            blockedReasons.Add("Game script setup requires the compiled " + GameTypeName + " type.");
+            blockedReasons.Add("Game script setup requires the compiled " + context.gameTypeName + " type.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
@@ -1130,9 +1239,9 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        if (context.gameType.Name != GameTypeName)
+        if (context.gameType.Name != context.gameTypeName)
         {
-            blockedReasons.Add("Game script setup requires " + GameTypeName + ", but the continuation context provided " + context.gameType.FullName + ".");
+            blockedReasons.Add("Game script setup requires " + context.gameTypeName + ", but the continuation context provided " + context.gameType.FullName + ".");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
@@ -1145,6 +1254,18 @@ internal static class GamingCouchQuickStartSetup
         if (!typeof(MonoBehaviour).IsAssignableFrom(context.gameType))
         {
             blockedReasons.Add("Compiled type " + context.gameType.FullName + " does not inherit from MonoBehaviour.");
+            return CreateGameListenerResult(
+                GCQuickStartGameListenerSetupStatus.Blocked,
+                false,
+                null,
+                "Game script setup is blocked.",
+                blockedReasons
+            );
+        }
+
+        if (!GCStartScreenGameScriptReceiverCompatibility.CanReceiveSetupAndPlay(context.gameType))
+        {
+            blockedReasons.Add("Compiled type " + context.gameType.FullName + " cannot receive both GamingCouchSetup(GCSetupOptions) and GamingCouchPlay(GCPlayOptions). Existing scripts were left untouched.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
@@ -1764,16 +1885,23 @@ internal static class GamingCouchQuickStartSetup
         var existingComponents = FindComponentsInScene(scene, context.gameType);
         if (existingComponents.Length > 1)
         {
-            blockedReasons.Add("The scene contains multiple " + GameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning quick-start setup.");
+            blockedReasons.Add("The scene contains multiple " + context.gameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning quick-start setup.");
             return null;
         }
 
         if (existingComponents.Length == 1)
         {
-            return existingComponents[0].gameObject;
+            var componentObject = existingComponents[0].gameObject;
+            if (string.Equals(componentObject.name, context.listenerObjectName, StringComparison.Ordinal))
+            {
+                return componentObject;
+            }
+
+            blockedReasons.Add("The scene already contains a " + context.gameTypeName + " component on " + componentObject.name + ". Assign it manually or move it to a scene object named " + context.listenerObjectName + " before rerunning setup.");
+            return null;
         }
 
-        var existingObject = FindRootGameObjectInScene(scene, ListenerObjectName);
+        var existingObject = FindRootGameObjectInScene(scene, context.listenerObjectName);
         if (existingObject != null)
         {
             try
@@ -1782,7 +1910,7 @@ internal static class GamingCouchQuickStartSetup
                 var listenerComponent = Undo.AddComponent(existingObject, context.gameType);
                 if (listenerComponent == null)
                 {
-                    blockedReasons.Add("Unity did not add " + GameTypeName + " to existing scene object " + ListenerObjectName + ".");
+                    blockedReasons.Add("Unity did not add " + context.gameTypeName + " to existing scene object " + context.listenerObjectName + ".");
                     return existingObject;
                 }
 
@@ -1794,7 +1922,7 @@ internal static class GamingCouchQuickStartSetup
             }
             catch (Exception exception)
             {
-                blockedReasons.Add("Could not add " + GameTypeName + " to existing scene object " + ListenerObjectName + ": " + exception.Message);
+                blockedReasons.Add("Could not add " + context.gameTypeName + " to existing scene object " + context.listenerObjectName + ": " + exception.Message);
                 return existingObject;
             }
         }
@@ -1803,7 +1931,7 @@ internal static class GamingCouchQuickStartSetup
         try
         {
             Undo.SetCurrentGroupName(CreateGameListenerUndoName);
-            listenerObject = new GameObject(ListenerObjectName);
+            listenerObject = new GameObject(context.listenerObjectName);
             if (listenerObject.scene != scene)
             {
                 SceneManager.MoveGameObjectToScene(listenerObject, scene);
@@ -1812,7 +1940,7 @@ internal static class GamingCouchQuickStartSetup
             var listenerComponent = listenerObject.AddComponent(context.gameType);
             if (listenerComponent == null)
             {
-                blockedReasons.Add("Unity did not add " + GameTypeName + " to the new quick-start Game script object.");
+                blockedReasons.Add("Unity did not add " + context.gameTypeName + " to the new quick-start Game script object.");
                 UnityEngine.Object.DestroyImmediate(listenerObject);
                 return null;
             }
@@ -1826,7 +1954,7 @@ internal static class GamingCouchQuickStartSetup
         }
         catch (Exception exception)
         {
-            blockedReasons.Add("Could not create quick-start Game script object " + ListenerObjectName + ": " + exception.Message);
+            blockedReasons.Add("Could not create quick-start Game script object " + context.listenerObjectName + ": " + exception.Message);
             if (listenerObject != null)
             {
                 UnityEngine.Object.DestroyImmediate(listenerObject);
@@ -1930,7 +2058,7 @@ internal static class GamingCouchQuickStartSetup
         List<string> blockedReasons
     )
     {
-        var root = new GameObject(PlayerTypeName);
+        var root = new GameObject(context.playerTypeName);
         GameObject visual = null;
         try
         {
@@ -2176,7 +2304,7 @@ internal static class GamingCouchQuickStartSetup
         var context = CreateContinuationContext(intent, GetPendingAction(intent), true);
         if (!context.HasRequiredTypes)
         {
-            LogPendingTypeWarningOnce();
+            LogPendingTypeWarningOnce(context);
             return;
         }
 
@@ -2233,15 +2361,19 @@ internal static class GamingCouchQuickStartSetup
         bool resumedAfterCompilation
     )
     {
+        var spec = GetScriptSetupSpec(intent, action);
         return new GCQuickStartSetupContinuationContext(
             intent,
             action,
             resumedAfterCompilation,
-            QuickStartFolderAssetPath,
-            GameScriptAssetPath,
-            PlayerScriptAssetPath,
-            FindScriptType(GameScriptAssetPath, GameTypeName, typeof(MonoBehaviour)),
-            FindScriptType(PlayerScriptAssetPath, PlayerTypeName, typeof(GCPlayer))
+            spec.scriptFolderAssetPath,
+            spec.gameScriptAssetPath,
+            spec.playerScriptAssetPath,
+            spec.gameTypeName,
+            spec.playerTypeName,
+            spec.listenerObjectName,
+            FindScriptType(spec.gameScriptAssetPath, spec.gameTypeName, typeof(MonoBehaviour)),
+            FindScriptType(spec.playerScriptAssetPath, spec.playerTypeName, typeof(GCPlayer))
         );
     }
 
@@ -2267,7 +2399,7 @@ internal static class GamingCouchQuickStartSetup
         }
     }
 
-    private static void LogPendingTypeWarningOnce()
+    private static void LogPendingTypeWarningOnce(GCQuickStartSetupContinuationContext context)
     {
         if (SessionState.GetBool(PendingWarningLoggedSessionKey, false))
         {
@@ -2275,7 +2407,7 @@ internal static class GamingCouchQuickStartSetup
         }
 
         SessionState.SetBool(PendingWarningLoggedSessionKey, true);
-        Debug.LogWarning("GamingCouch quick-start setup is waiting for compiled types " + GameTypeName + " and " + PlayerTypeName + ". Existing scripts will not be overwritten.");
+        Debug.LogWarning("GamingCouch quick-start setup is waiting for compiled types " + context.gameTypeName + " and " + context.playerTypeName + ". Existing scripts will not be overwritten.");
     }
 
     private static Type FindScriptType(string scriptAssetPath, string typeName, Type requiredBaseType)
@@ -2332,7 +2464,7 @@ internal static class GamingCouchQuickStartSetup
         return null;
     }
 
-    private static string BuildGameScriptSource()
+    private static string BuildGameScriptSource(string gameTypeName, string playerTypeName)
     {
         return @"using System.Collections;
 using DSB.GC;
@@ -2340,7 +2472,7 @@ using DSB.GC.Game;
 using DSB.GC.Hud;
 using UnityEngine;
 
-public class GCQuickStartGame : MonoBehaviour
+public class " + gameTypeName + @" : MonoBehaviour
 {
     [SerializeField]
     private float roundSeconds = 10.0f;
@@ -2348,7 +2480,7 @@ public class GCQuickStartGame : MonoBehaviour
     [SerializeField]
     private int maxScore = 100;
 
-    private readonly GCPlayerStore<GCQuickStartPlayer> players = new GCPlayerStore<GCQuickStartPlayer>();
+    private readonly GCPlayerStore<" + playerTypeName + @"> players = new GCPlayerStore<" + playerTypeName + @">();
     private Coroutine roundCoroutine;
 
     private void GamingCouchSetup(GCSetupOptions options)
@@ -2379,7 +2511,7 @@ public class GCQuickStartGame : MonoBehaviour
     private void GamingCouchPlay(GCPlayOptions options)
     {
         players.Clear();
-        GamingCouch.Instance.SetupPlayers<GCQuickStartPlayer>(options.players, player =>
+        GamingCouch.Instance.SetupPlayers<" + playerTypeName + @">(options.players, player =>
         {
             players.AddPlayer(player);
             player.ApplyPlayerColor();
@@ -2410,12 +2542,12 @@ public class GCQuickStartGame : MonoBehaviour
 ";
     }
 
-    private static string BuildPlayerScriptSource()
+    private static string BuildPlayerScriptSource(string playerTypeName)
     {
         return @"using DSB.GC;
 using UnityEngine;
 
-public class GCQuickStartPlayer : GCPlayer
+public class " + playerTypeName + @" : GCPlayer
 {
     [SerializeField]
     private Renderer colorRenderer;
