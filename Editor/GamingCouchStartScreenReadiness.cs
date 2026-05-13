@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using DSB.GC;
 using DSB.GC.Dev;
 using UnityEditor;
@@ -297,6 +298,7 @@ internal sealed class GCStartScreenReadiness
     internal readonly GamingCouch[] gamingCouches;
     internal readonly GamingCouch gamingCouch;
     internal readonly UnityEngine.Object listener;
+    internal readonly bool hasSerializedListenerReference;
     internal readonly UnityEngine.Object playerPrefab;
     internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
     internal readonly GCActiveSceneBuildSettingsReadiness buildSettings;
@@ -314,7 +316,8 @@ internal sealed class GCStartScreenReadiness
         GCStartScreenLocalPlayJsonReadiness localPlayJson,
         GCActiveSceneBuildSettingsReadiness buildSettings = null,
         GCGameViewAspectReadiness gameViewAspect = null,
-        GCWebGLExportReadiness webGLExport = null
+        GCWebGLExportReadiness webGLExport = null,
+        bool hasSerializedListenerReference = false
     )
     {
         this.scene = scene;
@@ -324,6 +327,7 @@ internal sealed class GCStartScreenReadiness
         this.gamingCouches = gamingCouches ?? new GamingCouch[0];
         this.gamingCouch = gamingCouch;
         this.listener = listener;
+        this.hasSerializedListenerReference = hasSerializedListenerReference || listener != null;
         this.playerPrefab = playerPrefab;
         this.localPlayJson = localPlayJson;
         this.buildSettings = buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
@@ -539,11 +543,34 @@ internal sealed class GCStartScreenReadiness
 
         if (listener == null)
         {
+            if (hasSerializedListenerReference)
+            {
+                return new GCStartScreenReadinessCheck(
+                    GCStartScreenReadinessCheckId.ListenerAssigned,
+                    GameScriptReadyCheckLabel,
+                    GCStartScreenReadinessCheckState.Fail,
+                    "The GamingCouch Game script reference is broken. Clear or replace the listener reference manually.",
+                    GameScriptReadyHelpText
+                );
+            }
+
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.ListenerAssigned,
                 GameScriptReadyCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
                 "Assign a Game script object to the GamingCouch listener field.",
+                GameScriptReadyHelpText
+            );
+        }
+
+        var compatibility = GCStartScreenGameScriptReceiverCompatibility.Inspect(listener);
+        if (!compatibility.isCompatible)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.ListenerAssigned,
+                GameScriptReadyCheckLabel,
+                GCStartScreenReadinessCheckState.Fail,
+                compatibility.message,
                 GameScriptReadyHelpText
             );
         }
@@ -754,6 +781,11 @@ internal sealed class GCStartScreenReadiness
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 return gamingCouches != null && gamingCouches.Length == 0;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
+                if (hasSerializedListenerReference)
+                {
+                    return false;
+                }
+
                 return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
                 return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName);
@@ -802,6 +834,97 @@ internal sealed class GCStartScreenReadiness
     }
 }
 
+internal sealed class GCStartScreenGameScriptReceiverCompatibility
+{
+    private const string SetupMethodName = "GamingCouchSetup";
+    private const string PlayMethodName = "GamingCouchPlay";
+
+    internal readonly bool isCompatible;
+    internal readonly string message;
+
+    private GCStartScreenGameScriptReceiverCompatibility(bool isCompatible, string message)
+    {
+        this.isCompatible = isCompatible;
+        this.message = message;
+    }
+
+    internal static GCStartScreenGameScriptReceiverCompatibility Inspect(UnityEngine.Object listener)
+    {
+        var gameObject = ResolveGameObject(listener);
+        if (gameObject == null)
+        {
+            return new GCStartScreenGameScriptReceiverCompatibility(
+                false,
+                "The GamingCouch Game script reference must point to a GameObject with a compatible listener component."
+            );
+        }
+
+        var components = gameObject.GetComponents<Component>();
+        for (var index = 0; components != null && index < components.Length; index++)
+        {
+            if (CanReceiveSetupAndPlay(components[index]))
+            {
+                return new GCStartScreenGameScriptReceiverCompatibility(
+                    true,
+                    "The GamingCouch Game script reference points to " + gameObject.name + "."
+                );
+            }
+        }
+
+        return new GCStartScreenGameScriptReceiverCompatibility(
+            false,
+            "The GamingCouch Game script reference points to " + gameObject.name + ", but no component on that object can receive both GamingCouchSetup(GCSetupOptions) and GamingCouchPlay(GCPlayOptions). Add a compatible Game script component or replace the listener reference."
+        );
+    }
+
+    private static GameObject ResolveGameObject(UnityEngine.Object listener)
+    {
+        var gameObject = listener as GameObject;
+        if (gameObject != null)
+        {
+            return gameObject;
+        }
+
+        var component = listener as Component;
+        return component != null ? component.gameObject : null;
+    }
+
+    private static bool CanReceiveSetupAndPlay(Component component)
+    {
+        if (component == null)
+        {
+            return false;
+        }
+
+        var type = component.GetType();
+        return HasReceiverMethod(type, SetupMethodName, typeof(GCSetupOptions)) &&
+               HasReceiverMethod(type, PlayMethodName, typeof(GCPlayOptions));
+    }
+
+    private static bool HasReceiverMethod(Type type, string methodName, Type parameterType)
+    {
+        while (type != null && type != typeof(MonoBehaviour))
+        {
+            var method = type.GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
+                null,
+                new[] { parameterType },
+                null
+            );
+
+            if (method != null)
+            {
+                return true;
+            }
+
+            type = type.BaseType;
+        }
+
+        return false;
+    }
+}
+
 internal static class GCStartScreenReadinessService
 {
     internal static GCStartScreenReadinessSummary InspectActiveSceneSummary()
@@ -818,6 +941,7 @@ internal static class GCStartScreenReadinessService
         var gamingCouches = GamingCouchSceneWiring.FindGamingCouchesInScene(scene);
         var gamingCouch = gamingCouches.Length == 1 ? gamingCouches[0] : null;
         var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
+        var hasSerializedListenerReference = GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
         var playerPrefab = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
         var localPlayJson = InspectLocalPlayJson();
         var buildSettings = GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
@@ -833,7 +957,8 @@ internal static class GCStartScreenReadinessService
             localPlayJson,
             buildSettings,
             gameViewAspect,
-            webGLExport
+            webGLExport,
+            hasSerializedListenerReference
         );
     }
 

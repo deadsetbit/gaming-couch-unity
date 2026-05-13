@@ -583,7 +583,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
                 return GetGamingCouchCount() > 1;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return readiness.gamingCouch == null;
+                return !IsChecklistSetupActionAvailable(id);
             case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
                 return readiness.buildSettings == null || !readiness.buildSettings.CanSetFirst;
             case GCStartScreenReadinessCheckId.GameViewAspect16By9:
@@ -593,6 +593,11 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             default:
                 return true;
         }
+    }
+
+    private bool IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId id)
+    {
+        return readiness != null && readiness.IsChecklistSetupActionAvailable(id);
     }
 
     private void FocusChecklistTarget(GCStartScreenReadinessCheckId id)
@@ -826,9 +831,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 return GetGamingCouchCount() == 0 ? "Create GamingCouch" : null;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
-                return "Create & Wire Game";
+                return IsChecklistSetupActionAvailable(checkId) ? "Create & Wire Game" : null;
             case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return "Wire Player Prefab";
+                return IsChecklistSetupActionAvailable(checkId) ? "Wire Player Prefab" : null;
             case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
                 return readiness != null && readiness.buildSettings != null && readiness.buildSettings.CanSetFirst
                     ? "Set First Build Scene"

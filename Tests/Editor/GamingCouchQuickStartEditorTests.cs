@@ -145,7 +145,7 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(missingCheck.label, Is.EqualTo("Game script is ready"));
         Assert.That(missingCheck.message, Does.Contain("Game script object"));
 
-        var listener = new GameObject("Existing Game");
+        var listener = CreateCompatibleListener("Existing Game");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
         var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
@@ -161,7 +161,7 @@ public sealed class GamingCouchQuickStartEditorTests
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var missingReadiness = GCStartScreenReadinessService.InspectActiveScene();
         var missingCheck = missingReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
-        var listener = new GameObject("Existing Game");
+        var listener = CreateCompatibleListener("Existing Game");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
         var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
@@ -174,6 +174,29 @@ public sealed class GamingCouchQuickStartEditorTests
 
             SetStartScreenWindowReadiness(window, readyReadiness);
             Assert.That(GetChecklistActionLabel(window, readyCheck), Is.EqualTo("Focus Game Script"));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(window);
+        }
+    }
+
+    [Test]
+    public void StartScreenWindowDoesNotOfferGameScriptSetupActionForAssignedIncompatibleListener()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Incomplete Listener");
+        listener.AddComponent<SetupOnlyGameScriptReceiver>();
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
+
+        try
+        {
+            SetStartScreenWindowReadiness(window, readiness);
+
+            Assert.That(GetChecklistActionLabel(window, check), Is.Null);
         }
         finally
         {
@@ -200,7 +223,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void ReadinessReportsIndividualMissingReferenceStates()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
 
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
@@ -218,6 +241,95 @@ public sealed class GamingCouchQuickStartEditorTests
         AssertCheck(ready, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
         AssertCheck(ready, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Pass);
         AssertCollapsedGamingCouchChecklist(ready);
+    }
+
+    [Test]
+    public void ReadinessAcceptsCompatibleCustomListenerNotNamedGame()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Round Coordinator");
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(check.message, Does.Contain("Round Coordinator"));
+    }
+
+    [Test]
+    public void ReadinessAcceptsPublicInheritedReceiverMethods()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Inherited Listener");
+        listener.AddComponent<InheritedCompatibleGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+    }
+
+    [Test]
+    public void ReadinessRejectsAssignedListenerWithoutSetupAndPlayReceivers()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Incomplete Listener");
+        listener.AddComponent<SetupOnlyGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("Incomplete Listener"));
+        Assert.That(check.message, Does.Contain("GamingCouchSetup(GCSetupOptions)"));
+        Assert.That(check.message, Does.Contain("GamingCouchPlay(GCPlayOptions)"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessRejectsReceiverMethodsWithWrongSignatures()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Wrong Signature Listener");
+        listener.AddComponent<WrongSignatureGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("Wrong Signature Listener"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessReportsBrokenSerializedListenerReferenceGuidance()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            null,
+            null,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            CreateReadyWebGLExportReadiness(),
+            true
+        );
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("broken"));
+        Assert.That(check.message, Does.Contain("Clear or replace"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
     }
 
     [Test]
@@ -545,7 +657,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void StartScreenReadinessSummaryReportsNoPendingItemsWhenReady()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
@@ -613,7 +725,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void WebGLExportChecklistRowReportsWarningWithoutSceneSetupAction()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
@@ -661,7 +773,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void WebGLExportChecklistRowBlockedDoesNotEnterGlobalSceneSetupAction()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
@@ -709,7 +821,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void WebGLExportChecklistRowMapsReadyAndNullReadinessStates()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
@@ -931,7 +1043,7 @@ public sealed class GamingCouchQuickStartEditorTests
     public void SetupActionAvailabilityIncludesLaunchReadinessRows()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Existing Listener");
+        var listener = CreateCompatibleListener("Existing Listener");
         var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
@@ -995,6 +1107,13 @@ public sealed class GamingCouchQuickStartEditorTests
         var gameObject = new GameObject(name);
         gameObject.SetActive(false);
         return gameObject.AddComponent<GamingCouch>();
+    }
+
+    private static GameObject CreateCompatibleListener(string name)
+    {
+        var gameObject = new GameObject(name);
+        gameObject.AddComponent<CompatibleGameScriptReceiver>();
+        return gameObject;
     }
 
     private static GameObject CreatePlayerPrefabObject(string name)
@@ -1397,5 +1516,49 @@ public sealed class GamingCouchQuickStartEditorTests
         {
             cleanupErrors.Add(exception);
         }
+    }
+}
+
+internal sealed class CompatibleGameScriptReceiver : MonoBehaviour
+{
+    private void GamingCouchSetup(GCSetupOptions options)
+    {
+    }
+
+    private void GamingCouchPlay(GCPlayOptions options)
+    {
+    }
+}
+
+internal sealed class SetupOnlyGameScriptReceiver : MonoBehaviour
+{
+    private void GamingCouchSetup(GCSetupOptions options)
+    {
+    }
+}
+
+internal abstract class CompatibleGameScriptReceiverBase : MonoBehaviour
+{
+    public void GamingCouchSetup(GCSetupOptions options)
+    {
+    }
+
+    public void GamingCouchPlay(GCPlayOptions options)
+    {
+    }
+}
+
+internal sealed class InheritedCompatibleGameScriptReceiver : CompatibleGameScriptReceiverBase
+{
+}
+
+internal sealed class WrongSignatureGameScriptReceiver : MonoBehaviour
+{
+    public void GamingCouchSetup()
+    {
+    }
+
+    public void GamingCouchPlay(string options)
+    {
     }
 }
