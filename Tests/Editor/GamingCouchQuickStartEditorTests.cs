@@ -40,6 +40,9 @@ public sealed class GamingCouchQuickStartEditorTests
     private bool previousStripUnusedMeshComponents;
     private bool previousSplashScreenShow;
     private bool previousSplashScreenShowUnityLogo;
+    private bool createdQuickStartProjectFolderForPrefabTest;
+    private bool createdQuickStartFolderForPrefabTest;
+    private bool createdQuickStartPrefabForPrefabTest;
 
     [SetUp]
     public void SetUp()
@@ -71,6 +74,7 @@ public sealed class GamingCouchQuickStartEditorTests
         var cleanupErrors = new List<Exception>();
 
         RunCleanup(RestoreActiveSceneAndCloseTestScene, cleanupErrors);
+        RunCleanup(DeleteQuickStartPrefabTestAssets, cleanupErrors);
         RunCleanup(DeleteTestAssetFolder, cleanupErrors);
         RunCleanup(RestoreBuildSettings, cleanupErrors);
         RunCleanup(RestoreSuppressAutoOpenSetting, cleanupErrors);
@@ -391,6 +395,106 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(gameSpec.requiresQuickStartFolders, Is.False);
         Assert.That(playerPrefabSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.GameScriptAssetPath));
         Assert.That(playerPrefabSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.PlayerScriptAssetPath));
+    }
+
+    [Test]
+    public void GeneratedRootGameSourceDemonstratesGamingCouchSetupAndPlayFlow()
+    {
+        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveSceneGameListener
+        );
+        var source = gameSpec.BuildGameScriptSource();
+
+        Assert.That(source, Does.Contain("public class Game : MonoBehaviour"));
+        Assert.That(source, Does.Contain("private void GamingCouchSetup(GCSetupOptions options)"));
+        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupGameVersus(new GCGameVersusSetupOptions"));
+        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupDone();"));
+        Assert.That(source, Does.Contain("private void GamingCouchPlay(GCPlayOptions options)"));
+        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupPlayers<Player>(options.players"));
+        Assert.That(source, Does.Contain("players.AddPlayer(player);"));
+        Assert.That(source, Does.Contain("player.ApplyPlayerColor();"));
+        Assert.That(source, Does.Contain("private void ApplyRandomFinalScores()"));
+        Assert.That(source, Does.Contain("Random.Range(0, clampedMaxScore + 1)"));
+        Assert.That(source, Does.Contain("player.SetScore("));
+        Assert.That(source, Does.Contain("player.SetFinished("));
+        Assert.That(source, Does.Contain("GamingCouch.Instance.GameOver();"));
+    }
+
+    [Test]
+    public void GeneratedRootPlayerSourceExtendsGCPlayerAndSupportsColorPlaceholderPrefab()
+    {
+        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveSceneGameListener
+        );
+        var source = gameSpec.BuildPlayerScriptSource();
+
+        Assert.That(source, Does.Contain("public class Player : GCPlayer"));
+        Assert.That(source, Does.Contain("private Renderer colorRenderer;"));
+        Assert.That(source, Does.Contain("private void Reset()"));
+        Assert.That(source, Does.Contain("private void OnValidate()"));
+        Assert.That(source, Does.Contain("private void Start()"));
+        Assert.That(source, Does.Contain("public void ApplyPlayerColor()"));
+        Assert.That(source, Does.Contain("colorRenderer.material.color = ColorBase;"));
+        Assert.That(source, Does.Contain("colorRenderer = GetComponentInChildren<Renderer>();"));
+        Assert.That(source, Does.Contain("public override string GetHudValueText()"));
+        Assert.That(source, Does.Contain("return Score.ToString();"));
+    }
+
+    [Test]
+    public void QuickStartPlayerPrefabWiresVisiblePlaceholderRendererToPlayerColorField()
+    {
+        ReserveQuickStartPrefabPathForTest();
+        var context = new GCQuickStartSetupContinuationContext(
+            GCQuickStartSetupIntent.ActiveScene,
+            GCQuickStartSetupAction.ActiveScenePlayerPrefab,
+            false,
+            GamingCouchQuickStartSetup.QuickStartFolderAssetPath,
+            GamingCouchQuickStartSetup.GameScriptAssetPath,
+            GamingCouchQuickStartSetup.PlayerScriptAssetPath,
+            nameof(CompatibleGameScriptReceiver),
+            nameof(ColorPlaceholderPrefabPlayer),
+            "Game",
+            typeof(CompatibleGameScriptReceiver),
+            typeof(ColorPlaceholderPrefabPlayer)
+        );
+
+        var result = GamingCouchQuickStartSetup.EnsureQuickStartPlayerPrefab(context);
+        createdQuickStartPrefabForPrefabTest = result.changed;
+
+        Assert.That(result.IsBlocked, Is.False, string.Join("\n", result.blockedReasons));
+        Assert.That(result.changed, Is.True);
+        Assert.That(result.prefab, Is.Not.Null);
+        Assert.That(result.prefab.name, Is.EqualTo(nameof(ColorPlaceholderPrefabPlayer)));
+
+        var player = result.prefab.GetComponent<ColorPlaceholderPrefabPlayer>();
+        var visual = result.prefab.transform.Find("Visual");
+        Assert.That(player, Is.Not.Null);
+        Assert.That(visual, Is.Not.Null);
+
+        var renderer = visual.GetComponent<Renderer>();
+        Assert.That(renderer, Is.Not.Null);
+
+        var serializedPlayer = new SerializedObject(player);
+        var colorRendererProperty = serializedPlayer.FindProperty("colorRenderer");
+        Assert.That(colorRendererProperty, Is.Not.Null);
+        Assert.That(colorRendererProperty.objectReferenceValue, Is.SameAs(renderer));
+    }
+
+    [Test]
+    public void GeneratedQuickStartSourceKeepsLegacyTypeNames()
+    {
+        var quickStartSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
+            GCQuickStartSetupIntent.QuickStartScene,
+            GCQuickStartSetupAction.QuickStartScene
+        );
+        var gameSource = quickStartSpec.BuildGameScriptSource();
+        var playerSource = quickStartSpec.BuildPlayerScriptSource();
+
+        Assert.That(gameSource, Does.Contain("public class GCQuickStartGame : MonoBehaviour"));
+        Assert.That(gameSource, Does.Contain("GamingCouch.Instance.SetupPlayers<GCQuickStartPlayer>(options.players"));
+        Assert.That(playerSource, Does.Contain("public class GCQuickStartPlayer : GCPlayer"));
     }
 
     [Test]
@@ -1558,6 +1662,34 @@ public sealed class GamingCouchQuickStartEditorTests
         }
     }
 
+    private void ReserveQuickStartPrefabPathForTest()
+    {
+        var playerPrefabFullPath = AssetPathToFullPathUnchecked(GamingCouchQuickStartSetup.PlayerPrefabAssetPath);
+        if (Directory.Exists(playerPrefabFullPath) || File.Exists(playerPrefabFullPath))
+        {
+            Assert.Ignore("Skipping quick-start prefab creation test because " + GamingCouchQuickStartSetup.PlayerPrefabAssetPath + " already exists on disk.");
+        }
+
+        if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(GamingCouchQuickStartSetup.PlayerPrefabAssetPath) != null)
+        {
+            Assert.Ignore("Skipping quick-start prefab creation test because " + GamingCouchQuickStartSetup.PlayerPrefabAssetPath + " already exists.");
+        }
+
+        if (!AssetDatabase.IsValidFolder(GamingCouchQuickStartSetup.ProjectFolderAssetPath))
+        {
+            var guid = AssetDatabase.CreateFolder("Assets", "GamingCouch");
+            Assert.That(string.IsNullOrEmpty(guid), Is.False);
+            createdQuickStartProjectFolderForPrefabTest = true;
+        }
+
+        if (!AssetDatabase.IsValidFolder(GamingCouchQuickStartSetup.QuickStartFolderAssetPath))
+        {
+            var guid = AssetDatabase.CreateFolder(GamingCouchQuickStartSetup.ProjectFolderAssetPath, "QuickStart");
+            Assert.That(string.IsNullOrEmpty(guid), Is.False);
+            createdQuickStartFolderForPrefabTest = true;
+        }
+    }
+
     private void DeleteTestAssetFolder()
     {
         if (string.IsNullOrEmpty(testFolderAssetPath) ||
@@ -1581,6 +1713,40 @@ public sealed class GamingCouchQuickStartEditorTests
         }
 
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private void DeleteQuickStartPrefabTestAssets()
+    {
+        if (createdQuickStartPrefabForPrefabTest)
+        {
+            AssetDatabase.DeleteAsset(GamingCouchQuickStartSetup.PlayerPrefabAssetPath);
+            createdQuickStartPrefabForPrefabTest = false;
+        }
+
+        if (createdQuickStartFolderForPrefabTest &&
+            AssetDatabase.IsValidFolder(GamingCouchQuickStartSetup.QuickStartFolderAssetPath) &&
+            IsAssetFolderEmpty(GamingCouchQuickStartSetup.QuickStartFolderAssetPath))
+        {
+            AssetDatabase.DeleteAsset(GamingCouchQuickStartSetup.QuickStartFolderAssetPath);
+            createdQuickStartFolderForPrefabTest = false;
+        }
+
+        if (createdQuickStartProjectFolderForPrefabTest &&
+            AssetDatabase.IsValidFolder(GamingCouchQuickStartSetup.ProjectFolderAssetPath) &&
+            IsAssetFolderEmpty(GamingCouchQuickStartSetup.ProjectFolderAssetPath))
+        {
+            AssetDatabase.DeleteAsset(GamingCouchQuickStartSetup.ProjectFolderAssetPath);
+            createdQuickStartProjectFolderForPrefabTest = false;
+        }
+
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private static bool IsAssetFolderEmpty(string assetPath)
+    {
+        var fullPath = AssetPathToFullPathUnchecked(assetPath);
+        return Directory.Exists(fullPath) &&
+               Directory.GetFileSystemEntries(fullPath).Length == 0;
     }
 
     private void RestoreBuildSettings()
@@ -1677,6 +1843,12 @@ internal abstract class CompatibleGameScriptReceiverBase : MonoBehaviour
 
 internal sealed class InheritedCompatibleGameScriptReceiver : CompatibleGameScriptReceiverBase
 {
+}
+
+internal sealed class ColorPlaceholderPrefabPlayer : GCPlayer
+{
+    [SerializeField]
+    private Renderer colorRenderer;
 }
 
 internal sealed class WrongSignatureGameScriptReceiver : MonoBehaviour

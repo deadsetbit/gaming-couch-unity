@@ -2486,6 +2486,7 @@ public class " + gameTypeName + @" : MonoBehaviour
     private void GamingCouchSetup(GCSetupOptions options)
     {
         var clampedMaxScore = Mathf.Max(1, maxScore);
+        // Configure the game mode and HUD before telling GamingCouch setup is complete.
         GamingCouch.Instance.SetupGameVersus(new GCGameVersusSetupOptions
         {
             maxScore = clampedMaxScore,
@@ -2511,6 +2512,7 @@ public class " + gameTypeName + @" : MonoBehaviour
     private void GamingCouchPlay(GCPlayOptions options)
     {
         players.Clear();
+        // Spawn the player prefab assigned on the GamingCouch object and keep typed references.
         GamingCouch.Instance.SetupPlayers<" + playerTypeName + @">(options.players, player =>
         {
             players.AddPlayer(player);
@@ -2529,14 +2531,18 @@ public class " + gameTypeName + @" : MonoBehaviour
     {
         yield return new WaitForSeconds(Mathf.Max(0.1f, roundSeconds));
 
+        ApplyRandomFinalScores();
+        GamingCouch.Instance.GameOver();
+    }
+
+    private void ApplyRandomFinalScores()
+    {
         var clampedMaxScore = Mathf.Max(1, maxScore);
         foreach (var player in players.Players)
         {
             player.SetScore(Random.Range(0, clampedMaxScore + 1), ""Quick-start round complete"");
             player.SetFinished(""Quick-start round complete"");
         }
-
-        GamingCouch.Instance.GameOver();
     }
 }
 ";
