@@ -319,8 +319,8 @@ internal sealed class GCQuickStartSetupContinuationContext
 internal static class GamingCouchQuickStartSetup
 {
     internal const string ProjectFolderAssetPath = "Assets/GamingCouch";
-    internal const string QuickStartFolderAssetPath = ProjectFolderAssetPath + "/QuickStart";
     internal const string ExampleFolderAssetPath = ProjectFolderAssetPath + "/GCExample";
+    internal const string QuickStartFolderAssetPath = ExampleFolderAssetPath;
     internal const string GameTypeName = "GCQuickStartGame";
     internal const string PlayerTypeName = "GCQuickStartPlayer";
     internal const string GameScriptAssetPath = QuickStartFolderAssetPath + "/" + GameTypeName + ".cs";
@@ -345,6 +345,13 @@ internal static class GamingCouchQuickStartSetup
     private const string CreateCameraUndoName = "Create Quick-Start Camera";
     private const string CreateLightUndoName = "Create Quick-Start Light";
     private const string PlayerVisualName = "Visual";
+    private const string ExampleTemplateHeader =
+        "/*\n" +
+        " * GamingCouch example template file.\n" +
+        " *\n" +
+        " * Move this script into your project's own scripts folder, then rename the file and class to fit your project.\n" +
+        " * For example: Game.cs/Game for your game script and Player.cs/Player for your player script.\n" +
+        " */\n\n";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
     private static readonly GCQuickStartScriptSetupSpec QuickStartScriptSetupSpec =
@@ -357,8 +364,8 @@ internal static class GamingCouchQuickStartSetup
             ListenerObjectName,
             true,
             true,
-            () => BuildGameScriptSource(GameTypeName, PlayerTypeName),
-            () => BuildPlayerScriptSource(PlayerTypeName)
+            () => BuildGameScriptSource(GameTypeName, PlayerTypeName, false),
+            () => BuildPlayerScriptSource(PlayerTypeName, false)
         );
     private static readonly GCQuickStartScriptSetupSpec ActiveSceneGameScriptSetupSpec =
         new GCQuickStartScriptSetupSpec(
@@ -370,8 +377,8 @@ internal static class GamingCouchQuickStartSetup
             ActiveSceneGameListenerObjectName,
             true,
             false,
-            () => BuildGameScriptSource(ActiveSceneGameTypeName, ActiveScenePlayerTypeName),
-            () => BuildPlayerScriptSource(ActiveScenePlayerTypeName)
+            () => BuildGameScriptSource(ActiveSceneGameTypeName, ActiveScenePlayerTypeName, true),
+            () => BuildPlayerScriptSource(ActiveScenePlayerTypeName, true)
         );
     private static Action<GCQuickStartSetupContinuationContext> scriptsReadyHandlers;
     private static GCQuickStartSceneSetupResult lastQuickStartSceneSetupResult;
@@ -2506,9 +2513,13 @@ internal static class GamingCouchQuickStartSetup
         return null;
     }
 
-    private static string BuildGameScriptSource(string gameTypeName, string playerTypeName)
+    private static string BuildGameScriptSource(
+        string gameTypeName,
+        string playerTypeName,
+        bool includeExampleTemplateHeader
+    )
     {
-        return @"using System.Collections;
+        return (includeExampleTemplateHeader ? ExampleTemplateHeader : string.Empty) + @"using System.Collections;
 using DSB.GC;
 using DSB.GC.Game;
 using DSB.GC.Hud;
@@ -2590,9 +2601,12 @@ public class " + gameTypeName + @" : MonoBehaviour
 ";
     }
 
-    private static string BuildPlayerScriptSource(string playerTypeName)
+    private static string BuildPlayerScriptSource(
+        string playerTypeName,
+        bool includeExampleTemplateHeader
+    )
     {
-        return @"using DSB.GC;
+        return (includeExampleTemplateHeader ? ExampleTemplateHeader : string.Empty) + @"using DSB.GC;
 using UnityEngine;
 
 public class " + playerTypeName + @" : GCPlayer
