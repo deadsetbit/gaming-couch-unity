@@ -43,6 +43,8 @@ public sealed class GamingCouchQuickStartEditorTests
     private bool createdQuickStartProjectFolderForPrefabTest;
     private bool createdQuickStartFolderForPrefabTest;
     private bool createdQuickStartPrefabForPrefabTest;
+    private bool createdRootGameScriptPathCollisionForTest;
+    private bool createdRootPlayerScriptPathCollisionForTest;
 
     [SetUp]
     public void SetUp()
@@ -74,6 +76,7 @@ public sealed class GamingCouchQuickStartEditorTests
         var cleanupErrors = new List<Exception>();
 
         RunCleanup(RestoreActiveSceneAndCloseTestScene, cleanupErrors);
+        RunCleanup(DeleteRootScriptPathCollisionTestAssets, cleanupErrors);
         RunCleanup(DeleteQuickStartPrefabTestAssets, cleanupErrors);
         RunCleanup(DeleteTestAssetFolder, cleanupErrors);
         RunCleanup(RestoreBuildSettings, cleanupErrors);
@@ -414,6 +417,9 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(source, Does.Contain("GamingCouch.Instance.SetupPlayers<Player>(options.players"));
         Assert.That(source, Does.Contain("players.AddPlayer(player);"));
         Assert.That(source, Does.Contain("player.ApplyPlayerColor();"));
+        Assert.That(source, Does.Contain("roundCoroutine = StartCoroutine(RunRound());"));
+        Assert.That(source, Does.Contain("private IEnumerator RunRound()"));
+        Assert.That(source, Does.Contain("yield return new WaitForSeconds(Mathf.Max(0.1f, roundSeconds));"));
         Assert.That(source, Does.Contain("private void ApplyRandomFinalScores()"));
         Assert.That(source, Does.Contain("Random.Range(0, clampedMaxScore + 1)"));
         Assert.That(source, Does.Contain("player.SetScore("));
@@ -578,6 +584,75 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(listenerResult.listenerObject, Is.Null);
         Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.Null);
         Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void GameRowScriptSetupBlocksRootGameAndPlayerPathCollisionsWithoutOverwrite()
+    {
+        ReserveRootGameAndPlayerScriptPathsForCollisionTest();
+        CreateRootScriptPathCollisionDirectory(
+            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
+            ref createdRootGameScriptPathCollisionForTest
+        );
+        CreateRootScriptPathCollisionDirectory(
+            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
+            ref createdRootPlayerScriptPathCollisionForTest
+        );
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        CreateGamingCouch("GamingCouch");
+
+        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartGameListenerReference();
+
+        Assert.That(result.IsBlocked, Is.True);
+        Assert.That(result.changed, Is.False);
+        Assert.That(result.status, Is.EqualTo(GCQuickStartActiveSceneSetupStatus.Blocked));
+        AssertHasEntryContaining(result.details, "Cannot create script Assets/Game.cs because a folder exists at that path.");
+        AssertHasEntryContaining(result.details, "Cannot create script Assets/Player.cs because a folder exists at that path.");
+        Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void CreateAndWireGameResultHandlingKeepsPendingCompilationVisibleAndReadySilent()
+    {
+        var getMessageType = typeof(GamingCouchStartScreenWindow)
+            .GetMethod("GetActiveSceneResultMessageType", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.That(getMessageType, Is.Not.Null);
+        var pendingResult = new GCQuickStartActiveSceneSetupResult(
+            GCQuickStartActiveSceneSetupStatus.PendingCompilation,
+            true,
+            "Created missing quick-start scripts and queued setup continuation after Unity compiles them.",
+            new[]
+            {
+                "Created: Assets/Game.cs",
+                "Created: Assets/Player.cs",
+            }
+        );
+
+        var pendingMessageType = (MessageType)getMessageType.Invoke(null, new object[] { pendingResult });
+
+        Assert.That(pendingMessageType, Is.EqualTo(MessageType.Warning));
+        Assert.That(ShouldShowStartScreenActionResult(pendingMessageType), Is.True);
+        AssertHasEntryContaining(pendingResult.details, "Created: Assets/Game.cs");
+        AssertHasEntryContaining(pendingResult.details, "Created: Assets/Player.cs");
+
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Game");
+        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
+
+        try
+        {
+            Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+
+            InvokeStartScreenRunEnsureGameListener(window);
+
+            Assert.That(GetStartScreenActionMessage(window), Is.Null);
+            Assert.That(GetStartScreenActionDetails(window), Is.Empty);
+            Assert.That(GetStartScreenActionMessageType(window), Is.EqualTo(MessageType.Info));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(window);
+        }
     }
 
     [Test]
@@ -1566,6 +1641,77 @@ public sealed class GamingCouchQuickStartEditorTests
             .Invoke(window, new object[] { check });
     }
 
+    private static bool ShouldShowStartScreenActionResult(MessageType messageType)
+    {
+        var shouldShowActionResult = typeof(GamingCouchStartScreenWindow)
+            .GetMethod("ShouldShowActionResult", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.That(shouldShowActionResult, Is.Not.Null);
+
+        return (bool)shouldShowActionResult.Invoke(null, new object[] { messageType });
+    }
+
+    private static void InvokeStartScreenRunEnsureGameListener(GamingCouchStartScreenWindow window)
+    {
+        var method = typeof(GamingCouchStartScreenWindow)
+            .GetMethod("RunEnsureGameListener", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(method, Is.Not.Null);
+
+        method.Invoke(window, null);
+    }
+
+    private static string GetStartScreenActionMessage(GamingCouchStartScreenWindow window)
+    {
+        var field = typeof(GamingCouchStartScreenWindow)
+            .GetField("actionMessage", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null);
+
+        return (string)field.GetValue(window);
+    }
+
+    private static MessageType GetStartScreenActionMessageType(GamingCouchStartScreenWindow window)
+    {
+        var field = typeof(GamingCouchStartScreenWindow)
+            .GetField("actionMessageType", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null);
+
+        return (MessageType)field.GetValue(window);
+    }
+
+    private static string[] GetStartScreenActionDetails(GamingCouchStartScreenWindow window)
+    {
+        var field = typeof(GamingCouchStartScreenWindow)
+            .GetField("actionDetails", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null);
+
+        return (string[])field.GetValue(window);
+    }
+
+    private void ReserveRootGameAndPlayerScriptPathsForCollisionTest()
+    {
+        ReserveRootScriptPathForCollisionTest(GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath);
+        ReserveRootScriptPathForCollisionTest(GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath);
+    }
+
+    private static void ReserveRootScriptPathForCollisionTest(string assetPath)
+    {
+        var fullPath = AssetPathToFullPathUnchecked(assetPath);
+        if (Directory.Exists(fullPath) || File.Exists(fullPath))
+        {
+            Assert.Ignore("Skipping root script path collision test because " + assetPath + " already exists on disk.");
+        }
+
+        if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath) != null)
+        {
+            Assert.Ignore("Skipping root script path collision test because " + assetPath + " already exists.");
+        }
+    }
+
+    private static void CreateRootScriptPathCollisionDirectory(string assetPath, ref bool created)
+    {
+        Directory.CreateDirectory(AssetPathToFullPathUnchecked(assetPath));
+        created = true;
+    }
+
     private void EnsureTestAssetFolder()
     {
         if (AssetDatabase.IsValidFolder(testFolderAssetPath))
@@ -1740,6 +1886,53 @@ public sealed class GamingCouchQuickStartEditorTests
         }
 
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private void DeleteRootScriptPathCollisionTestAssets()
+    {
+        DeleteRootScriptPathCollisionTestAsset(
+            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
+            ref createdRootGameScriptPathCollisionForTest
+        );
+        DeleteRootScriptPathCollisionTestAsset(
+            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
+            ref createdRootPlayerScriptPathCollisionForTest
+        );
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private static void DeleteRootScriptPathCollisionTestAsset(string assetPath, ref bool created)
+    {
+        if (!created)
+        {
+            return;
+        }
+
+        var fullPath = AssetPathToFullPathUnchecked(assetPath);
+        if (Directory.Exists(fullPath))
+        {
+            var nestedEntries = Directory.GetFileSystemEntries(fullPath);
+            if (nestedEntries.Length > 0)
+            {
+                throw new InvalidOperationException(
+                    "Refusing to recursively delete non-empty collision test folder " + assetPath + "."
+                );
+            }
+
+            var deletedThroughAssetDatabase = AssetDatabase.DeleteAsset(assetPath);
+            if (!deletedThroughAssetDatabase && Directory.Exists(fullPath))
+            {
+                Directory.Delete(fullPath, false);
+            }
+        }
+
+        var metaPath = fullPath + ".meta";
+        if (!Directory.Exists(fullPath) && File.Exists(metaPath))
+        {
+            File.Delete(metaPath);
+        }
+
+        created = false;
     }
 
     private static bool IsAssetFolderEmpty(string assetPath)
