@@ -728,7 +728,11 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        if (GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
+        var listenerReferenceState = GamingCouchSceneWiring.GetObjectReferenceState(
+            gamingCouch,
+            GamingCouchSceneWiring.ListenerPropertyName
+        );
+        if (listenerReferenceState == GamingCouchObjectReferenceState.Assigned)
         {
             details.Add("The GamingCouch Game script reference already contains a serialized reference.");
             return CreateActiveSceneResult(
@@ -737,6 +741,11 @@ internal static class GamingCouchQuickStartSetup
                 "Game script setup was already complete; existing reference was reused.",
                 details
             );
+        }
+
+        if (listenerReferenceState == GamingCouchObjectReferenceState.Missing)
+        {
+            details.Add("The GamingCouch listener field points to a missing GameObject and will be replaced.");
         }
 
         var scriptResult = EnsureQuickStartScripts(
@@ -986,8 +995,8 @@ internal static class GamingCouchQuickStartSetup
 
     private static bool IsActiveSceneQuickStartWiringReady(GamingCouch gamingCouch)
     {
-        return GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) &&
-               GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
+        return GamingCouchSceneWiring.HasAssignedObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) &&
+               GamingCouchSceneWiring.HasAssignedObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
     }
 
     private static GCActiveSceneBuildSettingsSetupResult EnsureActiveSceneFirstBuildSettingsScene(
@@ -1287,7 +1296,11 @@ internal static class GamingCouchQuickStartSetup
             );
         }
 
-        if (GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))
+        var listenerReferenceState = GamingCouchSceneWiring.GetObjectReferenceState(
+            gamingCouch,
+            GamingCouchSceneWiring.ListenerPropertyName
+        );
+        if (listenerReferenceState == GamingCouchObjectReferenceState.Assigned)
         {
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Ready,
@@ -1296,6 +1309,11 @@ internal static class GamingCouchQuickStartSetup
                 "The GamingCouch Game script reference already contains a serialized reference.",
                 blockedReasons
             );
+        }
+
+        if (listenerReferenceState == GamingCouchObjectReferenceState.Missing)
+        {
+            blockedReasons.Add("The GamingCouch listener field points to a missing GameObject and will be replaced.");
         }
 
         if (!GamingCouchSceneWiring.HasObjectReferenceSlot(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName))

@@ -299,6 +299,7 @@ internal sealed class GCStartScreenReadiness
     internal readonly GamingCouch gamingCouch;
     internal readonly UnityEngine.Object listener;
     internal readonly bool hasSerializedListenerReference;
+    internal readonly bool hasMissingSerializedListenerReference;
     internal readonly UnityEngine.Object playerPrefab;
     internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
     internal readonly GCActiveSceneBuildSettingsReadiness buildSettings;
@@ -317,7 +318,8 @@ internal sealed class GCStartScreenReadiness
         GCActiveSceneBuildSettingsReadiness buildSettings = null,
         GCGameViewAspectReadiness gameViewAspect = null,
         GCWebGLExportReadiness webGLExport = null,
-        bool hasSerializedListenerReference = false
+        bool hasSerializedListenerReference = false,
+        bool hasMissingSerializedListenerReference = false
     )
     {
         this.scene = scene;
@@ -328,6 +330,7 @@ internal sealed class GCStartScreenReadiness
         this.gamingCouch = gamingCouch;
         this.listener = listener;
         this.hasSerializedListenerReference = hasSerializedListenerReference || listener != null;
+        this.hasMissingSerializedListenerReference = hasMissingSerializedListenerReference && listener == null;
         this.playerPrefab = playerPrefab;
         this.localPlayJson = localPlayJson;
         this.buildSettings = buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
@@ -543,13 +546,24 @@ internal sealed class GCStartScreenReadiness
 
         if (listener == null)
         {
+            if (hasMissingSerializedListenerReference)
+            {
+                return new GCStartScreenReadinessCheck(
+                    GCStartScreenReadinessCheckId.ListenerAssigned,
+                    GameScriptReadyCheckLabel,
+                    GCStartScreenReadinessCheckState.Fail,
+                    "The GamingCouch listener field points to a missing GameObject. Use Create & Wire Game to replace it, or clear the missing listener reference manually.",
+                    GameScriptReadyHelpText
+                );
+            }
+
             if (hasSerializedListenerReference)
             {
                 return new GCStartScreenReadinessCheck(
                     GCStartScreenReadinessCheckId.ListenerAssigned,
                     GameScriptReadyCheckLabel,
                     GCStartScreenReadinessCheckState.Fail,
-                    "The GamingCouch Game script reference is broken. Clear or replace the listener reference manually.",
+                    "The GamingCouch listener reference could not be resolved. It may point to a deleted object, an unloaded asset, or a script that no longer compiles. Clear or replace the listener reference manually.",
                     GameScriptReadyHelpText
                 );
             }
@@ -781,6 +795,14 @@ internal sealed class GCStartScreenReadiness
             case GCStartScreenReadinessCheckId.GamingCouchInstance:
                 return gamingCouches != null && gamingCouches.Length == 0;
             case GCStartScreenReadinessCheckId.ListenerAssigned:
+                if (hasMissingSerializedListenerReference)
+                {
+                    return GamingCouchSceneWiring.HasObjectReferenceSlot(
+                        gamingCouch,
+                        GamingCouchSceneWiring.ListenerPropertyName
+                    );
+                }
+
                 if (hasSerializedListenerReference)
                 {
                     return false;
@@ -948,6 +970,7 @@ internal static class GCStartScreenReadinessService
         var gamingCouch = gamingCouches.Length == 1 ? gamingCouches[0] : null;
         var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
         var hasSerializedListenerReference = GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
+        var hasMissingSerializedListenerReference = GamingCouchSceneWiring.HasMissingObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
         var playerPrefab = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName);
         var localPlayJson = InspectLocalPlayJson();
         var buildSettings = GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
@@ -964,7 +987,8 @@ internal static class GCStartScreenReadinessService
             buildSettings,
             gameViewAspect,
             webGLExport,
-            hasSerializedListenerReference
+            hasSerializedListenerReference,
+            hasMissingSerializedListenerReference
         );
     }
 

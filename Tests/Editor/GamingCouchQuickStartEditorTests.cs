@@ -316,7 +316,7 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
-    public void ReadinessReportsBrokenSerializedListenerReferenceGuidance()
+    public void ReadinessReportsUnresolvedSerializedListenerReferenceGuidance()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var readiness = new GCStartScreenReadiness(
@@ -334,9 +334,32 @@ public sealed class GamingCouchQuickStartEditorTests
         var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
 
         AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
-        Assert.That(check.message, Does.Contain("broken"));
+        Assert.That(check.message, Does.Contain("could not be resolved"));
+        Assert.That(check.message, Does.Contain("deleted object"));
+        Assert.That(check.message, Does.Contain("unloaded asset"));
+        Assert.That(check.message, Does.Contain("script that no longer compiles"));
         Assert.That(check.message, Does.Contain("Clear or replace"));
         Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessReportsMissingSerializedListenerReferenceAndOffersSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Deleted Game");
+        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+
+        UnityEngine.Object.DestroyImmediate(listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        Assert.That(readiness.hasMissingSerializedListenerReference, Is.True);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("missing GameObject"));
+        Assert.That(check.message, Does.Contain("Create & Wire Game"));
+        Assert.That(check.message.Contains("broken"), Is.False);
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.True);
     }
 
     [Test]
@@ -376,6 +399,27 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(playerPrefabRerun.status, Is.EqualTo(GamingCouchSceneWiringStatus.Unchanged));
         Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.SameAs(existingListener));
         Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName), Is.SameAs(existingPlayerPrefab));
+    }
+
+    [Test]
+    public void SceneWiringReplacesMissingListenerReference()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var deletedListener = CreateCompatibleListener("Deleted Game");
+        var replacementListener = CreateCompatibleListener("Replacement Game");
+        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, deletedListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+
+        UnityEngine.Object.DestroyImmediate(deletedListener);
+
+        Assert.That(GamingCouchSceneWiring.HasMissingObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.True);
+
+        var result = GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, replacementListener);
+
+        Assert.That(result.status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+        Assert.That(result.changed, Is.True);
+        Assert.That(result.message, Does.Contain("Replaced the missing"));
+        Assert.That(GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.SameAs(replacementListener));
+        Assert.That(GamingCouchSceneWiring.HasAssignedObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName), Is.True);
     }
 
     [Test]

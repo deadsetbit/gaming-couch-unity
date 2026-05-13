@@ -75,7 +75,10 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 - The Start Screen can create or reuse a `GamingCouch` object when the active scene has none.
 - Multiple active-scene `GamingCouch` objects are a manual cleanup blocker and are never deleted automatically.
 - Game script listener and player prefab assignments are written only when the serialized fields are genuinely empty.
-- Occupied serialized listener or player prefab references, including broken or missing-object references, are preserved.
+- Occupied serialized listener or player prefab references are preserved when they still resolve to objects.
+- Missing serialized listener references caused by deleted scene objects are reported as missing GameObject references. The `Create & Wire Game` action may replace that missing listener reference with a newly created compatible `Game` object.
+- Other unresolved listener references must explain likely causes instead of calling the state "broken"; the user may need to clear or replace the listener reference manually.
+- Missing serialized player prefab references are preserved and require manual cleanup or replacement.
 - Generated quick-start assets live under `Assets/GamingCouch/QuickStart`.
 - Generated scripts, prefabs, and scenes are editable project content and are never overwritten on rerun.
 - Script generation uses a staged flow because Unity must compile generated scripts before components can be added.
@@ -123,10 +126,10 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 | ID | Task | Status | Done when | Dependencies | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Task 1 | Rename listener readiness to Game script readiness end to end. | Completed | The Start Screen checklist, shared readiness summary, inspector summary, tooltips, help text, and validation naming all use `Game script is ready` while preserving the existing readiness model. | None | Keep actionable setup rows distinct from true blockers. |
-| Task 2 | Validate compatible Game script receivers. | Completed | Assigned listener objects pass readiness when they can receive `GamingCouchSetup(GCSetupOptions)` and `GamingCouchPlay(GCPlayOptions)`, including compatible custom listener objects not named `Game`; broken references fail with manual guidance. | Task 1 | Do not require generated asset names for manually assigned compatible listeners. |
+| Task 2 | Validate compatible Game script receivers. | Completed | Assigned listener objects pass readiness when they can receive `GamingCouchSetup(GCSetupOptions)` and `GamingCouchPlay(GCPlayOptions)`, including compatible custom listener objects not named `Game`; unresolved references fail with manual guidance. | Task 1 | Do not require generated asset names for manually assigned compatible listeners. |
 | Task 3 | Implement safe `Create & Wire Game` setup. | Completed | The row action creates or reuses `Assets/Game.cs`, `Assets/Player.cs`, a scene object named `Game`, and the `Game` component through the staged compile flow, then assigns the listener only when the serialized field is empty. | Task 2 | Do not overwrite generated or user-authored assets and do not create or assign the player prefab from this action. |
 | Task 4 | Update generated starter Game and Player assets. | Completed | Generated `Game.cs` demonstrates the required GamingCouch setup and play callbacks, `SetupGameVersus`, `SetupDone`, `SetupPlayers<Player>`, randomized final scores, and `GameOver()`; generated `Player.cs` extends `GCPlayer` and supports the visible color placeholder prefab flow. | Task 3 | Existing `GCQuickStartGame` and `GCQuickStartPlayer` assets remain unmigrated unless already assigned and compatible. |
-| Task 5 | Add focused validation for Game script readiness behavior. | Completed | Package-local editor tests and static inspection cover receiver compatibility, broken listener guidance, staged compile classification, `Game.cs` and `Player.cs` conflict handling, `Create & Wire Game` result handling, and generated quick-start source structure; consuming-project/manual Unity validation remains documented as pending. | Task 1, Task 2, Task 3, Task 4 | Package-local coverage was added where feasible; consuming-project Play Mode validation remains pending/manual. |
+| Task 5 | Add focused validation for Game script readiness behavior. | Completed | Package-local editor tests and static inspection cover receiver compatibility, missing and unresolved listener guidance, staged compile classification, `Game.cs` and `Player.cs` conflict handling, `Create & Wire Game` result handling, and generated quick-start source structure; consuming-project/manual Unity validation remains documented as pending. | Task 1, Task 2, Task 3, Task 4 | Package-local coverage was added where feasible; consuming-project Play Mode validation remains pending/manual. |
 
 ## Validation
 
@@ -135,7 +138,7 @@ Available validation in this package-only checkout:
 - `git diff --check`.
 - Static inspection of Start Screen readiness rows, `Game script is ready` naming, help-button behavior, row message indentation, action separation, and inspector entry ordering.
 - Static inspection of package JSON parsing and Unity compatibility metadata where relevant to WebGL readiness.
-- Package-local editor-test coverage in `Tests/Editor/GamingCouchQuickStartEditorTests.cs` for compatible custom receivers, inherited receiver methods, incompatible receiver signatures, broken listener guidance, root `Assets/Game.cs` and `Assets/Player.cs` path collision blocking, generated `Game.cs`/`Player.cs` source structure, quick-start player prefab color wiring, `Create & Wire Game` action labels, pending-compilation warning visibility, and silent ready success classification.
+- Package-local editor-test coverage in `Tests/Editor/GamingCouchQuickStartEditorTests.cs` for compatible custom receivers, inherited receiver methods, incompatible receiver signatures, missing listener guidance and replacement, unresolved listener guidance, root `Assets/Game.cs` and `Assets/Player.cs` path collision blocking, generated `Game.cs`/`Player.cs` source structure, quick-start player prefab color wiring, `Create & Wire Game` action labels, pending-compilation warning visibility, and silent ready success classification.
 - Package-local static source inspection confirms generated quick-start play-loop structure includes `GamingCouchSetup(GCSetupOptions)`, `GamingCouchPlay(GCPlayOptions)`, `SetupGameVersus`, `SetupDone`, `SetupPlayers<Player>`, color application, a coroutine round, randomized final scores, and `GameOver()`.
 
 Pending validation requires a consuming Unity project with package import support:

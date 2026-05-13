@@ -12,6 +12,14 @@ internal enum GamingCouchSceneWiringStatus
     Blocked,
 }
 
+internal enum GamingCouchObjectReferenceState
+{
+    MissingSlot,
+    Empty,
+    Assigned,
+    Missing,
+}
+
 internal sealed class GamingCouchSceneWiringResult
 {
     internal readonly GamingCouchSceneWiringStatus status;
@@ -183,33 +191,42 @@ internal static class GamingCouchSceneWiring
 
     internal static bool HasObjectReference(GamingCouch gamingCouch, string propertyName)
     {
-        if (gamingCouch == null)
+        var state = GetObjectReferenceState(gamingCouch, propertyName);
+        return state == GamingCouchObjectReferenceState.Assigned ||
+               state == GamingCouchObjectReferenceState.Missing;
+    }
+
+    internal static bool HasAssignedObjectReference(GamingCouch gamingCouch, string propertyName)
+    {
+        return GetObjectReferenceState(gamingCouch, propertyName) == GamingCouchObjectReferenceState.Assigned;
+    }
+
+    internal static bool HasMissingObjectReference(GamingCouch gamingCouch, string propertyName)
+    {
+        return GetObjectReferenceState(gamingCouch, propertyName) == GamingCouchObjectReferenceState.Missing;
+    }
+
+    internal static GamingCouchObjectReferenceState GetObjectReferenceState(GamingCouch gamingCouch, string propertyName)
+    {
+        var property = FindObjectReferenceProperty(gamingCouch, propertyName);
+        if (property == null)
         {
-            return false;
+            return GamingCouchObjectReferenceState.MissingSlot;
         }
 
-        var serializedObject = new SerializedObject(gamingCouch);
-        serializedObject.Update();
-        var property = serializedObject.FindProperty(propertyName);
-        if (property == null || property.propertyType != SerializedPropertyType.ObjectReference)
+        if (property.objectReferenceValue != null)
         {
-            return false;
+            return GamingCouchObjectReferenceState.Assigned;
         }
 
-        return HasSerializedObjectReference(property);
+        return property.objectReferenceInstanceIDValue != 0
+            ? GamingCouchObjectReferenceState.Missing
+            : GamingCouchObjectReferenceState.Empty;
     }
 
     internal static bool HasObjectReferenceSlot(GamingCouch gamingCouch, string propertyName)
     {
-        if (gamingCouch == null)
-        {
-            return false;
-        }
-
-        var serializedObject = new SerializedObject(gamingCouch);
-        serializedObject.Update();
-        var property = serializedObject.FindProperty(propertyName);
-        return property != null && property.propertyType == SerializedPropertyType.ObjectReference;
+        return FindObjectReferenceProperty(gamingCouch, propertyName) != null;
     }
 
     internal static void MarkSceneDirty(GameObject gameObject)
@@ -261,11 +278,21 @@ internal static class GamingCouchSceneWiring
             );
         }
 
-        if (HasSerializedObjectReference(property))
+        var referenceState = GetSerializedObjectReferenceState(property);
+        if (referenceState == GamingCouchObjectReferenceState.Assigned)
         {
             return GamingCouchSceneWiringResult.UnchangedResult(
                 gamingCouch,
                 "The GamingCouch " + displayName + " reference already contains a serialized reference."
+            );
+        }
+
+        if (referenceState == GamingCouchObjectReferenceState.Missing &&
+            propertyName != ListenerPropertyName)
+        {
+            return GamingCouchSceneWiringResult.UnchangedResult(
+                gamingCouch,
+                "The GamingCouch " + displayName + " reference points to a missing object and was left unchanged."
             );
         }
 
@@ -277,12 +304,41 @@ internal static class GamingCouchSceneWiring
 
         return GamingCouchSceneWiringResult.SucceededResult(
             gamingCouch,
-            "Assigned the GamingCouch " + displayName + " reference."
+            referenceState == GamingCouchObjectReferenceState.Missing
+                ? "Replaced the missing GamingCouch " + displayName + " reference."
+                : "Assigned the GamingCouch " + displayName + " reference."
         );
     }
 
-    private static bool HasSerializedObjectReference(SerializedProperty property)
+    private static SerializedProperty FindObjectReferenceProperty(GamingCouch gamingCouch, string propertyName)
     {
-        return property.objectReferenceValue != null || property.objectReferenceInstanceIDValue != 0;
+        if (gamingCouch == null)
+        {
+            return null;
+        }
+
+        var serializedObject = new SerializedObject(gamingCouch);
+        serializedObject.Update();
+        var property = serializedObject.FindProperty(propertyName);
+        return property != null && property.propertyType == SerializedPropertyType.ObjectReference
+            ? property
+            : null;
+    }
+
+    private static GamingCouchObjectReferenceState GetSerializedObjectReferenceState(SerializedProperty property)
+    {
+        if (property == null || property.propertyType != SerializedPropertyType.ObjectReference)
+        {
+            return GamingCouchObjectReferenceState.MissingSlot;
+        }
+
+        if (property.objectReferenceValue != null)
+        {
+            return GamingCouchObjectReferenceState.Assigned;
+        }
+
+        return property.objectReferenceInstanceIDValue != 0
+            ? GamingCouchObjectReferenceState.Missing
+            : GamingCouchObjectReferenceState.Empty;
     }
 }
