@@ -772,12 +772,6 @@ public sealed class GamingCouchQuickStartEditorTests
     [Test]
     public void CreateAndWireGameResultHandlingKeepsPendingCompilationVisibleAndReadySilent()
     {
-        var getMessageType = typeof(GamingCouchStartScreenWindow)
-            .GetMethod("GetActiveSceneResultMessageType", BindingFlags.Static | BindingFlags.NonPublic);
-        var formatActionMessage = typeof(GamingCouchStartScreenWindow)
-            .GetMethod("FormatActionMessage", BindingFlags.Static | BindingFlags.NonPublic);
-        Assert.That(getMessageType, Is.Not.Null);
-        Assert.That(formatActionMessage, Is.Not.Null);
         var pendingResult = new GCQuickStartActiveSceneSetupResult(
             GCQuickStartActiveSceneSetupStatus.PendingCompilation,
             true,
@@ -789,38 +783,32 @@ public sealed class GamingCouchQuickStartEditorTests
             }
         );
 
-        var pendingMessageType = (MessageType)getMessageType.Invoke(null, new object[] { pendingResult });
-        var formattedPendingMessage = (string)formatActionMessage.Invoke(
-            null,
-            new object[] { pendingResult.message, pendingResult.details }
+        var pendingActionResult = GamingCouchStartScreenSetupActions.FromActiveSceneSetupResult(pendingResult);
+        var formattedPendingMessage = GamingCouchStartScreenSetupActions.FormatActionMessage(
+            pendingActionResult.message,
+            pendingActionResult.details
         );
 
-        Assert.That(pendingMessageType, Is.EqualTo(MessageType.Warning));
-        Assert.That(ShouldShowStartScreenActionResult(pendingMessageType), Is.True);
-        AssertHasEntryContaining(pendingResult.details, "Created: Assets/GamingCouch/GCExample/GCGameExample.cs");
-        AssertHasEntryContaining(pendingResult.details, "Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs");
+        Assert.That(pendingActionResult.messageType, Is.EqualTo(MessageType.Warning));
+        Assert.That(ShouldShowStartScreenActionResult(pendingActionResult.messageType), Is.True);
+        AssertHasEntryContaining(pendingActionResult.details, "Created: Assets/GamingCouch/GCExample/GCGameExample.cs");
+        AssertHasEntryContaining(pendingActionResult.details, "Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs");
         Assert.That(formattedPendingMessage, Does.Contain("queued setup continuation"));
         Assert.That(formattedPendingMessage, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCGameExample.cs"));
         Assert.That(formattedPendingMessage, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
 
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var listener = CreateCompatibleListener("Existing Game");
-        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
+        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
 
-        try
-        {
-            Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+        var readyActionResult = GamingCouchStartScreenSetupActions.RunSetupAction(
+            GCStartScreenReadinessActionId.CreateAndWireGameScript
+        );
 
-            InvokeStartScreenRunEnsureGameListener(window);
-
-            Assert.That(GetStartScreenActionMessage(window), Is.Null);
-            Assert.That(GetStartScreenActionDetails(window), Is.Empty);
-            Assert.That(GetStartScreenActionMessageType(window), Is.EqualTo(MessageType.Info));
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(window);
-        }
+        Assert.That(readyActionResult.messageType, Is.EqualTo(MessageType.Info));
+        Assert.That(ShouldShowStartScreenActionResult(readyActionResult.messageType), Is.False);
+        Assert.That(readyActionResult.message, Does.Contain("already complete"));
+        Assert.That(readyActionResult.details, Has.Member("The GamingCouch Game script reference already contains a serialized reference."));
     }
 
     [Test]
@@ -1906,42 +1894,6 @@ public sealed class GamingCouchQuickStartEditorTests
         Assert.That(shouldShowActionResult, Is.Not.Null);
 
         return (bool)shouldShowActionResult.Invoke(null, new object[] { messageType });
-    }
-
-    private static void InvokeStartScreenRunEnsureGameListener(GamingCouchStartScreenWindow window)
-    {
-        var method = typeof(GamingCouchStartScreenWindow)
-            .GetMethod("RunEnsureGameListener", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(method, Is.Not.Null);
-
-        method.Invoke(window, null);
-    }
-
-    private static string GetStartScreenActionMessage(GamingCouchStartScreenWindow window)
-    {
-        var field = typeof(GamingCouchStartScreenWindow)
-            .GetField("actionMessage", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null);
-
-        return (string)field.GetValue(window);
-    }
-
-    private static MessageType GetStartScreenActionMessageType(GamingCouchStartScreenWindow window)
-    {
-        var field = typeof(GamingCouchStartScreenWindow)
-            .GetField("actionMessageType", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null);
-
-        return (MessageType)field.GetValue(window);
-    }
-
-    private static string[] GetStartScreenActionDetails(GamingCouchStartScreenWindow window)
-    {
-        var field = typeof(GamingCouchStartScreenWindow)
-            .GetField("actionDetails", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null);
-
-        return (string[])field.GetValue(window);
     }
 
     private void ReserveGCExampleGameAndPlayerScriptPathsForCollisionTest()

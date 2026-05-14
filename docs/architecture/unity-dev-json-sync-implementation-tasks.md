@@ -35,7 +35,7 @@ Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Await explicit approval for Task 13 - Quick Start Setup Module.
+Next action: Await explicit approval for Task 14 - Editor Test Harness Module.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -51,7 +51,7 @@ Next action: Await explicit approval for Task 13 - Quick Start Setup Module.
 | 10. Contract Fixture Corpus | Done | Codex | Package-root Local Play Contract Fixture corpus complete; Unity editor tests consume corpus files directly. |
 | 11. Start Screen Readiness Module | Done | Codex | Behavior-neutral readiness row/action refactor complete; two local review passes complete; parent validation passed. |
 | 12. DevApp Runtime Adapter Module | Done | Codex | Outgoing runtime registration and snapshot message construction extracted; WebSocket transport and inbound command handling remain in `GCDevAppIntegration`; manual Unity editor validation passed. |
-| 13. Quick Start Setup Module | Pending | Unassigned | Start Screen setup action runner planned; keep setup behavior unchanged. |
+| 13. Quick Start Setup Module | Done | Codex | Start Screen setup action runner extracted; open-Editor bridge validation passed. |
 | 14. Editor Test Harness Module | Pending | Unassigned | Split broad editor tests by Module after Tasks 11-13 deepen their Interfaces. |
 
 ## Blocker Log
@@ -142,7 +142,12 @@ Required after every task:
 
 - Run `git diff --check`.
 - Inspect `git status --short` and confirm unrelated files were not touched.
-- Do not invoke Unity editor tests from the agent environment. User runs Unity editor tests manually from Task 12 onward; record the requested manual test scope and the user's reported result.
+- Follow `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.md` for Unity test execution:
+  - Prefer the open-Editor test bridge from this package over launching a second Unity process.
+  - Use `/Users/anttil/dev/dsb/gaming-couch-unity-template` as the known local host project when it exists and is the intended symlinked project.
+  - If the bridge runner times out without a `started` status, ask the user to open or refresh the host Unity Editor so it loads `Editor/GamingCouchCodexTestBridge.cs`, then retry.
+  - Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode.
+- Record Unity test commands and results, or the exact AGENTS.md-defined blocker/skipped validation gap, in this file under the completed task.
 - Record validation results in this file under the completed task.
 
 Required before final completion:
@@ -152,7 +157,7 @@ Required before final completion:
 - Confirm package version is `0.1.0-alpha.2` in the release/docs task.
 - Confirm public docs mention root `gc.dev.json`, editor-only Newtonsoft dependency, and required local-project files.
 - Confirm `CHANGELOG.md` records the new sync behavior and release version.
-- Run the manual Unity 2022.3 validation pass when available, or record the exact skipped environment gap.
+- Run the Unity 2022.3 validation pass through the AGENTS.md test path when available, or record the exact skipped environment gap.
 
 Manual Unity scenarios to cover before release:
 
@@ -1776,7 +1781,7 @@ This task should move setup-action dispatch out of `GamingCouchStartScreenWindow
 
 ### Status
 
-Pending.
+Done.
 
 ### Owned Files
 
@@ -1832,6 +1837,37 @@ After implementation and both review-and-patch passes:
 - Add validation results and skipped validation gaps.
 - Set current task to None if complete.
 - Set next action to approval for the next architecture roadmap slice.
+
+### Task 13 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Editor/GamingCouchStartScreenWindow.cs`
+- `Editor/GamingCouchStartScreenSetupActions.cs`
+- `Editor/GamingCouchStartScreenSetupActions.cs.meta`
+- `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`
+- `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Parent review-and-patch pass 1: confirmed Start Screen setup action dispatch moved out of `GamingCouchStartScreenWindow`; the window calls `GamingCouchStartScreenSetupActions` and applies returned focus/result/refresh instructions.
+- Parent review-and-patch pass 2: confirmed generated script, prefab, scene, non-overwrite, continuation, and WebGL setup behavior remain in existing setup Modules; `Editor/GamingCouchQuickStartSetup.cs` and public runtime payload files were not changed.
+- `git diff --check`: passed.
+- `rg -n "[ \t]+$" Editor/GamingCouchStartScreenSetupActions.cs Editor/GamingCouchStartScreenSetupActions.cs.meta Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`: no trailing whitespace matches.
+- Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveSceneQuickStart*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureCleanWebGLExportSetup`.
+- Static inspection: `GamingCouchStartScreenSetupActions` owns readiness action id dispatch, action result data, message type mapping, optional focus target, ping flag, and refresh/repaint instruction.
+- Static inspection: new Unity `.meta` GUIDs for the setup action Module and focused test file are unique within this repo.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; Unity accepted the request; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GamingCouchQuickStartEditorTests.CreateAndWireGameResultHandlingKeepsPendingCompilationVisibleAndReadySilent --timeout 300`: passed; Unity accepted the request; 1 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `git status --short --untracked-files=all`: Task 13 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+Skipped validation:
+
+- None.
 
 ## Task 14: Editor Test Harness Module
 

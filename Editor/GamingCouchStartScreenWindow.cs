@@ -398,13 +398,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void DrawActions()
     {
-        if (!ShouldShowActiveSceneSetupAction())
+        if (!GamingCouchStartScreenSetupActions.ShouldShowActiveSceneSetupAction(readiness))
         {
             return;
         }
 
         EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
-        using (new EditorGUI.DisabledScope(IsActiveSceneSetupActionBlocked()))
+        using (new EditorGUI.DisabledScope(GamingCouchStartScreenSetupActions.IsActiveSceneSetupActionBlocked(readiness)))
         {
             if (GUILayout.Button("Set up missing pieces"))
             {
@@ -413,27 +413,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         EditorGUILayout.Space();
-    }
-
-    private bool ShouldShowActiveSceneSetupAction()
-    {
-        if (readiness == null)
-        {
-            return false;
-        }
-
-        if (!IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene))
-        {
-            return false;
-        }
-
-        return readiness.HasSafeAutomatableSetupActions;
-    }
-
-    private bool IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId id)
-    {
-        var check = FindReadinessCheck(id);
-        return check != null && check.IsSatisfied;
     }
 
     private GCStartScreenReadinessCheck FindReadinessCheck(GCStartScreenReadinessCheckId id)
@@ -445,22 +424,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
         GCStartScreenReadinessCheck check;
         return readiness.TryGetCheck(id, out check) ? check : null;
-    }
-
-    private bool IsActiveSceneSetupActionBlocked()
-    {
-        if (GamingCouchQuickStartSetup.HasPendingSetup())
-        {
-            return true;
-        }
-
-        if (readiness == null)
-        {
-            return true;
-        }
-
-        return !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene) ||
-               !readiness.HasSafeAutomatableSetupActions;
     }
 
     private void DrawActionResult()
@@ -482,158 +445,41 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void RunChecklistAction(GCStartScreenReadinessCheck check)
     {
-        if (check == null || !check.HasAction)
-        {
-            SetActionResult("No checklist item is available for this action.", MessageType.Warning, null);
-            return;
-        }
-
-        var action = check.action;
-        if (action.isFocusAction)
-        {
-            FocusChecklistTarget(action);
-            return;
-        }
-
-        switch (action.id)
-        {
-            case GCStartScreenReadinessActionId.CreateGamingCouch:
-                RunEnsureGamingCouch();
-                break;
-            case GCStartScreenReadinessActionId.CreateAndWireGameScript:
-                RunEnsureGameListener();
-                break;
-            case GCStartScreenReadinessActionId.WirePlayerPrefab:
-                RunEnsurePlayerPrefab();
-                break;
-            case GCStartScreenReadinessActionId.SetFirstBuildSettingsScene:
-                RunEnsureActiveSceneFirstBuildSettingsScene();
-                break;
-            case GCStartScreenReadinessActionId.Select16By9GameView:
-                RunEnsureGameViewAspect16By9();
-                break;
-            case GCStartScreenReadinessActionId.SetUpWebGLExport:
-                RunEnsureWebGLExportSetup();
-                break;
-            default:
-                SetActionResult("No setup action is available for this checklist item.", MessageType.Info, null);
-                break;
-        }
+        ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunChecklistAction(check));
     }
 
     private bool IsChecklistActionDisabled(GCStartScreenReadinessCheck check)
     {
-        if (check == null || !check.HasAction)
-        {
-            return true;
-        }
-
-        if (check.HasFocusAction)
-        {
-            return check.action.target == null;
-        }
-
-        return IsChecklistSetupActionBlocked(check);
-    }
-
-    private bool IsChecklistSetupActionBlocked(GCStartScreenReadinessCheck check)
-    {
-        if (check == null || !check.HasSetupAction)
-        {
-            return true;
-        }
-
-        if (GamingCouchQuickStartSetup.HasPendingSetup())
-        {
-            return true;
-        }
-
-        if (readiness == null)
-        {
-            return true;
-        }
-
-        return check.action.requiresLoadedActiveScene &&
-               !IsReadinessCheckSatisfied(GCStartScreenReadinessCheckId.ActiveScene);
-    }
-
-    private void FocusChecklistTarget(GCStartScreenReadinessAction action)
-    {
-        var target = action != null ? action.target : null;
-        if (target == null)
-        {
-            SetActionResult("No checklist target is available to select.", MessageType.Warning, null);
-            return;
-        }
-
-        Selection.activeObject = target;
-        EditorGUIUtility.PingObject(target);
-        SetActionResult("Focused " + target.name + ".", MessageType.Info, null);
-    }
-
-    private void RunEnsureGamingCouch()
-    {
-        var result = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
-        if (result.gamingCouch != null)
-        {
-            Selection.activeObject = result.gamingCouch.gameObject;
-        }
-
-        SetActionResult(
-            result.message,
-            result.IsBlocked ? MessageType.Error : MessageType.Info,
-            result.changed ? null : new[] { "No scene changes were needed; the existing GamingCouch object was reused." }
-        );
-        Refresh();
-        Repaint();
-    }
-
-    private void RunEnsurePlayerPrefab()
-    {
-        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartPlayerPrefabReference();
-        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
-    }
-
-    private void RunEnsureGameListener()
-    {
-        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartGameListenerReference();
-        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
+        return GamingCouchStartScreenSetupActions.IsChecklistActionDisabled(check, readiness);
     }
 
     private void RunActiveSceneSetup()
     {
-        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartSetup();
-        SetActionResult(result.message, GetActiveSceneResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
+        ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunActiveSceneSetup());
     }
 
-    private void RunEnsureActiveSceneFirstBuildSettingsScene()
+    private void ApplySetupActionResult(GCStartScreenSetupActionResult result)
     {
-        var result = GamingCouchBuildSettingsReadiness.EnsureActiveSceneFirstEnabled();
-        SetActionResult(result.message, GetBuildSettingsResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
-    }
+        if (result == null)
+        {
+            return;
+        }
 
-    private void RunEnsureGameViewAspect16By9()
-    {
-        var result = GamingCouchGameViewAspect.SelectExisting16By9Size();
-        SetActionResult(result.message, GetGameViewAspectResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
-    }
+        if (result.focusTarget != null)
+        {
+            Selection.activeObject = result.focusTarget;
+            if (result.shouldPingFocusTarget)
+            {
+                EditorGUIUtility.PingObject(result.focusTarget);
+            }
+        }
 
-    private void RunEnsureWebGLExportSetup()
-    {
-        var result = GamingCouchWebGLExportSetup.EnsureCleanWebGLExportSetup();
-        SetActionResult(result.message, GetWebGLExportSetupResultMessageType(result), result.details);
-        Refresh();
-        Repaint();
+        SetActionResult(result.message, result.messageType, result.details);
+        if (result.shouldRefreshAndRepaint)
+        {
+            Refresh();
+            Repaint();
+        }
     }
 
     private void SetActionResult(string message, MessageType messageType, string[] details)
@@ -658,61 +504,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private static bool ShouldShowActionResult(MessageType messageType)
     {
-        return messageType == MessageType.Warning || messageType == MessageType.Error;
-    }
-
-    private static MessageType GetActiveSceneResultMessageType(GCQuickStartActiveSceneSetupResult result)
-    {
-        if (result.IsBlocked)
-        {
-            return MessageType.Error;
-        }
-
-        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
-    }
-
-    private static MessageType GetBuildSettingsResultMessageType(GCActiveSceneBuildSettingsSetupResult result)
-    {
-        return result.IsBlocked ? MessageType.Error : MessageType.Info;
-    }
-
-    private static MessageType GetGameViewAspectResultMessageType(GCGameViewAspectSetupResult result)
-    {
-        return result.IsBlocked ? MessageType.Warning : MessageType.Info;
-    }
-
-    private static MessageType GetWebGLExportSetupResultMessageType(GCWebGLExportSetupResult result)
-    {
-        if (result == null)
-        {
-            return MessageType.Error;
-        }
-
-        if (result.IsBlocked)
-        {
-            return MessageType.Error;
-        }
-
-        return result.HasWarning ? MessageType.Warning : MessageType.Info;
+        return GamingCouchStartScreenSetupActions.ShouldDisplayActionResult(messageType);
     }
 
     private static string FormatActionMessage(string message, string[] details)
     {
-        if (details == null || details.Length == 0)
-        {
-            return message;
-        }
-
-        var formatted = message;
-        for (var index = 0; index < details.Length; index++)
-        {
-            if (!string.IsNullOrEmpty(details[index]))
-            {
-                formatted += "\n- " + details[index];
-            }
-        }
-
-        return formatted;
+        return GamingCouchStartScreenSetupActions.FormatActionMessage(message, details);
     }
 
     private static GUIContent GetChecklistHelpContent(GCStartScreenReadinessCheck check)
