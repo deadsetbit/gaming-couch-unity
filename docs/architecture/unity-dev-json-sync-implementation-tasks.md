@@ -35,7 +35,7 @@ Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Await approval for the next architecture roadmap slice.
+Next action: Task 10 is tracked and awaiting implementation approval.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -48,6 +48,7 @@ Next action: Await approval for the next architecture roadmap slice.
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
 | 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
 | 9. Local Play Session Module | Done | Codex | Local Play Session Module owns active Capture, root validation, restart preflight/recapture, and issue logging coordination; two review passes complete; parent validation passed. |
+| 10. Contract Fixture Corpus | Pending | Codex | Promote the existing executable Contract Fixture cases into a package-root corpus consumed by Unity tests. |
 
 ## Blocker Log
 
@@ -1397,6 +1398,77 @@ Manual validation:
 Decisions:
 
 - No compatibility shim was kept for `GCEditorPlayJsonCapture` because there are no remaining source references after the session move.
+
+## Task 10: Contract Fixture Corpus
+
+### Objective
+
+Promote the existing executable **Contract Fixtures** from Unity test code into a package-root **Contract Fixture** corpus. Unity editor tests should consume the corpus directly so a future engine **Adapter** can reuse the same **Local Play Contract** examples without reading Unity-specific test implementation.
+
+This task is a data **Seam** only. It must not change Local Play Contract behavior, public runtime payloads, Unity Play Mode behavior, or add shared cross-engine implementation code.
+
+### Status
+
+Pending.
+
+### Owned Files
+
+- `ContractFixtures.meta`
+- `ContractFixtures/LocalPlay.meta`
+- `ContractFixtures/LocalPlay/**`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Only edit the editor test asmdef if the test corpus reader needs an explicit JSON parser reference. If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Create `ContractFixtures/LocalPlay` at the package root with Unity `.meta` hygiene for the new folder and files.
+2. Represent each **Contract Fixture** as one case folder containing:
+   - `gc.dev.json`
+   - optional `gc.metadata.json`
+   - `expected.json`
+3. Promote only the six existing `GCDevJsonContractFixtureTests` cases into the corpus:
+   - valid sparse roster **Capture**
+   - missing **Metadata** warning-only behavior
+   - **Metadata** max-player gate failure
+   - wrong **Seat** count failure
+   - unsupported `devVersion` failure
+   - preserving write keeps unrelated top-level `gc.dev.json` fields
+4. Keep `expected.json` as the portable fixture **Interface**: expected validity, issue codes/severities, **Capture** setup/play data, **Seat** identity data, and write assertions where needed.
+5. Update `GCDevJsonContractFixtureTests` so it enumerates or loads those corpus cases and writes their real `gc.dev.json` and optional `gc.metadata.json` files into a temporary root before using `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession`.
+6. Keep Unity-specific loading and NUnit assertions in tests. Do not move Unity implementation code into the corpus.
+7. Preserve public runtime payload shapes:
+   - `GCSetupOptions`
+   - `GCPlayOptions`
+   - `GCPlayerOptions`
+
+### Verification
+
+- Run `git diff --check`.
+- Statically confirm the six promoted **Contract Fixtures** exist under `ContractFixtures/LocalPlay`.
+- Statically confirm `GCDevJsonContractFixtureTests` consumes the corpus files instead of generating fixture JSON strings inline.
+- Statically confirm public runtime payloads remain unchanged:
+  - `GCSetupOptions`
+  - `GCPlayOptions`
+  - `GCPlayerOptions`
+- Run focused Unity editor tests for `GCDevJsonContractFixtureTests` if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 10 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to approval for the next architecture roadmap slice.
+
+### Task 10 Review Record
+
+Status: Pending
 
 ## Handoff Protocol
 
