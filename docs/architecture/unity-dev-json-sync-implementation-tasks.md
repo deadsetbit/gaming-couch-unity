@@ -31,11 +31,11 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Active architecture follow-up
+Overall status: Architecture follow-up complete
 
 Current task: None
 
-Next action: Task 10 is tracked and awaiting implementation approval.
+Next action: Approval for the next architecture roadmap slice.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Next action: Task 10 is tracked and awaiting implementation approval.
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
 | 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
 | 9. Local Play Session Module | Done | Codex | Local Play Session Module owns active Capture, root validation, restart preflight/recapture, and issue logging coordination; two review passes complete; parent validation passed. |
-| 10. Contract Fixture Corpus | Pending | Codex | Promote the existing executable Contract Fixture cases into a package-root corpus consumed by Unity tests. |
+| 10. Contract Fixture Corpus | Done | Codex | Package-root Local Play Contract Fixture corpus complete; Unity editor tests consume corpus files directly. |
 
 ## Blocker Log
 
@@ -1409,7 +1409,7 @@ This task is a data **Seam** only. It must not change Local Play Contract behavi
 
 ### Status
 
-Pending.
+Done.
 
 ### Owned Files
 
@@ -1468,7 +1468,92 @@ After implementation and both review-and-patch passes:
 
 ### Task 10 Review Record
 
-Status: Pending
+Status: Done
+
+Review pass 1 findings:
+
+- The Task 10 implementation promoted the six required **Contract Fixture** cases into `ContractFixtures/LocalPlay`, and `GCDevJsonContractFixtureTests` now copies each case's real `gc.dev.json` and optional `gc.metadata.json` files into a temporary project root before reading through `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession`.
+- No compile-risk patch was needed for `UnityEngine.JsonUtility` expected-file parsing, `UnityEditor.PackageManager.PackageInfo` corpus discovery, or `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef` references.
+- Successful Capture and write fixture assertions now validate required nested expected data before dereferencing it, so malformed `expected.json` files fail with targeted NUnit assertions instead of null-reference failures.
+- The task plan was prematurely marked fully `Done` and advanced to final architecture follow-up completion before review pass 1, review pass 2, and parent validation had completed.
+
+Review pass 1 patches:
+
+- Hardened `GCDevJsonContractFixtureTests` expected fixture null handling for successful Capture and write assertions.
+- Updated the top-level status, Task 10 table row, Task 10 status, and this review record so Task 10 is `In review` with review pass 1 complete rather than final `Done`.
+
+Review pass 2 findings:
+
+- `expected.json` for the successful Capture case carried Unity adapter payload fields (`setup.mode`, `setup.isServer`, and `setup.gameModeId`) as corpus data, which weakened the intended portable **Contract Fixture** Interface for future engine Adapters.
+- Static C# inspection found no compile-risk patches needed for `UnityEngine.JsonUtility`, private nested `[Serializable]` expected-data classes, `UnityEditor.PackageManager.PackageInfo`, array assertions, temp path handling, or optional metadata copying.
+- The six promoted corpus cases still match the original executable test behaviors: sparse roster Capture, missing metadata warning, metadata max-player gate failure, wrong Seat count failure, unsupported `devVersion`, and preserving-write retention of unrelated top-level `gc.dev.json` fields.
+
+Review pass 2 patches:
+
+- Changed the successful Capture fixture schema from Unity payload-shaped `setup`/`play` objects to portable contract fields: `entryKey`, `seed`, and `activePlayers`.
+- Updated `GCDevJsonContractFixtureTests` to keep Unity-specific assertions in the Unity test (`GCMode.Development`, server setup, and `GCSetupOptions.gameModeId`) while mapping portable fixture `entryKey`, `seed`, `activePlayers`, and **Seat** identity expectations onto the captured Unity payloads.
+- Updated the top-level task state and notes to show review pass 2 completion while keeping Task 10 `In review` for parent validation and final closure.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- Static corpus schema check: parsed every `ContractFixtures/LocalPlay/**/*.json`, confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, optional `gc.metadata.json` parsing, no `capture.setup`/`capture.play` payload-shaped fields, and portable success Capture fields `entryKey`, `seed`, `activePlayers`, and `seatIdentities`.
+- Static test-consumption check: `GCDevJsonContractFixtureTests` still discovers `ContractFixtures/LocalPlay`, loads `expected.json` with `JsonUtility`, copies corpus `gc.dev.json` and optional `gc.metadata.json` into a temp root, and exercises `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession.Capture`.
+- Inline-builder removal check: no `BuildDevJson`, `BuildMetadataJson`, `BuildSeats`, `StringBuilder`, `WriteDevJson`, `WriteMetadataJson`, or `AppendLine` matches remain in `GCDevJsonContractFixtureTests`.
+- Unity `.meta` hygiene and GUID check: every `ContractFixtures` directory/file has a sibling `.meta`, folder metas use `DefaultImporter`, JSON metas use `TextScriptImporter`, and the repo-wide `.meta` GUID scan found no duplicate GUIDs.
+- Public runtime payload static check: no diffs for `Runtime/GCSetupOptions.cs`, `Runtime/GCPlayOptions.cs`, `Runtime/GCPlayerSetupOptions.cs`, `Runtime/GCPlayer.cs`, or `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef`.
+
+Review pass 2 skipped validation:
+
+- Focused Unity editor tests were not run because this package root has no safe package-local Unity Test Runner command in scope, and the user explicitly disallowed unsafe Unity commands that create project artifacts.
+
+Changed paths:
+
+- `ContractFixtures.meta`
+- `ContractFixtures/LocalPlay.meta`
+- `ContractFixtures/LocalPlay/valid-sparse-roster-capture/**`
+- `ContractFixtures/LocalPlay/missing-metadata-warning-only/**`
+- `ContractFixtures/LocalPlay/metadata-max-player-gate-failure/**`
+- `ContractFixtures/LocalPlay/wrong-seat-count-failure/**`
+- `ContractFixtures/LocalPlay/unsupported-dev-version-failure/**`
+- `ContractFixtures/LocalPlay/preserving-write-unrelated-top-level-fields/**`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- Static corpus check: parsed every `ContractFixtures/LocalPlay/**/*.json` file and confirmed exactly six case folders with required `gc.dev.json` and `expected.json` files.
+- Static test-consumption check: `GCDevJsonContractFixtureTests` references `ContractFixtures/LocalPlay`, loads `expected.json`, copies corpus `gc.dev.json`/optional `gc.metadata.json` files into the temporary root, and uses `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession.Capture`.
+- Inline-builder removal check: `rg -n "BuildDevJson|BuildMetadataJson|BuildSeats|StringBuilder|WriteDevJson|WriteMetadataJson|AppendLine" Tests/Editor/GCDevJsonContractFixtureTests.cs` returned no matches.
+- Unity `.meta` hygiene check: every new `ContractFixtures` directory and JSON file has a sibling `.meta` file.
+- Public runtime payload static check: `git diff --name-only -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs Runtime/GCPlayerSetupOptions.cs` produced no output, so `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` were not changed.
+
+Skipped validation:
+
+- Focused Unity editor tests for `GCDevJsonContractFixtureTests` were not run. `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings` or `Packages` directory for a safe package-local Unity Test Runner invocation.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- Parent corpus JSON parse check: parsed all `ContractFixtures/LocalPlay` `gc.dev.json`, optional `gc.metadata.json`, and `expected.json` files; confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, matching expected ids, `valid`, `issues`, `capture`, and `write` fields, and no Unity-shaped `capture.setup` or `capture.play` fields.
+- Parent inline-builder removal check: `rg -n "BuildDevJson|BuildMetadataJson|BuildSeats|StringBuilder|WriteDevJson|WriteMetadataJson|AppendLine" Tests/Editor/GCDevJsonContractFixtureTests.cs` returned no matches.
+- Parent public payload/package/assembly diff check produced no changes for `GCSetupOptions`, `GCPlayOptions`, `GCPlayerOptions`, `GCPlayer`, `package.json`, runtime/editor asmdefs, or the editor test asmdef.
+- Parent Unity `.meta` hygiene check: every new `ContractFixtures` directory and JSON file has a sibling `.meta`, and the repo-wide `.meta` GUID duplicate scan produced no duplicate GUID output.
+- Parent Unity command availability check: `command -v Unity` and `command -v UnityHub` produced no executable path, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings` directory or `Packages/manifest.json`.
+- Parent staged whitespace check: `git diff --cached --check` initially found trailing whitespace in generated JSON `.meta` files; the new `ContractFixtures` `.meta` files were mechanically trimmed and the staged check passed.
+- Parent `git status --short --untracked-files=all`: Task 10 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+Parent skipped validation:
+
+- Focused Unity editor tests for `GCDevJsonContractFixtureTests` were not run because this package root has no safe package-local Unity Test Runner command and running Unity directly against this folder would create unmanaged local project artifacts.
+
+Decisions:
+
+- Kept `expected.json` portable by storing validity, issue code/severity expectations, portable **Capture** `entryKey`/seed/**Active Player** data, **Seat** identity data, and write/read-back assertions as simple JSON data.
+- Kept Unity-specific fixture discovery, JSON loading, store use, Capture calls, and NUnit assertions in `GCDevJsonContractFixtureTests`.
+- Used `UnityEngine.JsonUtility` for `expected.json` parsing, so `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef` did not need an explicit JSON parser reference.
+- The preserving-write fixture metadata includes both the initial `duel` entry and the write target `coop` entry so the corpus case has a valid initial read while still asserting unrelated top-level `gc.dev.json` fields survive the canonical write.
 
 ## Handoff Protocol
 

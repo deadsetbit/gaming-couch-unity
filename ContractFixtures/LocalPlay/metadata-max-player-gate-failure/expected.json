@@ -1,0 +1,17 @@
+{
+  "id": "metadata-max-player-gate-failure",
+  "valid": false,
+  "issues": [
+    {
+      "code": "MetadataEnabledSeatsAboveMaximum",
+      "severity": "Error"
+    }
+  ],
+  "capture": {
+    "assert": true,
+    "success": false
+  },
+  "write": {
+    "assert": false
+  }
+}

@@ -1,167 +1,295 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using DSB.GC;
 using DSB.GC.Dev;
 using NUnit.Framework;
+using UnityEngine;
 
 public sealed class GCDevJsonContractFixtureTests
 {
+    private const string CorpusRelativePath = "ContractFixtures/LocalPlay";
+
     [Test]
     public void ValidSparseRosterCapturesDensePlayersAndStableSeatIdentities()
     {
-        using (var fixture = new ContractFixture())
-        {
-            fixture.WriteMetadataJson(BuildMetadataJson("unity", "duel", 1, 4, true));
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1, 3, 8)));
-
-            var readResult = fixture.DevStore.Read();
-            var capture = GCLocalPlaySession.Capture(readResult);
-
-            Assert.That(readResult.IsValid, Is.True);
-            Assert.That(capture.success, Is.True);
-            Assert.That(capture.setupOptions.mode, Is.EqualTo(GCMode.Development));
-            Assert.That(capture.setupOptions.isServer, Is.True);
-            Assert.That(capture.setupOptions.gameModeId, Is.EqualTo("duel"));
-            Assert.That(capture.playOptions.seed, Is.EqualTo(12345));
-            Assert.That(capture.playOptions.players, Has.Length.EqualTo(3));
-            AssertPlayer(capture.playOptions.players[0], 1, "P1", GCPlayerType.player, GCPlayerColor.blue);
-            AssertPlayer(capture.playOptions.players[1], 2, "P3", GCPlayerType.player, GCPlayerColor.green);
-            AssertPlayer(capture.playOptions.players[2], 3, "P8", GCPlayerType.player, GCPlayerColor.brown);
-            Assert.That(capture.seatIdentities, Has.Length.EqualTo(3));
-            AssertSeatIdentity(capture.seatIdentities[0], 1, 1, GCPlayerType.player, GCPlayerColor.blue);
-            AssertSeatIdentity(capture.seatIdentities[1], 2, 3, GCPlayerType.player, GCPlayerColor.green);
-            AssertSeatIdentity(capture.seatIdentities[2], 3, 8, GCPlayerType.player, GCPlayerColor.brown);
-        }
+        RunContractFixtureCase("valid-sparse-roster-capture");
     }
 
     [Test]
     public void MissingMetadataKeepsValidDevJsonReadableWithWarningOnlyIssue()
     {
-        using (var fixture = new ContractFixture())
-        {
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1)));
-
-            var readResult = fixture.DevStore.Read();
-            var issue = FindIssue(readResult.validation, GCDevJsonIssueCode.MissingMetadataFile);
-
-            Assert.That(readResult.IsValid, Is.True);
-            Assert.That(readResult.validation.ErrorCount, Is.EqualTo(0));
-            Assert.That(readResult.validation.WarningCount, Is.EqualTo(1));
-            Assert.That(issue, Is.Not.Null);
-            Assert.That(issue.severity, Is.EqualTo(GCDevJsonIssueSeverity.Warning));
-        }
+        RunContractFixtureCase("missing-metadata-warning-only");
     }
 
     [Test]
     public void MetadataMaxPlayerGateFailsValidationAndCapture()
     {
-        using (var fixture = new ContractFixture())
-        {
-            fixture.WriteMetadataJson(BuildMetadataJson("unity", "duel", 1, 2, true));
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1, 3, 8)));
-
-            var readResult = fixture.DevStore.Read();
-            var capture = GCLocalPlaySession.Capture(readResult);
-            var issue = FindIssue(readResult.validation, GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum);
-
-            Assert.That(readResult.IsValid, Is.False);
-            Assert.That(capture.success, Is.False);
-            Assert.That(capture.validation, Is.SameAs(readResult.validation));
-            Assert.That(issue, Is.Not.Null);
-            Assert.That(issue.severity, Is.EqualTo(GCDevJsonIssueSeverity.Error));
-        }
+        RunContractFixtureCase("metadata-max-player-gate-failure");
     }
 
     [Test]
     public void WrongSeatCountFailsWithExistingIssueCode()
     {
-        using (var fixture = new ContractFixture())
-        {
-            fixture.WriteMetadataJson(BuildMetadataJson("unity", "duel", 1, 4, true));
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeatsWithCount(7, 1, 3)));
-
-            var readResult = fixture.DevStore.Read();
-            var issue = FindIssue(readResult.validation, GCDevJsonIssueCode.InvalidSeatCount);
-
-            Assert.That(readResult.IsValid, Is.False);
-            Assert.That(issue, Is.Not.Null);
-            Assert.That(issue.severity, Is.EqualTo(GCDevJsonIssueSeverity.Error));
-        }
+        RunContractFixtureCase("wrong-seat-count-failure");
     }
 
     [Test]
     public void UnsupportedDevVersionFailsWithExistingIssueCode()
     {
-        using (var fixture = new ContractFixture())
-        {
-            fixture.WriteMetadataJson(BuildMetadataJson("unity", "duel", 1, 4, true));
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1), 3));
-
-            var readResult = fixture.DevStore.Read();
-            var issue = FindIssue(readResult.validation, GCDevJsonIssueCode.UnsupportedDevVersion);
-
-            Assert.That(readResult.IsValid, Is.False);
-            Assert.That(issue, Is.Not.Null);
-            Assert.That(issue.severity, Is.EqualTo(GCDevJsonIssueSeverity.Error));
-        }
+        RunContractFixtureCase("unsupported-dev-version-failure");
     }
 
     [Test]
     public void PreservingWriteKeepsUnrelatedTopLevelDevJsonFields()
     {
+        RunContractFixtureCase("preserving-write-unrelated-top-level-fields");
+    }
+
+    private static void RunContractFixtureCase(string caseName)
+    {
+        var casePath = ResolveCasePath(caseName);
+        var expected = LoadExpected(caseName, casePath);
+
         using (var fixture = new ContractFixture())
         {
-            fixture.WriteMetadataJson(BuildMetadataJson("unity", "coop", 1, 4, true));
-            fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1, 3, 8), 2, true));
+            fixture.CopyCorpusFiles(casePath);
 
-            var writeResult = fixture.DevStore.Write(new GCDevJsonFile("coop", "98765", BuildSeatData(2, 4)));
-            var writtenText = File.ReadAllText(fixture.DevJsonPath, Encoding.UTF8);
-            var rewrittenReadResult = fixture.DevStore.Read();
+            var metadataReadResult = fixture.MetadataStore.Read();
+            var readResult = fixture.DevStore.Read(metadataReadResult);
 
-            Assert.That(writeResult.success, Is.True);
-            Assert.That(rewrittenReadResult.IsValid, Is.True);
-            Assert.That(rewrittenReadResult.data.devVersion, Is.EqualTo(GCDevJsonFile.SupportedDevVersion));
-            Assert.That(rewrittenReadResult.data.entryKey, Is.EqualTo("coop"));
-            Assert.That(rewrittenReadResult.data.seed, Is.EqualTo("98765"));
-            Assert.That(rewrittenReadResult.data.seats, Has.Length.EqualTo(GCDevJsonFile.SeatCount));
-            Assert.That(writtenText, Does.Contain("\"unrelatedTopLevel\": \"keep-me\""));
-            Assert.That(writtenText, Does.Contain("\"nestedUnrelated\": {"));
-            Assert.That(writtenText, Does.Contain("\"id\": \"contract-fixture\""));
+            AssertReadResult(readResult, expected);
+            AssertCapture(readResult, expected.capture);
+            AssertWrite(fixture, expected.write);
+        }
+    }
+
+    private static string ResolveCasePath(string caseName)
+    {
+        var corpusRoot = ResolveCorpusRoot();
+        var casePath = Path.Combine(corpusRoot, caseName);
+        Assert.That(Directory.Exists(casePath), Is.True, "Missing contract fixture case: " + casePath);
+        return casePath;
+    }
+
+    private static string ResolveCorpusRoot()
+    {
+        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(GCDevJsonContractFixtureTests).Assembly);
+        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+        {
+            var packageCorpusRoot = Path.Combine(packageInfo.resolvedPath, CorpusRelativePath);
+            if (Directory.Exists(packageCorpusRoot))
+            {
+                return packageCorpusRoot;
+            }
+        }
+
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (directory != null)
+        {
+            var candidate = Path.Combine(directory.FullName, CorpusRelativePath);
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        Assert.Fail("Could not locate contract fixture corpus at " + CorpusRelativePath + ".");
+        return null;
+    }
+
+    private static ExpectedFixture LoadExpected(string caseName, string casePath)
+    {
+        var expectedPath = Path.Combine(casePath, "expected.json");
+        Assert.That(File.Exists(expectedPath), Is.True, "Missing expected.json for contract fixture case: " + caseName);
+
+        var expected = JsonUtility.FromJson<ExpectedFixture>(File.ReadAllText(expectedPath, Encoding.UTF8));
+        Assert.That(expected, Is.Not.Null, "expected.json could not be parsed for contract fixture case: " + caseName);
+        Assert.That(expected.id, Is.EqualTo(caseName));
+        return expected;
+    }
+
+    private static void AssertReadResult(GCDevJsonReadResult readResult, ExpectedFixture expected)
+    {
+        Assert.That(readResult, Is.Not.Null);
+        Assert.That(readResult.IsValid, Is.EqualTo(expected.valid));
+        Assert.That(readResult.validation, Is.Not.Null);
+
+        var expectedIssues = expected.issues ?? Array.Empty<ExpectedIssue>();
+        Assert.That(readResult.validation.ErrorCount, Is.EqualTo(CountIssues(expectedIssues, "Error")));
+        Assert.That(readResult.validation.WarningCount, Is.EqualTo(CountIssues(expectedIssues, "Warning")));
+        Assert.That(readResult.validation.issues, Has.Length.EqualTo(expectedIssues.Length));
+
+        for (var index = 0; index < expectedIssues.Length; index++)
+        {
+            var expectedIssue = expectedIssues[index];
+            var issue = FindIssue(readResult.validation, expectedIssue.code);
+            Assert.That(issue, Is.Not.Null, "Expected issue code was not found: " + expectedIssue.code);
+            Assert.That(issue.severity.ToString(), Is.EqualTo(expectedIssue.severity));
+        }
+    }
+
+    private static int CountIssues(ExpectedIssue[] issues, string severity)
+    {
+        var count = 0;
+        for (var index = 0; index < issues.Length; index++)
+        {
+            if (issues[index] != null && issues[index].severity == severity)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static void AssertCapture(GCDevJsonReadResult readResult, ExpectedCapture expected)
+    {
+        if (expected == null || !expected.assert)
+        {
+            return;
+        }
+
+        var capture = GCLocalPlaySession.Capture(readResult);
+        Assert.That(capture.success, Is.EqualTo(expected.success));
+
+        if (!expected.success)
+        {
+            Assert.That(capture.validation, Is.SameAs(readResult.validation));
+            return;
+        }
+
+        Assert.That(expected.entryKey, Is.Not.Null.And.Not.Empty, "Successful capture fixture must include an entryKey expectation.");
+        Assert.That(expected.activePlayers, Is.Not.Null, "Successful capture fixture must include active player expectations.");
+        Assert.That(capture.setupOptions, Is.Not.Null);
+        Assert.That(capture.setupOptions.mode, Is.EqualTo(GCMode.Development));
+        Assert.That(capture.setupOptions.isServer, Is.True);
+        Assert.That(capture.setupOptions.gameModeId, Is.EqualTo(expected.entryKey));
+
+        Assert.That(capture.playOptions, Is.Not.Null);
+        Assert.That(capture.playOptions.seed, Is.EqualTo(expected.seed));
+        AssertPlayers(capture.playOptions.players, expected.activePlayers);
+        AssertSeatIdentities(capture.seatIdentities, expected.seatIdentities);
+    }
+
+    private static void AssertPlayers(GCPlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
+    {
+        expectedPlayers = expectedPlayers ?? Array.Empty<ExpectedPlayer>();
+        Assert.That(players, Has.Length.EqualTo(expectedPlayers.Length));
+
+        for (var index = 0; index < expectedPlayers.Length; index++)
+        {
+            var expectedPlayer = expectedPlayers[index];
+            var player = players[index];
+            Assert.That(player.playerId, Is.EqualTo(expectedPlayer.playerId));
+            Assert.That(player.name, Is.EqualTo(expectedPlayer.name));
+            Assert.That(player.type, Is.EqualTo(expectedPlayer.type));
+            Assert.That(player.color, Is.EqualTo(expectedPlayer.color));
+        }
+    }
+
+    private static void AssertSeatIdentities(GCSeatIdentity[] identities, ExpectedSeatIdentity[] expectedIdentities)
+    {
+        expectedIdentities = expectedIdentities ?? Array.Empty<ExpectedSeatIdentity>();
+        Assert.That(identities, Has.Length.EqualTo(expectedIdentities.Length));
+
+        for (var index = 0; index < expectedIdentities.Length; index++)
+        {
+            var expectedIdentity = expectedIdentities[index];
+            var identity = identities[index];
+            Assert.That(identity.playerId, Is.EqualTo(expectedIdentity.playerId));
+            Assert.That(identity.sourceSeatIndex, Is.EqualTo(expectedIdentity.sourceSeatIndex));
+            Assert.That(identity.label, Is.EqualTo(expectedIdentity.label));
+            Assert.That(identity.playerType.ToString(), Is.EqualTo(expectedIdentity.playerType));
+            Assert.That(identity.playerColor.ToString(), Is.EqualTo(expectedIdentity.playerColor));
+        }
+    }
+
+    private static void AssertWrite(ContractFixture fixture, ExpectedWrite expected)
+    {
+        if (expected == null || !expected.assert)
+        {
+            return;
+        }
+
+        Assert.That(expected.data, Is.Not.Null, "Write fixture must include canonical gc.dev.json data.");
+        var writeResult = fixture.DevStore.Write(ToDevJsonFile(expected.data), fixture.MetadataStore.Read());
+        Assert.That(writeResult.success, Is.EqualTo(expected.success));
+        Assert.That(writeResult.validation, Is.Not.Null);
+        Assert.That(writeResult.validation.IsValid, Is.EqualTo(expected.resultValid));
+
+        var writtenText = File.ReadAllText(fixture.DevJsonPath, Encoding.UTF8);
+        AssertWrittenText(writtenText, expected.writtenText);
+        AssertReadBack(fixture, expected.readBack);
+    }
+
+    private static GCDevJsonFile ToDevJsonFile(ExpectedDevJson data)
+    {
+        var expectedSeats = data.seats ?? Array.Empty<ExpectedSeat>();
+        var seats = new GCDevJsonSeat[expectedSeats.Length];
+        for (var index = 0; index < expectedSeats.Length; index++)
+        {
+            var expectedSeat = expectedSeats[index];
+            seats[index] = new GCDevJsonSeat(expectedSeat.name, expectedSeat.enabled, expectedSeat.isBot);
+        }
+
+        return new GCDevJsonFile(data.devVersion, data.entryKey, data.seed, seats);
+    }
+
+    private static void AssertWrittenText(string writtenText, ExpectedWrittenText expected)
+    {
+        if (expected == null)
+        {
+            return;
+        }
+
+        var expectedContains = expected.contains ?? Array.Empty<string>();
+        for (var index = 0; index < expectedContains.Length; index++)
+        {
+            Assert.That(writtenText, Does.Contain(expectedContains[index]));
+        }
+
+        if (expected.endsWithNewline)
+        {
             Assert.That(writtenText.EndsWith("\n", StringComparison.Ordinal), Is.True);
         }
     }
 
-    private static void AssertPlayer(
-        GCPlayerOptions player,
-        int playerId,
-        string name,
-        GCPlayerType type,
-        GCPlayerColor color
-    )
+    private static void AssertReadBack(ContractFixture fixture, ExpectedReadBack expected)
     {
-        Assert.That(player.playerId, Is.EqualTo(playerId));
-        Assert.That(player.name, Is.EqualTo(name));
-        Assert.That(player.type, Is.EqualTo(type.ToString()));
-        Assert.That(player.color, Is.EqualTo(color.ToString()));
+        if (expected == null || !expected.assert)
+        {
+            return;
+        }
+
+        var readResult = fixture.DevStore.Read(fixture.MetadataStore.Read());
+        Assert.That(readResult.IsValid, Is.EqualTo(expected.valid));
+        Assert.That(readResult.data, Is.Not.Null);
+        Assert.That(readResult.data.devVersion, Is.EqualTo(expected.devVersion));
+        Assert.That(readResult.data.entryKey, Is.EqualTo(expected.entryKey));
+        Assert.That(readResult.data.seed, Is.EqualTo(expected.seed));
+        Assert.That(readResult.data.seats, Has.Length.EqualTo(expected.seatCount));
+        Assert.That(GetEnabledSeatIndexes(readResult.data.seats), Is.EqualTo(expected.enabledSeatIndexes));
     }
 
-    private static void AssertSeatIdentity(
-        GCSeatIdentity identity,
-        int playerId,
-        int sourceSeatIndex,
-        GCPlayerType type,
-        GCPlayerColor color
-    )
+    private static int[] GetEnabledSeatIndexes(GCDevJsonSeat[] seats)
     {
-        Assert.That(identity.playerId, Is.EqualTo(playerId));
-        Assert.That(identity.sourceSeatIndex, Is.EqualTo(sourceSeatIndex));
-        Assert.That(identity.label, Is.EqualTo("Seat " + sourceSeatIndex));
-        Assert.That(identity.playerType, Is.EqualTo(type));
-        Assert.That(identity.playerColor, Is.EqualTo(color));
+        var enabledSeatIndexes = new List<int>();
+        for (var index = 0; index < seats.Length; index++)
+        {
+            if (seats[index].enabled)
+            {
+                enabledSeatIndexes.Add(index + 1);
+            }
+        }
+
+        return enabledSeatIndexes.ToArray();
     }
 
-    private static GCDevJsonIssue FindIssue(GCDevJsonValidationResult validation, GCDevJsonIssueCode code)
+    private static GCDevJsonIssue FindIssue(GCDevJsonValidationResult validation, string code)
     {
         if (validation == null || validation.issues == null)
         {
@@ -171,129 +299,13 @@ public sealed class GCDevJsonContractFixtureTests
         for (var index = 0; index < validation.issues.Length; index++)
         {
             var issue = validation.issues[index];
-            if (issue != null && issue.code == code)
+            if (issue != null && issue.code.ToString() == code)
             {
                 return issue;
             }
         }
 
         return null;
-    }
-
-    private static string BuildDevJson(string entryKey, string seed, string seatsJson, int devVersion = 2, bool includeUnknownFields = false)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("{");
-        if (includeUnknownFields)
-        {
-            builder.AppendLine("  \"unrelatedTopLevel\": \"keep-me\",");
-            builder.AppendLine("  \"nestedUnrelated\": {");
-            builder.AppendLine("    \"id\": \"contract-fixture\"");
-            builder.AppendLine("  },");
-        }
-
-        builder.AppendLine("  \"devVersion\": " + devVersion + ",");
-        builder.AppendLine("  \"entryKey\": \"" + entryKey + "\",");
-        builder.AppendLine("  \"seed\": \"" + seed + "\",");
-        builder.AppendLine("  \"seats\": " + seatsJson);
-        builder.Append("}");
-        return builder.ToString();
-    }
-
-    private static string BuildMetadataJson(
-        string platformId,
-        string entryKey,
-        int minPlayers,
-        int maxPlayers,
-        bool botSupport
-    )
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("{");
-        builder.AppendLine("  \"game\": {");
-        builder.AppendLine("    \"key\": \"contract-game\",");
-        builder.AppendLine("    \"name\": \"Contract Game\",");
-        builder.AppendLine("    \"entries\": {");
-        builder.AppendLine("      \"" + entryKey + "\": {");
-        builder.AppendLine("        \"name\": \"Contract Entry\",");
-        builder.AppendLine("        \"minPlayers\": " + minPlayers + ",");
-        builder.AppendLine("        \"maxPlayers\": " + maxPlayers + ",");
-        builder.AppendLine("        \"botSupport\": " + FormatBool(botSupport));
-        builder.AppendLine("      }");
-        builder.AppendLine("    }");
-        builder.AppendLine("  },");
-        builder.AppendLine("  \"platform\": {");
-        builder.AppendLine("    \"id\": \"" + platformId + "\"");
-        builder.AppendLine("  },");
-        builder.AppendLine("  \"properties\": {");
-        builder.AppendLine("    \"colors\": {");
-        builder.AppendLine("      \"players\": {}");
-        builder.AppendLine("    }");
-        builder.AppendLine("  }");
-        builder.Append("}");
-        return builder.ToString();
-    }
-
-    private static string BuildSeats(params int[] enabledSeats)
-    {
-        return BuildSeatsWithCount(GCDevJsonFile.SeatCount, enabledSeats);
-    }
-
-    private static string BuildSeatsWithCount(int seatCount, params int[] enabledSeats)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("[");
-        for (var seatIndex = 1; seatIndex <= seatCount; seatIndex++)
-        {
-            builder.AppendLine("  {");
-            builder.AppendLine("    \"name\": \"P" + seatIndex + "\",");
-            builder.AppendLine("    \"enabled\": " + FormatBool(Contains(enabledSeats, seatIndex)) + ",");
-            builder.AppendLine("    \"isBot\": false");
-            builder.Append("  }");
-            if (seatIndex < seatCount)
-            {
-                builder.Append(",");
-            }
-
-            builder.AppendLine();
-        }
-
-        builder.Append("]");
-        return builder.ToString();
-    }
-
-    private static GCDevJsonSeat[] BuildSeatData(params int[] enabledSeats)
-    {
-        var seats = new GCDevJsonSeat[GCDevJsonFile.SeatCount];
-        for (var seatIndex = 1; seatIndex <= GCDevJsonFile.SeatCount; seatIndex++)
-        {
-            seats[seatIndex - 1] = new GCDevJsonSeat("P" + seatIndex, Contains(enabledSeats, seatIndex), false);
-        }
-
-        return seats;
-    }
-
-    private static bool Contains(int[] values, int expected)
-    {
-        if (values == null)
-        {
-            return false;
-        }
-
-        for (var index = 0; index < values.Length; index++)
-        {
-            if (values[index] == expected)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string FormatBool(bool value)
-    {
-        return value ? "true" : "false";
     }
 
     private sealed class ContractFixture : IDisposable
@@ -318,19 +330,20 @@ public sealed class GCDevJsonContractFixtureTests
             get { return Path.Combine(rootPath, GCDevJsonFile.FileName); }
         }
 
-        internal string MetadataJsonPath
+        private string MetadataJsonPath
         {
             get { return Path.Combine(rootPath, GCMetadataJsonFile.FileName); }
         }
 
-        internal void WriteDevJson(string contents)
+        internal void CopyCorpusFiles(string casePath)
         {
-            File.WriteAllText(DevJsonPath, contents + "\n", new UTF8Encoding(false));
-        }
+            CopyRequiredFile(Path.Combine(casePath, GCDevJsonFile.FileName), DevJsonPath);
 
-        internal void WriteMetadataJson(string contents)
-        {
-            File.WriteAllText(MetadataJsonPath, contents + "\n", new UTF8Encoding(false));
+            var metadataSourcePath = Path.Combine(casePath, GCMetadataJsonFile.FileName);
+            if (File.Exists(metadataSourcePath))
+            {
+                File.Copy(metadataSourcePath, MetadataJsonPath, true);
+            }
         }
 
         public void Dispose()
@@ -339,6 +352,12 @@ public sealed class GCDevJsonContractFixtureTests
             {
                 Directory.Delete(rootPath, true);
             }
+        }
+
+        private static void CopyRequiredFile(string sourcePath, string destinationPath)
+        {
+            Assert.That(File.Exists(sourcePath), Is.True, "Missing contract fixture file: " + sourcePath);
+            File.Copy(sourcePath, destinationPath, true);
         }
     }
 
@@ -360,5 +379,99 @@ public sealed class GCDevJsonContractFixtureTests
         {
             return "Contract Fixture";
         }
+    }
+
+    [Serializable]
+    private sealed class ExpectedFixture
+    {
+        public string id;
+        public bool valid;
+        public ExpectedIssue[] issues;
+        public ExpectedCapture capture;
+        public ExpectedWrite write;
+    }
+
+    [Serializable]
+    private sealed class ExpectedIssue
+    {
+        public string code;
+        public string severity;
+    }
+
+    [Serializable]
+    private sealed class ExpectedCapture
+    {
+        public bool assert;
+        public bool success;
+        public string entryKey;
+        public int seed;
+        public ExpectedPlayer[] activePlayers;
+        public ExpectedSeatIdentity[] seatIdentities;
+    }
+
+    [Serializable]
+    private sealed class ExpectedPlayer
+    {
+        public int playerId;
+        public string name;
+        public string type;
+        public string color;
+    }
+
+    [Serializable]
+    private sealed class ExpectedSeatIdentity
+    {
+        public int playerId;
+        public int sourceSeatIndex;
+        public string label;
+        public string playerType;
+        public string playerColor;
+    }
+
+    [Serializable]
+    private sealed class ExpectedWrite
+    {
+        public bool assert;
+        public bool success;
+        public bool resultValid;
+        public ExpectedDevJson data;
+        public ExpectedWrittenText writtenText;
+        public ExpectedReadBack readBack;
+    }
+
+    [Serializable]
+    private sealed class ExpectedDevJson
+    {
+        public int devVersion;
+        public string entryKey;
+        public string seed;
+        public ExpectedSeat[] seats;
+    }
+
+    [Serializable]
+    private sealed class ExpectedSeat
+    {
+        public string name;
+        public bool enabled;
+        public bool isBot;
+    }
+
+    [Serializable]
+    private sealed class ExpectedWrittenText
+    {
+        public string[] contains;
+        public bool endsWithNewline;
+    }
+
+    [Serializable]
+    private sealed class ExpectedReadBack
+    {
+        public bool assert;
+        public bool valid;
+        public int devVersion;
+        public string entryKey;
+        public string seed;
+        public int seatCount;
+        public int[] enabledSeatIndexes;
     }
 }
