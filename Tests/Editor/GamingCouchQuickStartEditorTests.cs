@@ -173,16 +173,21 @@ public sealed class GamingCouchQuickStartEditorTests
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var missingReadiness = GCStartScreenReadinessService.InspectActiveScene();
         var missingCheck = missingReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
-        var listener = CreateCompatibleListener("Existing Game");
-        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
-        var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
-        var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
         var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
+
+        Assert.That(missingReadiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.True);
 
         try
         {
             SetStartScreenWindowReadiness(window, missingReadiness);
             Assert.That(GetChecklistActionLabel(window, missingCheck), Is.EqualTo("Create & Wire Game"));
+
+            // Create the ready state only after the missing-state assertion so a Unity window lifecycle
+            // refresh cannot replace injected missing readiness with ready scene readiness.
+            var listener = CreateCompatibleListener("Existing Game");
+            GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+            var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
+            var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
 
             SetStartScreenWindowReadiness(window, readyReadiness);
             Assert.That(GetChecklistActionLabel(window, readyCheck), Is.EqualTo("Focus Game Script"));
@@ -1004,7 +1009,7 @@ public sealed class GamingCouchQuickStartEditorTests
         EnsureTestAssetFolder();
         var sceneAssetPath = testFolderAssetPath + "/DuplicateGamingCouchScene.unity";
         var previousScene = SceneManager.GetActiveScene();
-        var launchScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        var launchScene = CreateLaunchSceneForActiveSceneSetupTest(out var launchSceneIsTestScene);
 
         try
         {
@@ -1044,19 +1049,38 @@ public sealed class GamingCouchQuickStartEditorTests
         }
         finally
         {
-            if (previousScene.IsValid() && previousScene.isLoaded)
+            if (launchSceneIsTestScene)
             {
-                SceneManager.SetActiveScene(previousScene);
-            }
-            else if (launchScene.IsValid() && launchScene.isLoaded)
-            {
-                SetAnyLoadedSceneActiveExcept(launchScene);
-            }
+                if (launchScene.IsValid() && launchScene.isLoaded)
+                {
+                    ClearSceneRootObjects(launchScene);
+                    if (!string.IsNullOrEmpty(launchScene.path))
+                    {
+                        EditorSceneManager.SaveScene(launchScene);
+                    }
+                }
 
-            if (launchScene.IsValid() && launchScene.isLoaded)
+                if (!testSceneWasCreatedAdditively)
+                {
+                    testScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                }
+            }
+            else
             {
-                ClearSceneRootObjects(launchScene);
-                EditorSceneManager.CloseScene(launchScene, true);
+                if (previousScene.IsValid() && previousScene.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousScene);
+                }
+                else if (launchScene.IsValid() && launchScene.isLoaded)
+                {
+                    SetAnyLoadedSceneActiveExcept(launchScene);
+                }
+
+                if (launchScene.IsValid() && launchScene.isLoaded)
+                {
+                    ClearSceneRootObjects(launchScene);
+                    EditorSceneManager.CloseScene(launchScene, true);
+                }
             }
         }
     }
@@ -2047,6 +2071,19 @@ public sealed class GamingCouchQuickStartEditorTests
         return scene.IsValid() &&
                scene.isLoaded &&
                string.IsNullOrEmpty(scene.path);
+    }
+
+    private Scene CreateLaunchSceneForActiveSceneSetupTest(out bool launchSceneIsTestScene)
+    {
+        if (testScene.IsValid() && testScene.isLoaded && string.IsNullOrEmpty(testScene.path))
+        {
+            launchSceneIsTestScene = true;
+            EnsureSceneIsActive(testScene);
+            return testScene;
+        }
+
+        launchSceneIsTestScene = false;
+        return EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
     }
 
     private static void EnsureSceneIsActive(Scene scene)
