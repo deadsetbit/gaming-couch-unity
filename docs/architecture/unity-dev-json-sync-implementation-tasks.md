@@ -35,7 +35,7 @@ Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Await explicit approval for Task 12 - DevApp Runtime Adapter Module.
+Next action: Await explicit approval for Task 13 - Quick Start Setup Module.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -50,7 +50,7 @@ Next action: Await explicit approval for Task 12 - DevApp Runtime Adapter Module
 | 9. Local Play Session Module | Done | Codex | Local Play Session Module owns active Capture, root validation, restart preflight/recapture, and issue logging coordination; two review passes complete; parent validation passed. |
 | 10. Contract Fixture Corpus | Done | Codex | Package-root Local Play Contract Fixture corpus complete; Unity editor tests consume corpus files directly. |
 | 11. Start Screen Readiness Module | Done | Codex | Behavior-neutral readiness row/action refactor complete; two local review passes complete; parent validation passed. |
-| 12. DevApp Runtime Adapter Module | Pending | Unassigned | Outgoing runtime registration and snapshot message construction planned; keep WebSocket transport and inbound command handling in `GCDevAppIntegration`. |
+| 12. DevApp Runtime Adapter Module | Done | Codex | Outgoing runtime registration and snapshot message construction extracted; WebSocket transport and inbound command handling remain in `GCDevAppIntegration`; manual Unity editor validation passed. |
 | 13. Quick Start Setup Module | Pending | Unassigned | Start Screen setup action runner planned; keep setup behavior unchanged. |
 | 14. Editor Test Harness Module | Pending | Unassigned | Split broad editor tests by Module after Tasks 11-13 deepen their Interfaces. |
 
@@ -142,7 +142,7 @@ Required after every task:
 
 - Run `git diff --check`.
 - Inspect `git status --short` and confirm unrelated files were not touched.
-- If a Unity compile/import is available, run it or record why it was skipped.
+- Do not invoke Unity editor tests from the agent environment. User runs Unity editor tests manually from Task 12 onward; record the requested manual test scope and the user's reported result.
 - Record validation results in this file under the completed task.
 
 Required before final completion:
@@ -1646,6 +1646,7 @@ Validation:
 - `git diff --check --no-index /dev/null Tests/Editor/GamingCouchStartScreenReadinessTests.cs.meta`: no whitespace output; command exits non-zero because the new file differs from `/dev/null`.
 - Static inspection: `GamingCouchStartScreenWindow` no longer contains `GetChecklistActionLabel`, `GetChecklistFocusTarget`, or a window-owned checklist setup availability helper; checklist buttons read labels from `GCStartScreenReadinessCheck.action`, and action execution switches on `GCStartScreenReadinessActionId`.
 - Static inspection: side-effecting setup/focus dispatch remains in `GamingCouchStartScreenWindow` for this slice through existing `RunEnsure*` methods and `FocusChecklistTarget`.
+- User manual Unity editor validation after commit: passed with no errors.
 - `git status --short --untracked-files=all`: Task 11 files changed; pre-existing unrelated untracked files remain present and untouched.
 
 Skipped validation:
@@ -1668,7 +1669,7 @@ This task is scoped to outgoing runtime messages only. Keep WebSocket connection
 
 ### Status
 
-Pending.
+Done.
 
 ### Owned Files
 
@@ -1721,7 +1722,7 @@ If implementation discovers another file is required, update this task with the 
   - snapshot signature changes when runtime state changes and stays stable when state is unchanged
 - Statically confirm `GCDevAppIntegration` still owns WebSocket lifecycle and inbound DevTool actions.
 - Statically confirm JSON field names and public runtime payloads remain unchanged.
-- Run focused Unity editor tests for DevApp runtime messages if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Ask the user to run focused Unity editor tests for DevApp runtime messages manually and record the reported result.
 - Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
 
 ### Status Update Rules
@@ -1733,6 +1734,37 @@ After implementation and both review-and-patch passes:
 - Add validation results and skipped validation gaps.
 - Set current task to None if complete.
 - Set next action to approval for the next architecture roadmap slice.
+
+### Task 12 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Runtime/Dev/GCDevAppIntegration.cs`
+- `Runtime/Dev/GCDevAppRuntimeMessages.cs`
+- `Runtime/Dev/GCDevAppRuntimeMessages.cs.meta`
+- `Tests/Editor/GCDevAppRuntimeMessagesTests.cs`
+- `Tests/Editor/GCDevAppRuntimeMessagesTests.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Parent review-and-patch pass 1: confirmed the new DevApp Runtime Adapter Module owns `runtime_register`, `runtime_snapshot`, runtime capabilities, **Seat** mapping, and snapshot signatures.
+- Parent review-and-patch pass 2: confirmed `GCDevAppIntegration` still owns WebSocket lifecycle, run id lifecycle, timestamps, snapshot send de-duplication, receive loop, and inbound DevTool actions.
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null Runtime/Dev/GCDevAppRuntimeMessages.cs`: no whitespace output; command exits non-zero because the new file differs from `/dev/null`.
+- `git diff --check --no-index /dev/null Tests/Editor/GCDevAppRuntimeMessagesTests.cs`: no whitespace output; command exits non-zero because the new file differs from `/dev/null`.
+- Static inspection: JSON DTO field names remain `type`, `timestamp`, `runtimeKind`, `projectRootPath`, `projectName`, `platform`, `rendererMode`, `displayName`, `runId`, `isRunning`, `capabilities`, `seats`, `paused`, and `timescale`.
+- Static inspection: public runtime payloads `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` were not changed.
+- User manual Unity editor validation for `GCDevAppRuntimeMessagesTests`: passed with no errors.
+- `git status --short --untracked-files=all`: Task 12 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+Decisions:
+
+- Kept timestamp creation in `GCDevAppIntegration`; the new Module accepts timestamps so outgoing message construction is testable without owning clock behavior.
+- Kept run id lifecycle and snapshot send de-duplication in `GCDevAppIntegration`; the new Module only creates the serializable snapshot state/message and matching signature string.
+- Kept WebSocket transport and inbound DevTool command handling in `GCDevAppIntegration`.
 
 ## Task 13: Quick Start Setup Module
 

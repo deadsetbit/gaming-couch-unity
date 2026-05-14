@@ -79,67 +79,22 @@ namespace DSB.GC.Dev
             return Guid.NewGuid().ToString("N");
         }
 
-        static string ResolveSeatType(GCPlayerType playerType)
-        {
-            return playerType == GCPlayerType.bot ? "bot" : "player";
-        }
-
         RuntimeRegisterMessage BuildRuntimeRegisterMessage()
         {
-            IGCLocalProjectRootResolver projectRootResolver = new GCUnityLocalProjectRootResolver();
-
-            return new RuntimeRegisterMessage
-            {
-                type = "runtime_register",
-                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                runtimeKind = "unity_editor",
-                projectRootPath = projectRootResolver.ResolveProjectRootPath(),
-                projectName = projectRootResolver.ResolveProjectName(),
-                platform = "unity",
-                rendererMode = "external",
-                displayName = "Unity Editor",
-            };
+            return GCDevAppRuntimeMessages.BuildRuntimeRegisterMessage(
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                new GCUnityLocalProjectRootResolver()
+            );
         }
 
-        RuntimeCapabilitiesMessage BuildRuntimeCapabilities()
+        GCSeatIdentity[] GetRuntimeSeatIdentities(GamingCouch gamingCouch)
         {
-            return new RuntimeCapabilitiesMessage
-            {
-                restart = true,
-                pause = true,
-                timescale = true,
-            };
-        }
-
-        RuntimeSeatMessage[] BuildRuntimeSeats()
-        {
-            var gamingCouch = GamingCouch.Instance;
             if (gamingCouch == null)
             {
-                return Array.Empty<RuntimeSeatMessage>();
+                return Array.Empty<GCSeatIdentity>();
             }
 
-            var seatIdentities = gamingCouch.GetCurrentPlaySeatIdentities();
-            if (seatIdentities.Length == 0)
-            {
-                return Array.Empty<RuntimeSeatMessage>();
-            }
-
-            var seats = new RuntimeSeatMessage[seatIdentities.Length];
-            for (var index = 0; index < seatIdentities.Length; index++)
-            {
-                var seatIdentity = seatIdentities[index];
-                var sourceSeatIndex = seatIdentity.sourceSeatIndex > 0 ? seatIdentity.sourceSeatIndex : index + 1;
-                seats[index] = new RuntimeSeatMessage
-                {
-                    playerId = seatIdentity.playerId,
-                    seatIndex = sourceSeatIndex,
-                    label = string.IsNullOrWhiteSpace(seatIdentity.label) ? $"Seat {sourceSeatIndex}" : seatIdentity.label,
-                    type = ResolveSeatType(seatIdentity.playerType),
-                };
-            }
-
-            return seats;
+            return gamingCouch.GetCurrentPlaySeatIdentities();
         }
 
         RuntimeSnapshotState BuildRuntimeSnapshotState()
@@ -147,30 +102,21 @@ namespace DSB.GC.Dev
             var gamingCouch = GamingCouch.Instance;
             var isRunning = Application.isPlaying;
 
-            return new RuntimeSnapshotState
-            {
-                runId = isRunning ? currentRunId : null,
-                isRunning = isRunning,
-                capabilities = BuildRuntimeCapabilities(),
-                seats = isRunning ? BuildRuntimeSeats() : Array.Empty<RuntimeSeatMessage>(),
-                paused = gamingCouch != null && gamingCouch.IsPaused,
-                timescale = gamingCouch != null ? gamingCouch.CurrentTimescale : Time.timeScale,
-            };
+            return GCDevAppRuntimeMessages.BuildRuntimeSnapshotState(
+                currentRunId,
+                isRunning,
+                GetRuntimeSeatIdentities(gamingCouch),
+                gamingCouch != null && gamingCouch.IsPaused,
+                gamingCouch != null ? gamingCouch.CurrentTimescale : Time.timeScale
+            );
         }
 
         RuntimeSnapshotMessage BuildRuntimeSnapshotMessage(RuntimeSnapshotState state)
         {
-            return new RuntimeSnapshotMessage
-            {
-                type = "runtime_snapshot",
-                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                runId = state.runId,
-                isRunning = state.isRunning,
-                capabilities = state.capabilities,
-                seats = state.seats,
-                paused = state.paused,
-                timescale = state.timescale,
-            };
+            return GCDevAppRuntimeMessages.BuildRuntimeSnapshotMessage(
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                state
+            );
         }
 
         IEnumerator SendJsonMessage(string payload)
@@ -224,7 +170,7 @@ namespace DSB.GC.Dev
             }
 
             var snapshotState = BuildRuntimeSnapshotState();
-            var snapshotSignature = JsonUtility.ToJson(snapshotState);
+            var snapshotSignature = GCDevAppRuntimeMessages.BuildRuntimeSnapshotSignature(snapshotState);
             if (snapshotSignature == lastSentSnapshotSignature)
             {
                 return;
@@ -559,58 +505,5 @@ namespace DSB.GC.Dev
         public WebSocketInputData inputs;
     }
 
-    [Serializable]
-    public class RuntimeCapabilitiesMessage
-    {
-        public bool restart;
-        public bool pause;
-        public bool timescale;
-    }
-
-    [Serializable]
-    public class RuntimeSeatMessage
-    {
-        public int playerId;
-        public int seatIndex;
-        public string label;
-        public string type;
-    }
-
-    [Serializable]
-    public class RuntimeRegisterMessage
-    {
-        public string type;
-        public long timestamp;
-        public string runtimeKind;
-        public string projectRootPath;
-        public string projectName;
-        public string platform;
-        public string rendererMode;
-        public string displayName;
-    }
-
-    [Serializable]
-    public class RuntimeSnapshotState
-    {
-        public string runId;
-        public bool isRunning;
-        public RuntimeCapabilitiesMessage capabilities;
-        public RuntimeSeatMessage[] seats;
-        public bool paused;
-        public float timescale;
-    }
-
-    [Serializable]
-    public class RuntimeSnapshotMessage
-    {
-        public string type;
-        public long timestamp;
-        public string runId;
-        public bool isRunning;
-        public RuntimeCapabilitiesMessage capabilities;
-        public RuntimeSeatMessage[] seats;
-        public bool paused;
-        public float timescale;
-    }
 #endif
 }
