@@ -121,10 +121,8 @@ internal static class GCDevJsonEditorPlayModeGate
     {
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-        GCEditorPlayCapture.RegisterCaptureHandler(GCEditorPlayJsonCapture.Capture);
-        GCEditorPlayPreflight.RegisterPreflightHandler(RunPreflight);
-        GCEditorPlayPreflight.RegisterRootValidationHandler(GCEditorPlayJsonCapture.ValidateRootJson);
-        GCEditorPlayPreflight.RegisterCaptureSucceededHandler(MarkPlayChangesCaptured);
+        GCLocalPlaySession.RegisterPreflightHandler(RunPreflight);
+        GCLocalPlaySession.RegisterCaptureSucceededHandler(MarkPlayChangesCaptured);
     }
 
     internal static void Register(GCDevJsonInspectorState state)
@@ -154,17 +152,17 @@ internal static class GCDevJsonEditorPlayModeGate
             return;
         }
 
-        var result = RunPreflight(GCEditorPlayPreflightContext.UnityPlayModeEntry);
+        var result = GCLocalPlaySession.RunPreflight(GCLocalPlaySessionBoundary.UnityPlayModeEntry);
         if (result.success)
         {
             return;
         }
 
-        LogBlockedBoundary(result);
+        GCLocalPlaySession.LogBlockedBoundary(result);
         EditorApplication.isPlaying = false;
     }
 
-    private static GCEditorPlayPreflightResult RunPreflight(GCEditorPlayPreflightContext context)
+    private static GCLocalPlaySessionPreflightResult RunPreflight(GCLocalPlaySessionBoundary context)
     {
         try
         {
@@ -201,12 +199,12 @@ internal static class GCDevJsonEditorPlayModeGate
                 }
             }
 
-            return GCEditorPlayPreflight.ValidateRootJson(context);
+            return GCLocalPlaySessionPreflightResult.Succeeded();
         }
         catch (Exception exception)
         {
-            var message = GCEditorPlayPreflight.GetBoundaryDisplayName(context) + " blocked because gc.dev.json preflight failed: " + exception.Message;
-            return GCEditorPlayPreflightResult.Failed(
+            var message = GCLocalPlaySession.GetBoundaryDisplayName(context) + " blocked because gc.dev.json preflight failed: " + exception.Message;
+            return GCLocalPlaySessionPreflightResult.Failed(
                 message,
                 null,
                 GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
@@ -237,42 +235,14 @@ internal static class GCDevJsonEditorPlayModeGate
         return states.ToArray();
     }
 
-    private static GCEditorPlayPreflightResult FailForMultipleDirtyDrafts(GCEditorPlayPreflightContext context, string path)
+    private static GCLocalPlaySessionPreflightResult FailForMultipleDirtyDrafts(GCLocalPlaySessionBoundary context, string path)
     {
-        var message = GCEditorPlayPreflight.GetBoundaryDisplayName(context) +
+        var message = GCLocalPlaySession.GetBoundaryDisplayName(context) +
                       " blocked because multiple GamingCouch inspectors have unsaved gc.dev.json drafts. Apply, revert, or close duplicate inspectors before continuing.";
-        return GCEditorPlayPreflightResult.Failed(
+        return GCLocalPlaySessionPreflightResult.Failed(
             message,
             path,
             GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.WriteError, message, path))
         );
-    }
-
-    private static void LogBlockedBoundary(GCEditorPlayPreflightResult result)
-    {
-        UnityEngine.Debug.LogError("[GamingCouch] " + result.message);
-        var issues = result.validation != null ? result.validation.issues : null;
-        if (issues == null || issues.Length == 0)
-        {
-            return;
-        }
-
-        for (var index = 0; index < issues.Length; index++)
-        {
-            var issue = issues[index];
-            if (issue == null)
-            {
-                continue;
-            }
-
-            if (issue.severity == GCDevJsonIssueSeverity.Warning)
-            {
-                UnityEngine.Debug.LogWarning("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
-            }
-        }
     }
 }

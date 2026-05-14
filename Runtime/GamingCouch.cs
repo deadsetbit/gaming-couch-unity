@@ -56,9 +56,6 @@ namespace DSB.GC
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
-#if UNITY_EDITOR
-        private GCEditorPlayCaptureResult editorPlayCapture;
-#endif
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
@@ -199,9 +196,9 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (Application.isEditor)
             {
-                if (TryGetValidEditorPlayCapture(out var playCapture))
+                if (GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup options", out var capturedSetupOptions))
                 {
-                    setupOptions = playCapture.setupOptions;
+                    setupOptions = capturedSetupOptions;
                 }
 
                 return;
@@ -231,12 +228,12 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (Application.isEditor)
             {
-                if (!TryGetValidEditorPlayCapture(out var playCapture))
+                if (!GCLocalPlaySession.TryRequireCapturedSetupOptions("GamingCouchSetup", out var capturedSetupOptions))
                 {
                     return;
                 }
 
-                setupOptions = playCapture.setupOptions;
+                setupOptions = capturedSetupOptions;
             }
 #endif
 
@@ -255,7 +252,12 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (Application.isEditor)
             {
-                Debug.LogError("[GamingCouch] " + source + " blocked because root gc.dev.json did not produce valid editor setup options. Fix gc.dev.json and re-enter Play Mode.");
+                if (GCLocalPlaySession.TryRequireCapturedSetupOptions(source, out var capturedSetupOptions))
+                {
+                    setupOptions = capturedSetupOptions;
+                    return true;
+                }
+
                 return false;
             }
 #endif
@@ -274,12 +276,12 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (Application.isEditor)
             {
-                if (!TryGetValidEditorPlayCapture(out var playCapture))
+                if (!TryGetEditorPlayOptions("Editor play", out var capturedPlayOptions, out var capturedSeatIdentities))
                 {
                     return;
                 }
 
-                Play(playCapture.playOptions, playCapture.seatIdentities);
+                Play(capturedPlayOptions, capturedSeatIdentities);
                 return;
             }
 #endif
@@ -344,12 +346,12 @@ namespace DSB.GC
         {
             GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
-            if (!TryGetValidEditorPlayCapture(out var playCapture))
+            if (!TryGetEditorPlayOptions("Editor play", out var capturedPlayOptions, out var capturedSeatIdentities))
             {
                 yield break;
             }
 
-            Play(playCapture.playOptions, playCapture.seatIdentities);
+            Play(capturedPlayOptions, capturedSeatIdentities);
         }
 #endif
 
@@ -521,7 +523,7 @@ namespace DSB.GC
             GCLog.LogDebug("SetupDone");
 
 #if UNITY_EDITOR
-            if (!TryGetValidEditorPlayCapture(out _))
+            if (!TryGetEditorPlayOptions("Editor play", out _, out _))
             {
                 return;
             }
@@ -796,78 +798,35 @@ namespace DSB.GC
 #if UNITY_EDITOR
         private void CaptureEditorPlaySettings()
         {
-            editorPlayCapture = GCEditorPlayCapture.Capture();
-            LogEditorPlayCaptureIssues(editorPlayCapture);
-            setupOptions = editorPlayCapture.success ? editorPlayCapture.setupOptions : null;
-            if (editorPlayCapture.success)
+            setupOptions = null;
+            if (GCLocalPlaySession.CaptureForRuntimeEntry() &&
+                GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup", out var capturedSetupOptions))
             {
-                GCEditorPlayPreflight.NotifyCaptureSucceeded();
+                setupOptions = capturedSetupOptions;
             }
         }
 
-        private bool TryGetValidEditorPlayCapture(out GCEditorPlayCaptureResult playCapture)
+        private void RecaptureEditorPlaySettingsForRestart()
         {
-            playCapture = editorPlayCapture;
-            if (playCapture.success && playCapture.playOptions != null && playCapture.setupOptions != null)
+            setupOptions = null;
+            if (GCLocalPlaySession.CaptureForRestart() &&
+                GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup", out var capturedSetupOptions))
             {
-                return true;
-            }
-
-            Debug.LogError("[GamingCouch] Editor play blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates. Fix gc.dev.json and re-enter Play Mode.");
-            return false;
-        }
-
-        private bool TryRunEditorRestartPreflight()
-        {
-            var result = GCEditorPlayPreflight.Run(GCEditorPlayPreflightContext.GamingCouchRestart);
-            if (result.success)
-            {
-                return true;
-            }
-
-            Debug.LogError("[GamingCouch] " + result.message);
-            LogDevJsonIssues(result.validation);
-            return false;
-        }
-
-        private static void LogEditorPlayCaptureIssues(GCEditorPlayCaptureResult capture)
-        {
-            LogDevJsonIssues(capture.validation);
-
-            if (!capture.success && !HasAnyIssues(capture.validation))
-            {
-                Debug.LogError("[GamingCouch] Editor play capture failed. Fix root gc.dev.json and re-enter Play Mode.");
+                setupOptions = capturedSetupOptions;
             }
         }
 
-        private static void LogDevJsonIssues(GCDevJsonValidationResult validation)
+        private bool TryGetEditorPlayOptions(
+            string source,
+            out GCPlayOptions capturedPlayOptions,
+            out GCSeatIdentity[] capturedSeatIdentities
+        )
         {
-            var issues = validation != null ? validation.issues : null;
-            if (issues != null)
-            {
-                for (var index = 0; index < issues.Length; index++)
-                {
-                    var issue = issues[index];
-                    if (issue == null)
-                    {
-                        continue;
-                    }
-
-                    if (issue.severity == GCDevJsonIssueSeverity.Warning)
-                    {
-                        Debug.LogWarning("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
-                    }
-                    else
-                    {
-                        Debug.LogError("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
-                    }
-                }
-            }
-        }
-
-        private static bool HasAnyIssues(GCDevJsonValidationResult validation)
-        {
-            return validation != null && validation.issues != null && validation.issues.Length > 0;
+            return GCLocalPlaySession.TryRequireCapturedPlayOptions(
+                source,
+                out capturedPlayOptions,
+                out capturedSeatIdentities
+            );
         }
 #endif
 
@@ -1078,13 +1037,13 @@ namespace DSB.GC
 #if UNITY_EDITOR
             if (Application.isEditor)
             {
-                if (!TryRunEditorRestartPreflight())
+                if (!GCLocalPlaySession.TryRunRestartPreflight())
                 {
                     return;
                 }
 
-                CaptureEditorPlaySettings();
-                if (!TryGetValidEditorPlayCapture(out _))
+                RecaptureEditorPlaySettingsForRestart();
+                if (!TryGetEditorPlayOptions("Editor play", out _, out _))
                 {
                     return;
                 }
@@ -1113,7 +1072,7 @@ namespace DSB.GC
             }
 
 #if UNITY_EDITOR
-            if (!TryRunEditorRestartPreflight())
+            if (!GCLocalPlaySession.TryRunRestartPreflight())
             {
                 yield break;
             }

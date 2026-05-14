@@ -16,7 +16,7 @@ public sealed class GCDevJsonContractFixtureTests
             fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1, 3, 8)));
 
             var readResult = fixture.DevStore.Read();
-            var capture = GCEditorPlayJsonCapture.Capture(readResult);
+            var capture = GCLocalPlaySession.Capture(readResult);
 
             Assert.That(readResult.IsValid, Is.True);
             Assert.That(capture.success, Is.True);
@@ -62,7 +62,7 @@ public sealed class GCDevJsonContractFixtureTests
             fixture.WriteDevJson(BuildDevJson("duel", "12345", BuildSeats(1, 3, 8)));
 
             var readResult = fixture.DevStore.Read();
-            var capture = GCEditorPlayJsonCapture.Capture(readResult);
+            var capture = GCLocalPlaySession.Capture(readResult);
             var issue = FindIssue(readResult.validation, GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum);
 
             Assert.That(readResult.IsValid, Is.False);

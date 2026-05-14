@@ -35,7 +35,7 @@ Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Approve Task 9 before implementation. Do not implement the next slice until Task 9 is approved.
+Next action: Await approval for the next architecture roadmap slice.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ Next action: Approve Task 9 before implementation. Do not implement the next sli
 | 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
 | 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
-| 9. Local Play Session Module | Pending approval | Codex | Proposed next architecture slice. Concentrate Capture, preflight, restart, Play Mode entry, active Capture ownership, and logging coordination behind a deeper Local Play Session Module before implementation. |
+| 9. Local Play Session Module | Done | Codex | Local Play Session Module owns active Capture, root validation, restart preflight/recapture, and issue logging coordination; two review passes complete; parent validation passed. |
 
 ## Blocker Log
 
@@ -1227,7 +1227,7 @@ This task preserves public runtime payloads and keeps portability at the **Local
 
 ### Status
 
-Pending approval. Do not mark this task `In progress` or implement it until explicitly approved.
+In review.
 
 ### Owned Files
 
@@ -1291,6 +1291,108 @@ After implementation and both review-and-patch passes:
 - Add validation results and skipped validation gaps.
 - Set current task to None if complete.
 - Set next action to the next approved architecture roadmap slice, or approval for the next tracked task.
+
+### Task 9 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Runtime/GamingCouch.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs.meta`
+- `Runtime/Dev/GCLocalPlaySession.cs`
+- `Runtime/Dev/GCLocalPlaySession.cs.meta`
+- `Editor/GCEditorPlayJsonCapture.cs`
+- `Editor/GCEditorPlayJsonCapture.cs.meta`
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `Tests/Editor/GCLocalPlaySessionTests.cs`
+- `Tests/Editor/GCLocalPlaySessionTests.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Implementation notes:
+
+- Added editor-only `GCLocalPlaySession` as the Local Play Session Module. It owns active Capture state, root Local Play Contract validation, preflight and capture result shapes, seed resolution, Seat-to-Active Player mapping, restart preflight/recapture helpers, Capture success notification, and Local Play Contract issue logging.
+- `GamingCouch` no longer stores a raw editor Capture result or logs Capture validation issues directly. It uses the session interface for runtime-entry Capture, captured setup/play access, restart preflight, and public restart recapture.
+- `GamingCouchEditor` remains the editor Adapter for inspector state registration and Unity Play Mode entry. It delegates root validation and preflight failure logging to `GCLocalPlaySession`.
+- `GCDevJsonInspectorState` continues to own inspector draft, conflict, pending play state, Apply, and Write Draft behavior; only its play-boundary result/context types were moved behind the session module.
+- `Editor/GCEditorPlayJsonCapture.cs` was retired with no compatibility shim because all capture/root-validation behavior moved into `Runtime/Dev/GCLocalPlaySession.cs`.
+- `Runtime/Dev/GCEditorPlayCapture.cs` was renamed to `Runtime/Dev/GCLocalPlaySession.cs`; the Unity `.meta` GUID was preserved on `GCLocalPlaySession.cs.meta`.
+- No public runtime payload shapes were changed:
+  - `GCSetupOptions`
+  - `GCPlayOptions`
+  - `GCPlayerOptions`
+
+Review pass 1 findings:
+
+- The session preflight path correctly runs root Local Play Contract validation after the registered inspector preflight succeeds.
+- `GamingCouch` uses the restart-specific `GCLocalPlaySession.CaptureForRestart()` interface for public restart recapture.
+- `GamingCouch` no longer stores a raw editor Capture result or directly coordinates Capture issue logging.
+- The Task 9 record prematurely claimed `Done`, review pass 2, parent validation, and skipped final commit status before those steps had completed.
+
+Review pass 1 patches:
+
+- Added a focused `GCLocalPlaySessionTests` regression test that proves root validation still runs after a successful registered preflight handler.
+- Corrected this task record and top-level task table to keep Task 9 `In review` until review pass 2 and parent validation complete.
+
+Review pass 1 validation:
+
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null <new-file>`: no whitespace output for new Task 9 source and `.meta` files; commands exit non-zero because `/dev/null` differs from each new file.
+- Static source search for retired names in `Runtime`, `Editor`, and `Tests`: no matches.
+- Static inspection: `GamingCouch` no longer has an `editorPlayCapture` field and no longer contains local Capture issue logging helpers.
+- Static inspection: active Capture is held only in `GCLocalPlaySession.activeCapture`; restart preflight does not mutate it, and public restart recapture uses `GCLocalPlaySession.CaptureForRestart()`.
+- Focused editor tests added in `Tests/Editor/GCLocalPlaySessionTests.cs` for valid Capture caching, failed Capture blocking, restart preflight stability, root validation after successful inspector preflight, restart recapture from latest Local Play Settings, and Capture success notification timing.
+- `GCDevJsonContractFixtureTests` now exercises Capture through `GCLocalPlaySession.Capture(readResult)`.
+- `git status --short --untracked-files=all`: Task 9 owned files are changed, and unrelated pre-existing untracked files remain present and untouched.
+
+Review pass 1 skipped validation:
+
+- Unity editor tests were not run. The only installed Unity editor found in this shell is `/Applications/Unity/Hub/Editor/6000.2.7f2`, while this repository is a UPM package root with no `ProjectSettings/`, no `Packages/manifest.json`, and no package-local Unity test command. Running Unity directly against this folder would create unmanaged local project artifacts, which is outside v1 scope.
+
+Review pass 2 findings:
+
+- No C# compile risks were found by static inspection in `GCLocalPlaySession`, `GamingCouch`, or the focused editor tests.
+- Moving Capture/preflight into `GCLocalPlaySession` preserves the intended behavior split: `GamingCouchEditor.RunPreflight` validates and applies inspector state, then returns success; `GCLocalPlaySession.RunPreflight` performs the single root `gc.dev.json` validation after that success.
+- Focused log-producing tests cover all expected `GCLocalPlaySession` `Debug.LogError` output with `LogAssert.Expect`; root preflight tests inspect returned failures and do not trigger logging.
+- `GCLocalPlaySession.cs.meta` preserves the retired `Runtime/Dev/GCEditorPlayCapture.cs.meta` GUID (`33b629b549c843c4bc527a7bd629340e`), and the retired editor JSON capture file has no replacement shim because no source references remain.
+- At review pass 2 time, the task appropriately remained `In review` until parent validation and final closure.
+
+Review pass 2 patches:
+
+- No code patches were needed.
+- Updated this task record and top-level next action/table notes to show review pass 2 completion without marking Task 9 done or parent validation complete.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- Static source search for retired names in `Runtime`, `Editor`, and `Tests` C# files: no matches.
+- Static inspection: `GamingCouchEditor.RunPreflight` no longer calls root JSON validation directly, so `GCLocalPlaySession.RunPreflight` validates root JSON exactly once after successful inspector preflight.
+- Static inspection: `GamingCouch` uses `GCLocalPlaySession.CaptureForRestart()` for restart recapture and does not retain a raw editor Capture result.
+- `dotnet build --no-restore`: not available for this package root; MSBuild reports no project or solution file.
+- `which csc mcs`: no local C# compiler found on `PATH`.
+- Unity editor tests were not run. Unity exists at `/Applications/Unity/Hub/Editor/6000.2.7f2/Unity.app/Contents/MacOS/Unity`, but this repository root has no `ProjectSettings/`, no `Packages/manifest.json`, and no package-local Unity test command. Running Unity directly against this folder would create unmanaged project artifacts.
+
+Parent validation:
+
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null <new Task 9 file>`: no whitespace output for `Runtime/Dev/GCLocalPlaySession.cs`, `Runtime/Dev/GCLocalPlaySession.cs.meta`, `Tests/Editor/GCLocalPlaySessionTests.cs`, and `Tests/Editor/GCLocalPlaySessionTests.cs.meta`; commands exit non-zero because `/dev/null` differs from each new file.
+- Static source search for retired names in `Runtime`, `Editor`, and `Tests`: no matches.
+- Public payload/package/assembly diff check produced no changes for `GCSetupOptions`, `GCPlayOptions`, `GCPlayerOptions`, `package.json`, or asmdefs.
+- Unity `.meta` inspection confirmed `Runtime/Dev/GCLocalPlaySession.cs.meta` preserves the retired `Runtime/Dev/GCEditorPlayCapture.cs.meta` GUID (`33b629b549c843c4bc527a7bd629340e`).
+- `rg --files -g '*.sln' -g '*.csproj'`: no project or solution files found, so `dotnet build` is not usable here.
+- `command -v csc` and `command -v mcs`: no local C# compiler found on `PATH`.
+- `git status --short --untracked-files=all`: Task 9 owned files changed; unrelated pre-existing untracked files remain present and untouched.
+
+Parent skipped validation:
+
+- Focused Unity editor tests were not run. `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, this repository root has no `ProjectSettings/`, no `Packages/manifest.json`, and no package-local Unity test command. Running Unity directly against this folder would create unmanaged local project artifacts.
+
+Decisions:
+
+- No compatibility shim was kept for `GCEditorPlayJsonCapture` because there are no remaining source references after the session move.
 
 ## Handoff Protocol
 

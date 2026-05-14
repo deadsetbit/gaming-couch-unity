@@ -173,7 +173,7 @@ internal sealed class GCDevJsonInspectorState
         return changedState;
     }
 
-    internal GCEditorPlayPreflightResult PrepareForPlayBoundary(GCEditorPlayPreflightContext context)
+    internal GCLocalPlaySessionPreflightResult PrepareForPlayBoundary(GCLocalPlaySessionBoundary context)
     {
         var validationResult = ValidateForPlayBoundary(context);
         if (!validationResult.success)
@@ -181,33 +181,33 @@ internal sealed class GCDevJsonInspectorState
             return validationResult;
         }
 
-        var boundaryName = GCEditorPlayPreflight.GetBoundaryDisplayName(context);
+        var boundaryName = GCLocalPlaySession.GetBoundaryDisplayName(context);
         if (!IsDirty)
         {
-            return GCEditorPlayPreflightResult.Succeeded();
+            return GCLocalPlaySessionPreflightResult.Succeeded();
         }
 
         if (WriteDraftToDisk())
         {
-            return GCEditorPlayPreflightResult.Succeeded();
+            return GCLocalPlaySessionPreflightResult.Succeeded();
         }
 
-        return GCEditorPlayPreflightResult.Failed(
+        return GCLocalPlaySessionPreflightResult.Failed(
             boundaryName + " blocked because the current gc.dev.json inspector draft could not be auto-applied.",
             lastWriteResult != null ? lastWriteResult.path : DevJsonPath,
             lastWriteResult != null ? lastWriteResult.validation : draftValidation
         );
     }
 
-    internal GCEditorPlayPreflightResult ValidateForPlayBoundary(GCEditorPlayPreflightContext context)
+    internal GCLocalPlaySessionPreflightResult ValidateForPlayBoundary(GCLocalPlaySessionBoundary context)
     {
         PollForExternalChanges(true);
         ValidateDraft();
 
-        var boundaryName = GCEditorPlayPreflight.GetBoundaryDisplayName(context);
+        var boundaryName = GCLocalPlaySession.GetBoundaryDisplayName(context);
         if (hasConflict)
         {
-            return GCEditorPlayPreflightResult.Failed(
+            return GCLocalPlaySessionPreflightResult.Failed(
                 boundaryName + " blocked because the current gc.dev.json inspector draft is conflicted. Reload from disk or write the draft before continuing.",
                 DevJsonPath,
                 draftValidation
@@ -216,19 +216,19 @@ internal sealed class GCDevJsonInspectorState
 
         if (!IsDirty)
         {
-            return GCEditorPlayPreflightResult.Succeeded();
+            return GCLocalPlaySessionPreflightResult.Succeeded();
         }
 
         if (draftValidation == null || !draftValidation.IsValid)
         {
-            return GCEditorPlayPreflightResult.Failed(
+            return GCLocalPlaySessionPreflightResult.Failed(
                 boundaryName + " blocked because the current gc.dev.json inspector draft is invalid.",
                 DevJsonPath,
                 draftValidation
             );
         }
 
-        return GCEditorPlayPreflightResult.Succeeded();
+        return GCLocalPlaySessionPreflightResult.Succeeded();
     }
 
     internal bool MarkPlayChangesCaptured()
