@@ -1,7 +1,7 @@
 # Unity `gc.dev.json` Sync Implementation Tasks
 
-Status: Done
-Last updated: 2026-05-09
+Status: Active follow-up
+Last updated: 2026-05-14
 Owner: Gaming Couch Unity package team
 
 ## Source Context
@@ -46,6 +46,7 @@ Next action: Release/tag follow-up only if explicitly requested.
 | 5. External reload, dirty draft, conflict, and pending play state | Done | GPT-5.5 xhigh subagent | Polling, conflict actions, metadata refresh, and play-mode pending-change status complete; parent validation passed. |
 | 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
+| 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
 
 ## Blocker Log
 
@@ -1095,6 +1096,125 @@ Final manual scenario status:
 Non-blocking follow-up:
 
 - DevApp package target bump to `unity-0.1.0-alpha.2` and DevApp Unity seed-range alignment remain separate main-repo follow-ups. No main-repo files were edited.
+
+## Task 8: Local Play Contract Architecture Hardening
+
+### Objective
+
+Deepen the Local Play Contract module without changing user-facing behavior. Move root JSON file stores, file stamps, and inspector draft models out of the inspector state file, then add executable fixture coverage for the current `gc.dev.json` and `gc.metadata.json` contract.
+
+This task treats portability as contract-level alignment across engine packages. Do not add Godot code, shared cross-repo packages, or main-repo changes in this task.
+
+### Owned Files
+
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GCDevJsonDraft.cs`
+- `Editor/GCDevJsonDraft.cs.meta`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `Runtime/Dev/GCDevJsonStore.cs.meta`
+- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCRootJsonFileStamp.cs`
+- `Runtime/Dev/GCRootJsonFileStamp.cs.meta`
+- `Editor/GCEditorPlayJsonCapture.cs`
+- `Runtime/GamingCouch.cs` (scope addition: expose runtime internals to `GamingCouch.Editor.Tests` so Task 8 contract fixtures can instantiate internal runtime dev stores with a fake `IGCLocalProjectRootResolver` while keeping the moved types internal)
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs.meta`
+- `CONTEXT.md`
+- `CONTEXT.md.meta`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Keep `CONTEXT.md` as the domain glossary for this task. Do not rewrite it unless implementation discovers a naming mismatch.
+2. Move `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCMetadataJsonStore`, and `GCRootJsonFileStamp` out of `Editor/GCDevJsonInspectorState.cs` into the `Runtime/Dev` files listed above.
+3. Keep the moved types `internal`, under the existing dev/runtime namespace, and editor-guarded consistently with current JSON sync code so player builds do not acquire editor JSON behavior.
+4. Move `GCDevJsonDraft` and `GCDevJsonSeatDraft` into `Editor/GCDevJsonDraft.cs`. Keep them inspector-only and behavior-neutral.
+5. Update existing inspector, readiness, and capture call sites to use the extracted types. Preserve existing validation issue codes, message text, missing/invalid metadata warning behavior, conflict behavior, and JSON write formatting.
+6. Add a small internal test seam to `Editor/GCEditorPlayJsonCapture.cs` only if needed so fixture tests can capture from a prepared `GCDevJsonReadResult` without depending on the real Unity project root.
+7. Add `Tests/Editor/GCDevJsonContractFixtureTests.cs` with fixture helpers that write real root files named exactly `gc.dev.json` and `gc.metadata.json` into a temporary root through a fake `IGCLocalProjectRootResolver`.
+8. Cover these contract cases:
+   - valid sparse roster: seats 1, 3, and 8 enabled, fixed seed, valid Unity metadata, dense active player IDs, and stable source-seat identity
+   - missing metadata: valid `gc.dev.json` remains readable with warning-only metadata issues
+   - metadata max-player gate: too many enabled seats for the selected entry fails validation and capture
+   - invalid dev structure: wrong seat count or unsupported `devVersion` fails with the existing issue code
+   - preserving write: updating canonical fields keeps unrelated top-level `gc.dev.json` fields
+9. Do not support legacy serialized play settings, migrate old scene values, change public DTOs, add release metadata, or edit the Gaming Couch main repo.
+
+### Verification
+
+- Run `git diff --check`.
+- Run the focused Unity editor tests for `GCDevJsonContractFixtureTests` if a Unity test command is available.
+- If a Unity test command is unavailable, record the exact skipped environment gap.
+- Statically confirm `Editor/GCDevJsonInspectorState.cs` no longer defines store, metadata store, file stamp, or draft types.
+- Statically confirm public runtime payloads remain unchanged:
+  - `GCSetupOptions`
+  - `GCPlayOptions`
+  - `GCPlayerOptions`
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 8 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to release/tag follow-up only if explicitly requested.
+
+### Task 8 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `CONTEXT.md`
+- `CONTEXT.md.meta`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GCDevJsonDraft.cs`
+- `Editor/GCDevJsonDraft.cs.meta`
+- `Editor/GCEditorPlayJsonCapture.cs`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `Runtime/Dev/GCDevJsonStore.cs.meta`
+- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCRootJsonFileStamp.cs`
+- `Runtime/Dev/GCRootJsonFileStamp.cs.meta`
+- `Runtime/GamingCouch.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- Review pass 2 `git diff --check`: passed.
+- `git diff --check --no-index /dev/null <new Task 8 file>` for each new Task 8 source/meta file: no whitespace output; commands exit non-zero because each new file differs from `/dev/null`.
+- Review pass 2 `git diff --check --no-index /dev/null <new Task 8 file>` for new Task 8 source/meta files, including `CONTEXT.md` and `CONTEXT.md.meta`: no whitespace output; commands exit non-zero because each new file differs from `/dev/null`.
+- Type extraction inspection: `Editor/GCDevJsonInspectorState.cs` no longer defines `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCMetadataJsonStore`, `GCRootJsonFileStamp`, `GCDevJsonDraft`, or `GCDevJsonSeatDraft`; each moved type has exactly one definition in its Task 8 destination file.
+- Review pass 2 type extraction inspection: moved store/stamp/draft types still have exactly one definition in the intended Task 8 destination files.
+- Public DTO inspection: `git diff -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs` produced no output; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` shapes remain unchanged.
+- JSON writer inspection: preserving write path remains `JObject` replacement of canonical fields plus `Formatting.Indented` and a trailing newline in `Runtime/Dev/GCDevJsonStore.cs`.
+- Review pass 2 Unity `.meta` inspection: new Task 8 C# files use `MonoImporter`, `CONTEXT.md.meta` uses `TextScriptImporter`, and `rg -o "^guid: [0-9a-f]+" -g "*.meta" | sed "s/.*guid: //" | sort | uniq -d` produced no duplicate GUID output.
+- `git status --short --untracked-files=all`: Task 8 paths changed; pre-existing unrelated untracked files remain present and untouched.
+- Review pass 2 fixture inspection: `GCDevJsonContractFixtureTests` writes exact `gc.dev.json` and `gc.metadata.json` root files through a fake `IGCLocalProjectRootResolver`; sparse roster, missing metadata, metadata max-player gate, invalid structure, unsupported `devVersion`, and preserving-write cases align with the Task 8 contract bullets.
+- Parent validation `git diff --check`: passed.
+- Parent type extraction scan confirmed the moved store/stamp/draft types have one intended definition each in their Task 8 destination files.
+- Parent public DTO diff check for `Runtime/GCSetupOptions.cs`, `Runtime/GCPlayOptions.cs`, and `Runtime/GCPlayerOptions.cs` produced no output.
+- Parent Unity command availability check: `command -v Unity` and `command -v UnityHub` returned no executable; `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`; `ProjectSettings` and `Packages` directories are absent from this package repo.
+- Parent Unity `.meta` GUID check: `rg -o "^guid: [0-9a-f]+" -g "*.meta" | sed "s/.*guid: //" | sort | uniq -d` produced no duplicate GUID output.
+
+Skipped validation:
+
+- Focused Unity editor tests for `GCDevJsonContractFixtureTests` were not run. `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings` or `Packages` directory for a safe package-local Unity Test Runner invocation.
+
+Decisions:
+
+- Added `Runtime/GamingCouch.cs` to Task 8 scope before editing so `GamingCouch.Editor.Tests` can access internal runtime dev contract types while the extracted store/stamp types remain internal.
+- Added an internal `GCEditorPlayJsonCapture.Capture(GCDevJsonReadResult)` test seam so contract fixtures can capture from temp-root file reads without depending on the real Unity project root.
 
 ## Handoff Protocol
 

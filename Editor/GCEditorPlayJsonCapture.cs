@@ -50,7 +50,7 @@ internal static class GCEditorPlayJsonCapture
         );
     }
 
-    private static GCEditorPlayCaptureResult Capture(GCDevJsonReadResult readResult)
+    internal static GCEditorPlayCaptureResult Capture(GCDevJsonReadResult readResult)
     {
         if (readResult == null)
         {

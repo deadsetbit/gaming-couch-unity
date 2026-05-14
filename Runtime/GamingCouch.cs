@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Gaming Couch - Netcode for GameObjects")]
 [assembly: InternalsVisibleTo("GamingCouch.Editor")]
+[assembly: InternalsVisibleTo("GamingCouch.Editor.Tests")]
 
 namespace DSB.GC
 {
