@@ -6,7 +6,7 @@ Owner: Gaming Couch Unity package team
 
 ## Purpose
 
-Sequence the next architecture improvements after the Local Play Contract hardening slice.
+Sequence the next architecture improvements after the Local Play Contract, Local Play Session, and Contract Fixture Corpus slices.
 
 This roadmap is about increasing **Depth**, **Leverage**, and **Locality** in the Unity package. It does not start Godot work directly. Portability means the **Local Play Contract** and **Contract Fixtures** stay stable enough that a future engine package can become another **Adapter** at the same contract **Seam**.
 
@@ -27,15 +27,16 @@ This roadmap is about increasing **Depth**, **Leverage**, and **Locality** in th
 
 ## Current Baseline
 
-Task 8 completed the first architecture suggestion:
+Tasks 8 through 10 completed the local play architecture follow-up:
 
 - **Local Play Contract Module**: root JSON stores, metadata store, file stamps, inspector draft, and executable **Contract Fixtures** are separated from inspector state.
-- **Leverage gained**: tests can exercise real `gc.dev.json` and `gc.metadata.json` file behavior through a smaller **Interface**.
-- **Locality gained**: root file parsing/writing rules now live in the Local Play Contract area instead of being embedded in inspector state.
+- **Local Play Session Module**: active **Capture**, root Local Play Contract validation, restart preflight/recapture, and issue logging coordination now sit behind one deeper **Module**.
+- **Contract Fixture Corpus**: package-root `ContractFixtures/LocalPlay` cases are portable data consumed by Unity editor tests.
+- **Leverage gained**: tests can exercise real `gc.dev.json` and `gc.metadata.json` file behavior, active **Capture**, and portable **Contract Fixture** cases through smaller **Interfaces**.
+- **Locality gained**: root file parsing/writing rules, local play session rules, and fixture expectations now live in their owning areas instead of being embedded in inspector state or broad test code.
 
 Remaining friction observed in the current code shape:
 
-- `Runtime/GamingCouch.cs` still coordinates play capture, restart, setup/play callbacks, and runtime state.
 - `Runtime/Dev/GCDevAppIntegration.cs` mixes connection lifecycle, runtime snapshots, project registration, and message construction.
 - `Editor/GamingCouchStartScreenReadiness.cs` and `Editor/GamingCouchStartScreenWindow.cs` are both large and tightly paired.
 - `Tests/Editor/GamingCouchQuickStartEditorTests.cs` is a broad test Module that makes new editor rules harder to place.
@@ -45,9 +46,9 @@ Remaining friction observed in the current code shape:
 | Order | Module | Status | Problem | Slice | Done when |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Local Play Contract Module | Done | Root JSON stores, draft state, file stamps, and tests were too close to inspector state. | Extract stores/draft/stamp and add executable **Contract Fixtures**. | Completed in Task 8 of the Dev JSON sync task plan. |
-| 2 | Local Play Session Module | Next | **Capture**, preflight, restart, and Play Mode entry rules are split across runtime, editor capture, and inspector state. | Concentrate the editor play session rules behind one deeper **Module** while keeping current behavior. | `GamingCouch` asks one Module for editor play readiness and captured options; restart and Play Mode entry use the same path. |
-| 3 | Contract Fixture Corpus | Next | The new **Contract Fixtures** are executable but still live as Unity test code. | Promote the fixture cases into a small contract corpus that Unity tests consume directly. | A future engine **Adapter** can reuse the same JSON cases and expected outcomes without reading Unity test code. |
-| 4 | Start Screen Readiness Module | Later | Readiness rules and Start Screen rendering have high coupling, so adding a check requires understanding both. | Separate readiness facts/actions from the EditorWindow rendering **Implementation**. | Readiness checks are testable through one **Interface**, and the window mostly renders already-computed rows. |
+| 2 | Local Play Session Module | Done | **Capture**, preflight, restart, and Play Mode entry rules were split across runtime, editor capture, and inspector state. | Concentrate the editor play session rules behind one deeper **Module** while keeping current behavior. | Completed in Task 9 of the Dev JSON sync task plan. |
+| 3 | Contract Fixture Corpus | Done | The new **Contract Fixtures** were executable but still lived as Unity test code. | Promote the fixture cases into a small contract corpus that Unity tests consume directly. | Completed in Task 10 of the Dev JSON sync task plan. |
+| 4 | Start Screen Readiness Module | Next | Readiness rules and Start Screen rendering have high coupling, so adding a check requires understanding both. | Separate readiness facts/actions from the EditorWindow rendering **Implementation**. | Readiness checks are testable through one **Interface**, and the window mostly renders already-computed rows. |
 | 5 | DevApp Runtime Adapter Module | Later | DevApp integration mixes transport, project identity, runtime snapshot, and message shape. | Split message construction from the WebSocket **Adapter** without changing DevApp behavior. | Runtime registration and snapshot messages are tested without a live transport. |
 | 6 | Quick Start Setup Module | Later | Safe scene/object/asset setup rules are spread across setup, scene wiring, and broad tests. | Concentrate the setup rules behind a deeper editor setup **Module**. | Generated assets, non-overwrite rules, and scene wiring have focused tests outside the mega test file. |
 | 7 | Editor Test Harness Module | Later | The broad Quick Start test file reduces **Locality** for new editor behavior. | Split tests by **Module** after the production **Modules** have deeper **Interfaces**. | New local play, readiness, setup, and DevApp rules have focused test homes. |
@@ -55,16 +56,16 @@ Remaining friction observed in the current code shape:
 
 ## Recommended Next Slice
 
-Do the **Local Play Session Module** next.
+Do the **Start Screen Readiness Module** next.
 
 Why this is the best next step:
 
-- It is adjacent to the completed Local Play Contract work.
-- It reduces the largest remaining local play **Seam** confusion: preflight, auto-apply, capture, restart, and active-play stability.
-- It improves **Locality** before touching broad Start Screen or DevApp integration code.
-- It creates a better test surface for active **Capture** behavior without changing public payloads.
+- It is the next highest-friction editor surface after the completed local play work.
+- `GamingCouchStartScreenReadiness.cs` and `GamingCouchStartScreenWindow.cs` are both large and tightly paired, so adding a readiness rule currently requires understanding rule calculation, action availability, and rendering together.
+- It improves **Locality** before touching the broader Quick Start setup tests.
+- It creates a better test surface for Start Screen readiness rows and actions without changing setup behavior.
 
-This slice should not rename public payloads, change Play Mode behavior, or add another engine **Adapter**. It should make the existing Unity **Adapter** deeper.
+This slice should not rename public payloads, change setup behavior, or add another engine **Adapter**. It should make the existing Unity **Adapter** deeper.
 
 ## Execution Model
 
