@@ -1227,7 +1227,7 @@ This task preserves public runtime payloads and keeps portability at the **Local
 
 ### Status
 
-In review.
+Done.
 
 ### Owned Files
 
@@ -1389,6 +1389,10 @@ Parent validation:
 Parent skipped validation:
 
 - Focused Unity editor tests were not run. `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, this repository root has no `ProjectSettings/`, no `Packages/manifest.json`, and no package-local Unity test command. Running Unity directly against this folder would create unmanaged local project artifacts.
+
+Manual validation:
+
+- Manual testing ok; no Local Play Session regressions were reported. No detailed Unity version or scenario transcript was supplied.
 
 Decisions:
 
