@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using DSB.GC;
 using NUnit.Framework;
 using UnityEditor;
@@ -264,6 +265,535 @@ public sealed class GamingCouchStartScreenReadinessTests
         Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.LocalPlayJsonValid), Is.False);
     }
 
+    [Test]
+    public void ReadinessReportsMissingGamingCouchInEmptyScene()
+    {
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+
+        Assert.That(readiness.IsSceneReady, Is.False);
+        Assert.That(readiness.gamingCouches, Has.Length.EqualTo(0));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Pass);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance).message, Does.Contain("Create a GamingCouch object"));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCollapsedGamingCouchChecklist(readiness);
+    }
+
+    [Test]
+    public void ReadinessKeepsActiveSceneGuardOutOfDisplayedChecklist()
+    {
+        var readiness = new GCStartScreenReadiness(default(Scene), null, null, null, null, null);
+        GCStartScreenReadinessCheck activeSceneCheck;
+        var checklistIds = readiness.checklist.Select(check => check.id).ToArray();
+        var checklistLabels = readiness.checklist.Select(check => check.label).ToArray();
+
+        Assert.That(readiness.IsSceneReady, Is.False);
+        Assert.That(readiness.sceneName, Is.EqualTo("Untitled"));
+        Assert.That(readiness.scenePath, Is.Null);
+        Assert.That(readiness.TryGetCheck(GCStartScreenReadinessCheckId.ActiveScene, out activeSceneCheck), Is.True);
+        Assert.That(activeSceneCheck, Is.SameAs(readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene)));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.ActiveScene).message, Does.Contain("No loaded active scene"));
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.ActiveScene));
+        Assert.That(HasActiveSceneChecklistLabel(checklistLabels), Is.False);
+    }
+
+    [Test]
+    public void ReadinessProvidesHelpTextForDisplayedChecklistRows()
+    {
+        var readiness = new GCStartScreenReadiness(default(Scene), null, null, null, null, null);
+        var displayableChecks = readiness.checklist.Where(check => check != null).ToArray();
+
+        Assert.That(displayableChecks, Is.Not.Empty);
+        Assert.That(displayableChecks.All(check => !string.IsNullOrEmpty(check.helpText)), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText != check.label), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText != check.message), Is.True);
+        Assert.That(displayableChecks.All(check => check.helpText.Length <= 90), Is.True);
+    }
+
+    [Test]
+    public void ReadinessUsesGameScriptCopyForListenerChecklistRow()
+    {
+        var blockedReadiness = new GCStartScreenReadiness(default(Scene), null, null, null, null, null);
+        var blockedCheck = blockedReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        Assert.That(blockedCheck.label, Is.EqualTo("Game script is ready"));
+        Assert.That(blockedCheck.message, Does.Contain("Game script readiness"));
+        Assert.That(blockedCheck.helpText, Does.Contain("Game script"));
+
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var missingReadiness = GCStartScreenReadinessService.InspectActiveScene();
+        var missingCheck = missingReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        Assert.That(missingCheck.label, Is.EqualTo("Game script is ready"));
+        Assert.That(missingCheck.message, Does.Contain("Game script object"));
+
+        var listener = CreateCompatibleListener("Existing Game");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
+        var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        Assert.That(readyCheck.label, Is.EqualTo("Game script is ready"));
+        Assert.That(readyCheck.message, Does.Contain("Game script reference"));
+        Assert.That(readyCheck.message, Does.Contain("Existing Game"));
+    }
+
+    [Test]
+    public void ReadinessReportsMissingReferencesOnBareGamingCouch()
+    {
+        CreateGamingCouch("GamingCouch");
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+
+        Assert.That(readiness.IsSceneReady, Is.False);
+        Assert.That(readiness.gamingCouches, Has.Length.EqualTo(1));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Pass);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Fail);
+        AssertCollapsedGamingCouchChecklist(readiness);
+    }
+
+    [Test]
+    public void ReadinessReportsIndividualMissingReferenceStates()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var missingPlayerReadiness = GCStartScreenReadinessService.InspectActiveScene();
+        Assert.That(missingPlayerReadiness.IsSceneReady, Is.False);
+        AssertCheck(missingPlayerReadiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+        AssertCheck(missingPlayerReadiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Fail);
+
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var ready = GCStartScreenReadinessService.InspectActiveScene();
+        Assert.That(ready.IsSceneReady, Is.True);
+        AssertCheck(ready, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Pass);
+        AssertCheck(ready, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+        AssertCheck(ready, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Pass);
+        AssertCollapsedGamingCouchChecklist(ready);
+    }
+
+    [Test]
+    public void ReadinessAcceptsCompatibleCustomListenerNotNamedGame()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Round Coordinator");
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(check.message, Does.Contain("Round Coordinator"));
+    }
+
+    [Test]
+    public void ReadinessAcceptsPublicInheritedReceiverMethods()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Inherited Listener");
+        listener.AddComponent<InheritedCompatibleGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Pass);
+    }
+
+    [Test]
+    public void ReadinessRejectsAssignedListenerWithoutSetupAndPlayReceivers()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Incomplete Listener");
+        listener.AddComponent<SetupOnlyGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("Incomplete Listener"));
+        Assert.That(check.message, Does.Contain("GamingCouchSetup(GCSetupOptions)"));
+        Assert.That(check.message, Does.Contain("GamingCouchPlay(GCPlayOptions)"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessRejectsReceiverMethodsWithWrongSignatures()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Wrong Signature Listener");
+        listener.AddComponent<WrongSignatureGameScriptReceiver>();
+
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("Wrong Signature Listener"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessReportsUnresolvedSerializedListenerReferenceGuidance()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            null,
+            null,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            CreateReadyWebGLExportReadiness(),
+            true
+        );
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("could not be resolved"));
+        Assert.That(check.message, Does.Contain("deleted object"));
+        Assert.That(check.message, Does.Contain("unloaded asset"));
+        Assert.That(check.message, Does.Contain("script that no longer compiles"));
+        Assert.That(check.message, Does.Contain("Clear or replace"));
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.False);
+    }
+
+    [Test]
+    public void ReadinessReportsMissingSerializedListenerReferenceAndOffersSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Deleted Game");
+        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
+
+        UnityEngine.Object.DestroyImmediate(listener);
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
+
+        Assert.That(readiness.hasMissingSerializedListenerReference, Is.True);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(check.message, Does.Contain("missing GameObject"));
+        Assert.That(check.message, Does.Contain("Create & Wire Game"));
+        Assert.That(check.message.Contains("broken"), Is.False);
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.True);
+    }
+
+    [Test]
+    public void ReadinessBlocksWhenActiveSceneHasMultipleGamingCouches()
+    {
+        CreateGamingCouch("GamingCouch A");
+        CreateGamingCouch("GamingCouch B");
+
+        var readiness = GCStartScreenReadinessService.InspectActiveScene();
+
+        Assert.That(readiness.IsSceneReady, Is.False);
+        Assert.That(readiness.gamingCouches, Has.Length.EqualTo(2));
+        Assert.That(readiness.gamingCouch, Is.Null);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.GamingCouchInstance, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance).message, Does.Contain("multiple GamingCouch"));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ListenerAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Blocked);
+        AssertCollapsedGamingCouchChecklist(readiness);
+    }
+
+    [Test]
+    public void BlockingChecklistReadinessIgnoresWarningRows()
+    {
+        var warningOnly = new[]
+        {
+            new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.GameViewAspect16By9,
+                "Game View uses 16:9 preview",
+                GCStartScreenReadinessCheckState.Warning,
+                "Game View could not be inspected."
+            ),
+        };
+        var blocking = new[]
+        {
+            new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene,
+                "Active scene is first Build Settings scene",
+                GCStartScreenReadinessCheckState.Fail,
+                "The active scene is not in Build Settings."
+            ),
+        };
+
+        Assert.That(GCStartScreenReadiness.HasBlockingChecklistIssues(warningOnly), Is.False);
+        Assert.That(GCStartScreenReadiness.HasBlockingChecklistIssues(blocking), Is.True);
+    }
+
+    [Test]
+    public void StartScreenReadinessSummaryReportsNoPendingItemsWhenReady()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+        var readiness = CreateReadyStartScreenReadiness(gamingCouch, listener, playerPrefab);
+
+        var summary = GCStartScreenReadinessSummary.Create(readiness, false);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.Ready));
+        Assert.That(summary.HasPendingItems, Is.False);
+        Assert.That(summary.blockerCount, Is.EqualTo(0));
+        Assert.That(summary.warningCount, Is.EqualTo(0));
+        Assert.That(summary.actionableSetupCount, Is.EqualTo(0));
+        Assert.That(summary.message, Is.EqualTo("Start Screen: no pending setup items."));
+    }
+
+    [Test]
+    public void StartScreenReadinessSummaryCountsBlockersWarningsAndActions()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var warningReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Warning,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            Array.Empty<string>()
+        );
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            null,
+            null,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            warningReadiness
+        );
+
+        var summary = GCStartScreenReadinessSummary.Create(readiness, false);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.Actionable));
+        Assert.That(summary.HasPendingItems, Is.True);
+        Assert.That(summary.blockerCount, Is.EqualTo(0));
+        Assert.That(summary.warningCount, Is.EqualTo(1));
+        Assert.That(summary.actionableSetupCount, Is.EqualTo(2));
+        Assert.That(summary.message, Is.EqualTo("Start Screen: 2 setup actions, 1 warning."));
+    }
+
+    [Test]
+    public void StartScreenReadinessSummaryPrioritizesPendingCompilation()
+    {
+        var summary = GCStartScreenReadinessSummary.Create(null, true);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.PendingCompilation));
+        Assert.That(summary.HasPendingItems, Is.True);
+        Assert.That(summary.hasPendingCompilation, Is.True);
+        Assert.That(summary.message, Does.Contain("waiting for Unity"));
+    }
+
+    [Test]
+    public void WebGLExportChecklistRowReportsWarningWithoutSceneSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var warningReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Warning,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            Array.Empty<string>()
+        );
+
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+            ),
+            GamingCouchGameViewAspect.InspectSizeEntries(
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                0,
+                true,
+                null
+            ),
+            warningReadiness
+        );
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Warning);
+        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).IsSatisfied, Is.True);
+        Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.False);
+        Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+    }
+
+    [Test]
+    public void WebGLExportChecklistRowBlockedDoesNotEnterGlobalSceneSetupAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var blockedReadiness = new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Blocked,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            "Clean WebGL export setup is incomplete.",
+            Array.Empty<string>()
+        );
+
+        var readiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            GamingCouchBuildSettingsReadiness.InspectScenePath(
+                true,
+                TestSceneBuildPath,
+                new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+            ),
+            GamingCouchGameViewAspect.InspectSizeEntries(
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                0,
+                true,
+                null
+            ),
+            blockedReadiness
+        );
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Blocked);
+        Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.True);
+        Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+        Assert.That(readiness.AvailableChecklistSetupActionCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void WebGLExportChecklistRowMapsReadyAndNullReadinessStates()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var readyReadiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateReadyWebGLExportReadiness()
+        );
+        var uninspectableReadiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null
+        );
+        var readyWebGLCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
+        var uninspectableWebGLCheck = uninspectableReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
+
+        AssertCheck(readyReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(readyWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(readyWebGLCheck.IsSatisfied, Is.True);
+        AssertCheck(uninspectableReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Fail);
+        Assert.That(uninspectableWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(uninspectableWebGLCheck.message, Does.Contain("could not be inspected"));
+    }
+
+    [Test]
+    public void SetupActionAvailabilityIncludesLaunchReadinessRows()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var buildSettingsMissing = GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            Array.Empty<EditorBuildSettingsScene>()
+        );
+        var gameViewReady = GamingCouchGameViewAspect.InspectSizeEntries(
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            0,
+            true,
+            null
+        );
+        var buildSettingsOnlyReadiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null,
+            buildSettingsMissing,
+            gameViewReady,
+            CreateReadyWebGLExportReadiness()
+        );
+
+        var buildSettingsReady = GamingCouchBuildSettingsReadiness.InspectScenePath(
+            true,
+            TestSceneBuildPath,
+            new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
+        );
+        var gameViewMismatch = GamingCouchGameViewAspect.InspectSizeEntries(
+            new[]
+            {
+                new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true),
+                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+            },
+            0,
+            true,
+            null
+        );
+        var gameViewOnlyReadiness = new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            null,
+            buildSettingsReady,
+            gameViewMismatch,
+            CreateReadyWebGLExportReadiness()
+        );
+
+        Assert.That(buildSettingsOnlyReadiness.HasSafeAutomatableSetupActions, Is.True);
+        Assert.That(gameViewOnlyReadiness.HasSafeAutomatableSetupActions, Is.True);
+    }
+
+
     private GCStartScreenReadiness CreateReadySceneReadiness(
         GCActiveSceneBuildSettingsReadiness buildSettings,
         GCGameViewAspectReadiness gameViewAspect,
@@ -363,6 +893,80 @@ public sealed class GamingCouchStartScreenReadinessTests
             "Clean WebGL export setup is ready.",
             Array.Empty<string>()
         );
+    }
+
+    private GCStartScreenReadiness CreateStartScreenReadinessWithWebGL(
+        GamingCouch gamingCouch,
+        UnityEngine.Object listener,
+        UnityEngine.Object playerPrefab,
+        GCWebGLExportReadiness webGLExport
+    )
+    {
+        return new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            webGLExport
+        );
+    }
+
+    private GCStartScreenReadiness CreateReadyStartScreenReadiness(
+        GamingCouch gamingCouch,
+        UnityEngine.Object listener,
+        UnityEngine.Object playerPrefab
+    )
+    {
+        return new GCStartScreenReadiness(
+            testScene,
+            new[] { gamingCouch },
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateValidLocalPlayJsonReadiness(),
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            CreateReadyWebGLExportReadiness()
+        );
+    }
+
+    private static void AssertCheck(
+        GCStartScreenReadiness readiness,
+        GCStartScreenReadinessCheckId id,
+        GCStartScreenReadinessCheckState state
+    )
+    {
+        Assert.That(readiness.GetCheck(id).state, Is.EqualTo(state));
+    }
+
+    private static void AssertCollapsedGamingCouchChecklist(GCStartScreenReadiness readiness)
+    {
+        var checklistIds = readiness.checklist.Select(check => check.id).ToArray();
+        var gamingCouchRows = readiness.checklist
+            .Where(check => check.id == GCStartScreenReadinessCheckId.GamingCouchInstance)
+            .ToArray();
+        var checklistLabels = readiness.checklist.Select(check => check.label).ToArray();
+
+        Assert.That(gamingCouchRows, Has.Length.EqualTo(1));
+        Assert.That(gamingCouchRows[0].label, Is.EqualTo("GamingCouch game object in scene"));
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.ActiveScene, GCStartScreenReadinessCheckState.Pass);
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.ActiveScene));
+        Assert.That(checklistIds, Has.Member(GCStartScreenReadinessCheckId.GamingCouchInstance));
+        Assert.That(checklistIds, Has.No.Member(GCStartScreenReadinessCheckId.SingleGamingCouchInstance));
+        Assert.That(HasActiveSceneChecklistLabel(checklistLabels), Is.False);
+        Assert.That(
+            readiness.GetCheck(GCStartScreenReadinessCheckId.SingleGamingCouchInstance),
+            Is.SameAs(readiness.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance))
+        );
+    }
+
+    private static bool HasActiveSceneChecklistLabel(string[] checklistLabels)
+    {
+        return checklistLabels.Any(label => string.Equals(label, "Active scene is available", StringComparison.Ordinal));
     }
 
     private static void AssertAction(

@@ -31,11 +31,11 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Active architecture follow-up
+Overall status: Architecture follow-up complete
 
 Current task: None
 
-Next action: Await explicit approval for Task 14 - Editor Test Harness Module.
+Next action: No second engine Adapter readiness task is approved.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -52,7 +52,7 @@ Next action: Await explicit approval for Task 14 - Editor Test Harness Module.
 | 11. Start Screen Readiness Module | Done | Codex | Behavior-neutral readiness row/action refactor complete; two local review passes complete; parent validation passed. |
 | 12. DevApp Runtime Adapter Module | Done | Codex | Outgoing runtime registration and snapshot message construction extracted; WebSocket transport and inbound command handling remain in `GCDevAppIntegration`; manual Unity editor validation passed. |
 | 13. Quick Start Setup Module | Done | Codex | Start Screen setup action runner extracted; open-Editor bridge validation passed. |
-| 14. Editor Test Harness Module | Pending | Unassigned | Split broad editor tests by Module after Tasks 11-13 deepen their Interfaces. |
+| 14. Editor Test Harness Module | Done | Codex | Broad editor tests split by Module; smoke fixture narrowed; open-Editor bridge validation passed. |
 
 ## Blocker Log
 
@@ -1879,7 +1879,7 @@ This task is a test architecture slice. Do not change production behavior unless
 
 ### Status
 
-Pending.
+Done.
 
 ### Owned Files
 
@@ -1927,6 +1927,40 @@ After implementation and both review-and-patch passes:
 - Add validation results and skipped validation gaps.
 - Set current task to None if complete.
 - Set next action to second engine **Adapter** readiness only when a real second engine **Adapter** is approved; otherwise leave architecture follow-up complete.
+
+### Task 14 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`
+- `Tests/Editor/GamingCouchQuickStartSetupAssetTests.cs`
+- `Tests/Editor/GamingCouchQuickStartSetupAssetTests.cs.meta`
+- `Tests/Editor/GamingCouchEditorTestSupport.cs`
+- `Tests/Editor/GamingCouchEditorTestSupport.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Parent review-and-patch pass 1: moved asset-dependent legacy prefab readiness tests back into `GamingCouchQuickStartSetupAssetTests` so `GamingCouchStartScreenReadinessTests` does not depend on generated prefab cleanup state.
+- Parent review-and-patch pass 2: trimmed `GamingCouchQuickStartEditorTests` from the broad harness down to two cross-Module smoke tests and only the local helpers they use.
+- `git diff --check`: passed.
+- Static test inventory: `GamingCouchQuickStartEditorTests` now has 2 tests, `GamingCouchStartScreenReadinessTests` has 32 tests, `GamingCouchQuickStartSetupAssetTests` has 31 tests, `GamingCouchStartScreenSetupActionsTests` has 8 tests, and `GCDevAppRuntimeMessagesTests` has 6 tests.
+- Static fixture inspection: shared editor test support is limited to common object factories and test double component types; no duplicate test double class definitions remain in `Tests/Editor`.
+- Unity `.meta` inspection: new Task 14 test file GUIDs are unique within this repo.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenReadinessTests --timeout 300`: passed after Unity refreshed the test assembly; 32 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchQuickStartSetupAssetTests --timeout 300`: completed with 27 passed, 0 failed, 4 skipped, 0 inconclusive; skipped cases are existing asset/path guard ignores.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchQuickStartEditorTests --timeout 300`: passed; 2 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GCDevAppRuntimeMessagesTests --timeout 300`: passed; 6 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --timeout 300`: completed with 87 passed, 0 failed, 4 skipped, 0 inconclusive.
+- `git status --short --untracked-files=all`: Task 14 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+Skipped validation:
+
+- The four skipped setup-asset tests are existing guard skips caused by generated example assets already present on disk in the host project.
 
 ## Handoff Protocol
 
