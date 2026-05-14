@@ -31,11 +31,11 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Done
+Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Release/tag follow-up only if explicitly requested.
+Next action: Approve Task 9 before implementation. Do not implement the next slice until Task 9 is approved.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -47,6 +47,7 @@ Next action: Release/tag follow-up only if explicitly requested.
 | 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
 | 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
+| 9. Local Play Session Module | Pending approval | Codex | Proposed next architecture slice. Concentrate Capture, preflight, restart, Play Mode entry, active Capture ownership, and logging coordination behind a deeper Local Play Session Module before implementation. |
 
 ## Blocker Log
 
@@ -1215,6 +1216,81 @@ Decisions:
 
 - Added `Runtime/GamingCouch.cs` to Task 8 scope before editing so `GamingCouch.Editor.Tests` can access internal runtime dev contract types while the extracted store/stamp types remain internal.
 - Added an internal `GCEditorPlayJsonCapture.Capture(GCDevJsonReadResult)` test seam so contract fixtures can capture from temp-root file reads without depending on the real Unity project root.
+
+## Task 9: Local Play Session Module
+
+### Objective
+
+Deepen the editor local play session path without changing user-facing behavior. Introduce a Local Play Session Module that owns the active **Capture** and gives `GamingCouch` one smaller **Interface** for editor play readiness, captured setup/play options, restart preflight, recapture, and Local Play Contract issue logging.
+
+This task preserves public runtime payloads and keeps portability at the **Local Play Contract** plus **Contract Fixture** level. Do not add Godot code, shared cross-engine implementation code, main-repo edits, or public DTO changes in this task.
+
+### Status
+
+Pending approval. Do not mark this task `In progress` or implement it until explicitly approved.
+
+### Owned Files
+
+- `Runtime/GamingCouch.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs`
+- `Runtime/Dev/GCEditorPlayCapture.cs.meta`
+- `Runtime/Dev/GCLocalPlaySession.cs`
+- `Runtime/Dev/GCLocalPlaySession.cs.meta`
+- `Editor/GCEditorPlayJsonCapture.cs`
+- `Editor/GCEditorPlayJsonCapture.cs.meta`
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `Tests/Editor/GCLocalPlaySessionTests.cs`
+- `Tests/Editor/GCLocalPlaySessionTests.cs.meta`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Add or rename to `Runtime/Dev/GCLocalPlaySession.cs` as the main internal editor-only Local Play Session Module. Preserve Unity `.meta` hygiene when renaming or deleting old files.
+2. Move the Seat-to-Active Player **Capture** mapping, seed resolution, root Local Play Contract validation, capture result shape, preflight result shape, and session issue logging coordination behind the Local Play Session Module.
+3. Make the session Module own the active **Capture** for an editor run. `GamingCouch` should not directly cache `GCEditorPlayCaptureResult` or coordinate Capture issue logging.
+4. Give `GamingCouch` a gameplay-facing session **Interface** for runtime entry Capture, setup option requirement, captured setup/play access, restart preflight, restart recapture, and Capture success notification.
+5. Preserve the current two-phase timing: preflight happens at Unity Play Mode entry and Gaming Couch restart boundaries; **Capture** happens at runtime entry or public restart recapture.
+6. Keep `GCDevJsonInspectorState` responsible for inspector draft, conflict, dirty state, pending play change state, and Apply/Write Draft behavior.
+7. Keep `GamingCouchEditor` as the editor **Adapter** that registers inspector states and handles Unity Play Mode entry, but delegate root validation and session callbacks through the Local Play Session Module.
+8. Retire `Editor/GCEditorPlayJsonCapture.cs` if its behavior has moved into `GCLocalPlaySession`; otherwise leave only a deliberate compatibility shim and record why.
+9. Preserve existing validation issue codes, message intent, missing/invalid metadata warning behavior, valid metadata gates, conflict behavior, JSON write formatting, active-play stability, and restart blocking behavior.
+10. Do not rename or change public runtime payload shapes:
+    - `GCSetupOptions`
+    - `GCPlayOptions`
+    - `GCPlayerOptions`
+
+### Verification
+
+- Run `git diff --check`.
+- Add focused editor tests for the Local Play Session Module:
+  - valid **Capture** is cached and reused for setup/play access in one editor run
+  - failed **Capture** blocks setup/play access with existing Local Play Contract validation details
+  - restart preflight failure does not clear or replace the active **Capture**
+  - successful restart preflight followed by recapture reads the latest **Local Play Settings**
+  - Capture success notification fires only after successful **Capture**
+- Update `GCDevJsonContractFixtureTests` to exercise **Capture** through `GCLocalPlaySession` while preserving existing **Contract Fixture** cases.
+- Statically confirm `GamingCouch` no longer directly coordinates editor Capture issue logging or stores the raw editor capture result.
+- Statically confirm old `GCEditorPlayCapture`, `GCEditorPlayPreflight`, and `GCEditorPlayJsonCapture` names are removed or remain only as explicit compatibility shims documented in this task's review record.
+- Statically confirm public runtime payloads remain unchanged:
+  - `GCSetupOptions`
+  - `GCPlayOptions`
+  - `GCPlayerOptions`
+- Run focused Unity editor tests if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 9 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to the next approved architecture roadmap slice, or approval for the next tracked task.
 
 ## Handoff Protocol
 
