@@ -168,38 +168,28 @@ public sealed class GamingCouchQuickStartEditorTests
     }
 
     [Test]
-    public void StartScreenWindowUsesGameScriptActionAndFocusLabels()
+    public void ReadinessUsesGameScriptActionAndFocusLabels()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var missingReadiness = GCStartScreenReadinessService.InspectActiveScene();
         var missingCheck = missingReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
-        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
 
         Assert.That(missingReadiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.ListenerAssigned), Is.True);
+        Assert.That(missingCheck.action.id, Is.EqualTo(GCStartScreenReadinessActionId.CreateAndWireGameScript));
+        Assert.That(missingCheck.action.label, Is.EqualTo("Create & Wire Game"));
 
-        try
-        {
-            SetStartScreenWindowReadiness(window, missingReadiness);
-            Assert.That(GetChecklistActionLabel(window, missingCheck), Is.EqualTo("Create & Wire Game"));
+        var listener = CreateCompatibleListener("Existing Game");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
+        var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
 
-            // Create the ready state only after the missing-state assertion so a Unity window lifecycle
-            // refresh cannot replace injected missing readiness with ready scene readiness.
-            var listener = CreateCompatibleListener("Existing Game");
-            GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
-            var readyReadiness = GCStartScreenReadinessService.InspectActiveScene();
-            var readyCheck = readyReadiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
-
-            SetStartScreenWindowReadiness(window, readyReadiness);
-            Assert.That(GetChecklistActionLabel(window, readyCheck), Is.EqualTo("Focus Game Script"));
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(window);
-        }
+        Assert.That(readyCheck.action.id, Is.EqualTo(GCStartScreenReadinessActionId.FocusGameScript));
+        Assert.That(readyCheck.action.label, Is.EqualTo("Focus Game Script"));
+        Assert.That(readyCheck.action.target, Is.SameAs(listener));
     }
 
     [Test]
-    public void StartScreenWindowDoesNotOfferGameScriptSetupActionForAssignedIncompatibleListener()
+    public void ReadinessDoesNotOfferGameScriptSetupActionForAssignedIncompatibleListener()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var listener = new GameObject("Incomplete Listener");
@@ -207,18 +197,9 @@ public sealed class GamingCouchQuickStartEditorTests
         GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
         var readiness = GCStartScreenReadinessService.InspectActiveScene();
         var check = readiness.GetCheck(GCStartScreenReadinessCheckId.ListenerAssigned);
-        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
 
-        try
-        {
-            SetStartScreenWindowReadiness(window, readiness);
-
-            Assert.That(GetChecklistActionLabel(window, check), Is.Null);
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(window);
-        }
+        Assert.That(check.HasSetupAction, Is.False);
+        Assert.That(check.action.id, Is.EqualTo(GCStartScreenReadinessActionId.None));
     }
 
     [Test]
@@ -1916,26 +1897,6 @@ public sealed class GamingCouchQuickStartEditorTests
     private static bool HasActiveSceneChecklistLabel(string[] checklistLabels)
     {
         return checklistLabels.Any(label => string.Equals(label, "Active scene is available", StringComparison.Ordinal));
-    }
-
-    private static void SetStartScreenWindowReadiness(
-        GamingCouchStartScreenWindow window,
-        GCStartScreenReadiness readiness
-    )
-    {
-        typeof(GamingCouchStartScreenWindow)
-            .GetField("readiness", BindingFlags.Instance | BindingFlags.NonPublic)
-            .SetValue(window, readiness);
-    }
-
-    private static string GetChecklistActionLabel(
-        GamingCouchStartScreenWindow window,
-        GCStartScreenReadinessCheck check
-    )
-    {
-        return (string)typeof(GamingCouchStartScreenWindow)
-            .GetMethod("GetChecklistActionLabel", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(window, new object[] { check });
     }
 
     private static bool ShouldShowStartScreenActionResult(MessageType messageType)

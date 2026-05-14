@@ -36,6 +36,81 @@ internal enum GCStartScreenReadinessCheckId
     LocalPlayJsonValid,
 }
 
+internal enum GCStartScreenReadinessActionId
+{
+    None,
+    FocusSceneObject,
+    FocusGameScript,
+    FocusPrefab,
+    CreateGamingCouch,
+    CreateAndWireGameScript,
+    WirePlayerPrefab,
+    SetFirstBuildSettingsScene,
+    Select16By9GameView,
+    SetUpWebGLExport,
+}
+
+internal sealed class GCStartScreenReadinessAction
+{
+    internal static readonly GCStartScreenReadinessAction NoAction = new GCStartScreenReadinessAction(
+        GCStartScreenReadinessActionId.None,
+        null,
+        false,
+        false,
+        false,
+        null
+    );
+
+    internal readonly GCStartScreenReadinessActionId id;
+    internal readonly string label;
+    internal readonly bool isSetupAction;
+    internal readonly bool isFocusAction;
+    internal readonly bool requiresLoadedActiveScene;
+    internal readonly UnityEngine.Object target;
+
+    private GCStartScreenReadinessAction(
+        GCStartScreenReadinessActionId id,
+        string label,
+        bool isSetupAction,
+        bool isFocusAction,
+        bool requiresLoadedActiveScene,
+        UnityEngine.Object target
+    )
+    {
+        this.id = id;
+        this.label = label;
+        this.isSetupAction = isSetupAction;
+        this.isFocusAction = isFocusAction;
+        this.requiresLoadedActiveScene = requiresLoadedActiveScene;
+        this.target = target;
+    }
+
+    internal bool IsAvailable
+    {
+        get { return id != GCStartScreenReadinessActionId.None; }
+    }
+
+    internal static GCStartScreenReadinessAction CreateSetupAction(
+        GCStartScreenReadinessActionId id,
+        string label,
+        bool requiresLoadedActiveScene = true
+    )
+    {
+        return new GCStartScreenReadinessAction(id, label, true, false, requiresLoadedActiveScene, null);
+    }
+
+    internal static GCStartScreenReadinessAction CreateFocusAction(
+        GCStartScreenReadinessActionId id,
+        string label,
+        UnityEngine.Object target
+    )
+    {
+        return target == null
+            ? NoAction
+            : new GCStartScreenReadinessAction(id, label, false, true, false, target);
+    }
+}
+
 internal sealed class GCStartScreenReadinessCheck
 {
     internal readonly GCStartScreenReadinessCheckId id;
@@ -43,13 +118,15 @@ internal sealed class GCStartScreenReadinessCheck
     internal readonly GCStartScreenReadinessCheckState state;
     internal readonly string message;
     internal readonly string helpText;
+    internal readonly GCStartScreenReadinessAction action;
 
     internal GCStartScreenReadinessCheck(
         GCStartScreenReadinessCheckId id,
         string label,
         GCStartScreenReadinessCheckState state,
         string message,
-        string helpText = null
+        string helpText = null,
+        GCStartScreenReadinessAction action = null
     )
     {
         this.id = id;
@@ -57,11 +134,27 @@ internal sealed class GCStartScreenReadinessCheck
         this.state = state;
         this.message = message;
         this.helpText = string.IsNullOrEmpty(helpText) ? message : helpText;
+        this.action = action ?? GCStartScreenReadinessAction.NoAction;
     }
 
     internal bool IsSatisfied
     {
         get { return state == GCStartScreenReadinessCheckState.Pass || state == GCStartScreenReadinessCheckState.Warning; }
+    }
+
+    internal bool HasAction
+    {
+        get { return action != null && action.IsAvailable; }
+    }
+
+    internal bool HasSetupAction
+    {
+        get { return action != null && action.isSetupAction; }
+    }
+
+    internal bool HasFocusAction
+    {
+        get { return action != null && action.isFocusAction; }
     }
 }
 
@@ -207,14 +300,14 @@ internal sealed class GCStartScreenReadinessSummary
     private static int CountBlockedChecksWithoutSetupAction(GCStartScreenReadiness readiness)
     {
         var count = 0;
-        if (IsBlockedWithoutSetupAction(readiness, readiness.activeSceneCheck))
+        if (IsBlockedWithoutSetupAction(readiness.activeSceneCheck))
         {
             count++;
         }
 
         for (var index = 0; readiness.checklist != null && index < readiness.checklist.Length; index++)
         {
-            if (IsBlockedWithoutSetupAction(readiness, readiness.checklist[index]))
+            if (IsBlockedWithoutSetupAction(readiness.checklist[index]))
             {
                 count++;
             }
@@ -223,10 +316,7 @@ internal sealed class GCStartScreenReadinessSummary
         return count;
     }
 
-    private static bool IsBlockedWithoutSetupAction(
-        GCStartScreenReadiness readiness,
-        GCStartScreenReadinessCheck check
-    )
+    private static bool IsBlockedWithoutSetupAction(GCStartScreenReadinessCheck check)
     {
         if (check == null ||
             (check.state != GCStartScreenReadinessCheckState.Fail &&
@@ -235,7 +325,7 @@ internal sealed class GCStartScreenReadinessSummary
             return false;
         }
 
-        return !readiness.IsChecklistSetupActionAvailable(check.id);
+        return !check.HasSetupAction;
     }
 
     private static string FormatMessage(int blockerCount, int warningCount, int actionableSetupCount)
@@ -291,6 +381,15 @@ internal sealed class GCStartScreenReadiness
     private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
     private const string GameViewAspectHelpText = "Keeps the Unity Game View preview on a 16:9 aspect ratio.";
     private const string WebGLExportSetupHelpText = "Checks the WebGL template and release settings for clean Gaming Couch exports.";
+    private const string FocusSceneObjectActionLabel = "Focus Scene Object";
+    private const string FocusGameScriptActionLabel = "Focus Game Script";
+    private const string FocusPrefabActionLabel = "Focus Prefab";
+    private const string CreateGamingCouchActionLabel = "Create GamingCouch";
+    private const string CreateAndWireGameScriptActionLabel = "Create & Wire Game";
+    private const string WirePlayerPrefabActionLabel = "Wire Player Prefab";
+    private const string SetFirstBuildSettingsSceneActionLabel = "Set First Build Scene";
+    private const string Select16By9GameViewActionLabel = "Select 16:9";
+    private const string SetUpWebGLExportActionLabel = "Set Up WebGL Export";
 
     internal readonly Scene scene;
     internal readonly string sceneName;
@@ -368,39 +467,18 @@ internal sealed class GCStartScreenReadiness
 
     internal int SafeAutomatableSetupActionCount
     {
-        get
-        {
-            return CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.GamingCouchInstance)) +
-                   CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.ListenerAssigned)) +
-                   CountIf(DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId.PlayerPrefabAssigned)) +
-                   CountIf(DoesBuildSettingsNeedSetup()) +
-                   CountIf(DoesGameViewNeedSetup());
-        }
+        get { return CountChecklistSetupActions(IsSafeAutomatableSetupAction); }
     }
 
     internal int AvailableChecklistSetupActionCount
     {
-        get { return SafeAutomatableSetupActionCount + CountIf(DoesWebGLExportNeedSetup()); }
+        get { return CountChecklistSetupActions(null); }
     }
 
     internal bool IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId id)
     {
-        id = NormalizeCheckId(id);
-        switch (id)
-        {
-            case GCStartScreenReadinessCheckId.GamingCouchInstance:
-            case GCStartScreenReadinessCheckId.ListenerAssigned:
-            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return DoesActiveSceneSetupCheckNeedSetup(id);
-            case GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene:
-                return DoesBuildSettingsNeedSetup();
-            case GCStartScreenReadinessCheckId.GameViewAspect16By9:
-                return DoesGameViewNeedSetup();
-            case GCStartScreenReadinessCheckId.WebGLExportSetup:
-                return DoesWebGLExportNeedSetup();
-            default:
-                return false;
-        }
+        GCStartScreenReadinessCheck check;
+        return TryGetCheck(id, out check) && check.HasSetupAction;
     }
 
     internal GCStartScreenReadinessCheck GetCheck(GCStartScreenReadinessCheckId id)
@@ -507,7 +585,11 @@ internal sealed class GCStartScreenReadiness
                 GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
                 "Create a GamingCouch object to continue active-scene setup.",
-                GamingCouchInstanceHelpText
+                GamingCouchInstanceHelpText,
+                GCStartScreenReadinessAction.CreateSetupAction(
+                    GCStartScreenReadinessActionId.CreateGamingCouch,
+                    CreateGamingCouchActionLabel
+                )
             );
         }
 
@@ -527,7 +609,8 @@ internal sealed class GCStartScreenReadiness
             GamingCouchInstanceCheckLabel,
             GCStartScreenReadinessCheckState.Pass,
             "The active scene has one GamingCouch component.",
-            GamingCouchInstanceHelpText
+            GamingCouchInstanceHelpText,
+            CreateFocusSceneObjectAction(gamingCouch)
         );
     }
 
@@ -553,7 +636,13 @@ internal sealed class GCStartScreenReadiness
                     GameScriptReadyCheckLabel,
                     GCStartScreenReadinessCheckState.Fail,
                     "The GamingCouch listener field points to a missing GameObject. Use Create & Wire Game to replace it, or clear the missing listener reference manually.",
-                    GameScriptReadyHelpText
+                    GameScriptReadyHelpText,
+                    GamingCouchSceneWiring.HasObjectReferenceSlot(
+                        gamingCouch,
+                        GamingCouchSceneWiring.ListenerPropertyName
+                    )
+                        ? CreateAndWireGameScriptAction()
+                        : GCStartScreenReadinessAction.NoAction
                 );
             }
 
@@ -573,7 +662,10 @@ internal sealed class GCStartScreenReadiness
                 GameScriptReadyCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
                 "Assign a Game script object to the GamingCouch listener field.",
-                GameScriptReadyHelpText
+                GameScriptReadyHelpText,
+                CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName)
+                    ? CreateAndWireGameScriptAction()
+                    : GCStartScreenReadinessAction.NoAction
             );
         }
 
@@ -594,7 +686,8 @@ internal sealed class GCStartScreenReadiness
             GameScriptReadyCheckLabel,
             GCStartScreenReadinessCheckState.Pass,
             "The GamingCouch Game script reference points to " + listener.name + ".",
-            GameScriptReadyHelpText
+            GameScriptReadyHelpText,
+            CreateFocusGameScriptAction(listener)
         );
     }
 
@@ -618,7 +711,10 @@ internal sealed class GCStartScreenReadiness
                 "Player prefab is assigned",
                 GCStartScreenReadinessCheckState.Fail,
                 "The GamingCouch player prefab reference is missing.",
-                PlayerPrefabAssignedHelpText
+                PlayerPrefabAssignedHelpText,
+                CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName)
+                    ? WirePlayerPrefabAction()
+                    : GCStartScreenReadinessAction.NoAction
             );
         }
 
@@ -634,7 +730,10 @@ internal sealed class GCStartScreenReadiness
                 "Player prefab is assigned",
                 GCStartScreenReadinessCheckState.Fail,
                 playerPrefabCompatibilityMessage,
-                PlayerPrefabAssignedHelpText
+                PlayerPrefabAssignedHelpText,
+                GamingCouchQuickStartSetup.CanReplaceActiveSceneGeneratedPlayerPrefab(listener, playerPrefab)
+                    ? WirePlayerPrefabAction()
+                    : GCStartScreenReadinessAction.NoAction
             );
         }
 
@@ -643,7 +742,8 @@ internal sealed class GCStartScreenReadiness
             "Player prefab is assigned",
             GCStartScreenReadinessCheckState.Pass,
             "The GamingCouch player prefab reference points to " + playerPrefab.name + ".",
-            PlayerPrefabAssignedHelpText
+            PlayerPrefabAssignedHelpText,
+            CreateFocusPrefabAction(playerPrefab)
         );
     }
 
@@ -725,7 +825,13 @@ internal sealed class GCStartScreenReadiness
                 ? GCStartScreenReadinessCheckState.Blocked
                 : GCStartScreenReadinessCheckState.Fail,
             buildSettings.message,
-            BuildSettingsHelpText
+            BuildSettingsHelpText,
+            buildSettings.CanSetFirst
+                ? GCStartScreenReadinessAction.CreateSetupAction(
+                    GCStartScreenReadinessActionId.SetFirstBuildSettingsScene,
+                    SetFirstBuildSettingsSceneActionLabel
+                )
+                : GCStartScreenReadinessAction.NoAction
         );
     }
 
@@ -757,7 +863,14 @@ internal sealed class GCStartScreenReadiness
             "Game View uses 16:9 preview",
             state,
             gameViewAspect.message,
-            GameViewAspectHelpText
+            GameViewAspectHelpText,
+            state != GCStartScreenReadinessCheckState.Pass && gameViewAspect.HasSafeSelectionAction
+                ? GCStartScreenReadinessAction.CreateSetupAction(
+                    GCStartScreenReadinessActionId.Select16By9GameView,
+                    Select16By9GameViewActionLabel,
+                    false
+                )
+                : GCStartScreenReadinessAction.NoAction
         );
     }
 
@@ -793,71 +906,52 @@ internal sealed class GCStartScreenReadiness
             "WebGL export settings configured",
             state,
             webGLExport.message,
-            WebGLExportSetupHelpText
+            WebGLExportSetupHelpText,
+            state != GCStartScreenReadinessCheckState.Pass && webGLExport.IsBlocked
+                ? GCStartScreenReadinessAction.CreateSetupAction(
+                    GCStartScreenReadinessActionId.SetUpWebGLExport,
+                    SetUpWebGLExportActionLabel,
+                    false
+                )
+                : GCStartScreenReadinessAction.NoAction
         );
     }
 
-    private bool DoesActiveSceneSetupCheckNeedSetup(GCStartScreenReadinessCheckId id)
+    private int CountChecklistSetupActions(Func<GCStartScreenReadinessAction, bool> predicate)
     {
-        id = NormalizeCheckId(id);
-        GCStartScreenReadinessCheck check;
-        if (!TryGetCheck(id, out check) || check.state != GCStartScreenReadinessCheckState.Fail)
+        var count = 0;
+        for (var index = 0; checklist != null && index < checklist.Length; index++)
+        {
+            var action = checklist[index] != null ? checklist[index].action : null;
+            if (action != null &&
+                action.isSetupAction &&
+                (predicate == null || predicate(action)))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsSafeAutomatableSetupAction(GCStartScreenReadinessAction action)
+    {
+        if (action == null)
         {
             return false;
         }
 
-        switch (id)
+        switch (action.id)
         {
-            case GCStartScreenReadinessCheckId.GamingCouchInstance:
-                return gamingCouches != null && gamingCouches.Length == 0;
-            case GCStartScreenReadinessCheckId.ListenerAssigned:
-                if (hasMissingSerializedListenerReference)
-                {
-                    return GamingCouchSceneWiring.HasObjectReferenceSlot(
-                        gamingCouch,
-                        GamingCouchSceneWiring.ListenerPropertyName
-                    );
-                }
-
-                if (hasSerializedListenerReference)
-                {
-                    return false;
-                }
-
-                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.ListenerPropertyName);
-            case GCStartScreenReadinessCheckId.PlayerPrefabAssigned:
-                return CanAssignMissingActiveSceneReference(GamingCouchSceneWiring.PlayerPrefabPropertyName) ||
-                       GamingCouchQuickStartSetup.CanReplaceActiveSceneGeneratedPlayerPrefab(listener, playerPrefab);
+            case GCStartScreenReadinessActionId.CreateGamingCouch:
+            case GCStartScreenReadinessActionId.CreateAndWireGameScript:
+            case GCStartScreenReadinessActionId.WirePlayerPrefab:
+            case GCStartScreenReadinessActionId.SetFirstBuildSettingsScene:
+            case GCStartScreenReadinessActionId.Select16By9GameView:
+                return true;
             default:
                 return false;
         }
-    }
-
-    private bool DoesBuildSettingsNeedSetup()
-    {
-        GCStartScreenReadinessCheck check;
-        return buildSettings != null &&
-               buildSettings.CanSetFirst &&
-               TryGetCheck(GCStartScreenReadinessCheckId.ActiveSceneFirstBuildSettingsScene, out check) &&
-               !check.IsSatisfied;
-    }
-
-    private bool DoesGameViewNeedSetup()
-    {
-        GCStartScreenReadinessCheck check;
-        return gameViewAspect != null &&
-               gameViewAspect.HasSafeSelectionAction &&
-               TryGetCheck(GCStartScreenReadinessCheckId.GameViewAspect16By9, out check) &&
-               !check.IsSatisfied;
-    }
-
-    private bool DoesWebGLExportNeedSetup()
-    {
-        GCStartScreenReadinessCheck check;
-        return webGLExport != null &&
-               webGLExport.IsBlocked &&
-               TryGetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup, out check) &&
-               !check.IsSatisfied;
     }
 
     private bool CanAssignMissingActiveSceneReference(string propertyName)
@@ -867,9 +961,86 @@ internal sealed class GCStartScreenReadiness
                !GamingCouchSceneWiring.HasObjectReference(gamingCouch, propertyName);
     }
 
-    private static int CountIf(bool value)
+    private static GCStartScreenReadinessAction CreateAndWireGameScriptAction()
     {
-        return value ? 1 : 0;
+        return GCStartScreenReadinessAction.CreateSetupAction(
+            GCStartScreenReadinessActionId.CreateAndWireGameScript,
+            CreateAndWireGameScriptActionLabel
+        );
+    }
+
+    private static GCStartScreenReadinessAction WirePlayerPrefabAction()
+    {
+        return GCStartScreenReadinessAction.CreateSetupAction(
+            GCStartScreenReadinessActionId.WirePlayerPrefab,
+            WirePlayerPrefabActionLabel
+        );
+    }
+
+    private static GCStartScreenReadinessAction CreateFocusSceneObjectAction(UnityEngine.Object target)
+    {
+        return GCStartScreenReadinessAction.CreateFocusAction(
+            GCStartScreenReadinessActionId.FocusSceneObject,
+            FocusSceneObjectActionLabel,
+            GetSelectionTarget(target)
+        );
+    }
+
+    private static GCStartScreenReadinessAction CreateFocusGameScriptAction(UnityEngine.Object target)
+    {
+        return GCStartScreenReadinessAction.CreateFocusAction(
+            GCStartScreenReadinessActionId.FocusGameScript,
+            FocusGameScriptActionLabel,
+            GetSelectionTarget(target)
+        );
+    }
+
+    private static GCStartScreenReadinessAction CreateFocusPrefabAction(UnityEngine.Object target)
+    {
+        return GCStartScreenReadinessAction.CreateFocusAction(
+            GCStartScreenReadinessActionId.FocusPrefab,
+            FocusPrefabActionLabel,
+            GetPrefabSelectionTarget(target)
+        );
+    }
+
+    private static UnityEngine.Object GetPrefabSelectionTarget(UnityEngine.Object target)
+    {
+        var selectionTarget = GetSelectionTarget(target);
+        if (selectionTarget == null)
+        {
+            return null;
+        }
+
+        if (AssetDatabase.Contains(selectionTarget))
+        {
+            return selectionTarget;
+        }
+
+        var gameObject = selectionTarget as GameObject;
+        if (gameObject == null)
+        {
+            return selectionTarget;
+        }
+
+        var prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+        return prefabAsset != null ? prefabAsset : selectionTarget;
+    }
+
+    private static UnityEngine.Object GetSelectionTarget(UnityEngine.Object target)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        var component = target as Component;
+        if (component != null && component.gameObject != null)
+        {
+            return component.gameObject;
+        }
+
+        return target;
     }
 }
 

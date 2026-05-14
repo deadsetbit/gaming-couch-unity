@@ -31,11 +31,11 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Architecture follow-up complete
+Overall status: Active architecture follow-up
 
 Current task: None
 
-Next action: Approval for the next architecture roadmap slice.
+Next action: Await explicit approval for Task 12 - DevApp Runtime Adapter Module.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -49,6 +49,10 @@ Next action: Approval for the next architecture roadmap slice.
 | 8. Local Play Contract architecture hardening | Done | Codex | Root JSON stores/draft/stamp extracted, contract fixtures added, two review passes complete, and parent validation passed; Unity editor tests skipped due unavailable safe package-local Unity test command. |
 | 9. Local Play Session Module | Done | Codex | Local Play Session Module owns active Capture, root validation, restart preflight/recapture, and issue logging coordination; two review passes complete; parent validation passed. |
 | 10. Contract Fixture Corpus | Done | Codex | Package-root Local Play Contract Fixture corpus complete; Unity editor tests consume corpus files directly. |
+| 11. Start Screen Readiness Module | Done | Codex | Behavior-neutral readiness row/action refactor complete; two local review passes complete; parent validation passed. |
+| 12. DevApp Runtime Adapter Module | Pending | Unassigned | Outgoing runtime registration and snapshot message construction planned; keep WebSocket transport and inbound command handling in `GCDevAppIntegration`. |
+| 13. Quick Start Setup Module | Pending | Unassigned | Start Screen setup action runner planned; keep setup behavior unchanged. |
+| 14. Editor Test Harness Module | Pending | Unassigned | Split broad editor tests by Module after Tasks 11-13 deepen their Interfaces. |
 
 ## Blocker Log
 
@@ -1554,6 +1558,307 @@ Decisions:
 - Kept Unity-specific fixture discovery, JSON loading, store use, Capture calls, and NUnit assertions in `GCDevJsonContractFixtureTests`.
 - Used `UnityEngine.JsonUtility` for `expected.json` parsing, so `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef` did not need an explicit JSON parser reference.
 - The preserving-write fixture metadata includes both the initial `duel` entry and the write target `coop` entry so the corpus case has a valid initial read while still asserting unrelated top-level `gc.dev.json` fields survive the canonical write.
+
+## Task 11: Start Screen Readiness Module
+
+### Objective
+
+Deepen the Start Screen readiness path without changing user-facing setup behavior. The Start Screen Readiness Module should own computed checklist rows and row action metadata so `GamingCouchStartScreenWindow` mostly renders already-computed readiness rows and dispatches declared actions.
+
+This task is a behavior-neutral architecture slice. Do not move quick-start setup execution out of the window yet; that belongs to the later Quick Start Setup Module slice. Do not change public runtime payloads, Play Mode behavior, Local Play Contract behavior, WebGL export behavior, or package release metadata.
+
+### Status
+
+Done.
+
+### Owned Files
+
+- `Editor/GamingCouchStartScreenReadiness.cs`
+- `Editor/GamingCouchStartScreenReadiness.cs.meta`
+- `Editor/GamingCouchStartScreenWindow.cs`
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs.meta`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Only create the focused readiness test file if it improves **Locality** over extending the broad quick-start test file. If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Add an internal Start Screen readiness action model under `Editor/GamingCouchStartScreenReadiness.cs`.
+2. Represent the action **Interface** with an action id and label. Include action ids for no action, focus scene object, focus game script, focus prefab, create GamingCouch, create and wire Game script, wire player prefab, set first Build Settings scene, select 16:9 Game View, and set up WebGL export.
+3. Extend `GCStartScreenReadinessCheck` so each computed checklist row carries its own action metadata.
+4. Keep readiness row state, message, help text, setup-action availability, and focus-action availability in the Start Screen Readiness Module.
+5. Update `GamingCouchStartScreenWindow` so checklist rendering reads action labels from computed rows instead of deriving them from raw readiness fields.
+6. Update `GamingCouchStartScreenWindow` action dispatch so it switches on the row action id. The existing side-effect methods can stay in the window for this slice.
+7. Keep active scene setup, build settings setup, Game View selection, WebGL export setup, focus behavior, pending compilation handling, and action-result display behavior unchanged.
+8. Keep `GCStartScreenReadinessService.InspectActiveScene()` as the entry point for inspecting the current Unity scene.
+9. Do not add a new shared cross-engine **Adapter** or any outside-repo dependency.
+
+### Verification
+
+- Run `git diff --check`.
+- Add or update focused editor tests for readiness action metadata:
+  - missing GamingCouch offers `Create GamingCouch`
+  - missing listener offers `Create & Wire Game`
+  - assigned compatible listener offers `Focus Game Script`
+  - assigned incompatible listener offers no setup action
+  - missing player prefab offers `Wire Player Prefab`
+  - ready player prefab offers `Focus Prefab`
+  - build settings row offers `Set First Build Scene` only when existing readiness can set the active scene first
+  - Game View row offers `Select 16:9` only when existing readiness has a safe selection action
+  - WebGL export row offers `Set Up WebGL Export` only when existing readiness is blocked and setup is available
+  - Local Play JSON row never offers a setup action
+- Statically confirm `GamingCouchStartScreenWindow` no longer owns checklist action label or normal setup-action availability rules.
+- Statically confirm action execution side effects remain in `GamingCouchStartScreenWindow` for this slice.
+- Run focused Unity editor tests for Start Screen readiness if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 11 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to approval for the next architecture roadmap slice.
+
+### Task 11 Review Record
+
+Status: Done
+
+Changed paths:
+
+- `Editor/GamingCouchStartScreenReadiness.cs`
+- `Editor/GamingCouchStartScreenWindow.cs`
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs.meta`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- Parent review-and-patch pass 1: removed stale window-owned action helpers and moved focus target resolution into the readiness action model.
+- Parent review-and-patch pass 2: confirmed focused readiness action coverage for missing/ready GamingCouch, missing/compatible/incompatible Game script, missing/ready player prefab, Build Settings, Game View, WebGL export, and Local Play JSON rows.
+- `git diff --check`: passed.
+- `git diff --check --no-index /dev/null Tests/Editor/GamingCouchStartScreenReadinessTests.cs`: no whitespace output; command exits non-zero because the new file differs from `/dev/null`.
+- `git diff --check --no-index /dev/null Tests/Editor/GamingCouchStartScreenReadinessTests.cs.meta`: no whitespace output; command exits non-zero because the new file differs from `/dev/null`.
+- Static inspection: `GamingCouchStartScreenWindow` no longer contains `GetChecklistActionLabel`, `GetChecklistFocusTarget`, or a window-owned checklist setup availability helper; checklist buttons read labels from `GCStartScreenReadinessCheck.action`, and action execution switches on `GCStartScreenReadinessActionId`.
+- Static inspection: side-effecting setup/focus dispatch remains in `GamingCouchStartScreenWindow` for this slice through existing `RunEnsure*` methods and `FocusChecklistTarget`.
+- `git status --short --untracked-files=all`: Task 11 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+Skipped validation:
+
+- Focused Unity editor tests for `GamingCouchStartScreenReadinessTests` were not run because `command -v Unity` and `command -v UnityHub` returned no executable, `/Applications/Unity/Hub/Editor` contains only `6000.2.7f2`, and this package repo has no `ProjectSettings`, `Packages`, or `Assets` directories for a safe package-local Unity Test Runner invocation. Running Unity directly against this folder would create unmanaged local project artifacts.
+
+Decisions:
+
+- Kept Start Screen setup side effects in `GamingCouchStartScreenWindow`; only row action identity, label, setup availability, and focus target metadata moved into the Start Screen Readiness Module.
+- Kept WebGL export setup out of the global active-scene setup count while preserving it as an available per-row checklist setup action.
+- Added a focused readiness test file instead of extending the broad quick-start test file further, while updating existing broad tests that reflected into removed window action-label helpers.
+
+## Task 12: DevApp Runtime Adapter Module
+
+### Objective
+
+Deepen the DevApp runtime message path without changing WebSocket behavior or DevApp protocol shape. Introduce a DevApp Runtime Adapter Module that owns outgoing runtime registration and runtime snapshot message construction so those messages can be tested without a live WebSocket transport.
+
+This task is scoped to outgoing runtime messages only. Keep WebSocket connection lifecycle, reconnect behavior, send/receive loops, inbound DevTool command parsing, input forwarding, restart, pause, and timescale command handling in `GCDevAppIntegration` for this slice.
+
+### Status
+
+Pending.
+
+### Owned Files
+
+- `Runtime/Dev/GCDevAppIntegration.cs`
+- `Runtime/Dev/GCDevAppRuntimeMessages.cs`
+- `Runtime/Dev/GCDevAppRuntimeMessages.cs.meta`
+- `Tests/Editor/GCDevAppRuntimeMessagesTests.cs`
+- `Tests/Editor/GCDevAppRuntimeMessagesTests.cs.meta`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Add an internal editor-only DevApp Runtime Adapter Module under `Runtime/Dev`.
+2. Move outgoing message DTOs and builders for `runtime_register` and `runtime_snapshot` into that Module.
+3. Keep the current JSON wire shape unchanged:
+   - `runtime_register`
+   - `runtime_snapshot`
+   - `runtimeKind`
+   - `projectRootPath`
+   - `projectName`
+   - `platform`
+   - `rendererMode`
+   - `displayName`
+   - `runId`
+   - `isRunning`
+   - `capabilities`
+   - `seats`
+   - `paused`
+   - `timescale`
+4. Preserve runtime capabilities as `restart`, `pause`, and `timescale`.
+5. Preserve **Seat** mapping from current play seat identities:
+   - `playerId`
+   - source `seatIndex`, falling back to dense index plus one when source seat index is unavailable
+   - label fallback to `Seat N`
+   - type `bot` for bot players and `player` otherwise
+6. Keep `GCDevAppIntegration` responsible for timestamps, run id lifecycle, snapshot send de-duplication, WebSocket send/receive, and inbound DevTool actions.
+7. Let `GCDevAppIntegration` call the new Module for register/snapshot message construction and snapshot signatures.
+8. Do not edit the Gaming Couch main repo or DevApp package target.
+
+### Verification
+
+- Run `git diff --check`.
+- Add focused editor tests for the DevApp Runtime Adapter Module:
+  - runtime register message keeps the existing type and project/platform/display fields
+  - stopped runtime snapshot has no `runId`, `isRunning` false, empty seats, and current pause/timescale fields
+  - running runtime snapshot includes run id, capabilities, current pause/timescale, and mapped seats
+  - **Seat** labels, source seat index fallback, and bot/player type mapping are preserved
+  - snapshot signature changes when runtime state changes and stays stable when state is unchanged
+- Statically confirm `GCDevAppIntegration` still owns WebSocket lifecycle and inbound DevTool actions.
+- Statically confirm JSON field names and public runtime payloads remain unchanged.
+- Run focused Unity editor tests for DevApp runtime messages if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 12 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to approval for the next architecture roadmap slice.
+
+## Task 13: Quick Start Setup Module
+
+### Objective
+
+Deepen Start Screen setup action execution without changing setup behavior. Introduce a Quick Start Setup action runner Module that accepts the readiness action id produced by Task 11 and returns action-result display data for the Start Screen window.
+
+This task should move setup-action dispatch out of `GamingCouchStartScreenWindow`, but it must not redesign generated scripts, prefab creation, scene creation, continuation behavior, or safety rules beyond what the action runner needs.
+
+### Status
+
+Pending.
+
+### Owned Files
+
+- `Editor/GamingCouchStartScreenReadiness.cs`
+- `Editor/GamingCouchStartScreenWindow.cs`
+- `Editor/GamingCouchQuickStartSetup.cs`
+- `Editor/GamingCouchStartScreenSetupActions.cs`
+- `Editor/GamingCouchStartScreenSetupActions.cs.meta`
+- `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`
+- `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Only create the focused setup action test file if it improves **Locality** over extending the broad quick-start test file. If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Add an internal Start Screen setup action runner Module under `Editor`.
+2. Define a small action result **Interface** for the window:
+   - message
+   - `MessageType`
+   - details
+   - optional focus target
+   - whether the window should refresh and repaint
+3. Move setup-action dispatch for the existing Start Screen readiness action ids into the runner.
+4. Keep focus target resolution available to the window or runner without changing user-visible focus behavior.
+5. Keep active scene setup, create GamingCouch, create and wire Game script, wire player prefab, set first Build Settings scene, select 16:9 Game View, and set up WebGL export behavior unchanged.
+6. Keep pending compilation handling and action-result display suppression for ready/info states unchanged.
+7. Keep generated asset, prefab, scene, and continuation safety rules in `GamingCouchQuickStartSetup`; do not broaden this task into a full setup rewrite.
+8. Update `GamingCouchStartScreenWindow` so button clicks call the setup action runner and then only apply the returned focus/result/refresh instructions.
+9. Do not change public runtime payloads, Local Play Contract behavior, or WebGL export settings.
+
+### Verification
+
+- Run `git diff --check`.
+- Add focused editor tests for the setup action runner:
+  - each action id dispatches to the same existing behavior as the old window path
+  - blocked actions return warning/error result data without unexpected scene or asset changes
+  - ready/info action results remain suppressed in the window when they were previously suppressed
+  - focus actions still select and ping the same target objects/assets
+  - pending compilation still returns a warning action result and preserves details
+- Statically confirm `GamingCouchStartScreenWindow` no longer owns setup-action dispatch decisions.
+- Statically confirm generated script, prefab, scene, non-overwrite, and continuation behavior remain in `GamingCouchQuickStartSetup`.
+- Run focused Unity editor tests for setup actions if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 13 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to approval for the next architecture roadmap slice.
+
+## Task 14: Editor Test Harness Module
+
+### Objective
+
+Improve editor test **Locality** after Tasks 11 through 13 have deepened the production **Interfaces**. Split the broad Quick Start editor test coverage by Module so new readiness, DevApp runtime message, setup action, and setup asset rules have focused test homes.
+
+This task is a test architecture slice. Do not change production behavior unless a test move exposes a compile issue that must be fixed to preserve existing behavior.
+
+### Status
+
+Pending.
+
+### Owned Files
+
+- `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
+- `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`
+- `Tests/Editor/GCDevAppRuntimeMessagesTests.cs`
+- `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`
+- `Tests/Editor/GamingCouchQuickStartSetupAssetTests.cs`
+- `Tests/Editor/GamingCouchQuickStartSetupAssetTests.cs.meta`
+- `Tests/Editor/GamingCouchEditorTestSupport.cs`
+- `Tests/Editor/GamingCouchEditorTestSupport.cs.meta`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Move existing broad quick-start tests into focused files by owning Module:
+   - Start Screen readiness rows and action metadata
+   - DevApp runtime message construction
+   - Start Screen setup action runner
+   - generated scripts, prefab, scene, non-overwrite, and setup asset rules
+2. Keep `GamingCouchQuickStartEditorTests.cs` only for cross-Module smoke coverage that genuinely needs multiple editor systems together.
+3. Add small shared editor test support only for repeated scene, build settings, asset, WebGL settings, and cleanup helpers.
+4. Avoid a large abstract test harness. Shared helpers should reduce duplication without hiding the behavior under test.
+5. Preserve all existing assertions unless a production Interface from Tasks 11 through 13 gives a clearer equivalent assertion.
+6. Preserve Unity `.meta` hygiene for new test files.
+7. Do not change production files unless required to fix test-only access after the split; record any such production file before editing it.
+
+### Verification
+
+- Run `git diff --check`.
+- Statically confirm broad test coverage moved into focused Module-owned files and no tests were silently deleted.
+- Statically confirm `GamingCouchQuickStartEditorTests.cs` no longer owns unrelated readiness, DevApp runtime message, setup action, and setup asset coverage.
+- Statically confirm shared test support remains small and does not become a second implementation of production rules.
+- Run focused Unity editor tests for the split test files if a safe Unity test command is available. If unavailable, record the exact skipped environment gap.
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 14 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set next action to second engine **Adapter** readiness only when a real second engine **Adapter** is approved; otherwise leave architecture follow-up complete.
 
 ## Handoff Protocol
 
