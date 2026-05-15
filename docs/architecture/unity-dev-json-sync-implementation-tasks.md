@@ -1,7 +1,7 @@
 # Unity `gc.dev.json` Sync Implementation Tasks
 
 Status: Active follow-up
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 Owner: Gaming Couch Unity package team
 
 ## Source Context
@@ -35,7 +35,7 @@ Overall status: Architecture follow-up complete
 
 Current task: None
 
-Next action: No second engine Adapter readiness task is approved.
+Next action: None.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
@@ -53,6 +53,7 @@ Next action: No second engine Adapter readiness task is approved.
 | 12. DevApp Runtime Adapter Module | Done | Codex | Outgoing runtime registration and snapshot message construction extracted; WebSocket transport and inbound command handling remain in `GCDevAppIntegration`; manual Unity editor validation passed. |
 | 13. Quick Start Setup Module | Done | Codex | Start Screen setup action runner extracted; open-Editor bridge validation passed. |
 | 14. Editor Test Harness Module | Done | Codex | Broad editor tests split by Module; smoke fixture narrowed; open-Editor bridge validation passed. |
+| 15. Runtime/Editor Local Play Contract split | Done | Codex | JSON-backed Local Play Contract implementation moved to Editor; Runtime keeps a neutral Local Play Session seam; two review passes complete; parent static validation passed; open-Editor bridge returned an environment error before focused test XML. |
 
 ## Blocker Log
 
@@ -1961,6 +1962,160 @@ Validation:
 Skipped validation:
 
 - The four skipped setup-asset tests are existing guard skips caused by generated example assets already present on disk in the host project.
+
+## Task 15: Runtime/Editor Local Play Contract Split
+
+### Objective
+
+Move JSON-backed **Local Play Contract** parsing, writing, validation, and Newtonsoft usage out of the Runtime assembly and into the Editor assembly. Keep **Local Play Session** as the Runtime-callable, editor-only **Seam** for Play Mode entry, restart preflight, active **Capture** caching, setup/play option access, and **Seat** identity access.
+
+This task should not change public gameplay APIs, player-build behavior, package version, changelog, or release metadata.
+
+### Status
+
+Done.
+
+### Owned Files
+
+- `Runtime/Dev/GCLocalPlaySession.cs`
+- `Runtime/Dev/GCDevJsonFile.cs`
+- `Runtime/Dev/GCDevJsonStore.cs`
+- `Runtime/Dev/GCDevJsonValidation.cs`
+- `Runtime/Dev/GCMetadataJsonFile.cs`
+- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCRootJsonFileStamp.cs`
+- `Runtime/dsb.gamingcouch.runtime.asmdef`
+- `Editor/GCDevJsonDraft.cs`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GCDevJsonInspectorView.cs`
+- `Editor/GamingCouchEditor.cs`
+- `Editor/GamingCouchStartScreenReadiness.cs`
+- `Editor/GamingCouchStartScreenWindow.cs`
+- `Editor/dsb.gamingcouch.editor.asmdef`
+- `Tests/Editor/GCLocalPlaySessionTests.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `CONTEXT.md`
+- `docs/adr/0001-keep-json-backed-local-play-contract-in-editor-assembly.md`
+- `docs/architecture/gamingcouch-unity-package-architecture-then-now.md`
+- `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
+- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Preserve Unity `.meta` hygiene when moving existing files. If implementation discovers another file is required, update this task with the reason before editing the extra file.
+
+### Implementation Steps
+
+1. Keep `GCLocalPlaySession` in Runtime as the **Local Play Session** **Seam**, but remove all dependencies on `GCDevJson*`, `GCMetadataJson*`, `JObject`, `JToken`, and `Unity.Newtonsoft.Json`.
+2. Add Runtime-owned neutral session types for a registered provider, capture/preflight results, issue severity, and issue display data.
+3. Make the Runtime session cache successful capture results and expose setup/play options and **Seat** identities exactly as before.
+4. Make Runtime session logging consume neutral session issues only; JSON issue codes and JSON-specific formatting must not cross the Runtime boundary.
+5. Add an Editor-owned JSON-backed Local Play Contract Adapter registered at editor load. It should read/write/validate `gc.dev.json`, read `gc.metadata.json`, build `GCSetupOptions`, build `GCPlayOptions`, build `GCSeatIdentity[]`, and map JSON validation results to neutral session issues.
+6. Move JSON implementation files and models into the Editor assembly while preserving their existing namespace unless a compile boundary requires otherwise.
+7. Keep `GCLocalProjectRootResolver` in Runtime because DevApp runtime message construction still uses it and it has no JSON dependency.
+8. Remove `Unity.Newtonsoft.Json` from `Runtime/dsb.gamingcouch.runtime.asmdef`; keep the dependency in the Editor asmdef and `package.json`.
+9. Update `GCDevJsonInspectorState`, `GCDevJsonInspectorView`, Start Screen readiness/window, and related Editor tests to use the Editor-owned JSON implementation.
+10. Update `GCLocalPlaySessionTests` to fake the neutral provider instead of using `GCDevJsonReadResult`.
+11. Update contract fixture tests so they exercise the Editor adapter and keep verifying read, write, validation, and **Capture** outcomes.
+12. Add the ADR and update `CONTEXT.md`, the architecture reference, and the architecture roadmap so the documented shape matches the Runtime **Seam** plus Editor JSON-backed Adapter split.
+13. Do not change public runtime payload shapes, Local Play Contract file rules, dirty/conflict preflight behavior, restart recapture behavior, DevApp seat snapshots, package version, changelog, or release metadata.
+
+### Verification
+
+- Run `git diff --check`.
+- Statically confirm `Runtime/dsb.gamingcouch.runtime.asmdef` no longer references `Unity.Newtonsoft.Json`.
+- Statically confirm `Runtime` no longer contains Newtonsoft/JObject/JToken references.
+- Statically confirm Runtime `GCLocalPlaySession` no longer references `GCDevJson*` or `GCMetadataJson*` types.
+- Run focused Unity editor tests:
+  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`
+  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`
+- Run the full EditMode bridge validation if focused tests pass:
+  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --timeout 300`
+- Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
+
+### Completion Notes
+
+Changed paths:
+
+- `Runtime/Dev/GCLocalPlaySession.cs`
+- `Runtime/dsb.gamingcouch.runtime.asmdef`
+- `Editor/GCDevJsonFile.cs`
+- `Editor/GCDevJsonFile.cs.meta`
+- `Editor/GCDevJsonStore.cs`
+- `Editor/GCDevJsonStore.cs.meta`
+- `Editor/GCDevJsonValidation.cs`
+- `Editor/GCDevJsonValidation.cs.meta`
+- `Editor/GCMetadataJsonFile.cs`
+- `Editor/GCMetadataJsonFile.cs.meta`
+- `Editor/GCMetadataJsonStore.cs`
+- `Editor/GCMetadataJsonStore.cs.meta`
+- `Editor/GCRootJsonFileStamp.cs`
+- `Editor/GCRootJsonFileStamp.cs.meta`
+- `Editor/GCDevJsonInspectorState.cs`
+- `Editor/GamingCouchEditor.cs`
+- `Tests/Editor/GCLocalPlaySessionTests.cs`
+- `Tests/Editor/GCDevJsonContractFixtureTests.cs`
+- `CONTEXT.md`
+- `docs/adr/0001-keep-json-backed-local-play-contract-in-editor-assembly.md`
+- `docs/adr/0001-keep-json-backed-local-play-contract-in-editor-assembly.md.meta`
+- `docs/adr.meta`
+- `docs/architecture/gamingcouch-unity-package-architecture-then-now.md`
+- `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
+- `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+
+Validation:
+
+- `git diff --check`: passed.
+- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
+- `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only Editor asmdef retains the reference.
+- `rg -n "GCDevJson|GCMetadataJson" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
+
+Review pass 2 findings:
+
+- No compile, test, or behavior defects requiring product-code patches were found.
+- Runtime boundary inspection confirmed `Runtime/Dev/GCLocalPlaySession.cs` contains only neutral Local Play Session provider/result/issue types and no `GCDevJson*`, `GCMetadataJson*`, Newtonsoft, `JObject`, or `JToken` references.
+- Editor adapter inspection confirmed `GCDevJsonLocalPlaySessionProvider` owns JSON read/capture/preflight mapping, builds setup/play options and seat identities, maps validation warnings/errors to neutral issues, and keeps bot-support-disabled as a warning-only validation result.
+- `.meta` inspection confirmed moved JSON files kept their existing Unity GUIDs.
+- Task status was corrected to keep Task 15 in review with parent validation pending instead of marking the architecture follow-up complete.
+
+Review pass 2 patches:
+
+- Updated this task record and top-level status table to keep Task 15 in review after pass 2, with parent validation still pending.
+
+Review pass 2 validation:
+
+- `git diff --check`: passed.
+- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
+- `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only `Editor/dsb.gamingcouch.editor.asmdef` matched.
+- `rg -n "GCDevJson|GCMetadataJson" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
+- `rg -n "[ \t]+$" Editor/GCDevJsonFile.cs Editor/GCDevJsonFile.cs.meta Editor/GCDevJsonStore.cs Editor/GCDevJsonStore.cs.meta Editor/GCDevJsonValidation.cs Editor/GCDevJsonValidation.cs.meta Editor/GCMetadataJsonFile.cs Editor/GCMetadataJsonFile.cs.meta Editor/GCMetadataJsonStore.cs Editor/GCMetadataJsonStore.cs.meta Editor/GCRootJsonFileStamp.cs Editor/GCRootJsonFileStamp.cs.meta docs/architecture/unity-dev-json-sync-implementation-tasks.md`: no matches.
+
+Review pass 2 skipped validation:
+
+- Unity bridge tests were not run in this pass because the previous Task 15 focused bridge runs already returned an environment-side error before result XML, and this pass was scoped to static inspection and fast checks.
+
+Parent validation:
+
+- Parent inspection confirmed `GCLocalPlaySession` owns neutral Local Play Session provider/result/issue types and no longer depends on JSON implementation types.
+- Parent inspection confirmed `GCDevJsonLocalPlaySessionProvider` is Editor-owned, registered at editor load, maps JSON validation codes to neutral issue strings, and builds setup/play options plus **Seat** identities.
+- `git diff --check`: passed.
+- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime -g '*.cs' -g '*.asmdef'`: no matches.
+- `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only `Editor/dsb.gamingcouch.editor.asmdef` matched.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-58a70d87afec45778cc1d9aef323a04e.json`, and did not create result XML.
+- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-6af45e302e6740d9bd839fe3a92e5e87.json`, and did not create result XML.
+- Recent Unity logs inspected after the bridge errors did not expose compile errors or test failure details for these requests.
+- Full EditMode bridge validation was skipped because both focused bridge runs failed before producing test result XML.
+- `git status --short --untracked-files=all`: Task 15 files changed; pre-existing unrelated untracked files remain present and untouched.
+
+### Status Update Rules
+
+After implementation and both review-and-patch passes:
+
+- Mark Task 15 `Done` or `Blocked`.
+- Add changed paths.
+- Add validation results and skipped validation gaps.
+- Set current task to None if complete.
+- Set overall status back to architecture follow-up complete if no further task is approved.
 
 ## Handoff Protocol
 

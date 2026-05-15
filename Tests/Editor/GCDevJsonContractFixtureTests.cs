@@ -60,7 +60,7 @@ public sealed class GCDevJsonContractFixtureTests
             var readResult = fixture.DevStore.Read(metadataReadResult);
 
             AssertReadResult(readResult, expected);
-            AssertCapture(readResult, expected.capture);
+            AssertCapture(fixture, readResult, expected.capture);
             AssertWrite(fixture, expected.write);
         }
     }
@@ -146,19 +146,21 @@ public sealed class GCDevJsonContractFixtureTests
         return count;
     }
 
-    private static void AssertCapture(GCDevJsonReadResult readResult, ExpectedCapture expected)
+    private static void AssertCapture(ContractFixture fixture, GCDevJsonReadResult readResult, ExpectedCapture expected)
     {
         if (expected == null || !expected.assert)
         {
             return;
         }
 
-        var capture = GCLocalPlaySession.Capture(readResult);
+        var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
         Assert.That(capture.success, Is.EqualTo(expected.success));
 
         if (!expected.success)
         {
-            Assert.That(capture.validation, Is.SameAs(readResult.validation));
+            Assert.That(capture.validation, Is.Not.Null);
+            Assert.That(capture.validation.ErrorCount, Is.EqualTo(readResult.validation.ErrorCount));
+            Assert.That(capture.validation.WarningCount, Is.EqualTo(readResult.validation.WarningCount));
             return;
         }
 

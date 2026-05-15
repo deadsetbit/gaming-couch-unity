@@ -195,7 +195,9 @@ internal sealed class GCDevJsonInspectorState
         return GCLocalPlaySessionPreflightResult.Failed(
             boundaryName + " blocked because the current gc.dev.json inspector draft could not be auto-applied.",
             lastWriteResult != null ? lastWriteResult.path : DevJsonPath,
-            lastWriteResult != null ? lastWriteResult.validation : draftValidation
+            GCDevJsonLocalPlaySessionProvider.MapValidation(
+                lastWriteResult != null ? lastWriteResult.validation : draftValidation
+            )
         );
     }
 
@@ -210,7 +212,7 @@ internal sealed class GCDevJsonInspectorState
             return GCLocalPlaySessionPreflightResult.Failed(
                 boundaryName + " blocked because the current gc.dev.json inspector draft is conflicted. Reload from disk or write the draft before continuing.",
                 DevJsonPath,
-                draftValidation
+                GCDevJsonLocalPlaySessionProvider.MapValidation(draftValidation)
             );
         }
 
@@ -224,7 +226,7 @@ internal sealed class GCDevJsonInspectorState
             return GCLocalPlaySessionPreflightResult.Failed(
                 boundaryName + " blocked because the current gc.dev.json inspector draft is invalid.",
                 DevJsonPath,
-                draftValidation
+                GCDevJsonLocalPlaySessionProvider.MapValidation(draftValidation)
             );
         }
 

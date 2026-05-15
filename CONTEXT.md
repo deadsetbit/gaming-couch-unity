@@ -28,6 +28,14 @@ _Avoid_: source seat
 The snapshot of valid **Local Play Settings** used for setup and play until restart or the next Play Mode entry.
 _Avoid_: live settings, current JSON
 
+**Local Play Session Seam**:
+The Runtime-owned editor-only boundary that caches **Capture**, runs preflight, and exposes setup/play options and **Seat** identities without knowing the JSON implementation.
+_Avoid_: JSON session, runtime JSON parser
+
+**Editor Local Play Contract Adapter**:
+The Editor-owned implementation that reads, writes, and validates `gc.dev.json` and `gc.metadata.json`, then maps the result into the **Local Play Session Seam**.
+_Avoid_: runtime contract adapter, shared JSON implementation
+
 **Contract Fixture**:
 An example local play file set with expected validation and capture results shared across engine packages.
 _Avoid_: Unity test data
@@ -38,6 +46,8 @@ _Avoid_: Unity test data
 - **Local Play Settings** contain exactly eight **Seats**.
 - Enabled **Seats** become **Active Players** during **Capture**.
 - A **Capture** is stable for the active editor run until restart or the next Play Mode entry.
+- The **Editor Local Play Contract Adapter** owns JSON parsing, writing, validation, and Newtonsoft usage.
+- The **Local Play Session Seam** owns active **Capture** caching and consumes only neutral provider results and issues.
 - **Contract Fixtures** verify the **Local Play Contract** for each engine package.
 
 ## Example Dialogue

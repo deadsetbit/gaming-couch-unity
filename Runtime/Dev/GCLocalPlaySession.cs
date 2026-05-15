@@ -10,13 +10,148 @@ namespace DSB.GC.Dev
         GamingCouchRestart,
     }
 
+    internal enum GCLocalPlaySessionIssueSeverity
+    {
+        Warning,
+        Error,
+    }
+
+    internal sealed class GCLocalPlaySessionIssue
+    {
+        internal readonly GCLocalPlaySessionIssueSeverity severity;
+        internal readonly string message;
+        internal readonly string path;
+        internal readonly int seatIndex;
+        internal readonly string fieldName;
+        internal readonly string entryKey;
+        internal readonly string code;
+
+        private GCLocalPlaySessionIssue(
+            GCLocalPlaySessionIssueSeverity severity,
+            string message,
+            string path,
+            int seatIndex,
+            string fieldName,
+            string entryKey,
+            string code
+        )
+        {
+            this.severity = severity;
+            this.message = message;
+            this.path = path;
+            this.seatIndex = seatIndex;
+            this.fieldName = fieldName;
+            this.entryKey = entryKey;
+            this.code = code;
+        }
+
+        internal static GCLocalPlaySessionIssue Error(
+            string message,
+            string path,
+            int seatIndex = 0,
+            string fieldName = null,
+            string entryKey = null,
+            string code = null
+        )
+        {
+            return new GCLocalPlaySessionIssue(
+                GCLocalPlaySessionIssueSeverity.Error,
+                message,
+                path,
+                seatIndex,
+                fieldName,
+                entryKey,
+                code
+            );
+        }
+
+        internal static GCLocalPlaySessionIssue Warning(
+            string message,
+            string path,
+            int seatIndex = 0,
+            string fieldName = null,
+            string entryKey = null,
+            string code = null
+        )
+        {
+            return new GCLocalPlaySessionIssue(
+                GCLocalPlaySessionIssueSeverity.Warning,
+                message,
+                path,
+                seatIndex,
+                fieldName,
+                entryKey,
+                code
+            );
+        }
+    }
+
+    internal sealed class GCLocalPlaySessionValidationResult
+    {
+        internal readonly GCLocalPlaySessionIssue[] issues;
+
+        private GCLocalPlaySessionValidationResult(GCLocalPlaySessionIssue[] issues)
+        {
+            this.issues = issues ?? Array.Empty<GCLocalPlaySessionIssue>();
+        }
+
+        internal bool IsValid
+        {
+            get { return ErrorCount == 0; }
+        }
+
+        internal int ErrorCount
+        {
+            get { return CountIssues(GCLocalPlaySessionIssueSeverity.Error); }
+        }
+
+        internal int WarningCount
+        {
+            get { return CountIssues(GCLocalPlaySessionIssueSeverity.Warning); }
+        }
+
+        internal static GCLocalPlaySessionValidationResult Valid()
+        {
+            return new GCLocalPlaySessionValidationResult(Array.Empty<GCLocalPlaySessionIssue>());
+        }
+
+        internal static GCLocalPlaySessionValidationResult FromIssue(GCLocalPlaySessionIssue issue)
+        {
+            if (issue == null)
+            {
+                return Valid();
+            }
+
+            return new GCLocalPlaySessionValidationResult(new[] { issue });
+        }
+
+        internal static GCLocalPlaySessionValidationResult FromIssues(GCLocalPlaySessionIssue[] issues)
+        {
+            return new GCLocalPlaySessionValidationResult(issues);
+        }
+
+        private int CountIssues(GCLocalPlaySessionIssueSeverity severity)
+        {
+            var count = 0;
+            for (var index = 0; index < issues.Length; index++)
+            {
+                if (issues[index] != null && issues[index].severity == severity)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
     internal sealed class GCLocalPlaySessionCaptureResult
     {
         internal readonly bool success;
         internal readonly GCSetupOptions setupOptions;
         internal readonly GCPlayOptions playOptions;
         internal readonly GCSeatIdentity[] seatIdentities;
-        internal readonly GCDevJsonValidationResult validation;
+        internal readonly GCLocalPlaySessionValidationResult validation;
         internal readonly string path;
 
         private GCLocalPlaySessionCaptureResult(
@@ -24,7 +159,7 @@ namespace DSB.GC.Dev
             GCSetupOptions setupOptions,
             GCPlayOptions playOptions,
             GCSeatIdentity[] seatIdentities,
-            GCDevJsonValidationResult validation,
+            GCLocalPlaySessionValidationResult validation,
             string path
         )
         {
@@ -32,7 +167,7 @@ namespace DSB.GC.Dev
             this.setupOptions = setupOptions;
             this.playOptions = playOptions;
             this.seatIdentities = seatIdentities ?? Array.Empty<GCSeatIdentity>();
-            this.validation = validation;
+            this.validation = validation ?? GCLocalPlaySessionValidationResult.Valid();
             this.path = path;
         }
 
@@ -40,14 +175,17 @@ namespace DSB.GC.Dev
             GCSetupOptions setupOptions,
             GCPlayOptions playOptions,
             GCSeatIdentity[] seatIdentities,
-            GCDevJsonValidationResult validation,
+            GCLocalPlaySessionValidationResult validation,
             string path
         )
         {
             return new GCLocalPlaySessionCaptureResult(true, setupOptions, playOptions, seatIdentities, validation, path);
         }
 
-        internal static GCLocalPlaySessionCaptureResult Failed(string path, GCDevJsonValidationResult validation)
+        internal static GCLocalPlaySessionCaptureResult Failed(
+            string path,
+            GCLocalPlaySessionValidationResult validation
+        )
         {
             return new GCLocalPlaySessionCaptureResult(false, null, null, Array.Empty<GCSeatIdentity>(), validation, path);
         }
@@ -58,49 +196,53 @@ namespace DSB.GC.Dev
         internal readonly bool success;
         internal readonly string message;
         internal readonly string path;
-        internal readonly GCDevJsonValidationResult validation;
+        internal readonly GCLocalPlaySessionValidationResult validation;
 
-        private GCLocalPlaySessionPreflightResult(bool success, string message, string path, GCDevJsonValidationResult validation)
+        private GCLocalPlaySessionPreflightResult(
+            bool success,
+            string message,
+            string path,
+            GCLocalPlaySessionValidationResult validation
+        )
         {
             this.success = success;
             this.message = message;
             this.path = path;
-            this.validation = validation;
+            this.validation = validation ?? GCLocalPlaySessionValidationResult.Valid();
         }
 
         internal static GCLocalPlaySessionPreflightResult Succeeded()
         {
-            return new GCLocalPlaySessionPreflightResult(true, null, null, GCDevJsonValidationResult.Valid());
+            return new GCLocalPlaySessionPreflightResult(true, null, null, GCLocalPlaySessionValidationResult.Valid());
         }
 
         internal static GCLocalPlaySessionPreflightResult Failed(
             string message,
             string path,
-            GCDevJsonValidationResult validation
+            GCLocalPlaySessionValidationResult validation
         )
         {
             return new GCLocalPlaySessionPreflightResult(false, message, path, validation);
         }
     }
 
+    internal interface IGCLocalPlaySessionProvider
+    {
+        GCLocalPlaySessionCaptureResult Capture();
+        GCLocalPlaySessionPreflightResult Validate(GCLocalPlaySessionBoundary context);
+    }
+
     internal static class GCLocalPlaySession
     {
-        private static readonly GCPlayerColor[] SeatColors =
-        {
-            GCPlayerColor.blue,
-            GCPlayerColor.red,
-            GCPlayerColor.green,
-            GCPlayerColor.yellow,
-            GCPlayerColor.purple,
-            GCPlayerColor.pink,
-            GCPlayerColor.cyan,
-            GCPlayerColor.brown,
-        };
-
         private static Func<GCLocalPlaySessionBoundary, GCLocalPlaySessionPreflightResult> preflightHandler;
-        private static Func<GCDevJsonReadResult> readHandler;
+        private static IGCLocalPlaySessionProvider provider;
         private static Action captureSucceededHandler;
         private static GCLocalPlaySessionCaptureResult activeCapture;
+
+        internal static void RegisterProvider(IGCLocalPlaySessionProvider sessionProvider)
+        {
+            provider = sessionProvider;
+        }
 
         internal static void RegisterPreflightHandler(
             Func<GCLocalPlaySessionBoundary, GCLocalPlaySessionPreflightResult> handler
@@ -134,59 +276,26 @@ namespace DSB.GC.Dev
 
         internal static GCLocalPlaySessionCaptureResult Capture()
         {
+            if (provider == null)
+            {
+                return FailedForMissingProvider();
+            }
+
             try
             {
-                return Capture(ReadRootJson());
+                var result = provider.Capture();
+                return result ?? GCLocalPlaySessionCaptureResult.Failed(
+                    null,
+                    GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                        "Local Play Contract capture did not produce a result.",
+                        null
+                    ))
+                );
             }
             catch (Exception exception)
             {
                 return FailedForCaptureException(exception);
             }
-        }
-
-        internal static GCLocalPlaySessionCaptureResult Capture(GCDevJsonReadResult readResult)
-        {
-            if (readResult == null)
-            {
-                return GCLocalPlaySessionCaptureResult.Failed(
-                    null,
-                    GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
-                        GCDevJsonIssueCode.ReadError,
-                        "gc.dev.json could not be read because the read result was missing.",
-                        null
-                    ))
-                );
-            }
-
-            if (!readResult.IsValid)
-            {
-                return GCLocalPlaySessionCaptureResult.Failed(GetPath(readResult), readResult.validation);
-            }
-
-            var data = readResult.data;
-            int seed;
-            if (!TryResolveSeed(data.seed, out seed))
-            {
-                return GCLocalPlaySessionCaptureResult.Failed(
-                    GetPath(readResult),
-                    GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
-                        GCDevJsonIssueCode.InvalidSeed,
-                        "gc.dev.json seed must be \"random\" or an integer string from " +
-                        GCDevJsonFile.MinSeed + " to " + GCDevJsonFile.MaxSeed + ".",
-                        GetPath(readResult)
-                    ))
-                );
-            }
-
-            var setupOptions = CreateSetupOptions(data);
-            var playOptions = CreatePlayOptions(data, seed, out var seatIdentities);
-            return GCLocalPlaySessionCaptureResult.Succeeded(
-                setupOptions,
-                playOptions,
-                seatIdentities,
-                readResult.validation,
-                GetPath(readResult)
-            );
         }
 
         internal static bool TryRequireCapturedSetupOptions(string source, out GCSetupOptions setupOptions)
@@ -262,33 +371,34 @@ namespace DSB.GC.Dev
 
         internal static GCLocalPlaySessionPreflightResult ValidateRootJson(GCLocalPlaySessionBoundary context)
         {
-            GCDevJsonReadResult readResult;
+            if (provider == null)
+            {
+                return FailedPreflightForMissingProvider(context);
+            }
+
             try
             {
-                readResult = ReadRootJson();
+                var result = provider.Validate(context);
+                if (result != null)
+                {
+                    return result;
+                }
             }
             catch (Exception exception)
             {
                 return FailedForException(context, exception);
             }
 
-            if (readResult != null && readResult.IsValid)
-            {
-                return GCLocalPlaySessionPreflightResult.Succeeded();
-            }
-
             var message = GetBoundaryDisplayName(context) +
-                          " blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates.";
+                          " blocked because Local Play Contract validation did not produce a result.";
             return GCLocalPlaySessionPreflightResult.Failed(
                 message,
-                GetPath(readResult),
-                readResult != null
-                    ? readResult.validation
-                    : GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(
-                        GCDevJsonIssueCode.ReadError,
-                        "gc.dev.json could not be read because the read result was missing.",
-                        null
-                    ))
+                null,
+                GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                    message,
+                    null,
+                    code: "ReadError"
+                ))
             );
         }
 
@@ -300,7 +410,7 @@ namespace DSB.GC.Dev
             }
 
             Debug.LogError("[GamingCouch] " + result.message);
-            LogDevJsonIssues(result.validation);
+            LogSessionIssues(result.validation);
         }
 
         internal static string GetBoundaryDisplayName(GCLocalPlaySessionBoundary context)
@@ -311,12 +421,12 @@ namespace DSB.GC.Dev
         }
 
         internal static IDisposable OverrideForTests(
-            Func<GCDevJsonReadResult> readHandlerOverride,
+            IGCLocalPlaySessionProvider providerOverride,
             Func<GCLocalPlaySessionBoundary, GCLocalPlaySessionPreflightResult> preflightHandlerOverride,
             Action captureSucceededHandlerOverride
         )
         {
-            return new TestOverride(readHandlerOverride, preflightHandlerOverride, captureSucceededHandlerOverride);
+            return new TestOverride(providerOverride, preflightHandlerOverride, captureSucceededHandlerOverride);
         }
 
         internal static GCLocalPlaySessionCaptureResult GetActiveCaptureForTests()
@@ -332,79 +442,33 @@ namespace DSB.GC.Dev
                    activeCapture.playOptions != null;
         }
 
-        private static GCSetupOptions CreateSetupOptions(GCDevJsonFile data)
+        private static GCLocalPlaySessionCaptureResult FailedForMissingProvider()
         {
-            return new GCSetupOptions
-            {
-                isServer = true,
-                gameModeId = data.entryKey,
-                mode = GCMode.Development,
-            };
+            return GCLocalPlaySessionCaptureResult.Failed(
+                null,
+                GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                    "Local Play Contract provider is not registered.",
+                    null,
+                    code: "ReadError"
+                ))
+            );
         }
 
-        private static GCPlayOptions CreatePlayOptions(GCDevJsonFile data, int seed, out GCSeatIdentity[] seatIdentities)
+        private static GCLocalPlaySessionPreflightResult FailedPreflightForMissingProvider(
+            GCLocalPlaySessionBoundary context
+        )
         {
-            var activePlayerCount = data.EnabledSeatCount;
-            var options = new GCPlayOptions
-            {
-                players = new GCPlayerOptions[activePlayerCount],
-                seed = seed,
-            };
-            seatIdentities = new GCSeatIdentity[activePlayerCount];
-
-            var activePlayerIndex = 0;
-            for (var sourceSeatIndex = 0; sourceSeatIndex < data.seats.Length; sourceSeatIndex++)
-            {
-                var seat = data.seats[sourceSeatIndex];
-                if (!seat.enabled)
-                {
-                    continue;
-                }
-
-                var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
-                var playerColor = SeatColors[sourceSeatIndex];
-                var playerId = activePlayerIndex + 1;
-                var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
-
-                options.players[activePlayerIndex] = new GCPlayerOptions
-                {
-                    type = playerType.ToString(),
-                    playerId = playerId,
-                    name = seat.name,
-                    color = playerColor.ToString(),
-                };
-
-                seatIdentities[activePlayerIndex] = new GCSeatIdentity
-                {
-                    playerId = playerId,
-                    sourceSeatIndex = oneBasedSourceSeatIndex,
-                    label = "Seat " + oneBasedSourceSeatIndex,
-                    playerType = playerType,
-                    playerColor = playerColor,
-                };
-
-                activePlayerIndex++;
-            }
-
-            return options;
-        }
-
-        private static bool TryResolveSeed(string seed, out int value)
-        {
-            if (seed == GCDevJsonFile.RandomSeed)
-            {
-                value = UnityEngine.Random.Range(GCDevJsonFile.MinSeed, GCDevJsonFile.MaxSeed + 1);
-                return true;
-            }
-
-            return int.TryParse(seed, out value) &&
-                   value >= GCDevJsonFile.MinSeed &&
-                   value <= GCDevJsonFile.MaxSeed;
-        }
-
-        private static GCDevJsonReadResult ReadRootJson()
-        {
-            return readHandler != null ? readHandler() : new GCDevJsonStore().Read();
+            var message = GetBoundaryDisplayName(context) +
+                          " blocked because the Local Play Contract provider is not registered.";
+            return GCLocalPlaySessionPreflightResult.Failed(
+                message,
+                null,
+                GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                    message,
+                    null,
+                    code: "ReadError"
+                ))
+            );
         }
 
         private static GCLocalPlaySessionCaptureResult FailedForCaptureException(Exception exception)
@@ -412,7 +476,11 @@ namespace DSB.GC.Dev
             var message = "gc.dev.json could not be read because editor JSON capture failed: " + exception.Message;
             return GCLocalPlaySessionCaptureResult.Failed(
                 null,
-                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
+                GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                    message,
+                    null,
+                    code: "ReadError"
+                ))
             );
         }
 
@@ -426,7 +494,11 @@ namespace DSB.GC.Dev
             return GCLocalPlaySessionPreflightResult.Failed(
                 message,
                 null,
-                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Error(GCDevJsonIssueCode.ReadError, message, null))
+                GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
+                    message,
+                    null,
+                    code: "ReadError"
+                ))
             );
         }
 
@@ -454,7 +526,7 @@ namespace DSB.GC.Dev
                 return;
             }
 
-            LogDevJsonIssues(capture.validation);
+            LogSessionIssues(capture.validation);
 
             if (!capture.success && !HasAnyIssues(capture.validation))
             {
@@ -462,7 +534,7 @@ namespace DSB.GC.Dev
             }
         }
 
-        private static void LogDevJsonIssues(GCDevJsonValidationResult validation)
+        private static void LogSessionIssues(GCLocalPlaySessionValidationResult validation)
         {
             var issues = validation != null ? validation.issues : null;
             if (issues == null)
@@ -478,48 +550,75 @@ namespace DSB.GC.Dev
                     continue;
                 }
 
-                if (issue.severity == GCDevJsonIssueSeverity.Warning)
+                var message = FormatIssue(issue);
+                if (issue.severity == GCLocalPlaySessionIssueSeverity.Warning)
                 {
-                    Debug.LogWarning("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
+                    Debug.LogWarning("[GamingCouch] " + message);
                 }
                 else
                 {
-                    Debug.LogError("[GamingCouch] " + GCDevJsonIssueFormatter.Format(issue));
+                    Debug.LogError("[GamingCouch] " + message);
                 }
             }
         }
 
-        private static bool HasAnyIssues(GCDevJsonValidationResult validation)
+        private static string FormatIssue(GCLocalPlaySessionIssue issue)
         {
-            return validation != null && validation.issues != null && validation.issues.Length > 0;
+            var message = issue.message ?? "Local Play Contract issue.";
+            if (!string.IsNullOrEmpty(issue.code))
+            {
+                message = issue.code + ": " + message;
+            }
+
+            if (issue.seatIndex > 0)
+            {
+                message += " Seat " + issue.seatIndex + ".";
+            }
+
+            if (!string.IsNullOrEmpty(issue.fieldName))
+            {
+                message += " Field: " + issue.fieldName + ".";
+            }
+
+            if (!string.IsNullOrEmpty(issue.entryKey))
+            {
+                message += " Entry: " + issue.entryKey + ".";
+            }
+
+            if (!string.IsNullOrEmpty(issue.path))
+            {
+                message += " Path: " + issue.path + ".";
+            }
+
+            return message;
         }
 
-        private static string GetPath(GCDevJsonReadResult readResult)
+        private static bool HasAnyIssues(GCLocalPlaySessionValidationResult validation)
         {
-            return readResult != null && readResult.parsedFile != null ? readResult.parsedFile.path : null;
+            return validation != null && validation.issues != null && validation.issues.Length > 0;
         }
 
         private sealed class TestOverride : IDisposable
         {
             private readonly Func<GCLocalPlaySessionBoundary, GCLocalPlaySessionPreflightResult> previousPreflightHandler;
-            private readonly Func<GCDevJsonReadResult> previousReadHandler;
+            private readonly IGCLocalPlaySessionProvider previousProvider;
             private readonly Action previousCaptureSucceededHandler;
             private readonly GCLocalPlaySessionCaptureResult previousActiveCapture;
             private bool disposed;
 
             internal TestOverride(
-                Func<GCDevJsonReadResult> readHandlerOverride,
+                IGCLocalPlaySessionProvider providerOverride,
                 Func<GCLocalPlaySessionBoundary, GCLocalPlaySessionPreflightResult> preflightHandlerOverride,
                 Action captureSucceededHandlerOverride
             )
             {
                 previousPreflightHandler = preflightHandler;
-                previousReadHandler = readHandler;
+                previousProvider = provider;
                 previousCaptureSucceededHandler = captureSucceededHandler;
                 previousActiveCapture = activeCapture;
 
                 preflightHandler = preflightHandlerOverride;
-                readHandler = readHandlerOverride;
+                provider = providerOverride;
                 captureSucceededHandler = captureSucceededHandlerOverride;
                 activeCapture = null;
             }
@@ -532,7 +631,7 @@ namespace DSB.GC.Dev
                 }
 
                 preflightHandler = previousPreflightHandler;
-                readHandler = previousReadHandler;
+                provider = previousProvider;
                 captureSucceededHandler = previousCaptureSucceededHandler;
                 activeCapture = previousActiveCapture;
                 disposed = true;
