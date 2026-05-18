@@ -26,12 +26,6 @@ internal static class GamingCouchCodexTestBridge
         EditorApplication.update += PollForRequests;
     }
 
-    [MenuItem("GamingCouch/Codex Test Bridge/Log Request Path")]
-    private static void LogRequestPath()
-    {
-        Debug.Log("Gaming Couch Codex test bridge request path: " + RequestFilePath);
-    }
-
     private static void PollForRequests()
     {
         if (EditorApplication.timeSinceStartup < nextPollTime)
