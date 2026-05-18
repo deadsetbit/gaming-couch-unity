@@ -126,11 +126,11 @@ internal static class GamingCouchStartScreenSetupActions
                 return RunEnsureGamingCouch();
             case GCStartScreenReadinessActionId.CreateAndWireGameScript:
                 return FromActiveSceneSetupResult(
-                    GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartGameListenerReference()
+                    GamingCouchQuickStartSetup.EnsureActiveSceneGameListenerReference()
                 );
             case GCStartScreenReadinessActionId.WirePlayerPrefab:
                 return FromActiveSceneSetupResult(
-                    GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartPlayerPrefabReference()
+                    GamingCouchQuickStartSetup.EnsureActiveScenePlayerPrefabReference()
                 );
             case GCStartScreenReadinessActionId.SetFirstBuildSettingsScene:
                 return FromBuildSettingsSetupResult(
@@ -158,11 +158,11 @@ internal static class GamingCouchStartScreenSetupActions
 
     internal static GCStartScreenSetupActionResult RunActiveSceneSetup()
     {
-        return FromActiveSceneSetupResult(GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartSetup());
+        return FromActiveSceneSetupResult(GamingCouchQuickStartSetup.EnsureActiveSceneSetup());
     }
 
     internal static GCStartScreenSetupActionResult FromActiveSceneSetupResult(
-        GCQuickStartActiveSceneSetupResult result
+        GCActiveSceneSetupResult result
     )
     {
         if (result == null)
@@ -365,7 +365,7 @@ internal static class GamingCouchStartScreenSetupActions
         );
     }
 
-    private static MessageType GetActiveSceneResultMessageType(GCQuickStartActiveSceneSetupResult result)
+    private static MessageType GetActiveSceneResultMessageType(GCActiveSceneSetupResult result)
     {
         if (result.IsBlocked)
         {

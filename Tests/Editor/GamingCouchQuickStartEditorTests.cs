@@ -95,7 +95,7 @@ public sealed class GamingCouchQuickStartEditorTests
                 new EditorBuildSettingsScene(sceneAssetPath, true),
             };
 
-            var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartSetup();
+            var result = GamingCouchQuickStartSetup.EnsureActiveSceneSetup();
             var scenes = EditorBuildSettings.scenes;
 
             Assert.That(result.IsBlocked, Is.True);

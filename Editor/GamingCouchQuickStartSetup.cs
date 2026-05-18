@@ -49,7 +49,7 @@ internal enum GCQuickStartSceneSetupStatus
     Blocked,
 }
 
-internal enum GCQuickStartActiveSceneSetupStatus
+internal enum GCActiveSceneSetupStatus
 {
     Ready,
     PendingCompilation,
@@ -188,15 +188,15 @@ internal sealed class GCQuickStartSceneSetupResult
     }
 }
 
-internal sealed class GCQuickStartActiveSceneSetupResult
+internal sealed class GCActiveSceneSetupResult
 {
-    internal readonly GCQuickStartActiveSceneSetupStatus status;
+    internal readonly GCActiveSceneSetupStatus status;
     internal readonly bool changed;
     internal readonly string message;
     internal readonly string[] details;
 
-    internal GCQuickStartActiveSceneSetupResult(
-        GCQuickStartActiveSceneSetupStatus status,
+    internal GCActiveSceneSetupResult(
+        GCActiveSceneSetupStatus status,
         bool changed,
         string message,
         string[] details
@@ -210,12 +210,12 @@ internal sealed class GCQuickStartActiveSceneSetupResult
 
     internal bool IsBlocked
     {
-        get { return status == GCQuickStartActiveSceneSetupStatus.Blocked; }
+        get { return status == GCActiveSceneSetupStatus.Blocked; }
     }
 
     internal bool IsPendingCompilation
     {
-        get { return status == GCQuickStartActiveSceneSetupStatus.PendingCompilation; }
+        get { return status == GCActiveSceneSetupStatus.PendingCompilation; }
     }
 }
 
@@ -684,7 +684,7 @@ internal static class GamingCouchQuickStartSetup
             : "Active Scene Setup";
     }
 
-    internal static GCQuickStartActiveSceneSetupResult EnsureActiveSceneQuickStartSetup()
+    internal static GCActiveSceneSetupResult EnsureActiveSceneSetup()
     {
         var details = new List<string>();
         var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
@@ -699,7 +699,7 @@ internal static class GamingCouchQuickStartSetup
         if (gamingCouchResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed,
                 "Active Scene Setup is blocked.",
                 details
@@ -709,7 +709,7 @@ internal static class GamingCouchQuickStartSetup
         if (buildSettingsResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed,
                 buildSettingsResult.message,
                 details
@@ -719,19 +719,19 @@ internal static class GamingCouchQuickStartSetup
         if (gameViewResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed,
                 gameViewResult.message,
                 details
             );
         }
 
-        if (IsActiveSceneQuickStartWiringReady(gamingCouchResult.gamingCouch))
+        if (IsActiveSceneSetupWiringReady(gamingCouchResult.gamingCouch))
         {
             details.Add("The GamingCouch Game script reference already contains a serialized reference.");
             details.Add("The GamingCouch player prefab reference already contains a serialized reference.");
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Ready,
+                GCActiveSceneSetupStatus.Ready,
                 changed,
                 changed
                     ? "Active Scene Setup completed."
@@ -750,7 +750,7 @@ internal static class GamingCouchQuickStartSetup
         if (scriptResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed || scriptResult.changed,
                 scriptResult.message,
                 details
@@ -760,7 +760,7 @@ internal static class GamingCouchQuickStartSetup
         if (scriptResult.IsPendingCompilation)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.PendingCompilation,
+                GCActiveSceneSetupStatus.PendingCompilation,
                 changed || scriptResult.changed,
                 scriptResult.message,
                 details
@@ -779,7 +779,7 @@ internal static class GamingCouchQuickStartSetup
         if (listenerResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed,
                 listenerResult.message,
                 details
@@ -791,7 +791,7 @@ internal static class GamingCouchQuickStartSetup
         if (prefabResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 changed,
                 prefabResult.message,
                 details
@@ -799,7 +799,7 @@ internal static class GamingCouchQuickStartSetup
         }
 
         return CreateActiveSceneResult(
-            GCQuickStartActiveSceneSetupStatus.Ready,
+            GCActiveSceneSetupStatus.Ready,
             changed,
             changed
                 ? "Active Scene Setup completed."
@@ -808,14 +808,14 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
-    internal static GCQuickStartActiveSceneSetupResult EnsureActiveSceneQuickStartPlayerPrefabReference()
+    internal static GCActiveSceneSetupResult EnsureActiveScenePlayerPrefabReference()
     {
         var details = new List<string>();
         var gamingCouch = GetSingleActiveSceneGamingCouch(details);
         if (gamingCouch == null)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 false,
                 "Player prefab setup is blocked.",
                 details
@@ -831,7 +831,7 @@ internal static class GamingCouchQuickStartSetup
         {
             details.Add(playerPrefabCompatibilityMessage);
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 false,
                 "Player prefab setup is blocked.",
                 details
@@ -843,7 +843,7 @@ internal static class GamingCouchQuickStartSetup
         {
             details.Add("The GamingCouch player prefab reference already contains a serialized reference.");
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Ready,
+                GCActiveSceneSetupStatus.Ready,
                 false,
                 "Player prefab setup was already complete; existing reference was reused.",
                 details
@@ -864,14 +864,14 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
-    internal static GCQuickStartActiveSceneSetupResult EnsureActiveSceneQuickStartGameListenerReference()
+    internal static GCActiveSceneSetupResult EnsureActiveSceneGameListenerReference()
     {
         var details = new List<string>();
         var gamingCouch = GetSingleActiveSceneGamingCouch(details);
         if (gamingCouch == null)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 false,
                 "Game script setup is blocked.",
                 details
@@ -886,7 +886,7 @@ internal static class GamingCouchQuickStartSetup
         {
             details.Add("The GamingCouch Game script reference already contains a serialized reference.");
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Ready,
+                GCActiveSceneSetupStatus.Ready,
                 false,
                 "Game script setup was already complete; existing reference was reused.",
                 details
@@ -974,17 +974,17 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
-    private static GCQuickStartActiveSceneSetupResult CreateActiveSceneResult(
-        GCQuickStartActiveSceneSetupStatus status,
+    private static GCActiveSceneSetupResult CreateActiveSceneResult(
+        GCActiveSceneSetupStatus status,
         bool changed,
         string message,
         List<string> details
     )
     {
-        return new GCQuickStartActiveSceneSetupResult(status, changed, message, details.ToArray());
+        return new GCActiveSceneSetupResult(status, changed, message, details.ToArray());
     }
 
-    private static GCQuickStartActiveSceneSetupResult ContinueActiveSceneObjectReferenceSetup(
+    private static GCActiveSceneSetupResult ContinueActiveSceneObjectReferenceSetup(
         GCQuickStartScriptSetupResult scriptResult,
         GCQuickStartSetupAction action,
         GamingCouch gamingCouch,
@@ -995,7 +995,7 @@ internal static class GamingCouchQuickStartSetup
         if (scriptResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 scriptResult.changed,
                 scriptResult.message,
                 details
@@ -1005,7 +1005,7 @@ internal static class GamingCouchQuickStartSetup
         if (scriptResult.IsPendingCompilation)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.PendingCompilation,
+                GCActiveSceneSetupStatus.PendingCompilation,
                 scriptResult.changed,
                 scriptResult.message,
                 details
@@ -1025,14 +1025,14 @@ internal static class GamingCouchQuickStartSetup
 
         details.Add("Unknown Active Scene Setup action: " + action + ".");
         return CreateActiveSceneResult(
-            GCQuickStartActiveSceneSetupStatus.Blocked,
+            GCActiveSceneSetupStatus.Blocked,
             scriptResult.changed,
             "Active Scene Setup is blocked.",
             details
         );
     }
 
-    private static GCQuickStartActiveSceneSetupResult EnsureQuickStartPlayerPrefabReference(
+    private static GCActiveSceneSetupResult EnsureQuickStartPlayerPrefabReference(
         GCQuickStartSetupContinuationContext context,
         GamingCouch gamingCouch,
         List<string> details
@@ -1047,7 +1047,7 @@ internal static class GamingCouchQuickStartSetup
         {
             details.Add(playerPrefabCompatibilityMessage);
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 false,
                 "Player prefab setup is blocked.",
                 details
@@ -1060,7 +1060,7 @@ internal static class GamingCouchQuickStartSetup
         if (prefabResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 prefabResult.changed,
                 prefabResult.message,
                 details
@@ -1072,7 +1072,7 @@ internal static class GamingCouchQuickStartSetup
         if (assignResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 prefabResult.changed || assignResult.changed,
                 assignResult.message,
                 details
@@ -1080,7 +1080,7 @@ internal static class GamingCouchQuickStartSetup
         }
 
         return CreateActiveSceneResult(
-            GCQuickStartActiveSceneSetupStatus.Ready,
+            GCActiveSceneSetupStatus.Ready,
             prefabResult.changed || assignResult.changed,
             prefabResult.changed || assignResult.changed
                 ? "Quick-start player prefab reference is ready."
@@ -1089,7 +1089,7 @@ internal static class GamingCouchQuickStartSetup
         );
     }
 
-    private static GCQuickStartActiveSceneSetupResult EnsureQuickStartGameListenerReference(
+    private static GCActiveSceneSetupResult EnsureQuickStartGameListenerReference(
         GCQuickStartSetupContinuationContext context,
         GamingCouch gamingCouch,
         List<string> details
@@ -1101,7 +1101,7 @@ internal static class GamingCouchQuickStartSetup
         if (listenerResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 listenerResult.changed,
                 listenerResult.message,
                 details
@@ -1111,7 +1111,7 @@ internal static class GamingCouchQuickStartSetup
         if (listenerResult.listenerObject == null)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Ready,
+                GCActiveSceneSetupStatus.Ready,
                 listenerResult.changed,
                 listenerResult.message,
                 details
@@ -1123,7 +1123,7 @@ internal static class GamingCouchQuickStartSetup
         if (assignResult.IsBlocked)
         {
             return CreateActiveSceneResult(
-                GCQuickStartActiveSceneSetupStatus.Blocked,
+                GCActiveSceneSetupStatus.Blocked,
                 listenerResult.changed || assignResult.changed,
                 assignResult.message,
                 details
@@ -1131,7 +1131,7 @@ internal static class GamingCouchQuickStartSetup
         }
 
         return CreateActiveSceneResult(
-            GCQuickStartActiveSceneSetupStatus.Ready,
+            GCActiveSceneSetupStatus.Ready,
             listenerResult.changed || assignResult.changed,
             listenerResult.changed || assignResult.changed
                 ? "Game script is ready."
@@ -1159,7 +1159,7 @@ internal static class GamingCouchQuickStartSetup
         return gamingCouches[0];
     }
 
-    private static bool IsActiveSceneQuickStartWiringReady(GamingCouch gamingCouch)
+    private static bool IsActiveSceneSetupWiringReady(GamingCouch gamingCouch)
     {
         if (!GamingCouchSceneWiring.HasAssignedObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) ||
             !GamingCouchSceneWiring.HasAssignedObjectReference(gamingCouch, GamingCouchSceneWiring.PlayerPrefabPropertyName))

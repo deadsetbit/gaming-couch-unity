@@ -1859,7 +1859,7 @@ Validation:
 - Parent review-and-patch pass 2: confirmed generated script, prefab, scene, non-overwrite, continuation, and WebGL setup behavior remain in existing setup Modules; `Editor/GamingCouchQuickStartSetup.cs` and public runtime payload files were not changed.
 - `git diff --check`: passed.
 - `rg -n "[ \t]+$" Editor/GamingCouchStartScreenSetupActions.cs Editor/GamingCouchStartScreenSetupActions.cs.meta Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`: no trailing whitespace matches.
-- Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveSceneQuickStart*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureCleanWebGLExportSetup`.
+- Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveScene*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureCleanWebGLExportSetup`.
 - Static inspection: `GamingCouchStartScreenSetupActions` owns readiness action id dispatch, action result data, message type mapping, optional focus target, ping flag, and refresh/repaint instruction.
 - Static inspection: new Unity `.meta` GUIDs for the setup action Module and focused test file are unique within this repo.
 - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; Unity accepted the request; 8 passed, 0 failed, 0 skipped, 0 inconclusive.

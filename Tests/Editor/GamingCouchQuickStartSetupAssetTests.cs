@@ -481,11 +481,11 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         CreateGamingCouch("GamingCouch");
 
-        var result = GamingCouchQuickStartSetup.EnsureActiveSceneQuickStartGameListenerReference();
+        var result = GamingCouchQuickStartSetup.EnsureActiveSceneGameListenerReference();
 
         Assert.That(result.IsBlocked, Is.True);
         Assert.That(result.changed, Is.False);
-        Assert.That(result.status, Is.EqualTo(GCQuickStartActiveSceneSetupStatus.Blocked));
+        Assert.That(result.status, Is.EqualTo(GCActiveSceneSetupStatus.Blocked));
         AssertHasEntryContaining(result.details, "Cannot create script Assets/GamingCouch/GCExample/GCGameExample.cs because a folder exists at that path.");
         AssertHasEntryContaining(result.details, "Cannot create script Assets/GamingCouch/GCExample/GCPlayerExample.cs because a folder exists at that path.");
         Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);

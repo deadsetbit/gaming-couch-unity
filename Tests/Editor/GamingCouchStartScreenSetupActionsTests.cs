@@ -174,8 +174,8 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [Test]
     public void PendingCompilationResultReturnsWarningAndPreservesDetails()
     {
-        var pendingResult = new GCQuickStartActiveSceneSetupResult(
-            GCQuickStartActiveSceneSetupStatus.PendingCompilation,
+        var pendingResult = new GCActiveSceneSetupResult(
+            GCActiveSceneSetupStatus.PendingCompilation,
             true,
             "Active Scene Setup created missing example scripts and queued setup continuation after Unity compiles them.",
             new[]
