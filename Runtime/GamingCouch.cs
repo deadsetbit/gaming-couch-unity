@@ -316,6 +316,7 @@ namespace DSB.GC
             if (pause)
             {
                 inputsByPlayerId.Clear();
+                externalInputsByPlayerId.Clear();
 
                 volumeOnPause = AudioListener.volume;
                 AudioListener.volume = 0.0f;
@@ -464,6 +465,7 @@ namespace DSB.GC
             GCControllerInputs inputs = new GCControllerInputs(inputsData);
 
             var playerId = int.Parse(playerIdAndInputsArray[0]);
+            externalInputsByPlayerId[playerId] = inputs;
             inputsByPlayerId[playerId] = inputs;
         }
         #endregion
@@ -769,6 +771,8 @@ namespace DSB.GC
 
         #region Player inputs
         private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputs> externalInputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+
         /// <summary>
         /// Get player inputs by player ID.
         /// </summary>
@@ -791,6 +795,7 @@ namespace DSB.GC
         {
             GCLog.LogDebug("ClearInputs");
             inputsByPlayerId.Clear();
+            externalInputsByPlayerId.Clear();
         }
         #endregion
 
@@ -876,8 +881,13 @@ namespace DSB.GC
 
         private int editorControlPlayerIndex = 0;
 
-        private bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
+        private static bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
         {
+            if (inputs == null)
+            {
+                return false;
+            }
+
             if (Mathf.Abs(inputs.a0) > axisDeadzone || Mathf.Abs(inputs.a1) > axisDeadzone)
             {
                 return true;
@@ -890,6 +900,63 @@ namespace DSB.GC
 
             return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1 || inputs.b3 == 1 ||
                 inputs.b12 == 1 || inputs.b13 == 1 || inputs.b14 == 1 || inputs.b15 == 1;
+        }
+
+        internal static GCControllerInputsData ResolveEditorInputs(
+            GCControllerInputsData keyboardInputsData,
+            GCControllerInputsData externalInputsData,
+            float axisDeadzone
+        )
+        {
+            var selectedInputs = HasNonZeroInput(keyboardInputsData, axisDeadzone)
+                ? keyboardInputsData
+                : HasNonZeroInput(externalInputsData, axisDeadzone)
+                    ? externalInputsData
+                    : null;
+
+            if (selectedInputs == null)
+            {
+                return new GCControllerInputsData();
+            }
+
+            return new GCControllerInputsData
+            {
+                a0 = Mathf.Clamp(selectedInputs.a0, -1.0f, 1.0f),
+                a1 = Mathf.Clamp(selectedInputs.a1, -1.0f, 1.0f),
+                a2 = Mathf.Clamp(selectedInputs.a2, -1.0f, 1.0f),
+                a3 = Mathf.Clamp(selectedInputs.a3, -1.0f, 1.0f),
+                b0 = selectedInputs.b0,
+                b1 = selectedInputs.b1,
+                b2 = selectedInputs.b2,
+                b3 = selectedInputs.b3,
+                b12 = selectedInputs.b12,
+                b13 = selectedInputs.b13,
+                b14 = selectedInputs.b14,
+                b15 = selectedInputs.b15,
+            };
+        }
+
+        internal static void ApplyEditorInputsForPlayer(
+            int playerId,
+            GCControllerInputsData keyboardInputsData,
+            Dictionary<int, GCControllerInputs> gameFacingInputsByPlayerId,
+            Dictionary<int, GCControllerInputs> externalInputsByPlayerId,
+            float axisDeadzone
+        )
+        {
+            GCControllerInputsData externalInputsData = null;
+            if (externalInputsByPlayerId != null &&
+                externalInputsByPlayerId.TryGetValue(playerId, out var externalInputs))
+            {
+                externalInputsData = externalInputs.RawData;
+            }
+
+            var finalInputsData = ResolveEditorInputs(
+                keyboardInputsData: keyboardInputsData,
+                externalInputsData: externalInputsData,
+                axisDeadzone: axisDeadzone
+            );
+            gameFacingInputsByPlayerId[playerId] = new GCControllerInputs(finalInputsData);
         }
 
         private void HandleEditorInputs()
@@ -914,18 +981,6 @@ namespace DSB.GC
 
             if (player == null) return;
 
-            var inputsList = new List<GCControllerInputsData>();
-
-            GCControllerInputsData externalInputsData = null;
-
-            // external inputs
-            var hasExternalInputs = inputsByPlayerId.TryGetValue(player.Id, out var externalInputs);
-            if (hasExternalInputs)
-            {
-                externalInputsData = externalInputs.RawData;
-                inputsList.Add(externalInputsData);
-            }
-
             // keyboard inputs
             GCControllerInputsData keyboardInputsData = null;
             if (useKeyboardControls)
@@ -937,34 +992,20 @@ namespace DSB.GC
                     b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
                     b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
                 };
-                inputsList.Add(keyboardInputsData);
             }
 
-            if (inputsList.Count == 0)
+            if (keyboardInputsData == null && !externalInputsByPlayerId.ContainsKey(player.Id))
             {
                 return;
             }
 
-            var finalInputsData = new GCControllerInputsData();
-            foreach (var inputs in inputsList)
-            {
-                if (!HasNonZeroInput(inputs, INPUT_AXIS_INNER_DEADZONE))
-                {
-                    continue;
-                }
-
-                finalInputsData.a0 = inputs.a0;
-                finalInputsData.a1 = inputs.a1;
-                finalInputsData.b0 = inputs.b0;
-                finalInputsData.b1 = inputs.b1;
-
-                break;
-            }
-
-            finalInputsData.a0 = Mathf.Clamp(finalInputsData.a0, -1.0f, 1.0f);
-            finalInputsData.a1 = Mathf.Clamp(finalInputsData.a1, -1.0f, 1.0f);
-
-            inputsByPlayerId[player.Id] = new GCControllerInputs(finalInputsData);
+            ApplyEditorInputsForPlayer(
+                playerId: player.Id,
+                keyboardInputsData: keyboardInputsData,
+                gameFacingInputsByPlayerId: inputsByPlayerId,
+                externalInputsByPlayerId: externalInputsByPlayerId,
+                axisDeadzone: INPUT_AXIS_INNER_DEADZONE
+            );
         }
         #endregion
 
