@@ -28,6 +28,16 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
 {
     private const float WindowWidth = 620f;
     private const float WindowHeight = 480f;
+    private static readonly string[] ProfileSelectorLabels =
+    {
+        "Dev (fast build)",
+        "Release (slow build)",
+    };
+    private static readonly GCWebGLBuildSettingsProfileId[] ProfileSelectorIds =
+    {
+        GCWebGLBuildSettingsProfileId.Dev,
+        GCWebGLBuildSettingsProfileId.Release,
+    };
 
     private string heading;
     private string message;
@@ -35,33 +45,21 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
     private GCWebGLPreviewRow[] rows = new GCWebGLPreviewRow[0];
     private HashSet<string> selectedSkippableRowIds = new HashSet<string>(StringComparer.Ordinal);
     private Func<string[], GCWebGLPreviewApplyOutcome> applyHandler;
+    private Action<GCWebGLPreviewApplyOutcome> onApplied;
     private Vector2 scrollPosition;
     private bool canApply;
+    private bool showProfileSelector;
+    private GCWebGLBuildSettingsProfileId selectedProfileId;
+    private int selectedProfileIndex;
 
     internal static void OpenReleaseProfile()
     {
-        var plan = GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan();
-        OpenProfilePlan(
-            "GamingCouch Release WebGL Build Settings",
-            plan,
-            "Apply Release Settings",
-            selectedIds => FromProfileResult(
-                GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(selectedIds)
-            )
-        );
+        OpenProfileSelector(GCWebGLBuildSettingsProfileId.Release, null);
     }
 
     internal static void OpenDevProfile()
     {
-        var plan = GamingCouchWebGLBuildSettingsProfiles.BuildDevProfilePlan();
-        OpenProfilePlan(
-            "GamingCouch Dev WebGL Build Settings",
-            plan,
-            "Apply Dev Settings",
-            selectedIds => FromProfileResult(
-                GamingCouchWebGLBuildSettingsProfiles.ApplyDevProfile(selectedIds)
-            )
-        );
+        OpenProfileSelector(GCWebGLBuildSettingsProfileId.Dev, null);
     }
 
     internal static void OpenCleanExport(Action<GCWebGLExportSetupResult> onApplied)
@@ -99,25 +97,16 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         );
     }
 
-    private static void OpenProfilePlan(
-        string windowTitle,
-        GCWebGLBuildSettingsProfilePlan plan,
-        string applyButtonLabel,
-        Func<string[], GCWebGLPreviewApplyOutcome> apply
+    internal static void OpenProfileSelector(
+        GCWebGLBuildSettingsProfileId initialProfileId,
+        Action<GCWebGLPreviewApplyOutcome> onApplied
     )
     {
-        var safePlan = plan ?? GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan();
-        OpenWindow(
-            windowTitle,
-            safePlan.HasChanges
-                ? "Review " + safePlan.displayName + " WebGL build setting changes before applying them."
-                : safePlan.displayName + " WebGL build settings are already configured.",
-            applyButtonLabel,
-            safePlan.rows,
-            GetDefaultSelectedSkippableRowIds(safePlan.rows),
-            safePlan.HasChanges,
-            apply
-        );
+        var window = CreateWindow("GamingCouch WebGL Build Settings");
+        window.showProfileSelector = true;
+        window.onApplied = onApplied;
+        window.SetProfile(initialProfileId);
+        window.ShowUtility();
     }
 
     private static void OpenWindow(
@@ -130,8 +119,7 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         Func<string[], GCWebGLPreviewApplyOutcome> apply
     )
     {
-        var window = CreateInstance<GamingCouchWebGLBuildSettingsPreviewWindow>();
-        window.titleContent = new GUIContent(windowTitle);
+        var window = CreateWindow(windowTitle);
         window.heading = windowTitle;
         window.message = message;
         window.applyLabel = applyButtonLabel;
@@ -142,14 +130,22 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         );
         window.canApply = canApply;
         window.applyHandler = apply;
+        window.ShowUtility();
+    }
+
+    private static GamingCouchWebGLBuildSettingsPreviewWindow CreateWindow(string windowTitle)
+    {
+        var window = CreateInstance<GamingCouchWebGLBuildSettingsPreviewWindow>();
+        window.titleContent = new GUIContent(windowTitle);
         window.minSize = new Vector2(WindowWidth, WindowHeight);
         window.maxSize = new Vector2(WindowWidth, 800f);
-        window.ShowUtility();
+        return window;
     }
 
     private void OnGUI()
     {
         EditorGUILayout.LabelField(heading, EditorStyles.boldLabel);
+        DrawProfileSelector();
         EditorGUILayout.HelpBox(message, GetHeaderMessageType());
         EditorGUILayout.Space();
 
@@ -159,6 +155,79 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
 
         GUILayout.FlexibleSpace();
         DrawFooterButtons();
+    }
+
+    private void DrawProfileSelector()
+    {
+        if (!showProfileSelector)
+        {
+            return;
+        }
+
+        var nextProfileIndex = EditorGUILayout.Popup(
+            "Profile",
+            selectedProfileIndex,
+            ProfileSelectorLabels
+        );
+        if (nextProfileIndex != selectedProfileIndex &&
+            nextProfileIndex >= 0 &&
+            nextProfileIndex < ProfileSelectorIds.Length)
+        {
+            SetProfile(ProfileSelectorIds[nextProfileIndex]);
+        }
+    }
+
+    private void SetProfile(GCWebGLBuildSettingsProfileId profileId)
+    {
+        selectedProfileId = profileId;
+        selectedProfileIndex = GetProfileSelectorIndex(profileId);
+
+        var plan = BuildProfilePlan(profileId);
+        heading = "GamingCouch WebGL Build Settings";
+        message = plan.HasChanges
+            ? "Review " + plan.displayName + " WebGL build setting changes before applying them."
+            : plan.displayName + " WebGL build settings are already configured.";
+        applyLabel = "Apply " + plan.displayName + " Settings";
+        rows = plan.rows;
+        selectedSkippableRowIds = new HashSet<string>(
+            GetDefaultSelectedSkippableRowIds(plan.rows),
+            StringComparer.Ordinal
+        );
+        canApply = plan.HasChanges;
+        applyHandler = selectedIds => ApplyProfile(selectedProfileId, selectedIds);
+        scrollPosition = Vector2.zero;
+    }
+
+    private static int GetProfileSelectorIndex(GCWebGLBuildSettingsProfileId profileId)
+    {
+        for (var index = 0; index < ProfileSelectorIds.Length; index++)
+        {
+            if (ProfileSelectorIds[index] == profileId)
+            {
+                return index;
+            }
+        }
+
+        return 0;
+    }
+
+    private static GCWebGLBuildSettingsProfilePlan BuildProfilePlan(
+        GCWebGLBuildSettingsProfileId profileId
+    )
+    {
+        return profileId == GCWebGLBuildSettingsProfileId.Dev
+            ? GamingCouchWebGLBuildSettingsProfiles.BuildDevProfilePlan()
+            : GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan();
+    }
+
+    private static GCWebGLPreviewApplyOutcome ApplyProfile(
+        GCWebGLBuildSettingsProfileId profileId,
+        string[] selectedIds
+    )
+    {
+        return profileId == GCWebGLBuildSettingsProfileId.Dev
+            ? FromProfileResult(GamingCouchWebGLBuildSettingsProfiles.ApplyDevProfile(selectedIds))
+            : FromProfileResult(GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(selectedIds));
     }
 
     private void DrawRows()
@@ -234,6 +303,11 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
     {
         var outcome = applyHandler(GetSelectedSkippableRowIds());
         LogOutcome(outcome);
+        if (onApplied != null)
+        {
+            onApplied(outcome);
+        }
+
         Close();
     }
 
