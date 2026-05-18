@@ -801,11 +801,161 @@ public sealed class GamingCouchQuickStartSetupAssetTests
 
             Assert.That(readiness.IsBlocked, Is.True);
             Assert.That(readiness.releaseSettingsReady, Is.False);
-            AssertHasEntryContaining(readiness.details, "WebGL compression is not disabled.");
+            AssertHasEntryContaining(readiness.details, "WebGL compression: Gzip -> Disabled");
         }
         finally
         {
             DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLBuildProfilesGenerateDiffRowsAndApplyFromSpecs()
+    {
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        PlayerSettings.WebGL.dataCaching = false;
+
+        var plan = GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan();
+        var result = GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile();
+        var readinessDetails = new List<string>();
+
+        Assert.That(plan.HasChanges, Is.True);
+        AssertHasPreviewRow(
+            plan.rows,
+            GamingCouchWebGLBuildSettingsProfiles.WebGLCompressionSettingId,
+            "WebGL compression: Gzip -> Disabled",
+            true
+        );
+        Assert.That(result.changed, Is.True);
+        AssertHasEntryContaining(result.details, "Applied WebGL compression: Gzip -> Disabled");
+        Assert.That(
+            GamingCouchWebGLBuildSettingsProfiles.IsReleaseProfileApplied(readinessDetails),
+            Is.True
+        );
+        Assert.That(readinessDetails, Is.Empty);
+    }
+
+    [Test]
+    public void WebGLBuildProfileSelectedApplySkipsUnselectedSettingForCurrentRun()
+    {
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        PlayerSettings.WebGL.dataCaching = false;
+
+        var result = GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(new[]
+        {
+            GamingCouchWebGLBuildSettingsProfiles.WebGLCompressionSettingId,
+        });
+        var readinessDetails = new List<string>();
+
+        Assert.That(result.changed, Is.True);
+        Assert.That(PlayerSettings.WebGL.compressionFormat, Is.EqualTo(WebGLCompressionFormat.Disabled));
+        Assert.That(PlayerSettings.WebGL.dataCaching, Is.False);
+        AssertHasEntryContaining(result.details, "Skipped WebGL data caching: Disabled -> Enabled");
+        Assert.That(
+            GamingCouchWebGLBuildSettingsProfiles.IsReleaseProfileApplied(readinessDetails),
+            Is.False
+        );
+        AssertHasEntryContaining(readinessDetails.ToArray(), "WebGL data caching: Disabled -> Enabled");
+    }
+
+    [Test]
+    public void CleanWebGLExportPlanReportsTemplateBlockersBeforeMutating()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
+        var destinationAsFile = CreateTemporaryPath("WebGLTemplateDestinationFile");
+
+        try
+        {
+            File.WriteAllText(destinationAsFile, "not a folder");
+
+            var plan = GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan(
+                sourceDirectory,
+                destinationAsFile,
+                false
+            );
+
+            Assert.That(plan.IsBlocked, Is.True);
+            AssertHasPreviewRow(
+                plan.rows,
+                "clean-template-folder",
+                "Project-local clean WebGL template folder: File -> Folder",
+                false
+            );
+            Assert.That(File.ReadAllText(destinationAsFile), Is.EqualTo("not a folder"));
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationAsFile);
+        }
+    }
+
+    [Test]
+    public void CleanWebGLExportPlanKeepsTemplateAndTargetRowsRequired()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
+        var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
+
+        try
+        {
+            var plan = GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan(
+                sourceDirectory,
+                destinationDirectory,
+                false
+            );
+
+            Assert.That(FindPreviewRow(plan.rows, "clean-template-folder").isSkippable, Is.False);
+            Assert.That(FindPreviewRow(plan.rows, GamingCouchWebGLExportSetup.TemplateSelectionRowId).isSkippable, Is.False);
+            Assert.That(FindPreviewRow(plan.rows, GamingCouchWebGLExportSetup.ActiveBuildTargetRowId).isSkippable, Is.False);
+            Assert.That(
+                FindPreviewRow(
+                    plan.rows,
+                    GamingCouchWebGLBuildSettingsProfiles.WebGLCompressionSettingId
+                ).isSkippable,
+                Is.True
+            );
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLDocsDoNotDuplicateManualBuildSettingLists()
+    {
+        var packageRoot = GetPackageRootPath();
+        var documentPaths = new[]
+        {
+            "README.md",
+            "Documentation~/README.md",
+            "docs/architecture/gamingcouch-clean-webgl-export-template-prd.md",
+            "docs/architecture/gamingcouch-quick-start-start-screen-prd.md",
+        };
+        var forbiddenExactSettingPhrases = new[]
+        {
+            "development build off",
+            "WebGL debug symbols off",
+            "high managed stripping",
+            "IL2CPP optimize size",
+            "WebAssembly 2023 where available",
+            "disk-size LTO",
+            "data caching on",
+            "WebGL compression disabled.",
+            "Debug symbols disabled.",
+            "Managed stripping level set to high.",
+            "Disk-size LTO enabled.",
+        };
+
+        foreach (var documentPath in documentPaths)
+        {
+            var fullPath = Path.Combine(packageRoot, documentPath);
+            var text = File.ReadAllText(fullPath);
+            foreach (var phrase in forbiddenExactSettingPhrases)
+            {
+                Assert.That(text, Does.Not.Contain(phrase), documentPath);
+            }
         }
     }
 
@@ -848,7 +998,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
             Assert.That(readiness.status, Is.EqualTo(GCWebGLExportSetupStatus.Warning));
             Assert.That(readiness.IsBlocked, Is.False);
             Assert.That(readiness.activeBuildTargetIsWebGL, Is.False);
-            AssertHasEntryContaining(readiness.details, "switch to WebGL manually");
+            AssertHasEntryContaining(readiness.details, "run clean WebGL export setup or switch to WebGL");
             Assert.That(readiness.templateFolderReady, Is.True);
             Assert.That(readiness.templateFilesReady, Is.True);
             Assert.That(readiness.templateSelected, Is.True);
@@ -962,6 +1112,29 @@ public sealed class GamingCouchQuickStartSetupAssetTests
             ),
             Is.True
         );
+    }
+
+    private static void AssertHasPreviewRow(
+        GCWebGLPreviewRow[] rows,
+        string id,
+        string expectedDiffText,
+        bool expectedSkippable
+    )
+    {
+        var row = FindPreviewRow(rows, id);
+        Assert.That(row.DiffText, Is.EqualTo(expectedDiffText));
+        Assert.That(row.isSkippable, Is.EqualTo(expectedSkippable));
+    }
+
+    private static GCWebGLPreviewRow FindPreviewRow(GCWebGLPreviewRow[] rows, string id)
+    {
+        var row = rows != null
+            ? rows.FirstOrDefault(candidate =>
+                candidate != null && string.Equals(candidate.id, id, StringComparison.Ordinal)
+            )
+            : null;
+        Assert.That(row, Is.Not.Null, "Expected preview row " + id + ".");
+        return row;
     }
 
     private static void AssertGeneratedGameSourceDemonstratesPlayFlow(
@@ -1120,6 +1293,19 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "index.html"), indexContent);
         return destinationDirectory;
+    }
+
+    private static string GetPackageRootPath()
+    {
+        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(
+            typeof(GamingCouchWebGLExportSetup).Assembly
+        );
+        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+        {
+            return packageInfo.resolvedPath;
+        }
+
+        return Directory.GetCurrentDirectory();
     }
 
     private string CreateTemporaryPath(string prefix)

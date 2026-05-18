@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -141,9 +142,7 @@ internal static class GamingCouchStartScreenSetupActions
                     GamingCouchGameViewAspect.SelectExisting16By9Size()
                 );
             case GCStartScreenReadinessActionId.SetUpWebGLExport:
-                return FromWebGLExportSetupResult(
-                    GamingCouchWebGLExportSetup.EnsureCleanWebGLExportSetup()
-                );
+                return OpenWebGLExportSetupPreview(null);
             default:
                 return CreateResult(
                     "No setup action is available for this checklist item.",
@@ -159,6 +158,28 @@ internal static class GamingCouchStartScreenSetupActions
     internal static GCStartScreenSetupActionResult RunActiveSceneSetup()
     {
         return FromActiveSceneSetupResult(GamingCouchQuickStartSetup.EnsureActiveSceneSetup());
+    }
+
+    internal static GCStartScreenSetupActionResult OpenWebGLExportSetupPreview(
+        Action<GCStartScreenSetupActionResult> onApplied
+    )
+    {
+        GamingCouchWebGLBuildSettingsPreviewWindow.OpenCleanExport(result =>
+        {
+            if (onApplied != null)
+            {
+                onApplied(FromWebGLExportSetupResult(result));
+            }
+        });
+
+        return CreateResult(
+            "Clean WebGL export setup preview opened.",
+            MessageType.Info,
+            null,
+            null,
+            false,
+            false
+        );
     }
 
     internal static GCStartScreenSetupActionResult FromActiveSceneSetupResult(
@@ -339,7 +360,7 @@ internal static class GamingCouchStartScreenSetupActions
         );
     }
 
-    private static GCStartScreenSetupActionResult FromWebGLExportSetupResult(
+    internal static GCStartScreenSetupActionResult FromWebGLExportSetupResult(
         GCWebGLExportSetupResult result
     )
     {

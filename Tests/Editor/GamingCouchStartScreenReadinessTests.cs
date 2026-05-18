@@ -215,7 +215,7 @@ public sealed class GamingCouchStartScreenReadinessTests
     }
 
     [Test]
-    public void WebGLExportActionRequiresBlockedReadiness()
+    public void WebGLExportActionAppearsForBlockedOrWarningReadiness()
     {
         var blockedReadiness = CreateReadySceneReadiness(
             CreateReadyBuildSettingsReadiness(),
@@ -237,9 +237,29 @@ public sealed class GamingCouchStartScreenReadinessTests
             CreateReadyGameViewAspectReadiness(),
             CreateReadyWebGLExportReadiness()
         );
+        var warningReadiness = CreateReadySceneReadiness(
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            new GCWebGLExportReadiness(
+                GCWebGLExportSetupStatus.Warning,
+                true,
+                true,
+                true,
+                true,
+                true,
+                false,
+                "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+                Array.Empty<string>()
+            )
+        );
 
         AssertAction(
             blockedReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
+            GCStartScreenReadinessActionId.SetUpWebGLExport,
+            "Set Up WebGL Export"
+        );
+        AssertAction(
+            warningReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
             GCStartScreenReadinessActionId.SetUpWebGLExport,
             "Set Up WebGL Export"
         );
@@ -587,8 +607,8 @@ public sealed class GamingCouchStartScreenReadinessTests
         Assert.That(summary.HasPendingItems, Is.True);
         Assert.That(summary.blockerCount, Is.EqualTo(0));
         Assert.That(summary.warningCount, Is.EqualTo(1));
-        Assert.That(summary.actionableSetupCount, Is.EqualTo(2));
-        Assert.That(summary.message, Is.EqualTo("Start Screen: 2 setup actions, 1 warning."));
+        Assert.That(summary.actionableSetupCount, Is.EqualTo(3));
+        Assert.That(summary.message, Is.EqualTo("Start Screen: 3 setup actions, 1 warning."));
     }
 
     [Test]
@@ -603,7 +623,7 @@ public sealed class GamingCouchStartScreenReadinessTests
     }
 
     [Test]
-    public void WebGLExportChecklistRowReportsWarningWithoutSceneSetupAction()
+    public void WebGLExportChecklistRowReportsWarningWithTargetSetupAction()
     {
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var listener = CreateCompatibleListener("Existing Listener");
@@ -645,9 +665,14 @@ public sealed class GamingCouchStartScreenReadinessTests
         );
 
         AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Warning);
-        Assert.That(readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup).IsSatisfied, Is.True);
+        AssertAction(
+            readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
+            GCStartScreenReadinessActionId.SetUpWebGLExport,
+            "Set Up WebGL Export"
+        );
         Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.False);
         Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+        Assert.That(readiness.AvailableChecklistSetupActionCount, Is.EqualTo(1));
     }
 
     [Test]

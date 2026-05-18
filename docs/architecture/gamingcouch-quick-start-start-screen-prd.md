@@ -107,8 +107,8 @@ The Quick Start Scene is not the active-scene setup path. It may reuse the same 
 - An uninspectable Game View state is a non-blocking warning and must not trigger startup auto-open by itself.
 - Setup must not create custom Game View sizes.
 - The WebGL row is labeled `WebGL export settings configured`.
-- The WebGL row tooltip explains the expected `PROJECT:GamingCouch` template and clean release defaults.
-- The WebGL row setup action configures only WebGL export settings and does not run active-scene setup.
+- The WebGL row tooltip explains that readiness checks the WebGL active build target, clean template, and generated release settings preview.
+- The WebGL row setup action opens the shared clean WebGL export preview, applies only WebGL export settings when confirmed, and does not run active-scene setup.
 
 ## Auto-open Policy
 

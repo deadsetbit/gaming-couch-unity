@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.PackageManager;
 using UnityEngine;
 
@@ -135,6 +136,73 @@ internal sealed class GCWebGLExportSetupResult
     }
 }
 
+internal sealed class GCWebGLExportSetupPlan
+{
+    internal readonly GCWebGLExportSetupStatus status;
+    internal readonly string message;
+    internal readonly string sourceTemplateDirectoryFullPath;
+    internal readonly string destinationTemplateDirectoryFullPath;
+    internal readonly bool refreshAssetDatabase;
+    internal readonly GCWebGLPreviewRow[] rows;
+    internal readonly string[] details;
+
+    internal GCWebGLExportSetupPlan(
+        GCWebGLExportSetupStatus status,
+        string message,
+        string sourceTemplateDirectoryFullPath,
+        string destinationTemplateDirectoryFullPath,
+        bool refreshAssetDatabase,
+        GCWebGLPreviewRow[] rows,
+        string[] details
+    )
+    {
+        this.status = status;
+        this.message = message;
+        this.sourceTemplateDirectoryFullPath = sourceTemplateDirectoryFullPath;
+        this.destinationTemplateDirectoryFullPath = destinationTemplateDirectoryFullPath;
+        this.refreshAssetDatabase = refreshAssetDatabase;
+        this.rows = rows ?? new GCWebGLPreviewRow[0];
+        this.details = details ?? new string[0];
+    }
+
+    internal bool IsBlocked
+    {
+        get { return status == GCWebGLExportSetupStatus.Blocked; }
+    }
+
+    internal bool HasChanges
+    {
+        get
+        {
+            for (var index = 0; index < rows.Length; index++)
+            {
+                if (rows[index] != null && rows[index].isChanged)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    internal string[] GetDefaultSelectedSkippableRowIds()
+    {
+        var selectedIds = new List<string>();
+        for (var index = 0; index < rows.Length; index++)
+        {
+            if (rows[index] != null &&
+                rows[index].isChanged &&
+                rows[index].isSkippable)
+            {
+                selectedIds.Add(rows[index].id);
+            }
+        }
+
+        return selectedIds.ToArray();
+    }
+}
+
 internal static class GamingCouchWebGLExportSetup
 {
     internal const string TemplateName = "GamingCouch";
@@ -142,26 +210,19 @@ internal static class GamingCouchWebGLExportSetup
     internal const string PackageTemplateAssetPath = "Editor/WebGLTemplates/" + TemplateName;
     internal const string ProjectTemplatesFolderAssetPath = "Assets/WebGLTemplates";
     internal const string ProjectTemplateAssetPath = ProjectTemplatesFolderAssetPath + "/" + TemplateName;
+    internal const string TemplateSelectionRowId = "webgl-template-selection";
+    internal const string ActiveBuildTargetRowId = "active-webgl-build-target";
+    internal const string SplashScreenRowId = "unity-splash-screen";
+    internal const string SplashLogoRowId = "unity-splash-logo";
 
     private static readonly string[] ExpectedTemplateFiles = { "index.html" };
 
     internal static GCWebGLExportSetupResult EnsureCleanWebGLExportSetup()
     {
         var packageTemplatePath = LocatePackageTemplatePath();
-        if (string.IsNullOrEmpty(packageTemplatePath))
-        {
-            var readiness = InspectReadiness();
-            return new GCWebGLExportSetupResult(
-                GCWebGLExportSetupStatus.Blocked,
-                false,
-                "Clean WebGL export setup is blocked.",
-                new[] { "Could not locate the package-owned GamingCouch WebGL template source." },
-                readiness
-            );
-        }
-
         var destinationPath = AssetPathToFullPath(ProjectTemplateAssetPath);
-        return EnsureCleanWebGLExportSetup(packageTemplatePath, destinationPath, true);
+        var plan = CreateCleanWebGLExportSetupPlan(packageTemplatePath, destinationPath, true);
+        return ApplyCleanWebGLExportSetupPlan(plan, null);
     }
 
     internal static GCWebGLExportSetupResult EnsureCleanWebGLExportSetup(
@@ -170,11 +231,97 @@ internal static class GamingCouchWebGLExportSetup
         bool refreshAssetDatabase
     )
     {
-        var details = new List<string>();
-        var installResult = InstallTemplateFiles(
+        var plan = CreateCleanWebGLExportSetupPlan(
             sourceTemplateDirectoryFullPath,
             destinationTemplateDirectoryFullPath,
             refreshAssetDatabase
+        );
+        return ApplyCleanWebGLExportSetupPlan(plan, null);
+    }
+
+    internal static GCWebGLExportSetupPlan CreateCleanWebGLExportSetupPlan()
+    {
+        return CreateCleanWebGLExportSetupPlan(
+            LocatePackageTemplatePath(),
+            AssetPathToFullPath(ProjectTemplateAssetPath),
+            true
+        );
+    }
+
+    internal static GCWebGLExportSetupPlan CreateCleanWebGLExportSetupPlan(
+        string sourceTemplateDirectoryFullPath,
+        string destinationTemplateDirectoryFullPath,
+        bool refreshAssetDatabase
+    )
+    {
+        var rows = new List<GCWebGLPreviewRow>();
+        var details = new List<string>();
+
+        AddTemplatePlanRows(
+            sourceTemplateDirectoryFullPath,
+            destinationTemplateDirectoryFullPath,
+            rows,
+            details
+        );
+        AddTemplateSelectionPlanRow(rows, details);
+        AddActiveBuildTargetPlanRow(rows, details, EditorUserBuildSettings.activeBuildTarget);
+        AddSplashPlanRows(rows, details);
+        AddProfilePlanRows(GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan(), rows, details);
+
+        var status = HasBlockedRows(rows)
+            ? GCWebGLExportSetupStatus.Blocked
+            : GCWebGLExportSetupStatus.Ready;
+        var hasChanges = HasChangedRows(rows);
+        var message = status == GCWebGLExportSetupStatus.Blocked
+            ? "Clean WebGL export setup preview is blocked."
+            : hasChanges
+                ? "Review clean WebGL export setup changes before applying them."
+                : "Clean WebGL export setup is already configured.";
+
+        return new GCWebGLExportSetupPlan(
+            status,
+            message,
+            sourceTemplateDirectoryFullPath,
+            destinationTemplateDirectoryFullPath,
+            refreshAssetDatabase,
+            rows.ToArray(),
+            details.ToArray()
+        );
+    }
+
+    internal static GCWebGLExportSetupResult ApplyCleanWebGLExportSetupPlan(
+        GCWebGLExportSetupPlan plan,
+        IEnumerable<string> selectedSkippableRowIds
+    )
+    {
+        var details = new List<string>();
+        if (plan == null)
+        {
+            var readiness = InspectReadiness();
+            return new GCWebGLExportSetupResult(
+                GCWebGLExportSetupStatus.Blocked,
+                false,
+                "Clean WebGL export setup is blocked.",
+                new[] { "No clean WebGL export setup plan was provided." },
+                readiness
+            );
+        }
+
+        if (plan.IsBlocked)
+        {
+            return new GCWebGLExportSetupResult(
+                GCWebGLExportSetupStatus.Blocked,
+                false,
+                "Clean WebGL export setup is blocked.",
+                plan.details,
+                InspectReadiness(plan.destinationTemplateDirectoryFullPath)
+            );
+        }
+
+        var installResult = InstallTemplateFiles(
+            plan.sourceTemplateDirectoryFullPath,
+            plan.destinationTemplateDirectoryFullPath,
+            plan.refreshAssetDatabase
         );
 
         details.Add(installResult.message);
@@ -188,15 +335,17 @@ internal static class GamingCouchWebGLExportSetup
                 installResult.changed,
                 "Clean WebGL export setup is blocked.",
                 details.ToArray(),
-                InspectReadiness(destinationTemplateDirectoryFullPath)
+                InspectReadiness(plan.destinationTemplateDirectoryFullPath)
             );
         }
 
+        var selectedIds = CreateSelectedIdSet(selectedSkippableRowIds);
         var changed = installResult.changed;
         changed |= SelectTemplate(details);
-        changed |= ApplyCleanReleaseDefaults(details);
+        changed |= ApplyCleanReleaseDefaults(details, selectedIds);
+        changed |= SwitchActiveBuildTargetToWebGL(details);
 
-        var readiness = InspectReadiness(destinationTemplateDirectoryFullPath);
+        var readiness = InspectReadiness(plan.destinationTemplateDirectoryFullPath);
         details.AddRange(readiness.details);
 
         return new GCWebGLExportSetupResult(
@@ -208,6 +357,340 @@ internal static class GamingCouchWebGLExportSetup
             details.ToArray(),
             readiness
         );
+    }
+
+    private static void AddTemplatePlanRows(
+        string sourceTemplateDirectoryFullPath,
+        string destinationTemplateDirectoryFullPath,
+        List<GCWebGLPreviewRow> rows,
+        List<string> details
+    )
+    {
+        if (string.IsNullOrEmpty(sourceTemplateDirectoryFullPath) ||
+            !Directory.Exists(sourceTemplateDirectoryFullPath))
+        {
+            AddPlanRow(
+                rows,
+                details,
+                new GCWebGLPreviewRow(
+                    "clean-template-source",
+                    GCWebGLPreviewRowKind.Template,
+                    "Package clean WebGL template source",
+                    "Missing",
+                    "Available package folder",
+                    true,
+                    false,
+                    true
+                )
+            );
+            return;
+        }
+
+        foreach (var fileName in ExpectedTemplateFiles)
+        {
+            var sourcePath = Path.Combine(sourceTemplateDirectoryFullPath, fileName);
+            if (Directory.Exists(sourcePath))
+            {
+                AddPlanRow(
+                    rows,
+                    details,
+                    new GCWebGLPreviewRow(
+                        "clean-template-source-" + fileName,
+                        GCWebGLPreviewRowKind.Template,
+                        "Package clean WebGL template file " + fileName,
+                        "Folder",
+                        "File",
+                        true,
+                        false,
+                        true
+                    )
+                );
+            }
+            else if (!File.Exists(sourcePath))
+            {
+                AddPlanRow(
+                    rows,
+                    details,
+                    new GCWebGLPreviewRow(
+                        "clean-template-source-" + fileName,
+                        GCWebGLPreviewRowKind.Template,
+                        "Package clean WebGL template file " + fileName,
+                        "Missing",
+                        "File",
+                        true,
+                        false,
+                        true
+                    )
+                );
+            }
+        }
+
+        if (string.IsNullOrEmpty(destinationTemplateDirectoryFullPath))
+        {
+            AddPlanRow(
+                rows,
+                details,
+                new GCWebGLPreviewRow(
+                    "clean-template-destination",
+                    GCWebGLPreviewRowKind.Template,
+                    "Project-local clean WebGL template folder",
+                    "Missing path",
+                    ProjectTemplateAssetPath,
+                    true,
+                    false,
+                    true
+                )
+            );
+            return;
+        }
+
+        var fullDestinationPath = Path.GetFullPath(destinationTemplateDirectoryFullPath);
+        if (File.Exists(fullDestinationPath))
+        {
+            AddPlanRow(
+                rows,
+                details,
+                new GCWebGLPreviewRow(
+                    "clean-template-folder",
+                    GCWebGLPreviewRowKind.Template,
+                    "Project-local clean WebGL template folder",
+                    "File",
+                    "Folder",
+                    true,
+                    false,
+                    true
+                )
+            );
+            return;
+        }
+
+        var parentCollisionPath = FindTemplateFolderParentFileCollision(fullDestinationPath);
+        if (!string.IsNullOrEmpty(parentCollisionPath))
+        {
+            AddPlanRow(
+                rows,
+                details,
+                new GCWebGLPreviewRow(
+                    "clean-template-parent-folder",
+                    GCWebGLPreviewRowKind.Template,
+                    "Project-local clean WebGL template parent folder",
+                    "File at " + parentCollisionPath,
+                    "Folder",
+                    true,
+                    false,
+                    true
+                )
+            );
+            return;
+        }
+
+        if (Directory.Exists(fullDestinationPath))
+        {
+            AddDetail(details, "Project-local clean WebGL template folder already exists: " + fullDestinationPath);
+        }
+        else
+        {
+            AddPlanRow(
+                rows,
+                details,
+                new GCWebGLPreviewRow(
+                    "clean-template-folder",
+                    GCWebGLPreviewRowKind.Template,
+                    "Project-local clean WebGL template folder",
+                    "Missing",
+                    "Create folder",
+                    true,
+                    false
+                )
+            );
+        }
+
+        foreach (var fileName in ExpectedTemplateFiles)
+        {
+            var destinationFilePath = Path.Combine(fullDestinationPath, fileName);
+            if (Directory.Exists(destinationFilePath))
+            {
+                AddPlanRow(
+                    rows,
+                    details,
+                    new GCWebGLPreviewRow(
+                        "clean-template-file-" + fileName,
+                        GCWebGLPreviewRowKind.Template,
+                        "Project-local clean WebGL template file " + fileName,
+                        "Folder",
+                        "File from package",
+                        true,
+                        false,
+                        true
+                    )
+                );
+            }
+            else if (File.Exists(destinationFilePath))
+            {
+                AddDetail(details, "Project-local clean WebGL template file will be reused: " + destinationFilePath);
+            }
+            else
+            {
+                AddPlanRow(
+                    rows,
+                    details,
+                    new GCWebGLPreviewRow(
+                        "clean-template-file-" + fileName,
+                        GCWebGLPreviewRowKind.Template,
+                        "Project-local clean WebGL template file " + fileName,
+                        "Missing",
+                        "Install package template file",
+                        true,
+                        false
+                    )
+                );
+            }
+        }
+    }
+
+    private static void AddTemplateSelectionPlanRow(List<GCWebGLPreviewRow> rows, List<string> details)
+    {
+        AddPlanRow(
+            rows,
+            details,
+            new GCWebGLPreviewRow(
+                TemplateSelectionRowId,
+                GCWebGLPreviewRowKind.Template,
+                "WebGL template selection",
+                PlayerSettings.WebGL.template,
+                ProjectTemplateIdentifier,
+                !string.Equals(PlayerSettings.WebGL.template, ProjectTemplateIdentifier, StringComparison.Ordinal),
+                false
+            )
+        );
+    }
+
+    private static void AddActiveBuildTargetPlanRow(
+        List<GCWebGLPreviewRow> rows,
+        List<string> details,
+        BuildTarget activeBuildTarget
+    )
+    {
+        AddPlanRow(
+            rows,
+            details,
+            new GCWebGLPreviewRow(
+                ActiveBuildTargetRowId,
+                GCWebGLPreviewRowKind.BuildTarget,
+                "Active build target",
+                activeBuildTarget.ToString(),
+                BuildTarget.WebGL.ToString(),
+                activeBuildTarget != BuildTarget.WebGL,
+                false
+            )
+        );
+    }
+
+    private static void AddSplashPlanRows(List<GCWebGLPreviewRow> rows, List<string> details)
+    {
+        AddPlanRow(
+            rows,
+            details,
+            new GCWebGLPreviewRow(
+                SplashScreenRowId,
+                GCWebGLPreviewRowKind.Splash,
+                "Unity splash screen",
+                FormatEnabled(PlayerSettings.SplashScreen.show),
+                FormatEnabled(false),
+                PlayerSettings.SplashScreen.show,
+                true
+            )
+        );
+        AddPlanRow(
+            rows,
+            details,
+            new GCWebGLPreviewRow(
+                SplashLogoRowId,
+                GCWebGLPreviewRowKind.Splash,
+                "Unity splash logo",
+                FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo),
+                FormatEnabled(false),
+                PlayerSettings.SplashScreen.showUnityLogo,
+                true
+            )
+        );
+    }
+
+    private static void AddProfilePlanRows(
+        GCWebGLBuildSettingsProfilePlan profilePlan,
+        List<GCWebGLPreviewRow> rows,
+        List<string> details
+    )
+    {
+        if (profilePlan == null || profilePlan.rows == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < profilePlan.rows.Length; index++)
+        {
+            AddPlanRow(rows, details, profilePlan.rows[index]);
+        }
+    }
+
+    private static void AddPlanRow(
+        List<GCWebGLPreviewRow> rows,
+        List<string> details,
+        GCWebGLPreviewRow row
+    )
+    {
+        if (row == null)
+        {
+            return;
+        }
+
+        rows.Add(row);
+        if (row.isChanged)
+        {
+            AddDetail(details, row.DiffText);
+        }
+    }
+
+    private static bool HasBlockedRows(List<GCWebGLPreviewRow> rows)
+    {
+        for (var index = 0; rows != null && index < rows.Count; index++)
+        {
+            if (rows[index] != null && rows[index].isBlocked)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasChangedRows(List<GCWebGLPreviewRow> rows)
+    {
+        for (var index = 0; rows != null && index < rows.Count; index++)
+        {
+            if (rows[index] != null && rows[index].isChanged)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string FindTemplateFolderParentFileCollision(string destinationTemplateDirectoryFullPath)
+    {
+        var currentPath = destinationTemplateDirectoryFullPath;
+        while (!string.IsNullOrEmpty(currentPath) && !Directory.Exists(currentPath))
+        {
+            if (File.Exists(currentPath))
+            {
+                return currentPath;
+            }
+
+            currentPath = Path.GetDirectoryName(currentPath);
+        }
+
+        return null;
     }
 
     internal static GCWebGLExportTemplateInstallResult InstallTemplateFiles(
@@ -362,7 +845,7 @@ internal static class GamingCouchWebGLExportSetup
         var activeBuildTargetIsWebGL = activeBuildTarget == BuildTarget.WebGL;
         if (!activeBuildTargetIsWebGL)
         {
-            details.Add("Active build target is " + activeBuildTarget + "; switch to WebGL manually before building.");
+            details.Add("Active build target is " + activeBuildTarget + "; run clean WebGL export setup or switch to WebGL before building.");
         }
 
         var blockingReady = templateFolderReady &&
@@ -442,13 +925,33 @@ internal static class GamingCouchWebGLExportSetup
         return true;
     }
 
-    private static bool ApplyCleanReleaseDefaults(List<string> details)
+    private static bool ApplyCleanReleaseDefaults(List<string> details, HashSet<string> selectedIds)
     {
         var changed = false;
-        changed |= GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(details);
-        changed |= SetSplashScreen(false, false, details);
+        changed |= GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(details, selectedIds);
+        changed |= SetSplashScreen(false, false, details, selectedIds);
 
         return changed;
+    }
+
+    private static bool SwitchActiveBuildTargetToWebGL(List<string> details)
+    {
+        if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
+        {
+            details.Add("Active build target already uses WebGL.");
+            return false;
+        }
+
+        var previousBuildTarget = EditorUserBuildSettings.activeBuildTarget;
+        if (EditorUserBuildSettings.SwitchActiveBuildTarget(NamedBuildTarget.WebGL, BuildTarget.WebGL) &&
+            EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
+        {
+            details.Add("Switched active build target from " + previousBuildTarget + " to WebGL.");
+            return true;
+        }
+
+        details.Add("Could not switch active build target from " + previousBuildTarget + " to WebGL.");
+        return false;
     }
 
     private static bool AreReleaseDefaultsApplied(List<string> details)
@@ -461,12 +964,12 @@ internal static class GamingCouchWebGLExportSetup
         var ready = true;
         ready &= Expect(
             !PlayerSettings.SplashScreen.show,
-            "Unity splash screen is not disabled.",
+            "Unity splash screen: " + FormatEnabled(PlayerSettings.SplashScreen.show) + " -> " + FormatEnabled(false),
             details
         );
         ready &= Expect(
             !PlayerSettings.SplashScreen.showUnityLogo,
-            "Unity splash logo is not disabled.",
+            "Unity splash logo: " + FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) + " -> " + FormatEnabled(false),
             details
         );
         return ready;
@@ -610,24 +1113,74 @@ internal static class GamingCouchWebGLExportSetup
         );
     }
 
-    private static bool SetSplashScreen(bool showSplash, bool showUnityLogo, List<string> details)
+    private static bool SetSplashScreen(
+        bool showSplash,
+        bool showUnityLogo,
+        List<string> details,
+        HashSet<string> selectedIds
+    )
     {
         var changed = false;
         if (PlayerSettings.SplashScreen.show != showSplash)
         {
-            PlayerSettings.SplashScreen.show = showSplash;
-            details.Add("Set Unity splash screen visibility to " + showSplash + ".");
-            changed = true;
+            var detail = "Unity splash screen: " +
+                         FormatEnabled(PlayerSettings.SplashScreen.show) +
+                         " -> " +
+                         FormatEnabled(showSplash);
+            if (selectedIds != null && !selectedIds.Contains(SplashScreenRowId))
+            {
+                AddDetail(details, "Skipped " + detail + ".");
+            }
+            else
+            {
+                PlayerSettings.SplashScreen.show = showSplash;
+                AddDetail(details, "Applied " + detail + ".");
+                changed = true;
+            }
         }
 
         if (PlayerSettings.SplashScreen.showUnityLogo != showUnityLogo)
         {
-            PlayerSettings.SplashScreen.showUnityLogo = showUnityLogo;
-            details.Add("Set Unity splash logo visibility to " + showUnityLogo + ".");
-            changed = true;
+            var detail = "Unity splash logo: " +
+                         FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) +
+                         " -> " +
+                         FormatEnabled(showUnityLogo);
+            if (selectedIds != null && !selectedIds.Contains(SplashLogoRowId))
+            {
+                AddDetail(details, "Skipped " + detail + ".");
+            }
+            else
+            {
+                PlayerSettings.SplashScreen.showUnityLogo = showUnityLogo;
+                AddDetail(details, "Applied " + detail + ".");
+                changed = true;
+            }
         }
 
         return changed;
+    }
+
+    private static HashSet<string> CreateSelectedIdSet(IEnumerable<string> selectedIds)
+    {
+        if (selectedIds == null)
+        {
+            return null;
+        }
+
+        return new HashSet<string>(selectedIds, StringComparer.Ordinal);
+    }
+
+    private static string FormatEnabled(bool value)
+    {
+        return value ? "Enabled" : "Disabled";
+    }
+
+    private static void AddDetail(List<string> details, string detail)
+    {
+        if (details != null && !string.IsNullOrEmpty(detail))
+        {
+            details.Add(detail);
+        }
     }
 
     private static bool Expect(bool condition, string detail, List<string> details)
@@ -637,7 +1190,7 @@ internal static class GamingCouchWebGLExportSetup
             return true;
         }
 
-        details.Add(detail);
+        AddDetail(details, detail);
         return false;
     }
 

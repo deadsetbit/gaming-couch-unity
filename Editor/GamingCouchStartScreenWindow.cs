@@ -446,6 +446,16 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void RunChecklistAction(GCStartScreenReadinessCheck check)
     {
+        if (check != null &&
+            check.action != null &&
+            check.action.id == GCStartScreenReadinessActionId.SetUpWebGLExport)
+        {
+            ApplySetupActionResult(
+                GamingCouchStartScreenSetupActions.OpenWebGLExportSetupPreview(ApplySetupActionResult)
+            );
+            return;
+        }
+
         ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunChecklistAction(check));
     }
 

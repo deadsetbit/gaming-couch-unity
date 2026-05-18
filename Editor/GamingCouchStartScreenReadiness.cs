@@ -380,7 +380,7 @@ internal sealed class GCStartScreenReadiness
     private const string LocalPlayJsonValidHelpText = "Validates the DevApp-generated gc.dev.json used to start local Play Mode.";
     private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
     private const string GameViewAspectHelpText = "Keeps the Unity Game View preview on a 16:9 aspect ratio.";
-    private const string WebGLExportSetupHelpText = "Checks the WebGL template and release settings for clean Gaming Couch exports.";
+    private const string WebGLExportSetupHelpText = "Checks the WebGL target, template, and release settings for clean Gaming Couch exports.";
     private const string FocusSceneObjectActionLabel = "Focus Scene Object";
     private const string FocusGameScriptActionLabel = "Focus Game Script";
     private const string FocusPrefabActionLabel = "Focus Prefab";
@@ -907,7 +907,7 @@ internal sealed class GCStartScreenReadiness
             state,
             webGLExport.message,
             WebGLExportSetupHelpText,
-            state != GCStartScreenReadinessCheckState.Pass && webGLExport.IsBlocked
+            state != GCStartScreenReadinessCheckState.Pass && (webGLExport.IsBlocked || webGLExport.HasWarning)
                 ? GCStartScreenReadinessAction.CreateSetupAction(
                     GCStartScreenReadinessActionId.SetUpWebGLExport,
                     SetUpWebGLExportActionLabel,

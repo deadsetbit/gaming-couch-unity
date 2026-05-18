@@ -1,279 +1,563 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Build;
+
+internal enum GCWebGLPreviewRowKind
+{
+    Setting,
+    Template,
+    BuildTarget,
+    Splash,
+}
+
+internal sealed class GCWebGLPreviewRow
+{
+    internal readonly string id;
+    internal readonly GCWebGLPreviewRowKind kind;
+    internal readonly string label;
+    internal readonly string currentValue;
+    internal readonly string targetValue;
+    internal readonly bool isChanged;
+    internal readonly bool isSkippable;
+    internal readonly bool isBlocked;
+
+    internal GCWebGLPreviewRow(
+        string id,
+        GCWebGLPreviewRowKind kind,
+        string label,
+        string currentValue,
+        string targetValue,
+        bool isChanged,
+        bool isSkippable,
+        bool isBlocked = false
+    )
+    {
+        this.id = id;
+        this.kind = kind;
+        this.label = label;
+        this.currentValue = string.IsNullOrEmpty(currentValue) ? "(none)" : currentValue;
+        this.targetValue = string.IsNullOrEmpty(targetValue) ? "(none)" : targetValue;
+        this.isChanged = isChanged || isBlocked;
+        this.isSkippable = isSkippable && !isBlocked;
+        this.isBlocked = isBlocked;
+    }
+
+    internal string DiffText
+    {
+        get { return label + ": " + currentValue + " -> " + targetValue; }
+    }
+}
+
+internal enum GCWebGLBuildSettingsProfileId
+{
+    Dev,
+    Release,
+}
+
+internal sealed class GCWebGLBuildSettingsProfilePlan
+{
+    internal readonly GCWebGLBuildSettingsProfileId profileId;
+    internal readonly string displayName;
+    internal readonly GCWebGLPreviewRow[] rows;
+
+    internal GCWebGLBuildSettingsProfilePlan(
+        GCWebGLBuildSettingsProfileId profileId,
+        string displayName,
+        GCWebGLPreviewRow[] rows
+    )
+    {
+        this.profileId = profileId;
+        this.displayName = displayName;
+        this.rows = rows ?? new GCWebGLPreviewRow[0];
+    }
+
+    internal bool HasChanges
+    {
+        get
+        {
+            for (var index = 0; index < rows.Length; index++)
+            {
+                if (rows[index] != null && rows[index].isChanged)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+}
 
 internal sealed class GCWebGLBuildSettingsProfileResult
 {
     internal readonly bool changed;
+    internal readonly string message;
     internal readonly string[] details;
 
-    internal GCWebGLBuildSettingsProfileResult(bool changed, string[] details)
+    internal GCWebGLBuildSettingsProfileResult(bool changed, string message, string[] details)
     {
         this.changed = changed;
+        this.message = message;
         this.details = details ?? new string[0];
     }
 }
 
 internal static class GamingCouchWebGLBuildSettingsProfiles
 {
+    internal const string Il2CppCodeGenerationSettingId = "il2cpp-code-generation";
+    internal const string ManagedStrippingLevelSettingId = "managed-stripping-level";
+    internal const string StripUnusedMeshComponentsSettingId = "strip-unused-mesh-components";
+    internal const string WebGLDataCachingSettingId = "webgl-data-caching";
+    internal const string WebGLCompressionSettingId = "webgl-compression";
+    internal const string WebGLExceptionSupportSettingId = "webgl-exception-support";
+    internal const string WebGLDebugSymbolsSettingId = "webgl-debug-symbols";
+    internal const string WebAssembly2023SettingId = "webassembly-2023";
+    internal const string DevelopmentBuildSettingId = "development-build";
+    internal const string WebGLCodeOptimizationSettingId = "webgl-code-optimization";
+
+    private static readonly GCWebGLBuildSettingSpec[] ReleaseProfileSpecs = CreateReleaseProfileSpecs();
+    private static readonly GCWebGLBuildSettingSpec[] DevProfileSpecs = CreateDevProfileSpecs();
+
+    internal static GCWebGLBuildSettingsProfilePlan BuildReleaseProfilePlan()
+    {
+        return BuildProfilePlan(GCWebGLBuildSettingsProfileId.Release);
+    }
+
+    internal static GCWebGLBuildSettingsProfilePlan BuildDevProfilePlan()
+    {
+        return BuildProfilePlan(GCWebGLBuildSettingsProfileId.Dev);
+    }
+
     internal static GCWebGLBuildSettingsProfileResult ApplyReleaseProfile()
     {
-        var details = new List<string>();
-        var changed = ApplyReleaseProfile(details);
-        return new GCWebGLBuildSettingsProfileResult(changed, details.ToArray());
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Release, null);
+    }
+
+    internal static GCWebGLBuildSettingsProfileResult ApplyReleaseProfile(IEnumerable<string> selectedSettingIds)
+    {
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Release, selectedSettingIds);
     }
 
     internal static bool ApplyReleaseProfile(List<string> details)
     {
-        var changed = false;
-        var namedBuildTarget = NamedBuildTarget.WebGL;
+        return ApplyReleaseProfile(details, null);
+    }
 
-        changed |= SetIl2CppCodeGeneration(namedBuildTarget, Il2CppCodeGeneration.OptimizeSize, details);
-        changed |= SetManagedStrippingLevel(namedBuildTarget, ManagedStrippingLevel.High, details);
-        changed |= SetStripUnusedMeshComponents(true, details);
-        changed |= SetWebGLDataCaching(true, details);
-        changed |= SetWebGLCompression(WebGLCompressionFormat.Disabled, details);
-        changed |= SetWebGLExceptionSupport(WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly, details);
-        changed |= SetWebGLDebugSymbolMode(WebGLDebugSymbolMode.Off, details);
-#if UNITY_2023_1_OR_NEWER
-        changed |= SetWebGLWasm2023(true, details);
-#endif
-        changed |= SetDevelopmentBuild(false, details);
-        changed |= SetWebGLCodeOptimization(UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO, details);
-
-        return changed;
+    internal static bool ApplyReleaseProfile(List<string> details, IEnumerable<string> selectedSettingIds)
+    {
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Release, details, selectedSettingIds);
     }
 
     internal static GCWebGLBuildSettingsProfileResult ApplyDevProfile()
     {
-        var details = new List<string>();
-        var changed = ApplyDevProfile(details);
-        return new GCWebGLBuildSettingsProfileResult(changed, details.ToArray());
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, null);
+    }
+
+    internal static GCWebGLBuildSettingsProfileResult ApplyDevProfile(IEnumerable<string> selectedSettingIds)
+    {
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, selectedSettingIds);
     }
 
     internal static bool ApplyDevProfile(List<string> details)
     {
-        var changed = false;
-        var namedBuildTarget = NamedBuildTarget.WebGL;
+        return ApplyDevProfile(details, null);
+    }
 
-        changed |= SetIl2CppCodeGeneration(namedBuildTarget, Il2CppCodeGeneration.OptimizeSpeed, details);
-        changed |= SetManagedStrippingLevel(namedBuildTarget, ManagedStrippingLevel.Disabled, details);
-        changed |= SetStripUnusedMeshComponents(false, details);
-        changed |= SetWebGLDataCaching(false, details);
-        changed |= SetWebGLCompression(WebGLCompressionFormat.Disabled, details);
-        changed |= SetWebGLExceptionSupport(WebGLExceptionSupport.FullWithStacktrace, details);
-        changed |= SetWebGLDebugSymbolMode(WebGLDebugSymbolMode.Embedded, details);
-#if UNITY_2023_1_OR_NEWER
-        changed |= SetWebGLWasm2023(true, details);
-#endif
-        changed |= SetDevelopmentBuild(true, details);
-        changed |= SetWebGLCodeOptimization(UnityEditor.WebGL.WasmCodeOptimization.BuildTimes, details);
-
-        return changed;
+    internal static bool ApplyDevProfile(List<string> details, IEnumerable<string> selectedSettingIds)
+    {
+        return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, details, selectedSettingIds);
     }
 
     internal static bool IsReleaseProfileApplied(List<string> details)
     {
-        var ready = true;
-        var namedBuildTarget = NamedBuildTarget.WebGL;
+        return IsProfileApplied(GCWebGLBuildSettingsProfileId.Release, details);
+    }
 
-        ready &= Expect(
-            PlayerSettings.GetIl2CppCodeGeneration(namedBuildTarget) == Il2CppCodeGeneration.OptimizeSize,
-            "IL2CPP code generation is not Optimize Size.",
-            details
+    internal static bool IsDevProfileApplied(List<string> details)
+    {
+        return IsProfileApplied(GCWebGLBuildSettingsProfileId.Dev, details);
+    }
+
+    private static GCWebGLBuildSettingsProfilePlan BuildProfilePlan(GCWebGLBuildSettingsProfileId profileId)
+    {
+        var specs = GetProfileSpecs(profileId);
+        var rows = new GCWebGLPreviewRow[specs.Length];
+        for (var index = 0; index < specs.Length; index++)
+        {
+            rows[index] = specs[index].BuildPreviewRow();
+        }
+
+        return new GCWebGLBuildSettingsProfilePlan(
+            profileId,
+            GetProfileDisplayName(profileId),
+            rows
         );
-        ready &= Expect(
-            PlayerSettings.GetManagedStrippingLevel(namedBuildTarget) == ManagedStrippingLevel.High,
-            "Managed stripping level is not High.",
-            details
-        );
-        ready &= Expect(
-            PlayerSettings.stripUnusedMeshComponents,
-            "Unused mesh component stripping is not enabled.",
-            details
-        );
-        ready &= Expect(
-            PlayerSettings.WebGL.dataCaching,
-            "WebGL data caching is not enabled.",
-            details
-        );
-        ready &= Expect(
-            PlayerSettings.WebGL.compressionFormat == WebGLCompressionFormat.Disabled,
-            "WebGL compression is not disabled.",
-            details
-        );
-        ready &= Expect(
-            PlayerSettings.WebGL.exceptionSupport == WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly,
-            "WebGL exception support is not ExplicitlyThrownExceptionsOnly.",
-            details
-        );
-        ready &= Expect(
-            PlayerSettings.WebGL.debugSymbolMode == WebGLDebugSymbolMode.Off,
-            "WebGL debug symbols are not off.",
-            details
-        );
-#if UNITY_2023_1_OR_NEWER
-        ready &= Expect(
-            PlayerSettings.WebGL.wasm2023,
-            "WebAssembly 2023 features are not enabled.",
-            details
-        );
-#endif
-        ready &= Expect(
-            !EditorUserBuildSettings.development,
-            "Development build is enabled.",
-            details
-        );
-        ready &= Expect(
-            UnityEditor.WebGL.UserBuildSettings.codeOptimization == UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO,
-            "WebGL code optimization is not Disk Size LTO.",
-            details
-        );
+    }
+
+    private static GCWebGLBuildSettingsProfileResult ApplyProfile(
+        GCWebGLBuildSettingsProfileId profileId,
+        IEnumerable<string> selectedSettingIds
+    )
+    {
+        var details = new List<string>();
+        var changed = ApplyProfile(profileId, details, selectedSettingIds);
+        var displayName = GetProfileDisplayName(profileId);
+        var message = changed
+            ? displayName + " WebGL build settings were applied."
+            : displayName + " WebGL build settings were already configured or skipped.";
+
+        return new GCWebGLBuildSettingsProfileResult(changed, message, details.ToArray());
+    }
+
+    private static bool ApplyProfile(
+        GCWebGLBuildSettingsProfileId profileId,
+        List<string> details,
+        IEnumerable<string> selectedSettingIds
+    )
+    {
+        var changed = false;
+        var selectedIds = CreateSelectedIdSet(selectedSettingIds);
+        var specs = GetProfileSpecs(profileId);
+
+        for (var index = 0; index < specs.Length; index++)
+        {
+            var row = specs[index].BuildPreviewRow();
+            if (!row.isChanged)
+            {
+                continue;
+            }
+
+            if (selectedIds != null && !selectedIds.Contains(row.id))
+            {
+                AddDetail(details, "Skipped " + row.DiffText + ".");
+                continue;
+            }
+
+            changed |= specs[index].Apply(details);
+        }
+
+        return changed;
+    }
+
+    private static bool IsProfileApplied(GCWebGLBuildSettingsProfileId profileId, List<string> details)
+    {
+        var ready = true;
+        var specs = GetProfileSpecs(profileId);
+        for (var index = 0; index < specs.Length; index++)
+        {
+            if (specs[index].IsApplied())
+            {
+                continue;
+            }
+
+            ready = false;
+            AddDetail(details, specs[index].BuildPreviewRow().DiffText);
+        }
 
         return ready;
     }
 
-    private static bool SetIl2CppCodeGeneration(
-        NamedBuildTarget namedBuildTarget,
-        Il2CppCodeGeneration expected,
-        List<string> details
-    )
+    private static GCWebGLBuildSettingSpec[] GetProfileSpecs(GCWebGLBuildSettingsProfileId profileId)
     {
-        if (PlayerSettings.GetIl2CppCodeGeneration(namedBuildTarget) == expected)
-        {
-            return false;
-        }
-
-        PlayerSettings.SetIl2CppCodeGeneration(namedBuildTarget, expected);
-        details.Add("Set IL2CPP code generation to " + expected + ".");
-        return true;
+        return profileId == GCWebGLBuildSettingsProfileId.Dev
+            ? DevProfileSpecs
+            : ReleaseProfileSpecs;
     }
 
-    private static bool SetManagedStrippingLevel(
-        NamedBuildTarget namedBuildTarget,
-        ManagedStrippingLevel expected,
-        List<string> details
-    )
+    private static string GetProfileDisplayName(GCWebGLBuildSettingsProfileId profileId)
     {
-        if (PlayerSettings.GetManagedStrippingLevel(namedBuildTarget) == expected)
-        {
-            return false;
-        }
-
-        PlayerSettings.SetManagedStrippingLevel(namedBuildTarget, expected);
-        details.Add("Set managed stripping level to " + expected + ".");
-        return true;
+        return profileId == GCWebGLBuildSettingsProfileId.Dev ? "Dev" : "Release";
     }
 
-    private static bool SetStripUnusedMeshComponents(bool expected, List<string> details)
+    private static HashSet<string> CreateSelectedIdSet(IEnumerable<string> selectedSettingIds)
     {
-        if (PlayerSettings.stripUnusedMeshComponents == expected)
+        if (selectedSettingIds == null)
         {
-            return false;
+            return null;
         }
 
-        PlayerSettings.stripUnusedMeshComponents = expected;
-        details.Add("Set unused mesh component stripping to " + expected + ".");
-        return true;
+        return new HashSet<string>(selectedSettingIds, StringComparer.Ordinal);
     }
 
-    private static bool SetWebGLDataCaching(bool expected, List<string> details)
+    private static GCWebGLBuildSettingSpec[] CreateReleaseProfileSpecs()
     {
-        if (PlayerSettings.WebGL.dataCaching == expected)
+        var specs = new List<GCWebGLBuildSettingSpec>
         {
-            return false;
-        }
-
-        PlayerSettings.WebGL.dataCaching = expected;
-        details.Add("Set WebGL data caching to " + expected + ".");
-        return true;
+            CreateIl2CppCodeGenerationSpec(Il2CppCodeGeneration.OptimizeSize),
+            CreateManagedStrippingLevelSpec(ManagedStrippingLevel.High),
+            CreateStripUnusedMeshComponentsSpec(true),
+            CreateWebGLDataCachingSpec(true),
+            CreateWebGLCompressionSpec(WebGLCompressionFormat.Disabled),
+            CreateWebGLExceptionSupportSpec(WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly),
+            CreateWebGLDebugSymbolsSpec(WebGLDebugSymbolMode.Off),
+        };
+#if UNITY_2023_1_OR_NEWER
+        specs.Add(CreateWebAssembly2023Spec(true));
+#endif
+        specs.Add(CreateDevelopmentBuildSpec(false));
+        specs.Add(CreateWebGLCodeOptimizationSpec(UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO));
+        return specs.ToArray();
     }
 
-    private static bool SetWebGLCompression(WebGLCompressionFormat expected, List<string> details)
+    private static GCWebGLBuildSettingSpec[] CreateDevProfileSpecs()
     {
-        if (PlayerSettings.WebGL.compressionFormat == expected)
+        var specs = new List<GCWebGLBuildSettingSpec>
         {
-            return false;
-        }
-
-        PlayerSettings.WebGL.compressionFormat = expected;
-        details.Add("Set WebGL compression to " + expected + ".");
-        return true;
+            CreateIl2CppCodeGenerationSpec(Il2CppCodeGeneration.OptimizeSpeed),
+            CreateManagedStrippingLevelSpec(ManagedStrippingLevel.Disabled),
+            CreateStripUnusedMeshComponentsSpec(false),
+            CreateWebGLDataCachingSpec(false),
+            CreateWebGLCompressionSpec(WebGLCompressionFormat.Disabled),
+            CreateWebGLExceptionSupportSpec(WebGLExceptionSupport.FullWithStacktrace),
+            CreateWebGLDebugSymbolsSpec(WebGLDebugSymbolMode.Embedded),
+        };
+#if UNITY_2023_1_OR_NEWER
+        specs.Add(CreateWebAssembly2023Spec(true));
+#endif
+        specs.Add(CreateDevelopmentBuildSpec(true));
+        specs.Add(CreateWebGLCodeOptimizationSpec(UnityEditor.WebGL.WasmCodeOptimization.BuildTimes));
+        return specs.ToArray();
     }
 
-    private static bool SetWebGLExceptionSupport(WebGLExceptionSupport expected, List<string> details)
+    private static GCWebGLBuildSettingSpec CreateIl2CppCodeGenerationSpec(Il2CppCodeGeneration expected)
     {
-        if (PlayerSettings.WebGL.exceptionSupport == expected)
-        {
-            return false;
-        }
-
-        PlayerSettings.WebGL.exceptionSupport = expected;
-        details.Add("Set WebGL exception support to " + expected + ".");
-        return true;
+        return new GCWebGLBuildSettingSpec(
+            Il2CppCodeGenerationSettingId,
+            "IL2CPP code generation",
+            () => FormatEnum(PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL)),
+            FormatEnum(expected),
+            () => PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL) == expected,
+            () => PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.WebGL, expected)
+        );
     }
 
-    private static bool SetWebGLDebugSymbolMode(WebGLDebugSymbolMode expected, List<string> details)
+    private static GCWebGLBuildSettingSpec CreateManagedStrippingLevelSpec(ManagedStrippingLevel expected)
     {
-        if (PlayerSettings.WebGL.debugSymbolMode == expected)
-        {
-            return false;
-        }
+        return new GCWebGLBuildSettingSpec(
+            ManagedStrippingLevelSettingId,
+            "Managed stripping level",
+            () => FormatEnum(PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL)),
+            FormatEnum(expected),
+            () => PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL) == expected,
+            () => PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, expected)
+        );
+    }
 
-        PlayerSettings.WebGL.debugSymbolMode = expected;
-        details.Add("Set WebGL debug symbols to " + expected + ".");
-        return true;
+    private static GCWebGLBuildSettingSpec CreateStripUnusedMeshComponentsSpec(bool expected)
+    {
+        return new GCWebGLBuildSettingSpec(
+            StripUnusedMeshComponentsSettingId,
+            "Unused mesh component stripping",
+            () => FormatEnabled(PlayerSettings.stripUnusedMeshComponents),
+            FormatEnabled(expected),
+            () => PlayerSettings.stripUnusedMeshComponents == expected,
+            () => PlayerSettings.stripUnusedMeshComponents = expected
+        );
+    }
+
+    private static GCWebGLBuildSettingSpec CreateWebGLDataCachingSpec(bool expected)
+    {
+        return new GCWebGLBuildSettingSpec(
+            WebGLDataCachingSettingId,
+            "WebGL data caching",
+            () => FormatEnabled(PlayerSettings.WebGL.dataCaching),
+            FormatEnabled(expected),
+            () => PlayerSettings.WebGL.dataCaching == expected,
+            () => PlayerSettings.WebGL.dataCaching = expected
+        );
+    }
+
+    private static GCWebGLBuildSettingSpec CreateWebGLCompressionSpec(WebGLCompressionFormat expected)
+    {
+        return new GCWebGLBuildSettingSpec(
+            WebGLCompressionSettingId,
+            "WebGL compression",
+            () => FormatEnum(PlayerSettings.WebGL.compressionFormat),
+            FormatEnum(expected),
+            () => PlayerSettings.WebGL.compressionFormat == expected,
+            () => PlayerSettings.WebGL.compressionFormat = expected
+        );
+    }
+
+    private static GCWebGLBuildSettingSpec CreateWebGLExceptionSupportSpec(WebGLExceptionSupport expected)
+    {
+        return new GCWebGLBuildSettingSpec(
+            WebGLExceptionSupportSettingId,
+            "WebGL exception support",
+            () => FormatEnum(PlayerSettings.WebGL.exceptionSupport),
+            FormatEnum(expected),
+            () => PlayerSettings.WebGL.exceptionSupport == expected,
+            () => PlayerSettings.WebGL.exceptionSupport = expected
+        );
+    }
+
+    private static GCWebGLBuildSettingSpec CreateWebGLDebugSymbolsSpec(WebGLDebugSymbolMode expected)
+    {
+        return new GCWebGLBuildSettingSpec(
+            WebGLDebugSymbolsSettingId,
+            "WebGL debug symbols",
+            () => FormatEnum(PlayerSettings.WebGL.debugSymbolMode),
+            FormatEnum(expected),
+            () => PlayerSettings.WebGL.debugSymbolMode == expected,
+            () => PlayerSettings.WebGL.debugSymbolMode = expected
+        );
     }
 
 #if UNITY_2023_1_OR_NEWER
-    private static bool SetWebGLWasm2023(bool expected, List<string> details)
+    private static GCWebGLBuildSettingSpec CreateWebAssembly2023Spec(bool expected)
     {
-        if (PlayerSettings.WebGL.wasm2023 == expected)
-        {
-            return false;
-        }
-
-        PlayerSettings.WebGL.wasm2023 = expected;
-        details.Add("Set WebAssembly 2023 features to " + expected + ".");
-        return true;
+        return new GCWebGLBuildSettingSpec(
+            WebAssembly2023SettingId,
+            "WebAssembly 2023",
+            () => FormatEnabled(PlayerSettings.WebGL.wasm2023),
+            FormatEnabled(expected),
+            () => PlayerSettings.WebGL.wasm2023 == expected,
+            () => PlayerSettings.WebGL.wasm2023 = expected
+        );
     }
 #endif
 
-    private static bool SetDevelopmentBuild(bool expected, List<string> details)
+    private static GCWebGLBuildSettingSpec CreateDevelopmentBuildSpec(bool expected)
     {
-        if (EditorUserBuildSettings.development == expected)
-        {
-            return false;
-        }
-
-        EditorUserBuildSettings.development = expected;
-        details.Add("Set development build to " + expected + ".");
-        return true;
+        return new GCWebGLBuildSettingSpec(
+            DevelopmentBuildSettingId,
+            "Development build",
+            () => FormatEnabled(EditorUserBuildSettings.development),
+            FormatEnabled(expected),
+            () => EditorUserBuildSettings.development == expected,
+            () => EditorUserBuildSettings.development = expected
+        );
     }
 
-    private static bool SetWebGLCodeOptimization(
-        UnityEditor.WebGL.WasmCodeOptimization expected,
-        List<string> details
+    private static GCWebGLBuildSettingSpec CreateWebGLCodeOptimizationSpec(
+        UnityEditor.WebGL.WasmCodeOptimization expected
     )
     {
-        if (UnityEditor.WebGL.UserBuildSettings.codeOptimization == expected)
-        {
-            return false;
-        }
-
-        UnityEditor.WebGL.UserBuildSettings.codeOptimization = expected;
-        details.Add("Set WebGL code optimization to " + expected + ".");
-        return true;
+        return new GCWebGLBuildSettingSpec(
+            WebGLCodeOptimizationSettingId,
+            "WebGL code optimization",
+            () => FormatEnum(UnityEditor.WebGL.UserBuildSettings.codeOptimization),
+            FormatEnum(expected),
+            () => UnityEditor.WebGL.UserBuildSettings.codeOptimization == expected,
+            () => UnityEditor.WebGL.UserBuildSettings.codeOptimization = expected
+        );
     }
 
-    private static bool Expect(bool condition, string detail, List<string> details)
+    private static string FormatEnabled(bool value)
     {
-        if (condition)
+        return value ? "Enabled" : "Disabled";
+    }
+
+    private static string FormatEnum(Enum value)
+    {
+        if (value == null)
+        {
+            return "(unknown)";
+        }
+
+        return SplitPascalCase(value.ToString());
+    }
+
+    private static string SplitPascalCase(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        var builder = new StringBuilder();
+        for (var index = 0; index < value.Length; index++)
+        {
+            var character = value[index];
+            if (index > 0 &&
+                char.IsUpper(character) &&
+                ShouldInsertSpaceBeforeUppercase(value, index))
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(character);
+        }
+
+        return builder.ToString();
+    }
+
+    private static bool ShouldInsertSpaceBeforeUppercase(string value, int index)
+    {
+        var previous = value[index - 1];
+        if (char.IsLower(previous) || char.IsDigit(previous))
         {
             return true;
         }
 
-        details.Add(detail);
-        return false;
+        return index + 1 < value.Length && char.IsLower(value[index + 1]);
+    }
+
+    private static void AddDetail(List<string> details, string detail)
+    {
+        if (details != null && !string.IsNullOrEmpty(detail))
+        {
+            details.Add(detail);
+        }
+    }
+
+    private sealed class GCWebGLBuildSettingSpec
+    {
+        internal readonly string id;
+        private readonly string label;
+        private readonly Func<string> getCurrentValue;
+        private readonly string targetValue;
+        private readonly Func<bool> isApplied;
+        private readonly Action applyTarget;
+
+        internal GCWebGLBuildSettingSpec(
+            string id,
+            string label,
+            Func<string> getCurrentValue,
+            string targetValue,
+            Func<bool> isApplied,
+            Action applyTarget
+        )
+        {
+            this.id = id;
+            this.label = label;
+            this.getCurrentValue = getCurrentValue;
+            this.targetValue = targetValue;
+            this.isApplied = isApplied;
+            this.applyTarget = applyTarget;
+        }
+
+        internal bool IsApplied()
+        {
+            return isApplied();
+        }
+
+        internal GCWebGLPreviewRow BuildPreviewRow()
+        {
+            return new GCWebGLPreviewRow(
+                id,
+                GCWebGLPreviewRowKind.Setting,
+                label,
+                getCurrentValue(),
+                targetValue,
+                !IsApplied(),
+                true
+            );
+        }
+
+        internal bool Apply(List<string> details)
+        {
+            var row = BuildPreviewRow();
+            if (!row.isChanged)
+            {
+                return false;
+            }
+
+            applyTarget();
+            AddDetail(details, "Applied " + row.DiffText + ".");
+            return true;
+        }
     }
 }

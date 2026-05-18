@@ -41,6 +41,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [TearDown]
     public void TearDown()
     {
+        CloseWebGLPreviewWindows();
         EditorBuildSettings.scenes = previousBuildSettingsScenes ?? Array.Empty<EditorBuildSettingsScene>();
         Selection.activeObject = null;
 
@@ -133,6 +134,54 @@ public sealed class GamingCouchStartScreenSetupActionsTests
             InvokeWindowChecklistAction(window, check);
 
             Assert.That(Selection.activeObject, Is.SameAs(playerPrefab));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(window);
+        }
+    }
+
+    [Test]
+    public void WebGLBuildMenuCommandOpensSharedPreviewWithoutApplying()
+    {
+        CloseWebGLPreviewWindows();
+
+        WebBuildOptimizer.ApplyReleaseBuildSettings();
+
+        Assert.That(FindWebGLPreviewWindows(), Is.Not.Empty);
+    }
+
+    [Test]
+    public void StartScreenWebGLChecklistActionOpensSharedPreview()
+    {
+        CloseWebGLPreviewWindows();
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Game");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        var readiness = CreateReadiness(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            webGLExport: new GCWebGLExportReadiness(
+                GCWebGLExportSetupStatus.Blocked,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                "Clean WebGL export setup is incomplete.",
+                Array.Empty<string>()
+            )
+        );
+        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
+        var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
+
+        try
+        {
+            InvokeWindowChecklistAction(window, check);
+
+            Assert.That(FindWebGLPreviewWindows(), Is.Not.Empty);
         }
         finally
         {
@@ -388,6 +437,23 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         Assert.That(method, Is.Not.Null);
 
         method.Invoke(window, new object[] { check });
+    }
+
+    private static GamingCouchWebGLBuildSettingsPreviewWindow[] FindWebGLPreviewWindows()
+    {
+        return Resources.FindObjectsOfTypeAll<GamingCouchWebGLBuildSettingsPreviewWindow>();
+    }
+
+    private static void CloseWebGLPreviewWindows()
+    {
+        var windows = FindWebGLPreviewWindows();
+        for (var index = 0; index < windows.Length; index++)
+        {
+            if (windows[index] != null)
+            {
+                windows[index].Close();
+            }
+        }
     }
 
     private static bool CanReuseActiveSceneAsTestScene(Scene scene)
