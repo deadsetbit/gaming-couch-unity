@@ -177,7 +177,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         var pendingResult = new GCQuickStartActiveSceneSetupResult(
             GCQuickStartActiveSceneSetupStatus.PendingCompilation,
             true,
-            "Created missing quick-start scripts and queued setup continuation after Unity compiles them.",
+            "Active Scene Setup created missing example scripts and queued setup continuation after Unity compiles them.",
             new[]
             {
                 "Created: Assets/GamingCouch/GCExample/GCGameExample.cs",
@@ -195,6 +195,28 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         Assert.That(formatted, Does.Contain("queued setup continuation"));
         Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCGameExample.cs"));
         Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
+    }
+
+    [Test]
+    public void ActiveSceneSetupNullResultUsesActiveSceneTerminology()
+    {
+        var result = GamingCouchStartScreenSetupActions.FromActiveSceneSetupResult(null);
+
+        Assert.That(result.messageType, Is.EqualTo(MessageType.Error));
+        Assert.That(result.message, Is.EqualTo("Active Scene Setup did not return a result."));
+    }
+
+    [Test]
+    public void PendingSetupDisplayNamesDistinguishSetupIntent()
+    {
+        Assert.That(
+            GamingCouchQuickStartSetup.GetSetupDisplayName(GCQuickStartSetupIntent.ActiveScene),
+            Is.EqualTo("Active Scene Setup")
+        );
+        Assert.That(
+            GamingCouchQuickStartSetup.GetSetupDisplayName(GCQuickStartSetupIntent.QuickStartScene),
+            Is.EqualTo("Quick Start Scene Setup")
+        );
     }
 
     [Test]

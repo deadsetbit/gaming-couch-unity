@@ -168,7 +168,7 @@ internal static class GamingCouchStartScreenSetupActions
         if (result == null)
         {
             return CreateResult(
-                "Active-scene quick-start setup did not return a result.",
+                "Active Scene Setup did not return a result.",
                 MessageType.Error,
                 null,
                 null,

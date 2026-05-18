@@ -389,8 +389,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             return;
         }
 
+        var setupDisplayName = GamingCouchQuickStartSetup.GetPendingSetupDisplayName();
         EditorGUILayout.HelpBox(
-            "Quick-start setup is waiting for Unity to compile generated scripts. Setup will continue automatically after compilation finishes.",
+            setupDisplayName + " is waiting for Unity to compile generated scripts. Setup will continue automatically after compilation finishes.",
             MessageType.Warning
         );
         EditorGUILayout.Space();

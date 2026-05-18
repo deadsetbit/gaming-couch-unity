@@ -599,7 +599,7 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckId.GamingCouchInstance,
                 GamingCouchInstanceCheckLabel,
                 GCStartScreenReadinessCheckState.Fail,
-                "The active scene contains multiple GamingCouch components. Remove duplicates manually before running quick-start setup.",
+                "The active scene contains multiple GamingCouch components. Remove duplicates manually before running Active Scene Setup.",
                 GamingCouchInstanceHelpText
             );
         }

@@ -461,7 +461,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateResult(
                 GCQuickStartScriptSetupStatus.Blocked,
                 false,
-                "Quick-start script generation is blocked.",
+                GetSetupDisplayName(intent) + " script generation is blocked.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -480,7 +480,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateResult(
                 GCQuickStartScriptSetupStatus.Blocked,
                 createdAssetPaths.Count > 0,
-                "Quick-start script generation is blocked.",
+                GetSetupDisplayName(intent) + " script generation is blocked.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -496,7 +496,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateResult(
                 GCQuickStartScriptSetupStatus.PendingCompilation,
                 true,
-                "Created missing quick-start scripts and queued setup continuation after Unity compiles them.",
+                GetSetupDisplayName(intent) + " created missing example scripts and queued setup continuation after Unity compiles them.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -514,18 +514,18 @@ internal static class GamingCouchQuickStartSetup
                 return CreateResult(
                     GCQuickStartScriptSetupStatus.PendingCompilation,
                     false,
-                    "Quick-start scripts already exist; waiting for Unity to compile their types.",
+                    GetSetupDisplayName(intent) + " is waiting for Unity to compile existing example scripts.",
                     createdAssetPaths,
                     reusedAssetPaths,
                     blockedReasons
                 );
             }
 
-            blockedReasons.Add("Quick-start script assets already exist, but compiled types " + spec.gameTypeName + " and " + spec.playerTypeName + " are not both available. Existing scripts were left untouched.");
+            blockedReasons.Add("Example script assets already exist, but compiled types " + spec.gameTypeName + " and " + spec.playerTypeName + " are not both available. Existing scripts were left untouched.");
             return CreateResult(
                 GCQuickStartScriptSetupStatus.Blocked,
                 false,
-                "Quick-start setup cannot continue until the existing script assets compile with the expected type names.",
+                GetSetupDisplayName(intent) + " cannot continue until the existing script assets compile with the expected type names.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -540,7 +540,7 @@ internal static class GamingCouchQuickStartSetup
         return CreateResult(
             GCQuickStartScriptSetupStatus.Ready,
             false,
-            "Quick-start scripts already exist and compiled types are available.",
+            "Example scripts already exist and compiled types are available.",
             createdAssetPaths,
             reusedAssetPaths,
             blockedReasons
@@ -672,6 +672,18 @@ internal static class GamingCouchQuickStartSetup
         return SessionState.GetBool(PendingSetupSessionKey, false);
     }
 
+    internal static string GetPendingSetupDisplayName()
+    {
+        return GetSetupDisplayName(GetPendingIntent());
+    }
+
+    internal static string GetSetupDisplayName(GCQuickStartSetupIntent intent)
+    {
+        return intent == GCQuickStartSetupIntent.QuickStartScene
+            ? "Quick Start Scene Setup"
+            : "Active Scene Setup";
+    }
+
     internal static GCQuickStartActiveSceneSetupResult EnsureActiveSceneQuickStartSetup()
     {
         var details = new List<string>();
@@ -689,7 +701,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
                 changed,
-                "Active-scene quick-start setup is blocked.",
+                "Active Scene Setup is blocked.",
                 details
             );
         }
@@ -722,8 +734,8 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartActiveSceneSetupStatus.Ready,
                 changed,
                 changed
-                    ? "Active-scene quick-start setup completed."
-                    : "Active-scene quick-start setup was already complete; existing scene references were reused.",
+                    ? "Active Scene Setup completed."
+                    : "Active Scene Setup was already complete; existing scene references were reused.",
                 details
             );
         }
@@ -790,8 +802,8 @@ internal static class GamingCouchQuickStartSetup
             GCQuickStartActiveSceneSetupStatus.Ready,
             changed,
             changed
-                ? "Active-scene quick-start setup completed."
-                : "Active-scene quick-start setup was already complete; existing assets and references were reused.",
+                ? "Active Scene Setup completed."
+                : "Active Scene Setup was already complete; existing assets and references were reused.",
             details
         );
     }
@@ -805,7 +817,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
                 false,
-                "Quick-start player prefab setup is blocked.",
+                "Player prefab setup is blocked.",
                 details
             );
         }
@@ -821,7 +833,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
                 false,
-                "Quick-start player prefab setup is blocked.",
+                "Player prefab setup is blocked.",
                 details
             );
         }
@@ -1011,11 +1023,11 @@ internal static class GamingCouchQuickStartSetup
             return EnsureQuickStartGameListenerReference(context, gamingCouch, details);
         }
 
-        details.Add("Unknown active-scene quick-start setup action: " + action + ".");
+        details.Add("Unknown Active Scene Setup action: " + action + ".");
         return CreateActiveSceneResult(
             GCQuickStartActiveSceneSetupStatus.Blocked,
             scriptResult.changed,
-            "Active-scene quick-start setup is blocked.",
+            "Active Scene Setup is blocked.",
             details
         );
     }
@@ -1037,7 +1049,7 @@ internal static class GamingCouchQuickStartSetup
             return CreateActiveSceneResult(
                 GCQuickStartActiveSceneSetupStatus.Blocked,
                 false,
-                "Quick-start player prefab setup is blocked.",
+                "Player prefab setup is blocked.",
                 details
             );
         }
@@ -1315,7 +1327,7 @@ internal static class GamingCouchQuickStartSetup
 
         if (!AssetDatabase.IsValidFolder(context.quickStartFolderAssetPath))
         {
-            blockedReasons.Add("Quick-start folder " + context.quickStartFolderAssetPath + " is missing. Run quick-start script setup first.");
+            blockedReasons.Add("Example asset folder " + context.quickStartFolderAssetPath + " is missing. Run example script setup first.");
             return CreatePlayerPrefabResult(
                 GCQuickStartPlayerPrefabSetupStatus.Blocked,
                 false,
@@ -2594,7 +2606,7 @@ internal static class GamingCouchQuickStartSetup
     {
         if (scriptsReadyHandlers == null)
         {
-            Debug.Log("GamingCouch quick-start scripts are ready. Later setup tasks can continue from the scripts-ready hook.");
+            Debug.Log("GamingCouch example scripts are ready. Later setup tasks can continue from the scripts-ready hook.");
             return;
         }
 
@@ -2620,7 +2632,7 @@ internal static class GamingCouchQuickStartSetup
         }
 
         SessionState.SetBool(PendingWarningLoggedSessionKey, true);
-        Debug.LogWarning("GamingCouch quick-start setup is waiting for compiled types " + context.gameTypeName + " and " + context.playerTypeName + ". Existing scripts will not be overwritten.");
+        Debug.LogWarning("GamingCouch " + GetSetupDisplayName(context.intent) + " is waiting for compiled types " + context.gameTypeName + " and " + context.playerTypeName + ". Existing scripts will not be overwritten.");
     }
 
     private static Type FindScriptType(string scriptAssetPath, string typeName, Type requiredBaseType)
