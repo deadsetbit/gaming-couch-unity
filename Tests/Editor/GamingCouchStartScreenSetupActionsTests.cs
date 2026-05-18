@@ -152,6 +152,41 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     }
 
     [Test]
+    public void WebGLProfileMenuCommandsOpenSelectorWithRequestedInitialProfile()
+    {
+        CloseWebGLPreviewWindows();
+
+        WebBuildOptimizer.ApplyDevBuildSettings();
+        Assert.That(
+            GetSelectedProfile(AssertSingleWebGLPreviewWindow()),
+            Is.EqualTo(GCWebGLBuildSettingsProfileId.Dev)
+        );
+
+        CloseWebGLPreviewWindows();
+
+        WebBuildOptimizer.ApplyReleaseBuildSettings();
+        Assert.That(
+            GetSelectedProfile(AssertSingleWebGLPreviewWindow()),
+            Is.EqualTo(GCWebGLBuildSettingsProfileId.Release)
+        );
+    }
+
+    [Test]
+    public void StartScreenBuildSettingsProfileActionOpensSharedPreview()
+    {
+        CloseWebGLPreviewWindows();
+
+        var result = GamingCouchStartScreenSetupActions.OpenWebGLBuildSettingsProfilePreview(null);
+
+        Assert.That(result.messageType, Is.EqualTo(MessageType.Info));
+        Assert.That(result.message, Does.Contain("WebGL build settings preview opened"));
+        Assert.That(
+            GetSelectedProfile(AssertSingleWebGLPreviewWindow()),
+            Is.EqualTo(GCWebGLBuildSettingsProfileId.Dev)
+        );
+    }
+
+    [Test]
     public void StartScreenWebGLChecklistActionOpensSharedPreview()
     {
         CloseWebGLPreviewWindows();
@@ -442,6 +477,24 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     private static GamingCouchWebGLBuildSettingsPreviewWindow[] FindWebGLPreviewWindows()
     {
         return Resources.FindObjectsOfTypeAll<GamingCouchWebGLBuildSettingsPreviewWindow>();
+    }
+
+    private static GamingCouchWebGLBuildSettingsPreviewWindow AssertSingleWebGLPreviewWindow()
+    {
+        var windows = FindWebGLPreviewWindows();
+        Assert.That(windows, Has.Length.EqualTo(1));
+        return windows[0];
+    }
+
+    private static GCWebGLBuildSettingsProfileId GetSelectedProfile(
+        GamingCouchWebGLBuildSettingsPreviewWindow window
+    )
+    {
+        var field = typeof(GamingCouchWebGLBuildSettingsPreviewWindow)
+            .GetField("selectedProfileId", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null);
+
+        return (GCWebGLBuildSettingsProfileId)field.GetValue(window);
     }
 
     private static void CloseWebGLPreviewWindows()

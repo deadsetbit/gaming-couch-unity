@@ -399,18 +399,21 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void DrawActions()
     {
-        if (!GamingCouchStartScreenSetupActions.ShouldShowActiveSceneSetupAction(readiness))
+        EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
+        if (GamingCouchStartScreenSetupActions.ShouldShowActiveSceneSetupAction(readiness))
         {
-            return;
+            using (new EditorGUI.DisabledScope(GamingCouchStartScreenSetupActions.IsActiveSceneSetupActionBlocked(readiness)))
+            {
+                if (GUILayout.Button("Set up missing pieces"))
+                {
+                    RunActiveSceneSetup();
+                }
+            }
         }
 
-        EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
-        using (new EditorGUI.DisabledScope(GamingCouchStartScreenSetupActions.IsActiveSceneSetupActionBlocked(readiness)))
+        if (GUILayout.Button("Configure WebGL Build Settings"))
         {
-            if (GUILayout.Button("Set up missing pieces"))
-            {
-                RunActiveSceneSetup();
-            }
+            RunWebGLBuildSettingsProfilePreview();
         }
 
         EditorGUILayout.Space();
@@ -467,6 +470,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void RunActiveSceneSetup()
     {
         ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunActiveSceneSetup());
+    }
+
+    private void RunWebGLBuildSettingsProfilePreview()
+    {
+        ApplySetupActionResult(
+            GamingCouchStartScreenSetupActions.OpenWebGLBuildSettingsProfilePreview(ApplySetupActionResult)
+        );
     }
 
     private void ApplySetupActionResult(GCStartScreenSetupActionResult result)

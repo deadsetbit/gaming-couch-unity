@@ -182,6 +182,31 @@ internal static class GamingCouchStartScreenSetupActions
         );
     }
 
+    internal static GCStartScreenSetupActionResult OpenWebGLBuildSettingsProfilePreview(
+        Action<GCStartScreenSetupActionResult> onApplied
+    )
+    {
+        GamingCouchWebGLBuildSettingsPreviewWindow.OpenProfileSelector(
+            GCWebGLBuildSettingsProfileId.Dev,
+            outcome =>
+            {
+                if (onApplied != null)
+                {
+                    onApplied(FromWebGLBuildSettingsProfileOutcome(outcome));
+                }
+            }
+        );
+
+        return CreateResult(
+            "WebGL build settings preview opened.",
+            MessageType.Info,
+            null,
+            null,
+            false,
+            false
+        );
+    }
+
     internal static GCStartScreenSetupActionResult FromActiveSceneSetupResult(
         GCActiveSceneSetupResult result
     )
@@ -380,6 +405,32 @@ internal static class GamingCouchStartScreenSetupActions
             result.message,
             GetWebGLExportSetupResultMessageType(result),
             result.details,
+            null,
+            false,
+            true
+        );
+    }
+
+    internal static GCStartScreenSetupActionResult FromWebGLBuildSettingsProfileOutcome(
+        GCWebGLPreviewApplyOutcome outcome
+    )
+    {
+        if (outcome == null)
+        {
+            return CreateResult(
+                "WebGL build settings preview did not return a result.",
+                MessageType.Error,
+                null,
+                null,
+                false,
+                true
+            );
+        }
+
+        return CreateResult(
+            outcome.message,
+            outcome.messageType,
+            outcome.details,
             null,
             false,
             true
