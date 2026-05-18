@@ -14,6 +14,8 @@
 - Resolve absolute paths by joining base path from `AGENTS.local.md` with the relative mappings above.
 - If a task needs GC SDK, GC Client, or GC DevApp paths and `AGENTS.local.md` is missing, invalid, or does not define base path, ask the user for the Gaming Couch main repo base path.
 - After user provides the base path, create or update `AGENTS.local.md` on the fly (it is git-ignored).
+- If any required local absolute path is missing from `AGENTS.local.md`, ask the user for that path.
+- When the user provides a missing local path, offer to create or update `AGENTS.local.md` with it.
 - Never use `AGENTS.local.example.md` as a live source of truth; it is only a template for humans.
 - Always ask permission from the user if making changes to outside repos.
 - Do not add machine-local absolute paths to this tracked file. Put them in `AGENTS.local.md`.
