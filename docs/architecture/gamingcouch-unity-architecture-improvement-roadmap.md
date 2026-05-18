@@ -14,10 +14,10 @@ Terminology follows `CONTEXT.md`: **Start Screen** is the Unity editor UI/readin
 
 ## Source Context
 
-- `/Users/anttil/dev/dsb/gaming-couch-unity/CONTEXT.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/gamingcouch-quick-start-start-screen-prd.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
+- `<this-repo>/CONTEXT.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/gamingcouch-quick-start-start-screen-prd.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
 
 ## Roadmap Principles
 

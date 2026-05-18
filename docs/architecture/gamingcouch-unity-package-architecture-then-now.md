@@ -14,10 +14,10 @@ The useful pattern is:
 
 ## Source Artifacts
 
-- `/Users/anttil/dev/dsb/gaming-couch-unity/CONTEXT.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
-- `/Users/anttil/dev/dsb/gamingcouch/client/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
+- `<this-repo>/CONTEXT.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
+- `<gc-client>/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
 
 ## Then
 

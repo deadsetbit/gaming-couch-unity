@@ -8,17 +8,18 @@ Owner: Gaming Couch Unity package team
 
 Primary roadmap:
 
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
 
 Primary PRD:
 
-- `/Users/anttil/dev/dsb/gamingcouch/client/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
+- `<gc-client>/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
 
-Repos:
+Repos and bridge placeholders:
 
-- Unity package repo: `/Users/anttil/dev/dsb/gaming-couch-unity`
-- Gaming Couch main repo: `/Users/anttil/dev/dsb/gamingcouch/client`
-- Main repo path is also defined by `AGENTS.local.md`; use the bridge if the workspace moves on this machine.
+- Unity package repo: `<this-repo>`
+- Gaming Couch main repo base path: `<gaming-couch-main-repo>`
+- GC Client path: `<gc-client>`
+- Resolve `<gc-client>` from `AGENTS.local.md` plus the `client` relative mapping from `AGENTS.md`.
 
 ## Execution Rules
 

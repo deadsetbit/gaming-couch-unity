@@ -8,24 +8,25 @@ Owner: Gaming Couch Unity package team
 
 Primary PRD:
 
-- `/Users/anttil/dev/dsb/gamingcouch/client/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
+- `<gc-client>/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`
 
 Prep context:
 
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
 
 Repos and local bridge:
 
-- Unity package repo: `/Users/anttil/dev/dsb/gaming-couch-unity`
-- Gaming Couch main repo base path from `AGENTS.local.md`: `/Users/anttil/dev/dsb/gamingcouch/client`
+- Unity package repo: `<this-repo>`
+- Gaming Couch main repo base path from `AGENTS.local.md`: `<gaming-couch-main-repo>`
 - Main repo relative mappings from `AGENTS.md`:
   - GC SDK: `sdk`
   - GC Client: `client`
   - GC DevApp: `devspace/devapp`
-- Always load `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.local.md` before using main-repo mappings.
-- Never use `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.local.example.md` as live truth. It is only a human template.
-- Ask the user for permission before editing anything outside `/Users/anttil/dev/dsb/gaming-couch-unity`.
+- GC Client path: `<gc-client>`
+- Always load `<this-repo>/AGENTS.local.md` before using main-repo mappings.
+- Never use `<this-repo>/AGENTS.local.example.md` as live truth. It is only a human template.
+- Ask the user for permission before editing anything outside `<this-repo>`.
 
 This file tracks implementation work only. Creating this plan does not implement production code.
 
@@ -143,9 +144,9 @@ Required after every task:
 
 - Run `git diff --check`.
 - Inspect `git status --short` and confirm unrelated files were not touched.
-- Follow `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.md` for Unity test execution:
+- Follow `<this-repo>/AGENTS.md` for Unity test execution:
   - Prefer the open-Editor test bridge from this package over launching a second Unity process.
-  - Use `/Users/anttil/dev/dsb/gaming-couch-unity-template` as the known local host project when it exists and is the intended symlinked project.
+  - Use `<local-unity-host-project>` as the known local host project when it exists and is the intended symlinked project.
   - If the bridge runner times out without a `started` status, ask the user to open or refresh the host Unity Editor so it loads `Editor/GamingCouchCodexTestBridge.cs`, then retry.
   - Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode.
 - Record Unity test commands and results, or the exact AGENTS.md-defined blocker/skipped validation gap, in this file under the completed task.
@@ -201,7 +202,7 @@ Add the editor-only JSON dependency, `gc.dev.json` data model, parser, validatio
 - `Runtime/Dev/GCDevJsonStore.cs.meta`
 - `Runtime/Dev/GCDevJsonValidation.cs`
 - `Runtime/Dev/GCDevJsonValidation.cs.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If the implementer chooses different new file names, update this task before editing.
 
@@ -327,7 +328,7 @@ Add `gc.metadata.json` parsing and validation context for labels, colors, platfo
 - `Runtime/Dev/GCDevJsonValidation.cs`
 - `Runtime/Dev/GCDevJsonValidation.cs.meta`
 - `Runtime/Dev/GCDevJsonStore.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 ### Implementation Steps
 
@@ -467,7 +468,7 @@ Replace serialized editor play settings as the source for setup/play capture wit
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `Runtime/Dev/GCDevJsonValidation.cs`
 - `Runtime/Dev/GCSeatIdentity.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 ### Implementation Steps
 
@@ -623,7 +624,7 @@ Activate a custom `GamingCouch` inspector that draws normal component fields and
 - `Editor/GCDevJsonInspectorView.cs.meta`
 - `Runtime/Dev/GCDevJsonFile.cs`
 - `Runtime/Dev/GCMetadataJsonFile.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation uses fewer or differently named editor helper files, update this task with the final ownership.
 
@@ -757,7 +758,7 @@ Add file polling and state transitions for external JSON edits, dirty drafts, co
 - `Editor/GCDevJsonInspectorView.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `Runtime/Dev/GCMetadataJsonStore.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 ### Implementation Steps
 
@@ -917,7 +918,7 @@ Enforce draft auto-apply, validation blocking, capture timing, and restart behav
 - `Editor/GamingCouchEditor.cs`
 - `Editor/GCDevJsonInspectorState.cs`
 - `Editor/GCDevJsonInspectorView.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 ### Implementation Steps
 
@@ -1020,7 +1021,7 @@ Document the feature, record release metadata, update package versioning, and co
 - `Documentation~/README.md`
 - `CHANGELOG.md`
 - `package.json`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 Do not edit `VERSIONING_PLAN.md` or `VERSIONING_PLAN.md.meta` unless the user explicitly expands scope.
 
@@ -1085,8 +1086,8 @@ Validation:
 - Pass 2 `.meta` diff check: `git diff --name-only | rg '\\.meta$'` returned no matches, confirming no tracked `.meta` files are modified.
 - Protected-file diff check: `git diff --name-only -- VERSIONING_PLAN.md VERSIONING_PLAN.md.meta docs.meta docs/architecture.meta docs/architecture/unity-dev-json-sync-prep-execution-tasks.md.meta docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md.meta` produced no output. Their existing untracked status remains unchanged from the initial worktree status.
 - Pass 2 protected-file status check: `git status --short -- VERSIONING_PLAN.md VERSIONING_PLAN.md.meta docs.meta docs/architecture.meta docs/architecture/unity-dev-json-sync-prep-execution-tasks.md.meta docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md.meta` still shows those protected files only as pre-existing untracked files.
-- Main repo status check: `git -C /Users/anttil/dev/dsb/gamingcouch/client status --short` shows that the main repo is already dirty with unrelated modified/untracked files, including `docs/architecture/dev-flow-todo.md`, several docs, and game-local JSON files. Task 7 performed no writes outside `/Users/anttil/dev/dsb/gaming-couch-unity`.
-- Pass 2 main-repo status check: `git -C /Users/anttil/dev/dsb/gamingcouch/client status --short` still shows only unrelated pre-existing main-repo changes; no main-repo files were edited by Task 7 pass 2.
+- Main repo status check: `git -C <gc-client> status --short` shows that the main repo is already dirty with unrelated modified/untracked files, including `docs/architecture/dev-flow-todo.md`, several docs, and game-local JSON files. Task 7 performed no writes outside `<this-repo>`.
+- Pass 2 main-repo status check: `git -C <gc-client> status --short` still shows only unrelated pre-existing main-repo changes; no main-repo files were edited by Task 7 pass 2.
 
 Parent validation:
 
@@ -1095,7 +1096,7 @@ Parent validation:
 - Documentation grep confirmed `README.md`, `Documentation~/README.md`, and `CHANGELOG.md` mention root `gc.dev.json`, `gc.metadata.json`, editor-only Newtonsoft JSON sync, no bootstrap/repair behavior, Play Mode/restart gates, and release version `0.1.0-alpha.2`.
 - `git diff --name-only`: only Task 7 owned tracked files are modified.
 - Protected-file diff check produced no output; the protected files remain untouched.
-- Main repo status check still shows only unrelated pre-existing main-repo changes; Task 7 made no writes outside `/Users/anttil/dev/dsb/gaming-couch-unity`.
+- Main repo status check still shows only unrelated pre-existing main-repo changes; Task 7 made no writes outside `<this-repo>`.
 
 Skipped validation:
 
@@ -1134,7 +1135,7 @@ This task treats portability as contract-level alignment across engine packages.
 - `Tests/Editor/GCDevJsonContractFixtureTests.cs.meta`
 - `CONTEXT.md`
 - `CONTEXT.md.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1254,7 +1255,7 @@ Done.
 - `Tests/Editor/GCDevJsonContractFixtureTests.cs`
 - `Tests/Editor/GCLocalPlaySessionTests.cs`
 - `Tests/Editor/GCLocalPlaySessionTests.cs.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1585,7 +1586,7 @@ Done.
 - `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
 - `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`
 - `Tests/Editor/GamingCouchStartScreenReadinessTests.cs.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 Only create the focused readiness test file if it improves **Locality** over extending the broad quick-start test file. If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1684,7 +1685,7 @@ Done.
 - `Runtime/Dev/GCDevAppRuntimeMessages.cs.meta`
 - `Tests/Editor/GCDevAppRuntimeMessagesTests.cs`
 - `Tests/Editor/GCDevAppRuntimeMessagesTests.cs.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1794,7 +1795,7 @@ Done.
 - `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`
 - `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`
 - `Tests/Editor/GamingCouchQuickStartEditorTests.cs`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 Only create the focused setup action test file if it improves **Locality** over extending the broad quick-start test file. If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1862,8 +1863,8 @@ Validation:
 - Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveScene*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureCleanWebGLExportSetup`.
 - Static inspection: `GamingCouchStartScreenSetupActions` owns readiness action id dispatch, action result data, message type mapping, optional focus target, ping flag, and refresh/repaint instruction.
 - Static inspection: new Unity `.meta` GUIDs for the setup action Module and focused test file are unique within this repo.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; Unity accepted the request; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GamingCouchQuickStartEditorTests.CreateAndWireGameResultHandlingKeepsPendingCompilationVisibleAndReadySilent --timeout 300`: passed; Unity accepted the request; 1 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; Unity accepted the request; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GamingCouchQuickStartEditorTests.CreateAndWireGameResultHandlingKeepsPendingCompilationVisibleAndReadySilent --timeout 300`: passed; Unity accepted the request; 1 passed, 0 failed, 0 skipped, 0 inconclusive.
 - `git status --short --untracked-files=all`: Task 13 files changed; pre-existing unrelated untracked files remain present and untouched.
 
 Skipped validation:
@@ -1892,7 +1893,7 @@ Done.
 - `Tests/Editor/GamingCouchQuickStartSetupAssetTests.cs.meta`
 - `Tests/Editor/GamingCouchEditorTestSupport.cs`
 - `Tests/Editor/GamingCouchEditorTestSupport.cs.meta`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -1951,12 +1952,12 @@ Validation:
 - Static test inventory: `GamingCouchQuickStartEditorTests` now has 2 tests, `GamingCouchStartScreenReadinessTests` has 32 tests, `GamingCouchQuickStartSetupAssetTests` has 31 tests, `GamingCouchStartScreenSetupActionsTests` has 8 tests, and `GCDevAppRuntimeMessagesTests` has 6 tests.
 - Static fixture inspection: shared editor test support is limited to common object factories and test double component types; no duplicate test double class definitions remain in `Tests/Editor`.
 - Unity `.meta` inspection: new Task 14 test file GUIDs are unique within this repo.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenReadinessTests --timeout 300`: passed after Unity refreshed the test assembly; 32 passed, 0 failed, 0 skipped, 0 inconclusive.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchQuickStartSetupAssetTests --timeout 300`: completed with 27 passed, 0 failed, 4 skipped, 0 inconclusive; skipped cases are existing asset/path guard ignores.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchQuickStartEditorTests --timeout 300`: passed; 2 passed, 0 failed, 0 skipped, 0 inconclusive.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --filter GCDevAppRuntimeMessagesTests --timeout 300`: passed; 6 passed, 0 failed, 0 skipped, 0 inconclusive.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --timeout 300`: completed with 87 passed, 0 failed, 4 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchStartScreenReadinessTests --timeout 300`: passed after Unity refreshed the test assembly; 32 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchQuickStartSetupAssetTests --timeout 300`: completed with 27 passed, 0 failed, 4 skipped, 0 inconclusive; skipped cases are existing asset/path guard ignores.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchQuickStartEditorTests --timeout 300`: passed; 2 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; 8 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GCDevAppRuntimeMessagesTests --timeout 300`: passed; 6 passed, 0 failed, 0 skipped, 0 inconclusive.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --timeout 300`: completed with 87 passed, 0 failed, 4 skipped, 0 inconclusive.
 - `git status --short --untracked-files=all`: Task 14 files changed; pre-existing unrelated untracked files remain present and untouched.
 
 Skipped validation:
@@ -1998,7 +1999,7 @@ Done.
 - `docs/adr/0001-keep-json-backed-local-play-contract-in-editor-assembly.md`
 - `docs/architecture/gamingcouch-unity-package-architecture-then-now.md`
 - `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
-- `/Users/anttil/dev/dsb/gaming-couch-unity/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 Preserve Unity `.meta` hygiene when moving existing files. If implementation discovers another file is required, update this task with the reason before editing the extra file.
 
@@ -2025,10 +2026,10 @@ Preserve Unity `.meta` hygiene when moving existing files. If implementation dis
 - Statically confirm `Runtime` no longer contains Newtonsoft/JObject/JToken references.
 - Statically confirm Runtime `GCLocalPlaySession` no longer references `GCDevJson*` or `GCMetadataJson*` types.
 - Run focused Unity editor tests:
-  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`
-  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`
+  - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`
+  - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`
 - Run the full EditMode bridge validation if focused tests pass:
-  - `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --timeout 300`
+  - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --timeout 300`
 - Confirm unrelated untracked files remain untouched unless they are listed as owned files above.
 
 ### Completion Notes
@@ -2067,8 +2068,8 @@ Validation:
 - `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
 - `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only Editor asmdef retains the reference.
 - `rg -n "GCDevJson|GCMetadataJson" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
 
 Review pass 2 findings:
 
@@ -2101,8 +2102,8 @@ Parent validation:
 - `git diff --check`: passed.
 - `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime -g '*.cs' -g '*.asmdef'`: no matches.
 - `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only `Editor/dsb.gamingcouch.editor.asmdef` matched.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-58a70d87afec45778cc1d9aef323a04e.json`, and did not create result XML.
-- `python3 Tools/run-open-unity-tests.py /Users/anttil/dev/dsb/gaming-couch-unity-template --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-6af45e302e6740d9bd839fe3a92e5e87.json`, and did not create result XML.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-58a70d87afec45778cc1d9aef323a04e.json`, and did not create result XML.
+- `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-6af45e302e6740d9bd839fe3a92e5e87.json`, and did not create result XML.
 - Recent Unity logs inspected after the bridge errors did not expose compile errors or test failure details for these requests.
 - Full EditMode bridge validation was skipped because both focused bridge runs failed before producing test result XML.
 - `git status --short --untracked-files=all`: Task 15 files changed; pre-existing unrelated untracked files remain present and untouched.
@@ -2121,10 +2122,10 @@ After implementation and both review-and-patch passes:
 
 At the start of any future chat:
 
-1. Read `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.local.md`.
-2. Read `/Users/anttil/dev/dsb/gaming-couch-unity/AGENTS.md`.
+1. Read `<this-repo>/AGENTS.local.md`.
+2. Read `<this-repo>/AGENTS.md`.
 3. Read this plan.
-4. Read the PRD at `/Users/anttil/dev/dsb/gamingcouch/client/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`.
+4. Read the PRD at `<gc-client>/docs/prd/gaming-couch-unity-dev-json-sync-prd.md`.
 5. Run `git status --short`.
 6. Identify the first `Pending` task in the status table.
 7. Mark only that task `In progress`.
