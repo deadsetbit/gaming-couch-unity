@@ -1358,7 +1358,7 @@ internal static class GamingCouchQuickStartSetup
                     GCQuickStartPlayerPrefabSetupStatus.Blocked,
                     false,
                     existingPrefab,
-                    "Quick-start player prefab generation is blocked.",
+                    "Example player prefab generation is blocked.",
                     blockedReasons
                 );
             }
@@ -1367,7 +1367,7 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartPlayerPrefabSetupStatus.Ready,
                 false,
                 existingPrefab,
-                "Reused existing quick-start player prefab.",
+                "Reused existing example player prefab.",
                 blockedReasons
             );
         }
@@ -1379,7 +1379,7 @@ internal static class GamingCouchQuickStartSetup
                 GCQuickStartPlayerPrefabSetupStatus.Blocked,
                 false,
                 null,
-                "Quick-start player prefab generation is blocked.",
+                "Example player prefab generation is blocked.",
                 blockedReasons
             );
         }
@@ -1388,7 +1388,7 @@ internal static class GamingCouchQuickStartSetup
             GCQuickStartPlayerPrefabSetupStatus.Ready,
             true,
             createdPrefab,
-            "Created quick-start player prefab.",
+            "Created example player prefab.",
             blockedReasons
         );
     }
@@ -1462,7 +1462,7 @@ internal static class GamingCouchQuickStartSetup
 
         if (gamingCouch == null)
         {
-            blockedReasons.Add("A GamingCouch object is required before creating the quick-start Game script object.");
+            blockedReasons.Add("A GamingCouch object is required before creating the example Game script object.");
             return CreateGameListenerResult(
                 GCQuickStartGameListenerSetupStatus.Blocked,
                 false,
@@ -1528,7 +1528,7 @@ internal static class GamingCouchQuickStartSetup
             GCQuickStartGameListenerSetupStatus.Ready,
             changed,
             listenerObject,
-            changed ? "Created quick-start Game script object." : "Reused existing quick-start Game script object.",
+            changed ? "Created example Game script object." : "Reused existing example Game script object.",
             blockedReasons
         );
     }
@@ -2087,7 +2087,7 @@ internal static class GamingCouchQuickStartSetup
         var existingComponents = FindComponentsInScene(scene, context.gameType);
         if (existingComponents.Length > 1)
         {
-            blockedReasons.Add("The scene contains multiple " + context.gameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning quick-start setup.");
+            blockedReasons.Add("The scene contains multiple " + context.gameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning " + GetSetupDisplayName(context.intent) + ".");
             return null;
         }
 
@@ -2142,7 +2142,7 @@ internal static class GamingCouchQuickStartSetup
             var listenerComponent = listenerObject.AddComponent(context.gameType);
             if (listenerComponent == null)
             {
-                blockedReasons.Add("Unity did not add " + context.gameTypeName + " to the new quick-start Game script object.");
+                blockedReasons.Add("Unity did not add " + context.gameTypeName + " to the new example Game script object.");
                 UnityEngine.Object.DestroyImmediate(listenerObject);
                 return null;
             }
@@ -2156,7 +2156,7 @@ internal static class GamingCouchQuickStartSetup
         }
         catch (Exception exception)
         {
-            blockedReasons.Add("Could not create quick-start Game script object " + context.listenerObjectName + ": " + exception.Message);
+            blockedReasons.Add("Could not create example Game script object " + context.listenerObjectName + ": " + exception.Message);
             if (listenerObject != null)
             {
                 UnityEngine.Object.DestroyImmediate(listenerObject);
@@ -2289,7 +2289,7 @@ internal static class GamingCouchQuickStartSetup
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, context.playerPrefabAssetPath, out var success);
             if (!success || prefab == null)
             {
-                blockedReasons.Add("Unity did not save the quick-start player prefab at " + context.playerPrefabAssetPath + ".");
+                blockedReasons.Add("Unity did not save the example player prefab at " + context.playerPrefabAssetPath + ".");
                 return null;
             }
 
@@ -2297,7 +2297,7 @@ internal static class GamingCouchQuickStartSetup
         }
         catch (Exception exception)
         {
-            blockedReasons.Add("Could not create quick-start player prefab " + context.playerPrefabAssetPath + ": " + exception.Message);
+            blockedReasons.Add("Could not create example player prefab " + context.playerPrefabAssetPath + ": " + exception.Message);
             return null;
         }
         finally
@@ -2440,7 +2440,7 @@ internal static class GamingCouchQuickStartSetup
         var gamingCouches = GamingCouchSceneWiring.FindActiveSceneGamingCouches();
         if (gamingCouches.Length == 0)
         {
-            Debug.LogWarning("Create or reuse a GamingCouch object before wiring quick-start references.");
+            Debug.LogWarning("Create or reuse a GamingCouch object before wiring Active Scene Setup references.");
             return null;
         }
 
