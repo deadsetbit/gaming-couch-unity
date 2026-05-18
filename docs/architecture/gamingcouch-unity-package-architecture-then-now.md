@@ -6,7 +6,7 @@ Scope: `adeaaf5` (`Update quick-start unified asset validation`) to `bcca403` (`
 
 ## Purpose
 
-Show how the Unity package architecture moved from broad orchestrators toward smaller modules around the **Local Play Contract**, **Capture**, Start Screen readiness, setup execution, DevApp runtime messages, and module-owned tests.
+Show how the Unity package architecture moved from broad orchestrators toward smaller modules around the **Local Play Contract**, **Capture**, **Start Screen Readiness**, **Active Scene Setup**, **Quick Start Scene** creation, DevApp runtime messages, and module-owned tests.
 
 The useful pattern is:
 
@@ -63,7 +63,7 @@ flowchart LR
     EditorGate["GamingCouchEditor<br/>Unity Play Mode adapter"]
     Readiness["Start Screen Readiness<br/>facts, rows, action metadata"]
     Actions["Start Screen Setup Actions<br/>action dispatch and result data"]
-    SetupEffects["Quick Start, Build Settings,<br/>Game View, WebGL setup effects"]
+    SetupEffects["Active Scene Setup, Quick Start Scene,<br/>Build Settings, Game View, WebGL effects"]
     Window["GamingCouchStartScreenWindow.cs<br/>renders rows and applies action results"]
   end
 
@@ -115,9 +115,9 @@ flowchart LR
 | Inspector draft state | Draft classes lived inside `GCDevJsonInspectorState.cs`. | `Editor/GCDevJsonDraft.cs` plus `GCDevJsonInspectorState.cs`. | Separate editable model from state machine and view. |
 | Play/restart preflight and Capture | `GamingCouch.cs`, `GamingCouchEditor.cs`, `GCEditorPlayCapture.cs`, and `GCEditorPlayJsonCapture.cs` shared capture/preflight work. | `Runtime/Dev/GCLocalPlaySession.cs` owns the neutral seam; `GCDevJsonLocalPlaySessionProvider` in Editor adapts JSON to setup/play payloads. | Put active **Capture** and restart boundaries behind one session module without coupling Runtime to JSON. |
 | Runtime setup/play payload shape | Public DTOs stayed stable. | Public DTOs still stay stable: `GCSetupOptions`, `GCPlayOptions`, `GCPlayerOptions`. | Deepen internal modules without changing public payload contracts. |
-| Start Screen readiness rows | Readiness facts and window behavior were tightly paired. | `GamingCouchStartScreenReadiness.cs` and `GCStartScreenReadinessService` own facts, rows, and action metadata. | Make readiness a queryable model before the window renders it. |
+| Start Screen readiness rows | Readiness facts and window behavior were tightly paired. | `GamingCouchStartScreenReadiness.cs` and `GCStartScreenReadinessService` own **Start Screen Readiness** facts, rows, and action metadata. | Make readiness a queryable model before the window renders it. |
 | Start Screen setup action dispatch | `GamingCouchStartScreenWindow.cs` switched over checklist ids and called setup helpers directly. | `GamingCouchStartScreenSetupActions.cs` maps action ids to execution and result display data. | Move decisions out of the EditorWindow; leave the window to render and apply results. |
-| Quick Start generated assets | `GamingCouchQuickStartSetup.cs` owned generated scripts, prefabs, scenes, and continuation rules, with broad tests. | Same module owns asset/setup side effects, now called through the action runner and tested by asset-focused tests. | Keep side effects in one setup module, but test them locally. |
+| Active Scene Setup and Quick Start Scene generated assets | `GamingCouchQuickStartSetup.cs` owned generated scripts, prefabs, scenes, and continuation rules, with broad tests. | Same module owns **Example Assets**, current-scene setup side effects, and **Quick Start Scene** side effects, now called through the action runner and tested by asset-focused tests. | Keep side effects in one setup module, but keep the current-scene path distinct from generated scene creation. |
 | DevApp runtime register/snapshot payloads | `GCDevAppIntegration.cs` built payloads and owned transport. | `GCDevAppRuntimeMessages.cs` builds messages and signatures; `GCDevAppIntegration.cs` keeps WebSocket lifecycle and inbound DevTool commands. | Split message construction from transport. |
 | Editor tests | `GamingCouchQuickStartEditorTests.cs` was a broad fixture covering many modules. | Focused test files mirror contract, session, readiness, messages, setup actions, assets, and smoke behavior. | Test files follow production module ownership. |
 
@@ -126,7 +126,8 @@ flowchart LR
 - `gc.dev.json` is read and written by Editor `GCDevJsonStore`, structurally represented by `GCDevJsonFile`, validated by `GCDevJsonValidation`, edited through `GCDevJsonDraft` and `GCDevJsonInspectorState`, and captured for runtime through the Editor JSON adapter registered with `GCLocalPlaySession`.
 - `gc.metadata.json` is read by `GCMetadataJsonStore`, represented by `GCMetadataJsonFile`, validated as warning or gate context, and never written by the Unity package.
 - `GCLocalPlaySession` remains in Runtime but depends only on neutral provider, capture, preflight, and issue types. It does not reference Newtonsoft, `JObject`, `JToken`, `GCDevJson*`, or `GCMetadataJson*`.
-- Start Screen readiness answers "what is true and what action is available"; Start Screen setup actions answer "what should happen when this action is clicked"; Quick Start setup performs asset, prefab, scene, and continuation side effects.
+- **Start Screen Readiness** answers "what is true and what action is available"; Start Screen setup actions answer "what should happen when this action is clicked"; **Active Scene Setup** applies safe setup to the user's current scene and related editor launch settings; **Quick Start Scene** setup creates or opens `GamingCouchQuickStart.unity`.
+- The **Quick Start Scene** is not the active-scene setup path. Both paths may reuse the same **Example Assets**, but only Quick Start Scene setup owns generated example scene creation.
 - `GCDevAppRuntimeMessages` exists so outgoing `runtime_register` and `runtime_snapshot` payloads can be tested without opening a WebSocket. `GCDevAppIntegration` remains the transport and inbound-command adapter.
 - The test harness split is deliberate: each deeper module now has a focused test home, while `GamingCouchQuickStartEditorTests` keeps only cross-module smoke coverage.
 

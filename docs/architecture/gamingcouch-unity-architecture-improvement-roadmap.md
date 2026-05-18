@@ -10,6 +10,8 @@ Sequence the next architecture improvements after the Local Play Contract, Local
 
 This roadmap is about increasing **Depth**, **Leverage**, and **Locality** in the Unity package. It does not start Godot work directly. Portability means the **Local Play Contract** and **Contract Fixtures** stay stable enough that a future engine package can become another **Adapter** at the same contract **Seam**.
 
+Terminology follows `CONTEXT.md`: **Start Screen** is the Unity editor UI/readiness surface, **Start Screen Readiness** is its shared facts and action model, **Active Scene Setup** is safe setup applied to the user's current scene, **Quick Start Scene** is the generated `GamingCouchQuickStart.unity` example scene, and **Example Assets** are generated editable assets in `Assets/GamingCouch/GCExample`.
+
 ## Source Context
 
 - `/Users/anttil/dev/dsb/gaming-couch-unity/CONTEXT.md`
@@ -40,6 +42,7 @@ Remaining friction observed in the current code shape:
 
 - `Runtime/Dev/GCDevAppIntegration.cs` mixes connection lifecycle, runtime snapshots, project registration, and message construction.
 - `Editor/GamingCouchStartScreenReadiness.cs` and `Editor/GamingCouchStartScreenWindow.cs` are both large and tightly paired.
+- Active-scene setup and Quick Start Scene creation still share `GamingCouchQuickStartSetup.cs`, so code and tests need clear language to distinguish the current-scene path from generated scene creation.
 - `Tests/Editor/GamingCouchQuickStartEditorTests.cs` is a broad test Module that makes new editor rules harder to place.
 
 ## Improvement Sequence
@@ -50,9 +53,9 @@ Remaining friction observed in the current code shape:
 | 2 | Local Play Session Module | Done | **Capture**, preflight, restart, and Play Mode entry rules were split across runtime, editor capture, and inspector state. | Concentrate the editor play session rules behind one deeper **Module** while keeping current behavior. | Completed in Task 9 of the Dev JSON sync task plan. |
 | 3 | Contract Fixture Corpus | Done | The new **Contract Fixtures** were executable but still lived as Unity test code. | Promote the fixture cases into a small contract corpus that Unity tests consume directly. | Completed in Task 10 of the Dev JSON sync task plan. |
 | 4 | Runtime/Editor Local Play Contract Split | Done | Runtime still carried JSON implementation details and Newtonsoft references after the first local play slices. | Move JSON-backed contract behavior to Editor and keep Runtime as the neutral Local Play Session **Seam**. | Completed in Task 15 of the Dev JSON sync task plan. |
-| 5 | Start Screen Readiness Module | Next | Readiness rules and Start Screen rendering have high coupling, so adding a check requires understanding both. | Separate readiness facts/actions from the EditorWindow rendering **Implementation**. | Readiness checks are testable through one **Interface**, and the window mostly renders already-computed rows. |
+| 5 | Start Screen Readiness Module | Next | **Start Screen Readiness** rules and Start Screen rendering have high coupling, so adding a check requires understanding both. | Separate readiness facts/actions from the EditorWindow rendering **Implementation**. | Readiness checks are testable through one **Interface**, and the window mostly renders already-computed rows. |
 | 6 | DevApp Runtime Adapter Module | Later | DevApp integration mixes transport, project identity, runtime snapshot, and message shape. | Split message construction from the WebSocket **Adapter** without changing DevApp behavior. | Runtime registration and snapshot messages are tested without a live transport. |
-| 7 | Quick Start Setup Module | Later | Safe scene/object/asset setup rules are spread across setup, scene wiring, and broad tests. | Concentrate the setup rules behind a deeper editor setup **Module**. | Generated assets, non-overwrite rules, and scene wiring have focused tests outside the mega test file. |
+| 7 | Active Scene Setup and Quick Start Scene Setup Module | Later | Safe current-scene setup, generated **Example Assets**, and **Quick Start Scene** creation share setup code and broad tests. | Concentrate setup rules behind a deeper editor setup **Module** while preserving the distinction between **Active Scene Setup** and **Quick Start Scene** creation. | Generated assets, non-overwrite rules, active-scene wiring, and Quick Start Scene creation have focused tests outside the mega test file. |
 | 8 | Editor Test Harness Module | Later | The broad Quick Start test file reduces **Locality** for new editor behavior. | Split tests by **Module** after the production **Modules** have deeper **Interfaces**. | New local play, readiness, setup, and DevApp rules have focused test homes. |
 | 9 | Second Engine Adapter Readiness | Deferred | A Godot **Adapter** is still hypothetical, so extracting shared code now would create a speculative **Seam**. | Keep contract-level portability notes and wait for a real second **Adapter** need. | Godot work starts by implementing the **Local Play Contract** and running the shared **Contract Fixtures**, not by importing Unity internals. |
 
