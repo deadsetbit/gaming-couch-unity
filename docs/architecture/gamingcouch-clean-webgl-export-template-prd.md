@@ -22,7 +22,7 @@ The v1 template is a clean production/upload shell only. It provides Unity loadi
 
 - Package metadata requires Unity `6000.0`.
 - Package version remains `0.1.0-alpha.2`.
-- The setup workflow is available from `GamingCouch/WebGL Build/Setup clean WebGL export`.
+- The setup workflow is available from `GamingCouch/WebGL Build/Preview clean WebGL export setup`.
 - The setup workflow shows a generated preview before mutating project or editor settings.
 - The package owns the source template and copies it into the consuming project at `Assets/WebGLTemplates/GamingCouch`.
 - Unity selects the installed custom template as `PROJECT:GamingCouch`.

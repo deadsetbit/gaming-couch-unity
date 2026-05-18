@@ -19,7 +19,7 @@ This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can
 
 # Clean WebGL export setup
 
-Use `GamingCouch/WebGL Build/Setup clean WebGL export` or the WebGL export row in the GamingCouch start screen to prepare a project for clean WebGL builds.
+Use `GamingCouch/WebGL Build/Preview clean WebGL export setup` or the WebGL export row in the GamingCouch start screen to prepare a project for clean WebGL builds.
 
 The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned clean template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
 
@@ -191,8 +191,6 @@ GamingCouch.Instance.SetupGameVersus(
 
 Now the hud is set to reflect the player score that is set by GCPlayer.SetScore or GCPlayer.AddScore.
 
-// TODO: Examples for all the value types, and how to update them
-
 To see other HUD value types, see [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum).
 
 ## Manually update the Players HUD
@@ -293,8 +291,6 @@ GCPlayer.ColorOffWhite
 When you are ready to build your project for Gaming Couch, run the clean WebGL export setup before creating the build. Review the generated preview, then apply the target, template, splash/logo, and release-profile changes needed for a clean export.
 
 If setup warns that the active build target is still not WebGL, run setup again or switch the project to WebGL manually before building.
-
-// TODO: Further instructions on how to build the project for Gaming Couch and integrate it to the platform.
 
 # What next?
 

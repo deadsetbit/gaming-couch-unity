@@ -8,7 +8,7 @@ This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can
 
 ## Clean WebGL Export
 
-Run `GamingCouch/WebGL Build/Setup clean WebGL export` or use the WebGL export row in the GamingCouch start screen to configure a project for clean WebGL builds.
+Run `GamingCouch/WebGL Build/Preview clean WebGL export setup` or use the WebGL export row in the GamingCouch start screen to configure a project for clean WebGL builds.
 
 The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned clean template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
 

@@ -17,9 +17,9 @@ Primary intent:
 
 Relevant existing entry points:
 
-- `GamingCouch/WebGL Build/Apply dev build settings (fast build)`
-- `GamingCouch/WebGL Build/Apply release build settings (slow build)`
-- `GamingCouch/WebGL Build/Setup clean WebGL export`
+- `GamingCouch/WebGL Build/Preview dev build settings (fast build)`
+- `GamingCouch/WebGL Build/Preview release build settings (slow build)`
+- `GamingCouch/WebGL Build/Preview clean WebGL export setup`
 - Start Screen checklist row `WebGL export settings configured`
 
 Current user decisions:

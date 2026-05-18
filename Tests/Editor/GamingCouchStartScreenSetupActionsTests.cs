@@ -146,7 +146,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     {
         CloseWebGLPreviewWindows();
 
-        WebBuildOptimizer.ApplyReleaseBuildSettings();
+        GamingCouchWebGLBuildMenu.PreviewReleaseBuildSettings();
 
         Assert.That(FindWebGLPreviewWindows(), Is.Not.Empty);
     }
@@ -156,7 +156,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     {
         CloseWebGLPreviewWindows();
 
-        WebBuildOptimizer.ApplyDevBuildSettings();
+        GamingCouchWebGLBuildMenu.PreviewDevBuildSettings();
         Assert.That(
             GetSelectedProfile(AssertSingleWebGLPreviewWindow()),
             Is.EqualTo(GCWebGLBuildSettingsProfileId.Dev)
@@ -164,7 +164,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
 
         CloseWebGLPreviewWindows();
 
-        WebBuildOptimizer.ApplyReleaseBuildSettings();
+        GamingCouchWebGLBuildMenu.PreviewReleaseBuildSettings();
         Assert.That(
             GetSelectedProfile(AssertSingleWebGLPreviewWindow()),
             Is.EqualTo(GCWebGLBuildSettingsProfileId.Release)

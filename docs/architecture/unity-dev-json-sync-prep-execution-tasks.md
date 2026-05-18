@@ -258,7 +258,7 @@ Prepare the Editor-side structure for a future `GamingCouch` custom inspector wi
 - `Editor/GamingCouchInspectorHost.cs`
 - `Editor/GamingCouchInspectorHost.cs.meta`
 - `Runtime/GamingCouch.cs`
-- `Editor/Utils/WebBuildOptimizer.cs` (inspect/compile impact only)
+- `Editor/GamingCouchWebGLBuildMenu.cs` (inspect/compile impact only)
 - `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
 - `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
 
@@ -303,7 +303,7 @@ Task 4 implementation result, 2026-05-09: Done.
 
 - Changed paths: `Editor/dsb.gamingcouch.editor.asmdef`, `Editor/dsb.gamingcouch.editor.asmdef.meta`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchMenuItems.cs.meta`, `Editor/GamingCouchInspectorHost.cs`, `Editor/GamingCouchInspectorHost.cs.meta`, `Runtime/GamingCouch.cs`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
 - Verification: implementation, first review-and-patch pass, second review-and-patch pass, and parent validation ran `git diff --check`. The second pass and parent validation parsed the editor asmdef JSON and confirmed its runtime asmdef GUID reference matches `Runtime/dsb.gamingcouch.runtime.asmdef.meta`. Static inspection confirmed the existing `GamingCouch` menu item paths and GameObject creation behavior remain unchanged, no active `[CustomEditor]` is registered, and the inactive inspector host adds no `gc.dev.json` UI, file I/O, polling, draft/conflict state, play-mode hooks, or Apply/Revert behavior. Unity 2022.3 compile/import was not run in this environment.
-- Scope notes: The editor assembly is editor-only and references the runtime `GamingCouch` assembly by asmdef GUID. The menu script and `.meta` were renamed to preserve the existing script GUID. The inactive inspector helper draws serialized `GamingCouch` fields while excluding `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`. `Editor/Utils/WebBuildOptimizer.cs`, runtime serialized field names, package metadata, JSON sync behavior, and main-repo files were left unchanged.
+- Scope notes: The editor assembly is editor-only and references the runtime `GamingCouch` assembly by asmdef GUID. The menu script and `.meta` were renamed to preserve the existing script GUID. The inactive inspector helper draws serialized `GamingCouch` fields while excluding `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`. The WebGL build menu script, runtime serialized field names, package metadata, JSON sync behavior, and main-repo files were left unchanged.
 - Remaining Task 4 gates: none.
 
 ## Task 5: Package Metadata Hygiene
@@ -358,7 +358,7 @@ After implementation:
 Task 5 implementation result, 2026-05-09: Done.
 
 - Changed paths: `package.json`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
-- Verification: second review-and-patch pass and parent validation ran `git diff --check`, parsed `package.json` as JSON, and confirmed `package.json` version remained `0.0.1`, dependencies remained `{}`, `licensesUrl` remained `https://example.com/licensing.html`, keywords are exactly `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added an editor-only `Editor/dsb.gamingcouch.editor.asmdef` referencing the runtime asmdef GUID and left `Runtime/dsb.gamingcouch.runtime.asmdef` runtime-only. Unity 2022.3 compile/import was not run in this environment.
+- Verification: second review-and-patch pass and parent validation ran `git diff --check`, parsed `package.json` as JSON, and confirmed `package.json` version remained `0.0.1`, dependencies remained `{}`, the license URL remained a placeholder pending release metadata cleanup, keywords are exactly `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added an editor-only `Editor/dsb.gamingcouch.editor.asmdef` referencing the runtime asmdef GUID and left `Runtime/dsb.gamingcouch.runtime.asmdef` runtime-only. Unity 2022.3 compile/import was not run in this environment.
 - Scope notes: Replaced unambiguous placeholder keywords with `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`. No editor asmdef patch was needed. No runtime editor references, JSON sync behavior, package version/dependency changes, license URL changes, changelog updates, public docs, `LICENSE.md`, `VERSIONING_PLAN.md`, or main-repo files were changed.
 
 ## Deferred Decisions

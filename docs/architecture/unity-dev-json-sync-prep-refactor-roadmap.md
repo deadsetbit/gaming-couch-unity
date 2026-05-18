@@ -140,7 +140,7 @@ Task 4 implementation note, 2026-05-09: Done.
 
 - Changed paths: `Editor/dsb.gamingcouch.editor.asmdef`, `Editor/dsb.gamingcouch.editor.asmdef.meta`, `Editor/GamingCouchMenuItems.cs`, `Editor/GamingCouchMenuItems.cs.meta`, `Editor/GamingCouchInspectorHost.cs`, `Editor/GamingCouchInspectorHost.cs.meta`, `Runtime/GamingCouch.cs`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
 - Verification: implementation, first review-and-patch pass, second review-and-patch pass, and parent validation ran `git diff --check`. The second pass and parent validation parsed the editor asmdef JSON and confirmed its runtime asmdef GUID reference matches `Runtime/dsb.gamingcouch.runtime.asmdef.meta`. Static inspection confirmed menu item paths and GameObject creation behavior remain unchanged, no active `[CustomEditor]` is registered, and the inactive inspector host adds no `gc.dev.json` UI, file I/O, polling, draft/conflict state, play-mode hooks, or Apply/Revert behavior. Unity 2022.3 compile/import was not run in this environment.
-- Scope remained prep-only; the editor asmdef is editor-only, runtime internals are exposed only to `GamingCouch.Editor`, the existing menu script GUID was preserved through `.meta` rename, `Editor/Utils/WebBuildOptimizer.cs` was inspected but not edited, and no runtime serialized fields, package metadata, JSON sync behavior, Task 5 work, or main-repo files were changed.
+- Scope remained prep-only; the editor asmdef is editor-only, runtime internals are exposed only to `GamingCouch.Editor`, the existing menu script GUID was preserved through `.meta` rename, the WebGL build menu script was inspected but not edited, and no runtime serialized fields, package metadata, JSON sync behavior, Task 5 work, or main-repo files were changed.
 - Remaining Task 4 gates: none.
 
 ### 5. Package Metadata Hygiene
@@ -159,7 +159,7 @@ Completion criteria:
 Task 5 implementation note, 2026-05-09: Done.
 
 - Changed paths: `package.json`, `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`, `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`.
-- Verification: second review-and-patch pass and parent validation ran `git diff --check`, parsed `package.json` as JSON, and confirmed version remained `0.0.1`, dependencies remained `{}`, `licensesUrl` remained `https://example.com/licensing.html`, keywords are exactly `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added the editor-only asmdef and the runtime asmdef remains runtime-only. Unity 2022.3 compile/import was not run in this environment.
+- Verification: second review-and-patch pass and parent validation ran `git diff --check`, parsed `package.json` as JSON, and confirmed version remained `0.0.1`, dependencies remained `{}`, the license URL remained a placeholder pending release metadata cleanup, keywords are exactly `gaming-couch`, `unity`, `webgl`, and `local-multiplayer`, and the Newtonsoft package dependency is not present. Static inspection confirmed Task 4 already added the editor-only asmdef and the runtime asmdef remains runtime-only. Unity 2022.3 compile/import was not run in this environment.
 - Scope remained prep-only; no JSON sync, metadata parsing, public docs, changelog, license URL, package version/dependency, release/tag, runtime asmdef, Task 4 editor asmdef, `VERSIONING_PLAN.md`, or main-repo files were changed.
 
 ## Compatibility Rules

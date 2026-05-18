@@ -4,9 +4,9 @@
           "displayName": "Gaming Couch",
           "description": "Integrate Unity game with Gaming Couch platform.",
           "unity": "6000.0",
-          "documentationUrl": "https://example.com/",
-          "changelogUrl": "https://example.com/changelog.html",
-          "licensesUrl": "https://example.com/licensing.html",
+          "documentationUrl": "https://deadsetbit.github.io/gaming-couch-unity/",
+          "changelogUrl": "https://github.com/deadsetbit/gaming-couch-unity/blob/main/CHANGELOG.md",
+          "licensesUrl": "https://github.com/deadsetbit/gaming-couch-unity/blob/main/LICENSE.md",
           "dependencies": {
                     "com.unity.nuget.newtonsoft-json": "3.2.1"
           },

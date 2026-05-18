@@ -9,7 +9,6 @@ public class GamingCouchMenuItems
   }
 
   [MenuItem("GameObject/GamingCouch", false, 0)]
-  [MenuItem("Assets/Create/GamingCouch", false, 0)]
   [MenuItem("GamingCouch/Create GamingCouch GameObject")]
   static void CreatePrefabInstance()
   {
