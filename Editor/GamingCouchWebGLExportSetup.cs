@@ -297,13 +297,13 @@ internal static class GamingCouchWebGLExportSetup
         var details = new List<string>();
         if (plan == null)
         {
-            var readiness = InspectReadiness();
+            var currentReadiness = InspectReadiness();
             return new GCWebGLExportSetupResult(
                 GCWebGLExportSetupStatus.Blocked,
                 false,
                 "Clean WebGL export setup is blocked.",
                 new[] { "No clean WebGL export setup plan was provided." },
-                readiness
+                currentReadiness
             );
         }
 
