@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
@@ -9,21 +12,72 @@ using UnityEngine;
 [InitializeOnLoad]
 internal static class GamingCouchCodexTestBridge
 {
-    internal const string RequestFilePath = "/tmp/gaming-couch-unity-codex-test-request.json";
-
+    private const string AppDataDirectoryName = "Gaming Couch";
+    private const string BridgeDirectoryName = "CodexTestBridge";
+    private const string SessionsDirectoryName = "sessions";
+    private const string ManifestFileName = "session.json";
+    private const string OutputsDirectoryName = "outputs";
+    private const string RequestFileName = "request.json";
     private const string LastRequestIdEditorPrefsKey = "GamingCouch.CodexTestBridge.LastRequestId.";
     private const double PollIntervalSeconds = 0.5d;
+    private const uint PrivateDirectoryMode = 448; // 0700
+    private const uint PrivateFileMode = 384; // 0600
 
-    private static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
+    internal static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
+    private static readonly string LocalAppDataDirectory = GetLocalAppDataDirectory();
+    internal static readonly string BridgeRootDirectory = GetBridgeRootDirectory(ProjectPath);
+    private static readonly string SessionId = Guid.NewGuid().ToString("N");
+    private static readonly string SessionToken = CreateSessionToken();
+    private static readonly string SessionsDirectory = Path.Combine(BridgeRootDirectory, SessionsDirectoryName);
+    private static readonly string SessionDirectory = Path.Combine(SessionsDirectory, SessionId);
+    internal static readonly string OutputDirectory = Path.Combine(SessionDirectory, OutputsDirectoryName);
+    internal static readonly string RequestFilePath = Path.Combine(SessionDirectory, RequestFileName);
+    private static readonly string ManifestPath = Path.Combine(BridgeRootDirectory, ManifestFileName);
 
     private static double nextPollTime;
     private static CodexTestRunCallbacks activeCallbacks;
     private static TestRunnerApi activeTestRunnerApi;
+    private static bool bridgeSessionReady;
 
     static GamingCouchCodexTestBridge()
     {
+        PrepareBridgeSession();
         EditorApplication.update -= PollForRequests;
         EditorApplication.update += PollForRequests;
+    }
+
+    private static void PrepareBridgeSession()
+    {
+        try
+        {
+            EnsureDirectoryTreeWithoutSymlinks(BridgeRootDirectory, LocalAppDataDirectory);
+            EnsureDirectoryWithoutSymlink(SessionsDirectory);
+            EnsureDirectoryWithoutSymlink(SessionDirectory);
+            EnsureDirectoryWithoutSymlink(OutputDirectory);
+
+            var session = new CodexTestBridgeSession
+            {
+                projectPath = ProjectPath,
+                sessionId = SessionId,
+                token = SessionToken,
+                requestPath = RequestFilePath,
+                outputDirectory = OutputDirectory,
+                createdAtUtc = DateTime.UtcNow.ToString("o")
+            };
+
+            WriteFileAtomically(
+                ManifestPath,
+                JsonUtility.ToJson(session, true),
+                BridgeRootDirectory
+            );
+            bridgeSessionReady = true;
+            Debug.Log("Gaming Couch Codex test bridge session ready at " + RequestFilePath + ".");
+        }
+        catch (Exception exception)
+        {
+            bridgeSessionReady = false;
+            Debug.LogError("Gaming Couch Codex test bridge disabled because session setup failed: " + exception);
+        }
     }
 
     private static void PollForRequests()
@@ -35,8 +89,14 @@ internal static class GamingCouchCodexTestBridge
 
         nextPollTime = EditorApplication.timeSinceStartup + PollIntervalSeconds;
 
-        if (EditorApplication.isCompiling || EditorApplication.isUpdating || !File.Exists(RequestFilePath))
+        if (!bridgeSessionReady || EditorApplication.isCompiling || EditorApplication.isUpdating || !File.Exists(RequestFilePath))
         {
+            return;
+        }
+
+        if (!IsSafeBridgeFile(RequestFilePath, SessionDirectory, out var unsafeRequestReason))
+        {
+            Debug.LogWarning("Gaming Couch Codex test bridge ignored an unsafe request file: " + unsafeRequestReason);
             return;
         }
 
@@ -51,13 +111,19 @@ internal static class GamingCouchCodexTestBridge
             return;
         }
 
-        if (request == null || string.IsNullOrWhiteSpace(request.requestId))
+        if (request == null || !IsValidRequestId(request.requestId))
         {
             return;
         }
 
         if (!IsForThisProject(request))
         {
+            return;
+        }
+
+        if (!HasSessionToken(request.token))
+        {
+            Debug.LogWarning("Gaming Couch Codex test bridge ignored a request with an invalid session token.");
             return;
         }
 
@@ -79,16 +145,48 @@ internal static class GamingCouchCodexTestBridge
 
     private static bool IsForThisProject(CodexTestRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.projectPath))
+        return IsProjectPathForThisProject(request.projectPath);
+    }
+
+    internal static bool IsProjectPathForThisProject(string projectPath)
+    {
+        return !string.IsNullOrWhiteSpace(projectPath)
+            && string.Equals(
+                NormalizeProjectPath(projectPath),
+                ProjectPath,
+                PathComparison
+            );
+    }
+
+    internal static string GetDefaultOutputPath(string requestId, string extension)
+    {
+        if (!IsValidRequestId(requestId))
         {
-            return true;
+            throw new ArgumentException("Request id must be a GUID nonce without separators.");
         }
 
-        return string.Equals(
-            NormalizeProjectPath(request.projectPath),
-            ProjectPath,
-            StringComparison.Ordinal
-        );
+        var fullPath = NormalizeProjectPath(Path.Combine(OutputDirectory, "gaming-couch-unity-test-" + requestId + "." + extension));
+        if (!IsPathInsideDirectory(fullPath, OutputDirectory))
+        {
+            throw new ArgumentException("Output path must stay inside the bridge session output directory.");
+        }
+        return fullPath;
+    }
+
+    internal static bool IsValidRequestId(string requestId)
+    {
+        if (string.IsNullOrWhiteSpace(requestId))
+        {
+            return false;
+        }
+
+        Guid parsed;
+        return Guid.TryParseExact(requestId, "N", out parsed);
+    }
+
+    private static bool HasSessionToken(string token)
+    {
+        return ConstantTimeEquals(token, SessionToken);
     }
 
     private static bool HasHandledRequest(string requestId)
@@ -214,7 +312,7 @@ internal static class GamingCouchCodexTestBridge
         {
             var request = callbacks.Request;
             var resultsPath = request.GetResultsPath();
-            EnsureParentDirectory(resultsPath);
+            EnsureOutputParentDirectory(resultsPath);
             TestRunnerApi.SaveResultToFile(result, resultsPath);
 
             var status = CodexTestStatus.Finished(request, callbacks.JobId, result, resultsPath);
@@ -266,17 +364,26 @@ internal static class GamingCouchCodexTestBridge
     private static void WriteStatus(CodexTestStatus status)
     {
         var statusPath = status.GetStatusPath();
-        EnsureParentDirectory(statusPath);
-        File.WriteAllText(statusPath, JsonUtility.ToJson(status, true));
+        EnsureOutputParentDirectory(statusPath);
+        WriteFileAtomically(statusPath, JsonUtility.ToJson(status, true), OutputDirectory);
     }
 
-    private static void EnsureParentDirectory(string path)
+    private static void EnsureOutputParentDirectory(string path)
     {
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory))
+        var fullPath = NormalizeProjectPath(path);
+        if (!IsPathInsideDirectory(fullPath, OutputDirectory))
         {
-            Directory.CreateDirectory(directory);
+            throw new ArgumentException("Output path must stay inside the bridge session output directory.");
         }
+
+        var directory = Path.GetDirectoryName(fullPath);
+        if (string.IsNullOrEmpty(directory))
+        {
+            throw new ArgumentException("Output path must include a parent directory.");
+        }
+
+        EnsureDirectoryTreeWithoutSymlinks(directory, OutputDirectory);
+        RejectExistingSymlinksInPath(fullPath, OutputDirectory, true);
     }
 
     private static string NormalizeProjectPath(string path)
@@ -285,19 +392,297 @@ internal static class GamingCouchCodexTestBridge
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 
+    internal static string GetBridgeRootDirectory(string projectPath)
+    {
+        return Path.Combine(
+            LocalAppDataDirectory,
+            AppDataDirectoryName,
+            BridgeDirectoryName,
+            ComputeProjectHash(NormalizeProjectPath(projectPath))
+        );
+    }
+
+    private static string GetLocalAppDataDirectory()
+    {
+        if (Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        }
+
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".local",
+            "share"
+        );
+    }
+
+    internal static bool IsPathInsideDirectory(string path, string directory)
+    {
+        var fullPath = NormalizeProjectPath(path);
+        var fullDirectory = NormalizeProjectPath(directory);
+        if (string.Equals(fullPath, fullDirectory, PathComparison))
+        {
+            return true;
+        }
+
+        var directoryWithSeparator = fullDirectory + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(directoryWithSeparator, PathComparison);
+    }
+
+    private static bool IsSafeBridgeFile(string path, string containingDirectory, out string reason)
+    {
+        reason = null;
+        try
+        {
+            if (!IsPathInsideDirectory(path, containingDirectory))
+            {
+                reason = "request file is outside the bridge session directory";
+                return false;
+            }
+
+            RejectExistingSymlinksInPath(path, containingDirectory, true);
+            var attributes = File.GetAttributes(path);
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                reason = "request path is a directory";
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            reason = exception.Message;
+            return false;
+        }
+    }
+
+    private static void EnsureDirectoryWithoutSymlink(string directory)
+    {
+        if (File.Exists(directory) && !Directory.Exists(directory))
+        {
+            throw new IOException("Expected a directory but found a file at " + directory + ".");
+        }
+
+        if (Directory.Exists(directory))
+        {
+            RejectSymlink(directory);
+            RestrictUnixPermissions(directory, PrivateDirectoryMode);
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        RejectSymlink(directory);
+        RestrictUnixPermissions(directory, PrivateDirectoryMode);
+    }
+
+    private static void EnsureDirectoryTreeWithoutSymlinks(string directory, string rootDirectory)
+    {
+        var fullDirectory = NormalizeProjectPath(directory);
+        var fullRootDirectory = NormalizeProjectPath(rootDirectory);
+        if (!IsPathInsideDirectory(fullDirectory, fullRootDirectory))
+        {
+            throw new ArgumentException("Directory must stay inside the bridge session directory.");
+        }
+
+        EnsureDirectoryWithoutSymlink(fullRootDirectory);
+        if (string.Equals(fullDirectory, fullRootDirectory, PathComparison))
+        {
+            return;
+        }
+
+        var remainder = fullDirectory.Substring(fullRootDirectory.Length)
+            .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var current = fullRootDirectory;
+        foreach (var segment in remainder.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, segment);
+            EnsureDirectoryWithoutSymlink(current);
+        }
+    }
+
+    private static void RejectExistingSymlinksInPath(string path, string rootDirectory, bool includeLeaf)
+    {
+        var fullPath = NormalizeProjectPath(path);
+        var fullRootDirectory = NormalizeProjectPath(rootDirectory);
+        if (!IsPathInsideDirectory(fullPath, fullRootDirectory))
+        {
+            throw new ArgumentException("Path must stay inside the bridge session directory.");
+        }
+
+        RejectSymlink(fullRootDirectory);
+        var pathToCheck = includeLeaf ? fullPath : Path.GetDirectoryName(fullPath);
+        if (string.IsNullOrEmpty(pathToCheck) || string.Equals(pathToCheck, fullRootDirectory, PathComparison))
+        {
+            return;
+        }
+
+        var remainder = pathToCheck.Substring(fullRootDirectory.Length)
+            .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var current = fullRootDirectory;
+        foreach (var segment in remainder.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, segment);
+            if (File.Exists(current) || Directory.Exists(current))
+            {
+                RejectSymlink(current);
+            }
+        }
+    }
+
+    private static void RejectSymlink(string path)
+    {
+        if (IsSymlink(path))
+        {
+            throw new IOException("Refusing to use symlinked bridge path " + path + ".");
+        }
+    }
+
+    private static bool IsSymlink(string path)
+    {
+        try
+        {
+            return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+        }
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    private static void RestrictUnixPermissions(string path, uint mode)
+    {
+        if (Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            return;
+        }
+
+        if (Chmod(path, mode) != 0)
+        {
+            throw new IOException("Failed to restrict bridge path permissions for " + path + ": errno " + Marshal.GetLastWin32Error() + ".");
+        }
+    }
+
+    private static void WriteFileAtomically(string path, string contents, string containingDirectory)
+    {
+        var fullPath = NormalizeProjectPath(path);
+        if (!IsPathInsideDirectory(fullPath, containingDirectory))
+        {
+            throw new ArgumentException("File path must stay inside the bridge session directory.");
+        }
+
+        var parentDirectory = Path.GetDirectoryName(fullPath);
+        if (string.IsNullOrEmpty(parentDirectory))
+        {
+            throw new ArgumentException("File path must include a parent directory.");
+        }
+
+        EnsureDirectoryTreeWithoutSymlinks(parentDirectory, containingDirectory);
+        RejectExistingSymlinksInPath(fullPath, containingDirectory, true);
+
+        var tempPath = Path.Combine(parentDirectory, Path.GetFileName(fullPath) + "." + Guid.NewGuid().ToString("N") + ".tmp");
+        try
+        {
+            RejectExistingSymlinksInPath(tempPath, containingDirectory, true);
+            File.WriteAllText(tempPath, contents);
+            RestrictUnixPermissions(tempPath, PrivateFileMode);
+            RejectExistingSymlinksInPath(fullPath, containingDirectory, true);
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+
+            File.Move(tempPath, fullPath);
+            RestrictUnixPermissions(fullPath, PrivateFileMode);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    private static string CreateSessionToken()
+    {
+        return Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+    }
+
+    private static bool ConstantTimeEquals(string actual, string expected)
+    {
+        if (string.IsNullOrEmpty(actual) || string.IsNullOrEmpty(expected))
+        {
+            return false;
+        }
+
+        var actualBytes = Encoding.UTF8.GetBytes(actual);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        var difference = actualBytes.Length ^ expectedBytes.Length;
+        var length = Math.Min(actualBytes.Length, expectedBytes.Length);
+        for (var index = 0; index < length; index++)
+        {
+            difference |= actualBytes[index] ^ expectedBytes[index];
+        }
+
+        return difference == 0;
+    }
+
+    private static string ComputeProjectHash(string projectPath)
+    {
+        using (var sha256 = SHA256.Create())
+        {
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(projectPath));
+            var builder = new StringBuilder();
+            for (var index = 0; index < 16; index++)
+            {
+                builder.Append(bytes[index].ToString("x2"));
+            }
+
+            return builder.ToString();
+        }
+    }
+
+    private static StringComparison PathComparison
+    {
+        get
+        {
+            return Application.platform == RuntimePlatform.WindowsEditor
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+        }
+    }
+
+    [DllImport("libc", EntryPoint = "chmod", SetLastError = true)]
+    private static extern int Chmod(string path, uint mode);
+
 #pragma warning disable CS0649
+    [Serializable]
+    private sealed class CodexTestBridgeSession
+    {
+        public string projectPath;
+        public string sessionId;
+        public string token;
+        public string requestPath;
+        public string outputDirectory;
+        public string createdAtUtc;
+    }
+
     [Serializable]
     private sealed class CodexTestRequest
     {
         public string requestId;
+        public string token;
         public string projectPath;
         public string testMode;
         public string[] testNames;
         public string[] groupNames;
         public string[] categoryNames;
         public string[] assemblyNames;
-        public string resultsPath;
-        public string statusPath;
         public bool runSynchronously;
 
         public string GetDisplayMode()
@@ -307,22 +692,12 @@ internal static class GamingCouchCodexTestBridge
 
         public string GetResultsPath()
         {
-            if (!string.IsNullOrWhiteSpace(resultsPath))
-            {
-                return resultsPath;
-            }
-
-            return Path.Combine(Path.GetTempPath(), "gaming-couch-unity-test-" + requestId + ".xml");
+            return GetDefaultOutputPath(requestId, "xml");
         }
 
         public string GetStatusPath()
         {
-            if (!string.IsNullOrWhiteSpace(statusPath))
-            {
-                return statusPath;
-            }
-
-            return Path.Combine(Path.GetTempPath(), "gaming-couch-unity-test-" + requestId + ".json");
+            return GetDefaultOutputPath(requestId, "json");
         }
     }
 #pragma warning restore CS0649
@@ -433,7 +808,7 @@ internal static class GamingCouchCodexTestBridge
                 return statusPath;
             }
 
-            return Path.Combine(Path.GetTempPath(), "gaming-couch-unity-test-" + requestId + ".json");
+            return GetDefaultOutputPath(requestId, "json");
         }
 
         private static CodexTestStatus FromRequest(
