@@ -51,6 +51,8 @@ namespace DSB.GC.Dev
 
         public void Connect()
         {
+            shouldReconnect = true;
+
             if (isConnecting || (websocket != null && websocket.State == WebSocketState.Open))
             {
                 LogWebSocket("Connect ignored; already connecting or connected.");
@@ -162,6 +164,26 @@ namespace DSB.GC.Dev
             isSnapshotSendInFlight = false;
         }
 
+        IEnumerator SendRuntimeGameOverMessage(RuntimeGameOverMessage message)
+        {
+            yield return SendJsonMessage(JsonUtility.ToJson(message));
+        }
+
+        internal void PublishRuntimeGameOver(int[] playerIdsByPlacement)
+        {
+            if (websocket == null || websocket.State != WebSocketState.Open || string.IsNullOrEmpty(currentRunId))
+            {
+                return;
+            }
+
+            var message = GCDevAppRuntimeMessages.BuildRuntimeGameOverMessage(
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                currentRunId,
+                playerIdsByPlacement
+            );
+            StartCoroutine(SendRuntimeGameOverMessage(message));
+        }
+
         void TryPublishRuntimeSnapshot()
         {
             if (websocket == null || websocket.State != WebSocketState.Open || isSnapshotSendInFlight || string.IsNullOrEmpty(currentRunId))
@@ -204,27 +226,28 @@ namespace DSB.GC.Dev
             if (hasException)
             {
                 isConnecting = false;
-                if (shouldReconnect)
-                {
-                    LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
-                    yield return new WaitForSeconds(reconnectDelay);
-                    StartCoroutine(ConnectWebSocket());
-                }
+                yield return ScheduleReconnect();
                 yield break;
             }
 
             yield return new WaitUntil(() => connectTask.IsCompleted);
 
-            if (connectTask.IsFaulted)
+            if (connectTask.IsFaulted || connectTask.IsCanceled || websocket == null)
             {
                 isConnecting = false;
-                LogWebSocket("Connect faulted.");
-                if (shouldReconnect)
+                if (connectTask.IsFaulted)
                 {
-                    LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
-                    yield return new WaitForSeconds(reconnectDelay);
-                    StartCoroutine(ConnectWebSocket());
+                    LogWebSocket("Connect faulted.");
                 }
+                else if (connectTask.IsCanceled)
+                {
+                    LogWebSocket("Connect canceled.");
+                }
+                else
+                {
+                    LogWebSocket("Connect ended after websocket closed.");
+                }
+                yield return ScheduleReconnect();
                 yield break;
             }
 
@@ -305,9 +328,23 @@ namespace DSB.GC.Dev
             LogWebSocket("Receive loop ended.");
             if (shouldReconnect && websocket != null && websocket.State != WebSocketState.Open)
             {
-                LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
-                yield return new WaitForSeconds(reconnectDelay);
-                StartCoroutine(ConnectWebSocket());
+                yield return ScheduleReconnect();
+            }
+        }
+
+        IEnumerator ScheduleReconnect()
+        {
+            if (!shouldReconnect)
+            {
+                yield break;
+            }
+
+            LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
+            yield return new WaitForSeconds(reconnectDelay);
+
+            if (shouldReconnect)
+            {
+                Connect();
             }
         }
 

@@ -9,6 +9,7 @@ namespace DSB.GC.Dev
     {
         internal const string RuntimeRegisterType = "runtime_register";
         internal const string RuntimeSnapshotType = "runtime_snapshot";
+        internal const string RuntimeGameOverType = "runtime_game_over";
         internal const string RuntimeKind = "unity_editor";
         internal const string Platform = "unity";
         internal const string RendererMode = "external";
@@ -73,6 +74,21 @@ namespace DSB.GC.Dev
             return JsonUtility.ToJson(state ?? BuildRuntimeSnapshotState(null, false, null, false, Time.timeScale));
         }
 
+        internal static RuntimeGameOverMessage BuildRuntimeGameOverMessage(
+            long timestamp,
+            string runId,
+            int[] playerIdsByPlacement
+        )
+        {
+            return new RuntimeGameOverMessage
+            {
+                type = RuntimeGameOverType,
+                timestamp = timestamp,
+                runId = runId,
+                playerIdsByPlacement = CopyPlayerIdsByPlacement(playerIdsByPlacement),
+            };
+        }
+
         private static RuntimeCapabilitiesMessage BuildRuntimeCapabilities()
         {
             return new RuntimeCapabilitiesMessage
@@ -110,6 +126,18 @@ namespace DSB.GC.Dev
         private static string ResolveSeatType(GCPlayerType playerType)
         {
             return playerType == GCPlayerType.bot ? "bot" : "player";
+        }
+
+        private static int[] CopyPlayerIdsByPlacement(int[] playerIdsByPlacement)
+        {
+            if (playerIdsByPlacement == null || playerIdsByPlacement.Length == 0)
+            {
+                return Array.Empty<int>();
+            }
+
+            var copiedPlayerIdsByPlacement = new int[playerIdsByPlacement.Length];
+            Array.Copy(playerIdsByPlacement, copiedPlayerIdsByPlacement, playerIdsByPlacement.Length);
+            return copiedPlayerIdsByPlacement;
         }
     }
 
@@ -165,6 +193,15 @@ namespace DSB.GC.Dev
         public RuntimeSeatMessage[] seats;
         public bool paused;
         public float timescale;
+    }
+
+    [Serializable]
+    public class RuntimeGameOverMessage
+    {
+        public string type;
+        public string runId;
+        public int[] playerIdsByPlacement;
+        public long timestamp;
     }
 }
 #endif
