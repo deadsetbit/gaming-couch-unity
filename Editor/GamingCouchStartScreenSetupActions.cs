@@ -48,7 +48,7 @@ internal static class GamingCouchStartScreenSetupActions
 
     internal static bool IsActiveSceneSetupActionBlocked(GCStartScreenReadiness readiness)
     {
-        if (GamingCouchQuickStartSetup.HasPendingSetup())
+        if (GamingCouchActiveSceneSetup.HasPendingSetup())
         {
             return true;
         }
@@ -127,11 +127,11 @@ internal static class GamingCouchStartScreenSetupActions
                 return RunEnsureGamingCouch();
             case GCStartScreenReadinessActionId.CreateAndWireGameScript:
                 return FromActiveSceneSetupResult(
-                    GamingCouchQuickStartSetup.EnsureActiveSceneGameListenerReference()
+                    GamingCouchActiveSceneSetup.EnsureActiveSceneGameListenerReference()
                 );
             case GCStartScreenReadinessActionId.WirePlayerPrefab:
                 return FromActiveSceneSetupResult(
-                    GamingCouchQuickStartSetup.EnsureActiveScenePlayerPrefabReference()
+                    GamingCouchActiveSceneSetup.EnsureActiveScenePlayerPrefabReference()
                 );
             case GCStartScreenReadinessActionId.SetFirstBuildSettingsScene:
                 return FromBuildSettingsSetupResult(
@@ -157,7 +157,7 @@ internal static class GamingCouchStartScreenSetupActions
 
     internal static GCStartScreenSetupActionResult RunActiveSceneSetup()
     {
-        return FromActiveSceneSetupResult(GamingCouchQuickStartSetup.EnsureActiveSceneSetup());
+        return FromActiveSceneSetupResult(GamingCouchActiveSceneSetup.EnsureActiveSceneSetup());
     }
 
     internal static GCStartScreenSetupActionResult OpenWebGLExportSetupPreview(
@@ -267,7 +267,7 @@ internal static class GamingCouchStartScreenSetupActions
             return true;
         }
 
-        if (GamingCouchQuickStartSetup.HasPendingSetup())
+        if (GamingCouchActiveSceneSetup.HasPendingSetup())
         {
             return true;
         }

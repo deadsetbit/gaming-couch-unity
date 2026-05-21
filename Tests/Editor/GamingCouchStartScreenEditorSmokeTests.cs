@@ -8,10 +8,10 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-public sealed class GamingCouchQuickStartEditorTests
+public sealed class GamingCouchStartScreenEditorSmokeTests
 {
     private const string SuppressAutoOpenKey = "DSB.GC.StartScreen.SuppressAutoOpen";
-    private const string TestFolderAssetPathPrefix = "Assets/GamingCouchQuickStartEditorTests_";
+    private const string TestFolderAssetPathPrefix = "Assets/GamingCouchStartScreenEditorSmokeTests_";
     private const string ExistingSceneBuildPath = "Assets/GamingCouchExistingScene.unity";
     private const string OtherSceneBuildPath = "Assets/GamingCouchOtherScene.unity";
 
@@ -95,7 +95,7 @@ public sealed class GamingCouchQuickStartEditorTests
                 new EditorBuildSettingsScene(sceneAssetPath, true),
             };
 
-            var result = GamingCouchQuickStartSetup.EnsureActiveSceneSetup();
+            var result = GamingCouchActiveSceneSetup.EnsureActiveSceneSetup();
             var scenes = EditorBuildSettings.scenes;
 
             Assert.That(result.IsBlocked, Is.True);

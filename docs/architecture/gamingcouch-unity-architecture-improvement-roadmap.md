@@ -10,13 +10,13 @@ Sequence the next architecture improvements after the Local Play Contract, Local
 
 This roadmap is about increasing **Depth**, **Leverage**, and **Locality** in the Unity package. It does not start Godot work directly. Portability means the **Local Play Contract** and **Contract Fixtures** stay stable enough that a future engine package can become another **Adapter** at the same contract **Seam**.
 
-Terminology follows `CONTEXT.md`: **Start Screen** is the Unity editor UI/readiness surface, **Start Screen Readiness** is its shared facts and action model, **Active Scene Setup** is safe setup applied to the user's current scene, **Quick Start Scene** is the generated `GamingCouchQuickStart.unity` example scene, and **Example Assets** are generated editable assets in `Assets/GamingCouch/GCExample`.
+Terminology follows `CONTEXT.md`: **Start Screen** is the Unity editor UI/readiness surface, **Start Screen Readiness** is its shared facts and action model, **Active Scene Setup** is safe setup applied to the user's current scene, and **Example Assets** are generated editable assets in `Assets/GamingCouch/GCExample`.
 
 ## Source Context
 
 - `<this-repo>/CONTEXT.md`
 - `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
-- `<this-repo>/docs/architecture/gamingcouch-quick-start-start-screen-prd.md`
+- `<this-repo>/docs/architecture/gamingcouch-start-screen-prd.md`
 - `<this-repo>/docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
 
 ## Roadmap Principles
@@ -42,8 +42,8 @@ Remaining friction observed in the current code shape:
 
 - `Runtime/Dev/GCDevAppIntegration.cs` mixes connection lifecycle, runtime snapshots, project registration, and message construction.
 - `Editor/GamingCouchStartScreenReadiness.cs` and `Editor/GamingCouchStartScreenWindow.cs` are both large and tightly paired.
-- Active-scene setup and Quick Start Scene creation still share `GamingCouchQuickStartSetup.cs`, so code and tests need clear language to distinguish the current-scene path from generated scene creation.
-- `Tests/Editor/GamingCouchQuickStartEditorTests.cs` is a broad test Module that makes new editor rules harder to place.
+- Active-scene setup now lives in `GamingCouchActiveSceneSetup.cs`; remaining setup work should keep Example Asset rules and active-scene wiring in focused tests.
+- `Tests/Editor/GamingCouchStartScreenEditorSmokeTests.cs` keeps only cross-module smoke behavior, while setup asset coverage lives in `GamingCouchActiveSceneSetupAssetTests.cs`.
 
 ## Improvement Sequence
 
@@ -55,8 +55,8 @@ Remaining friction observed in the current code shape:
 | 4 | Runtime/Editor Local Play Contract Split | Done | Runtime still carried JSON implementation details and Newtonsoft references after the first local play slices. | Move JSON-backed contract behavior to Editor and keep Runtime as the neutral Local Play Session **Seam**. | Completed in Task 15 of the Dev JSON sync task plan. |
 | 5 | Start Screen Readiness Module | Next | **Start Screen Readiness** rules and Start Screen rendering have high coupling, so adding a check requires understanding both. | Separate readiness facts/actions from the EditorWindow rendering **Implementation**. | Readiness checks are testable through one **Interface**, and the window mostly renders already-computed rows. |
 | 6 | DevApp Runtime Adapter Module | Later | DevApp integration mixes transport, project identity, runtime snapshot, and message shape. | Split message construction from the WebSocket **Adapter** without changing DevApp behavior. | Runtime registration and snapshot messages are tested without a live transport. |
-| 7 | Active Scene Setup and Quick Start Scene Setup Module | Later | Safe current-scene setup, generated **Example Assets**, and **Quick Start Scene** creation share setup code and broad tests. | Concentrate setup rules behind a deeper editor setup **Module** while preserving the distinction between **Active Scene Setup** and **Quick Start Scene** creation. | Generated assets, non-overwrite rules, active-scene wiring, and Quick Start Scene creation have focused tests outside the mega test file. |
-| 8 | Editor Test Harness Module | Later | The broad Quick Start test file reduces **Locality** for new editor behavior. | Split tests by **Module** after the production **Modules** have deeper **Interfaces**. | New local play, readiness, setup, and DevApp rules have focused test homes. |
+| 7 | Active Scene Setup Module | Later | Safe current-scene setup and generated **Example Assets** still sit in one broad setup module. | Concentrate setup rules behind a deeper editor setup **Module** while preserving Start Screen action behavior. | Generated assets, non-overwrite rules, and active-scene wiring have focused tests outside smoke coverage. |
+| 8 | Editor Test Harness Module | Later | Smoke tests should stay small as new editor behavior grows. | Split tests by **Module** after the production **Modules** have deeper **Interfaces**. | New local play, readiness, setup, and DevApp rules have focused test homes. |
 | 9 | Second Engine Adapter Readiness | Deferred | A Godot **Adapter** is still hypothetical, so extracting shared code now would create a speculative **Seam**. | Keep contract-level portability notes and wait for a real second **Adapter** need. | Godot work starts by implementing the **Local Play Contract** and running the shared **Contract Fixtures**, not by importing Unity internals. |
 
 ## Recommended Next Slice
@@ -67,7 +67,7 @@ Why this is the best next step:
 
 - It is the next highest-friction editor surface after the completed local play work.
 - `GamingCouchStartScreenReadiness.cs` and `GamingCouchStartScreenWindow.cs` are both large and tightly paired, so adding a readiness rule currently requires understanding rule calculation, action availability, and rendering together.
-- It improves **Locality** before touching the broader Quick Start setup tests.
+- It improves **Locality** before touching broader Start Screen setup behavior.
 - It creates a better test surface for Start Screen readiness rows and actions without changing setup behavior.
 
 This slice should not rename public payloads, change setup behavior, or add another engine **Adapter**. It should make the existing Unity **Adapter** deeper.

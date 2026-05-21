@@ -719,7 +719,7 @@ internal sealed class GCStartScreenReadiness
         }
 
         string playerPrefabCompatibilityMessage;
-        if (!GamingCouchQuickStartSetup.IsActiveSceneGeneratedPlayerPrefabCompatible(
+        if (!GamingCouchActiveSceneSetup.IsActiveSceneGeneratedPlayerPrefabCompatible(
             listener,
             playerPrefab,
             out playerPrefabCompatibilityMessage
@@ -731,9 +731,7 @@ internal sealed class GCStartScreenReadiness
                 GCStartScreenReadinessCheckState.Fail,
                 playerPrefabCompatibilityMessage,
                 PlayerPrefabAssignedHelpText,
-                GamingCouchQuickStartSetup.CanReplaceActiveSceneGeneratedPlayerPrefab(listener, playerPrefab)
-                    ? WirePlayerPrefabAction()
-                    : GCStartScreenReadinessAction.NoAction
+                GCStartScreenReadinessAction.NoAction
             );
         }
 
@@ -1147,7 +1145,7 @@ internal static class GCStartScreenReadinessService
     {
         return GCStartScreenReadinessSummary.Create(
             InspectActiveScene(),
-            GamingCouchQuickStartSetup.HasPendingSetup()
+            GamingCouchActiveSceneSetup.HasPendingSetup()
         );
     }
 

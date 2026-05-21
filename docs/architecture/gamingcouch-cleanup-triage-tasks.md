@@ -1,7 +1,7 @@
 # GamingCouch Cleanup Triage Tasks
 
 Status: Ready for implementation
-Last updated: 2026-05-18
+Last updated: 2026-05-21
 Owner: Gaming Couch Unity package team
 
 ## Source Context
@@ -13,7 +13,7 @@ Primary intent:
 - Remove low-risk user-facing confusion before release.
 - Keep compatibility-sensitive Runtime cleanup separate from simple cleanup.
 - Treat NGO/WebGL transport findings as bug hardening, not cosmetic cleanup.
-- Decide whether the unreachable Quick Start Scene path should be exposed or deleted before touching that code.
+- Remove the unreachable generated scene path instead of exposing it as a supported product route.
 
 Current user decisions:
 
@@ -22,24 +22,24 @@ Current user decisions:
 - Keep direct WebGL menu access, but rename it to preview-oriented wording.
 - Do not change the README multiplayer WIP section in the first cleanup task.
 - Use Apache-2.0 for this package, with `Gaming Couch` as the copyright holder.
-- Track transport hardening, Runtime API deprecation, Quick Start Scene direction, and Contract Fixture hardening as separate follow-ups.
+- Track transport hardening, Runtime API deprecation, Active Scene Setup cleanup, and Contract Fixture hardening as separate follow-ups.
 
 This file tracks implementation work only. Creating this plan does not implement production code.
 
 ## Status
 
-Overall status: Task 1 completed
+Overall status: Task 1 and Task 4 completed
 
 Current task: None
 
-Next action: Stop here unless explicitly asked to continue with Task 2.
+Next action: Stop here unless explicitly asked to continue with another pending task.
 
 | ID | Task | Status | Done when | Dependencies | Notes |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Low-risk user-facing cleanup | Completed | Misleading menu routes, stale WebGL menu naming, package URLs, Apache-2.0 license text, and obvious non-multiplayer README TODOs are cleaned up without changing Runtime public APIs or transport behavior. | None | Keep README multiplayer WIP section unchanged. Preserve Unity `.meta` hygiene when renaming files. Updated affected docs/tests where the renamed WebGL menu module is referenced. |
 | 2 | NGO/WebGL transport hardening | Pending | Duplicate/stale `.jslib` bridge behavior, payload slicing, static server state, unused transport helpers, and missing transport tests are addressed through a focused bug-hardening slice. | None | Treat as behavior work. Validate with tests and WebGL build/smoke coverage where feasible. |
 | 3 | Runtime API deprecation cleanup | Pending | Deprecated or internal-looking Runtime public surfaces are reviewed with compatibility rules, migration notes, and staged deprecation/removal decisions. | None | Candidates include `GCNameTag`, `GCPlayerStoreInput`, mutable store views, and public internal setup/dev methods. Do not casually delete serialized compatibility shims. |
-| 4 | Quick Start Scene product decision | Pending | The team decides whether Quick Start Scene setup should be exposed as a supported user route or removed as unreachable scope. | None | No code deletion/exposure until this decision is recorded. |
+| 4 | Active Scene Setup terminology cleanup | Completed | The unreachable generated scene route is removed, setup code is named for Active Scene Setup, and docs use Start Screen, Start Screen Readiness, Active Scene Setup, and Example Assets vocabulary. | None | Generated editable Example Assets stay available for Active Scene Setup. Legacy generated prefab replacement checks remain for compatibility. |
 | 5 | Contract Fixture warning-only assertion | Pending | The missing-metadata warning-only Contract Fixture asserts successful Capture behavior if that is still intended. | None | Small test-hardening task; do not bundle with UI cleanup. |
 
 ## Task 1 Details
@@ -67,7 +67,7 @@ Out of scope:
 
 - Do not alter Runtime public APIs, serialized compatibility fields, or HUD compatibility shims.
 - Do not touch NGO/WebGL transport behavior.
-- Do not change Quick Start Scene creation/exposure.
+- Do not change generated scene creation/exposure outside Task 4; Task 4 removes that route.
 - Do not rewrite or remove the README online multiplayer WIP section.
 - Do not edit the Gaming Couch main repo, GC SDK, GC Client, or GC DevApp without explicit permission.
 

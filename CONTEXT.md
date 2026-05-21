@@ -42,7 +42,7 @@ _Avoid_: Unity test data
 
 **Start Screen**:
 The Unity editor window and inspector entry point that displays readiness and setup actions.
-_Avoid_: quick start window, setup wizard
+_Avoid_: setup wizard
 
 **Start Screen Readiness**:
 The model of active-scene facts, checklist rows, action metadata, and summary state used by the **Start Screen**.
@@ -50,15 +50,11 @@ _Avoid_: window state, UI-only checks
 
 **Active Scene Setup**:
 Safe setup applied to the currently active user scene, including creating or reusing `GamingCouch`, generated **Example Assets**, listener wiring, player prefab wiring, Build Settings, Game View aspect, and WebGL export setup where applicable.
-_Avoid_: quick-start wording for current-scene setup, quick-start wiring
-
-**Quick Start Scene**:
-The generated example scene at `Assets/GamingCouch/GCExample/GamingCouchQuickStart.unity`.
-_Avoid_: active scene setup, generated current-scene setup
+_Avoid_: generated scene setup
 
 **Example Assets**:
 Generated editable project assets in `Assets/GamingCouch/GCExample`, including `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`.
-_Avoid_: quick-start classes, package samples
+_Avoid_: package samples
 
 ## Relationships
 
@@ -70,9 +66,8 @@ _Avoid_: quick-start classes, package samples
 - The **Local Play Session Seam** owns active **Capture** caching and consumes only neutral provider results and issues.
 - **Contract Fixtures** verify the **Local Play Contract** for each engine package.
 - The **Start Screen** renders **Start Screen Readiness** and exposes safe setup actions.
-- **Active Scene Setup** changes the user's currently active scene or related editor launch settings; it is not the **Quick Start Scene** path.
-- The **Quick Start Scene** is generated example content that uses the same **Example Assets** but opens a separate scene asset.
-- **Example Assets** are editable project content reused by both **Active Scene Setup** and the **Quick Start Scene**.
+- **Active Scene Setup** changes the user's currently active scene or related editor launch settings.
+- **Example Assets** are editable project content created or reused by **Active Scene Setup**.
 
 ## Example Dialogue
 
@@ -83,4 +78,3 @@ _Avoid_: quick-start classes, package samples
 
 - "player" can mean a configured **Seat** or a runtime **Active Player**. Use **Seat** for the root roster slot and **Active Player** for captured runtime play.
 - "portable" means preserving the **Local Play Contract** and **Contract Fixtures** across engine packages, not forcing shared implementation code.
-- "quick start" previously covered both active-scene setup and the **Quick Start Scene**. Use **Active Scene Setup** for setup applied to the current user scene and **Quick Start Scene** for `GamingCouchQuickStart.unity`.

@@ -384,12 +384,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private static void DrawPendingSetupStatus()
     {
-        if (!GamingCouchQuickStartSetup.HasPendingSetup())
+        if (!GamingCouchActiveSceneSetup.HasPendingSetup())
         {
             return;
         }
 
-        var setupDisplayName = GamingCouchQuickStartSetup.GetPendingSetupDisplayName();
+        var setupDisplayName = GamingCouchActiveSceneSetup.GetPendingSetupDisplayName();
         EditorGUILayout.HelpBox(
             setupDisplayName + " is waiting for Unity to compile generated scripts. Setup will continue automatically after compilation finishes.",
             MessageType.Warning

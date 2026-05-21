@@ -291,15 +291,11 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     }
 
     [Test]
-    public void PendingSetupDisplayNamesDistinguishSetupIntent()
+    public void PendingSetupDisplayNameUsesActiveSceneTerminology()
     {
         Assert.That(
-            GamingCouchQuickStartSetup.GetSetupDisplayName(GCQuickStartSetupIntent.ActiveScene),
+            GamingCouchActiveSceneSetup.GetSetupDisplayName(GCActiveSceneSetupIntent.ActiveScene),
             Is.EqualTo("Active Scene Setup")
-        );
-        Assert.That(
-            GamingCouchQuickStartSetup.GetSetupDisplayName(GCQuickStartSetupIntent.QuickStartScene),
-            Is.EqualTo("Quick Start Scene Setup")
         );
     }
 

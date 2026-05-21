@@ -1,4 +1,4 @@
-# GamingCouch Quick Start Start Screen PRD
+# GamingCouch Start Screen PRD
 
 Status: In progress
 Owner: Gaming Couch Unity package team
@@ -9,7 +9,7 @@ The GamingCouch Unity package provides an editor Start Screen that reports activ
 
 The same readiness model is shared with the `GamingCouch` inspector so users can see a concise Start Screen readiness summary from the component inspector without duplicating readiness logic.
 
-Terminology is intentionally split: **Active Scene Setup** is the current-scene setup path, while **Quick Start Scene** refers only to the generated example scene at `Assets/GamingCouch/GCExample/GamingCouchQuickStart.unity`.
+Terminology is intentionally narrowed to **Start Screen**, **Start Screen Readiness**, **Active Scene Setup**, and **Example Assets**. There is no generated example scene product route.
 
 ## Goals
 
@@ -82,19 +82,15 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 - Other unresolved listener references must explain likely causes instead of calling the state "broken"; the user may need to clear or replace the listener reference manually.
 - Missing serialized player prefab references are preserved and require manual cleanup or replacement.
 - Generated example assets live under `Assets/GamingCouch/GCExample`.
-- New generated Game script, Player script, and Player prefab assets use the `GCGameExample` and `GCPlayerExample` naming family everywhere. `Quick Start` remains only a workflow and scene concept, not a generated class or prefab name.
-- Generated scripts, prefabs, and scenes are editable project content and are never overwritten on rerun.
+- New generated Game script, Player script, and Player prefab assets use the `GCGameExample` and `GCPlayerExample` naming family everywhere.
+- Generated scripts and prefabs are editable project content and are never overwritten on rerun.
 - Generated example scripts are named `GCGameExample.cs` and `GCPlayerExample.cs`, with compiled types `GCGameExample` and `GCPlayerExample`, to avoid root-level file and type conflicts.
 - Generated example scripts include a header block explaining that they are GamingCouch example template files that users should move and rename to fit their project, such as `Game.cs` and `Player.cs`.
 - Script generation uses a staged flow because Unity must compile generated scripts before components can be added.
 - The generated player prefab is named `GCPlayerExample.prefab`, has `GCPlayerExample` on its root, and includes a simple visible placeholder that applies GamingCouch player colors.
 - The generated listener object is named `Game`, has `GCGameExample`, and demonstrates `GamingCouchSetup`, `GamingCouchPlay`, `SetupGameVersus`, `SetupDone`, `SetupPlayers<GCPlayerExample>`, randomized final scores, and `GameOver()`.
-- The generated Quick Start Scene remains named `GamingCouchQuickStart.unity` and includes a wired `GamingCouch` object, `Game` listener, `GCPlayerExample.prefab`, camera, and light.
 - When the assigned listener is generated `GCGameExample`, player prefab readiness requires the assigned prefab root to have `GCPlayerExample`. Custom listener scripts keep the existing reference-only player prefab readiness behavior.
-- Creating the Quick Start Scene opens the scene and adds it to Build Settings.
 - The package detects missing or invalid local play JSON and reports it clearly, but does not create, bootstrap, migrate, or repair `gc.dev.json` or `gc.metadata.json`.
-
-The Quick Start Scene is not the active-scene setup path. It may reuse the same generated example assets, but it creates or opens `GamingCouchQuickStart.unity` instead of wiring the user's currently active scene.
 
 ## Launch Readiness
 
@@ -136,8 +132,9 @@ The Quick Start Scene is not the active-scene setup path. It may reuse the same 
 | Task 1 | Rename listener readiness to Game script readiness end to end. | Completed | The Start Screen checklist, shared readiness summary, inspector summary, tooltips, help text, and validation naming all use `Game script is ready` while preserving the existing readiness model. | None | Keep actionable setup rows distinct from true blockers. |
 | Task 2 | Validate compatible Game script receivers. | Completed | Assigned listener objects pass readiness when they can receive `GamingCouchSetup(GCSetupOptions)` and `GamingCouchPlay(GCPlayOptions)`, including compatible custom listener objects not named `Game`; unresolved references fail with manual guidance. | Task 1 | Do not require generated asset names for manually assigned compatible listeners. |
 | Task 3 | Implement safe `Create & Wire Game` setup. | Completed | The row action creates or reuses `Assets/GamingCouch/GCExample/GCGameExample.cs`, `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, a scene object named `Game`, and the `GCGameExample` component through the staged compile flow, then assigns the listener only when the serialized field is empty. | Task 2 | Do not overwrite generated or user-authored assets and do not create or assign the player prefab from this action. |
-| Task 4 | Unify generated Quick Start Game and Player assets around `GCGameExample` and `GCPlayerExample`. | Completed | Active Scene Setup and Quick Start Scene setup both create or reuse `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`; no new `GCQuickStartGame`, `GCQuickStartPlayer`, or `GCQuickStartPlayer.prefab` assets are generated; the Quick Start Scene remains `GamingCouchQuickStart.unity` and wires the unified example assets. | Task 3 | `Quick Start` remains workflow and scene language only. |
-| Task 5 | Add focused validation for unified generated asset behavior. | Completed | Package-local editor tests and static inspection cover receiver compatibility, missing and unresolved listener guidance, staged compile classification, `Assets/GamingCouch/GCExample` script conflict handling, `Create & Wire Game` pending result details, unified generated `GCGameExample` / `GCPlayerExample` source, prefab, and Quick Start Scene wiring, plus generated-listener player prefab compatibility validation. | Task 1, Task 2, Task 3, Task 4 | Consuming-project Play Mode validation remains pending/manual. |
+| Task 4 | Unify generated Example Assets around `GCGameExample` and `GCPlayerExample`. | Completed | Active Scene Setup creates or reuses `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`. | Task 3 | Example Assets remain editable project content. |
+| Task 5 | Add focused validation for unified generated asset behavior. | Completed | Package-local editor tests and static inspection cover receiver compatibility, missing and unresolved listener guidance, staged compile classification, `Assets/GamingCouch/GCExample` script conflict handling, `Create & Wire Game` pending result details, unified generated `GCGameExample` / `GCPlayerExample` source and prefab behavior, plus generated-listener player prefab compatibility validation. | Task 1, Task 2, Task 3, Task 4 | Consuming-project Play Mode validation remains pending/manual. |
+| Task 6 | Remove generated example scene route. | Completed | Active Scene Setup is the only setup path; generated scene creation/opening/build-settings insertion is removed; setup code and tests use Active Scene Setup and Example Assets terminology. | Task 4 | Legacy generated prefab compatibility checks remain for old project assets. |
 
 ## Validation
 
@@ -146,10 +143,10 @@ Available validation in this package-only checkout:
 - `git diff --check`.
 - Static inspection of Start Screen readiness rows, `Game script is ready` naming, help-button behavior, row message indentation, action separation, and inspector entry ordering.
 - Static inspection of package JSON parsing and Unity compatibility metadata where relevant to WebGL readiness.
-- Package-local editor-test coverage in `Tests/Editor/GamingCouchQuickStartEditorTests.cs` for compatible custom receivers, inherited receiver methods, incompatible receiver signatures, missing listener guidance and replacement, unresolved listener guidance, `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs` path collision blocking, generated `GCGameExample.cs`/`GCPlayerExample.cs` source structure and header text, `GCPlayerExample.prefab` creation and color wiring, Quick Start Scene wiring to unified example assets, generated-listener player prefab compatibility validation, `Create & Wire Game` action labels, pending-compilation warning visibility with formatted pending result details, and silent ready success classification.
+- Package-local editor-test coverage in `Tests/Editor/GamingCouchActiveSceneSetupAssetTests.cs`, `Tests/Editor/GamingCouchStartScreenReadinessTests.cs`, `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`, and `Tests/Editor/GamingCouchStartScreenEditorSmokeTests.cs` for compatible custom receivers, inherited receiver methods, incompatible receiver signatures, missing listener guidance and replacement, unresolved listener guidance, `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs` path collision blocking, generated `GCGameExample.cs`/`GCPlayerExample.cs` source structure and header text, `GCPlayerExample.prefab` creation and color wiring, generated-listener player prefab compatibility validation, `Create & Wire Game` action labels, pending-compilation warning visibility with formatted pending result details, and silent ready success classification.
 - Package-local static source inspection confirms generated example play-loop structure includes `GamingCouchSetup(GCSetupOptions)`, `GamingCouchPlay(GCPlayOptions)`, `SetupGameVersus`, `SetupDone`, `SetupPlayers<GCPlayerExample>`, color application, a coroutine round, randomized final scores, and `GameOver()`.
 
 Pending validation requires a consuming Unity project with package import support:
 
 - Consuming-project Unity edit-mode confirmation that package-local editor tests pass under a real package import, including generated script compile/resume behavior after Unity domain reload.
-- Manual Unity validation for staged compile continuation from newly created `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, `GCPlayerExample.prefab` creation and assignment, `Create & Wire Game` end-to-end success feedback in the Start Screen UI, generated quick-start Play Mode loop with valid local play JSON, missing or invalid local play JSON messaging, Game View 16:9 behavior, and clean WebGL setup interaction from the Start Screen.
+- Manual Unity validation for staged compile continuation from newly created `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, `GCPlayerExample.prefab` creation and assignment, `Create & Wire Game` end-to-end success feedback in the Start Screen UI, generated example Play Mode loop with valid local play JSON, missing or invalid local play JSON messaging, Game View 16:9 behavior, and clean WebGL setup interaction from the Start Screen.

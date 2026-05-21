@@ -74,7 +74,7 @@ python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode
 
 Focused validation should include:
 
-- `GamingCouchQuickStartSetupAssetTests` WebGL export/profile tests.
+- `GamingCouchActiveSceneSetupAssetTests` WebGL export/profile tests.
 - `GamingCouchStartScreenReadinessTests`.
 - `GamingCouchStartScreenSetupActionsTests` if Start Screen dispatch changes.
 - Any new preview-window or preview-service tests added by the implementation.

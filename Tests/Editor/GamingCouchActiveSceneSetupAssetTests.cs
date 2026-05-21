@@ -11,12 +11,12 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public sealed class GamingCouchQuickStartSetupAssetTests
+public sealed class GamingCouchActiveSceneSetupAssetTests
 {
     private const string SuppressAutoOpenKey = "DSB.GC.StartScreen.SuppressAutoOpen";
-    private const string TestFolderAssetPathPrefix = "Assets/GamingCouchQuickStartEditorTests_";
+    private const string TestFolderAssetPathPrefix = "Assets/GamingCouchActiveSceneSetupAssetTests_";
     private const string ExistingSceneBuildPath = "Assets/GamingCouchExistingScene.unity";
-    private const string TestSceneBuildPath = "Assets/GamingCouchQuickStartEditorTestScene.unity";
+    private const string TestSceneBuildPath = "Assets/GamingCouchActiveSceneSetupAssetTestScene.unity";
     private const string OtherSceneBuildPath = "Assets/GamingCouchOtherScene.unity";
 
     private string previousSuppressAutoOpenConfigValue;
@@ -42,10 +42,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     private bool previousSplashScreenShowUnityLogo;
     private bool createdExampleProjectFolderForPrefabTest;
     private bool createdExampleFolderForPrefabTest;
-    private bool createdLegacyQuickStartFolderForPrefabTest;
     private bool createdUnifiedPlayerPrefabForPrefabTest;
-    private bool createdLegacyExamplePlayerPrefabForPrefabTest;
-    private bool createdLegacyQuickStartPrefabForPrefabTest;
     private bool createdExampleProjectFolderForCollisionTest;
     private bool createdExampleFolderForCollisionTest;
     private bool createdExampleGameScriptPathCollisionForTest;
@@ -82,7 +79,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
 
         RunCleanup(RestoreActiveSceneAndCloseTestScene, cleanupErrors);
         RunCleanup(DeleteGeneratedScriptPathCollisionTestAssets, cleanupErrors);
-        RunCleanup(DeleteQuickStartPrefabTestAssets, cleanupErrors);
+        RunCleanup(DeleteExamplePrefabTestAssets, cleanupErrors);
         RunCleanup(DeleteTestAssetFolder, cleanupErrors);
         RunCleanup(RestoreBuildSettings, cleanupErrors);
         RunCleanup(RestoreSuppressAutoOpenSetting, cleanupErrors);
@@ -138,20 +135,20 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     [Test]
     public void CreateAndWireGameScriptSetupUsesGCExampleGameAndPlayerAssets()
     {
-        var missingPiecesSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveSceneMissingPieces
+        var missingPiecesSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneMissingPieces
         );
-        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveSceneGameListener
+        var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneGameListener
         );
-        var playerPrefabSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveScenePlayerPrefab
+        var playerPrefabSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveScenePlayerPrefab
         );
 
-        Assert.That(gameSpec.scriptFolderAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ExampleFolderAssetPath));
+        Assert.That(gameSpec.scriptFolderAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ExampleFolderAssetPath));
         Assert.That(gameSpec.gameScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCGameExample.cs"));
         Assert.That(gameSpec.playerScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
         Assert.That(gameSpec.playerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
@@ -159,21 +156,20 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         Assert.That(gameSpec.playerTypeName, Is.EqualTo("GCPlayerExample"));
         Assert.That(gameSpec.listenerObjectName, Is.EqualTo("Game"));
         Assert.That(gameSpec.requiresGeneratedScriptFolder, Is.True);
-        Assert.That(gameSpec.requiresQuickStartFolders, Is.False);
-        Assert.That(playerPrefabSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath));
-        Assert.That(playerPrefabSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath));
-        Assert.That(playerPrefabSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath));
-        Assert.That(missingPiecesSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath));
-        Assert.That(missingPiecesSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath));
-        Assert.That(missingPiecesSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath));
+        Assert.That(playerPrefabSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath));
+        Assert.That(playerPrefabSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath));
+        Assert.That(playerPrefabSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
+        Assert.That(missingPiecesSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath));
+        Assert.That(missingPiecesSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath));
+        Assert.That(missingPiecesSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
     }
 
     [Test]
     public void GeneratedActiveSceneGameSourceUsesGCGameExampleAndDemonstratesPlayFlow()
     {
-        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveSceneGameListener
+        var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneGameListener
         );
         var source = gameSpec.BuildGameScriptSource();
 
@@ -184,9 +180,9 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     [Test]
     public void GeneratedActiveScenePlayerSourceUsesGCPlayerExampleAndSupportsColorPlaceholderPrefab()
     {
-        var gameSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveSceneGameListener
+        var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneGameListener
         );
         var source = gameSpec.BuildPlayerScriptSource();
 
@@ -195,17 +191,17 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     }
 
     [Test]
-    public void QuickStartPlayerPrefabWiresVisiblePlaceholderRendererToPlayerColorField()
+    public void ExamplePlayerPrefabWiresVisiblePlaceholderRendererToPlayerColorField()
     {
-        ReserveQuickStartPrefabPathForTest();
-        var context = new GCQuickStartSetupContinuationContext(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveScenePlayerPrefab,
+        ReserveExamplePlayerPrefabPathForTest();
+        var context = new GCExampleAssetSetupContinuationContext(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
-            GamingCouchQuickStartSetup.QuickStartFolderAssetPath,
-            GamingCouchQuickStartSetup.GameScriptAssetPath,
-            GamingCouchQuickStartSetup.PlayerScriptAssetPath,
-            GamingCouchQuickStartSetup.PlayerPrefabAssetPath,
+            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
+            GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath,
+            GamingCouchActiveSceneSetup.ExamplePlayerScriptAssetPath,
+            GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath,
             nameof(CompatibleGameScriptReceiver),
             nameof(ColorPlaceholderPrefabPlayer),
             "Game",
@@ -213,7 +209,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
             typeof(ColorPlaceholderPrefabPlayer)
         );
 
-        var result = GamingCouchQuickStartSetup.EnsureQuickStartPlayerPrefab(context);
+        var result = GamingCouchActiveSceneSetup.EnsureExamplePlayerPrefab(context);
         createdUnifiedPlayerPrefabForPrefabTest = result.changed;
 
         Assert.That(result.IsBlocked, Is.False, string.Join("\n", result.blockedReasons));
@@ -239,14 +235,14 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     public void ActiveScenePlayerPrefabSetupCreatesGCPlayerExamplePrefab()
     {
         ReserveActiveScenePlayerPrefabPathForTest();
-        var context = new GCQuickStartSetupContinuationContext(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveScenePlayerPrefab,
+        var context = new GCExampleAssetSetupContinuationContext(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
-            GamingCouchQuickStartSetup.ExampleFolderAssetPath,
-            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
-            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
-            GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath,
+            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
+            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath,
             nameof(GCGameExample),
             nameof(GCPlayerExample),
             "Game",
@@ -254,110 +250,14 @@ public sealed class GamingCouchQuickStartSetupAssetTests
             typeof(GCPlayerExample)
         );
 
-        var result = GamingCouchQuickStartSetup.EnsureQuickStartPlayerPrefab(context);
+        var result = GamingCouchActiveSceneSetup.EnsureExamplePlayerPrefab(context);
         createdUnifiedPlayerPrefabForPrefabTest = result.changed;
 
         Assert.That(result.IsBlocked, Is.False, string.Join("\n", result.blockedReasons));
         Assert.That(result.changed, Is.True);
         Assert.That(result.prefab, Is.Not.Null);
-        Assert.That(AssetDatabase.GetAssetPath(result.prefab), Is.EqualTo(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath));
+        Assert.That(AssetDatabase.GetAssetPath(result.prefab), Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
         Assert.That(result.prefab.GetComponent<GCPlayerExample>(), Is.Not.Null);
-    }
-
-    [Test]
-    public void ReadinessOffersToReplaceLegacyQuickStartPrefabForActiveSceneGame()
-    {
-        ReserveLegacyExamplePlayerPrefabPathForTest();
-        var legacyPlayerPrefab = CreatePlayerPrefabAsset(
-            GamingCouchQuickStartSetup.LegacyQuickStartPlayerPrefabAssetPath,
-            typeof(ColorPlaceholderPrefabPlayer)
-        );
-        createdLegacyExamplePlayerPrefabForPrefabTest = true;
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Game");
-        listener.AddComponent<GCGameExample>();
-        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
-        Assert.That(GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, legacyPlayerPrefab).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
-
-        var readiness = GCStartScreenReadinessService.InspectActiveScene();
-        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
-
-        AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Fail);
-        Assert.That(check.message, Does.Contain("GCPlayerExample"));
-        Assert.That(check.message, Does.Contain("legacy"));
-        Assert.That(check.message, Does.Contain(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath));
-        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.PlayerPrefabAssigned), Is.True);
-    }
-
-    [Test]
-    public void ReadinessOffersToReplaceOldQuickStartFolderPlayerPrefabForActiveSceneGame()
-    {
-        ReserveLegacyQuickStartPrefabPathForTest();
-        var legacyPlayerPrefab = CreatePlayerPrefabAsset(
-            GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath,
-            typeof(ColorPlaceholderPrefabPlayer)
-        );
-        createdLegacyQuickStartPrefabForPrefabTest = true;
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = new GameObject("Game");
-        listener.AddComponent<GCGameExample>();
-        Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
-        Assert.That(GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, legacyPlayerPrefab).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
-
-        var readiness = GCStartScreenReadinessService.InspectActiveScene();
-        var check = readiness.GetCheck(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
-
-        AssertCheck(readiness, GCStartScreenReadinessCheckId.PlayerPrefabAssigned, GCStartScreenReadinessCheckState.Fail);
-        Assert.That(check.message, Does.Contain("GCPlayerExample"));
-        Assert.That(check.message, Does.Contain("legacy"));
-        Assert.That(check.message, Does.Contain(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath));
-        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.PlayerPrefabAssigned), Is.True);
-    }
-
-    [Test]
-    public void GeneratedQuickStartSourceUsesUnifiedExampleTypesAndAssetPaths()
-    {
-        var quickStartSpec = GamingCouchQuickStartSetup.GetScriptSetupSpec(
-            GCQuickStartSetupIntent.QuickStartScene,
-            GCQuickStartSetupAction.QuickStartScene
-        );
-        var gameSource = quickStartSpec.BuildGameScriptSource();
-        var playerSource = quickStartSpec.BuildPlayerScriptSource();
-
-        Assert.That(quickStartSpec.scriptFolderAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ExampleFolderAssetPath));
-        Assert.That(quickStartSpec.gameScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCGameExample.cs"));
-        Assert.That(quickStartSpec.playerScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
-        Assert.That(quickStartSpec.playerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
-        Assert.That(GamingCouchQuickStartSetup.PlayerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
-        Assert.That(GamingCouchQuickStartSetup.GameTypeName, Is.EqualTo("GCGameExample"));
-        Assert.That(GamingCouchQuickStartSetup.PlayerTypeName, Is.EqualTo("GCPlayerExample"));
-        Assert.That(quickStartSpec.gameTypeName, Is.EqualTo(GamingCouchQuickStartSetup.GameTypeName));
-        Assert.That(quickStartSpec.playerTypeName, Is.EqualTo(GamingCouchQuickStartSetup.PlayerTypeName));
-        Assert.That(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
-        Assert.That(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.PlayerPrefabAssetPath));
-        Assert.That(GamingCouchQuickStartSetup.QuickStartSceneAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GamingCouchQuickStart.unity"));
-        AssertGeneratedGameSourceDemonstratesPlayFlow(gameSource, "GCGameExample", "GCPlayerExample");
-        AssertGeneratedPlayerSourceSupportsColorPlaceholderPrefab(playerSource, "GCPlayerExample");
-    }
-
-    [Test]
-    public void QuickStartSceneContinuationUsesUnifiedExampleAssetsForSceneWiring()
-    {
-        var context = CreateContinuationContextForTest(
-            GCQuickStartSetupIntent.QuickStartScene,
-            GCQuickStartSetupAction.QuickStartScene,
-            false
-        );
-
-        Assert.That(context.intent, Is.EqualTo(GCQuickStartSetupIntent.QuickStartScene));
-        Assert.That(context.action, Is.EqualTo(GCQuickStartSetupAction.QuickStartScene));
-        Assert.That(context.quickStartFolderAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.ExampleFolderAssetPath));
-        Assert.That(context.gameScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.GameScriptAssetPath));
-        Assert.That(context.playerScriptAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.PlayerScriptAssetPath));
-        Assert.That(context.playerPrefabAssetPath, Is.EqualTo(GamingCouchQuickStartSetup.PlayerPrefabAssetPath));
-        Assert.That(context.gameTypeName, Is.EqualTo("GCGameExample"));
-        Assert.That(context.playerTypeName, Is.EqualTo("GCPlayerExample"));
-        Assert.That(context.listenerObjectName, Is.EqualTo("Game"));
     }
 
     [Test]
@@ -366,7 +266,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var context = CreateGameListenerTestContext();
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
         var assignResult = GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listenerResult.listenerObject);
 
         Assert.That(listenerResult.IsBlocked, Is.False);
@@ -388,7 +288,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
 
         UnityEngine.Object.DestroyImmediate(deletedListener);
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
         var assignResult = GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listenerResult.listenerObject);
 
         Assert.That(listenerResult.IsBlocked, Is.False);
@@ -408,7 +308,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         var existingGame = new GameObject("Game");
         var context = CreateGameListenerTestContext();
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
 
         Assert.That(listenerResult.IsBlocked, Is.False);
         Assert.That(listenerResult.changed, Is.True);
@@ -423,7 +323,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         var existingListener = CreateCompatibleListener("Existing Listener");
         var context = CreateGameListenerTestContext();
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
 
         Assert.That(listenerResult.IsBlocked, Is.True);
         Assert.That(listenerResult.changed, Is.False);
@@ -442,7 +342,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
 
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, existingListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
 
         Assert.That(listenerResult.IsBlocked, Is.False);
         Assert.That(listenerResult.changed, Is.False);
@@ -457,7 +357,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         var gamingCouch = CreateGamingCouch("GamingCouch");
         var context = CreateGameListenerTestContext(typeof(SetupOnlyGameScriptReceiver));
 
-        var listenerResult = GamingCouchQuickStartSetup.EnsureQuickStartGameListener(context, gamingCouch);
+        var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
 
         Assert.That(listenerResult.IsBlocked, Is.True);
         Assert.That(listenerResult.changed, Is.False);
@@ -471,17 +371,17 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     {
         ReserveGCExampleGameAndPlayerScriptPathsForCollisionTest();
         CreateScriptPathCollisionDirectory(
-            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
             ref createdExampleGameScriptPathCollisionForTest
         );
         CreateScriptPathCollisionDirectory(
-            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
             ref createdExamplePlayerScriptPathCollisionForTest
         );
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         CreateGamingCouch("GamingCouch");
 
-        var result = GamingCouchQuickStartSetup.EnsureActiveSceneGameListenerReference();
+        var result = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListenerReference();
 
         Assert.That(result.IsBlocked, Is.True);
         Assert.That(result.changed, Is.False);
@@ -505,7 +405,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         File.WriteAllText(fullPath, OriginalContent);
         AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
 
-        GamingCouchQuickStartSetup.EnsureGeneratedAssetFileWithoutOverwrite(
+        GamingCouchActiveSceneSetup.EnsureGeneratedAssetFileWithoutOverwrite(
             assetPath,
             "generated replacement",
             createdAssetPaths,
@@ -517,31 +417,6 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         Assert.That(createdAssetPaths, Is.Empty);
         Assert.That(reusedAssetPaths, Is.EquivalentTo(new[] { assetPath }));
         Assert.That(File.ReadAllText(fullPath), Is.EqualTo(OriginalContent));
-    }
-
-    [Test]
-    public void BuildSettingsInsertionAddsQuickStartSceneWithoutDuplicates()
-    {
-        EditorBuildSettings.scenes = new[]
-        {
-            new EditorBuildSettingsScene(ExistingSceneBuildPath, false),
-        };
-
-        var firstInsertChanged = GamingCouchQuickStartSetup.AddSceneToBuildSettingsIfMissing(TestSceneBuildPath);
-        var secondInsertChanged = GamingCouchQuickStartSetup.AddSceneToBuildSettingsIfMissing(TestSceneBuildPath);
-        var matchingScenes = EditorBuildSettings.scenes
-            .Where(scene => scene != null && scene.path == TestSceneBuildPath)
-            .ToArray();
-        var existingScenes = EditorBuildSettings.scenes
-            .Where(scene => scene != null && scene.path == ExistingSceneBuildPath)
-            .ToArray();
-
-        Assert.That(firstInsertChanged, Is.True);
-        Assert.That(secondInsertChanged, Is.False);
-        Assert.That(matchingScenes, Has.Length.EqualTo(1));
-        Assert.That(matchingScenes[0].enabled, Is.True);
-        Assert.That(existingScenes, Has.Length.EqualTo(1));
-        Assert.That(existingScenes[0].enabled, Is.False);
     }
 
     [Test]
@@ -931,7 +806,7 @@ public sealed class GamingCouchQuickStartSetupAssetTests
             "README.md",
             "Documentation~/README.md",
             "docs/architecture/gamingcouch-clean-webgl-export-template-prd.md",
-            "docs/architecture/gamingcouch-quick-start-start-screen-prd.md",
+            "docs/architecture/gamingcouch-start-screen-prd.md",
         };
         var forbiddenExactSettingPhrases = new[]
         {
@@ -1049,49 +924,26 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         }
     }
 
-    private static GCQuickStartSetupContinuationContext CreateGameListenerTestContext()
+    private static GCExampleAssetSetupContinuationContext CreateGameListenerTestContext()
     {
         return CreateGameListenerTestContext(typeof(CompatibleGameScriptReceiver));
     }
 
-    private static GCQuickStartSetupContinuationContext CreateGameListenerTestContext(Type gameType)
+    private static GCExampleAssetSetupContinuationContext CreateGameListenerTestContext(Type gameType)
     {
-        return new GCQuickStartSetupContinuationContext(
-            GCQuickStartSetupIntent.ActiveScene,
-            GCQuickStartSetupAction.ActiveSceneGameListener,
+        return new GCExampleAssetSetupContinuationContext(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneGameListener,
             false,
-            GamingCouchQuickStartSetup.ExampleFolderAssetPath,
-            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
-            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
-            GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath,
+            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
+            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath,
             gameType.Name,
             nameof(GCPlayer),
             "Game",
             gameType,
             typeof(GCPlayer)
-        );
-    }
-
-    private static GCQuickStartSetupContinuationContext CreateContinuationContextForTest(
-        GCQuickStartSetupIntent intent,
-        GCQuickStartSetupAction action,
-        bool resumedAfterCompilation
-    )
-    {
-        // Exercise the production factory so path/type mapping changes are covered without duplicating its logic here.
-        var method = typeof(GamingCouchQuickStartSetup)
-            .GetMethod(
-                "CreateContinuationContext",
-                BindingFlags.Static | BindingFlags.NonPublic,
-                null,
-                new[] { typeof(GCQuickStartSetupIntent), typeof(GCQuickStartSetupAction), typeof(bool) },
-                null
-            );
-        Assert.That(method, Is.Not.Null);
-
-        return (GCQuickStartSetupContinuationContext)method.Invoke(
-            null,
-            new object[] { intent, action, resumedAfterCompilation }
         );
     }
 
@@ -1384,8 +1236,8 @@ public sealed class GamingCouchQuickStartSetupAssetTests
 
     private void ReserveGCExampleGameAndPlayerScriptPathsForCollisionTest()
     {
-        ReserveGeneratedScriptPathForCollisionTest(GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath);
-        ReserveGeneratedScriptPathForCollisionTest(GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath);
+        ReserveGeneratedScriptPathForCollisionTest(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath);
+        ReserveGeneratedScriptPathForCollisionTest(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath);
         EnsureGCExampleFolderForTest(
             ref createdExampleProjectFolderForCollisionTest,
             ref createdExampleFolderForCollisionTest
@@ -1521,46 +1373,14 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         }
     }
 
-    private void ReserveQuickStartPrefabPathForTest()
+    private void ReserveExamplePlayerPrefabPathForTest()
     {
-        ReservePlayerPrefabPathForTest(GamingCouchQuickStartSetup.PlayerPrefabAssetPath);
+        ReservePlayerPrefabPathForTest(GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath);
     }
 
     private void ReserveActiveScenePlayerPrefabPathForTest()
     {
-        ReservePlayerPrefabPathForTest(GamingCouchQuickStartSetup.ActiveScenePlayerPrefabAssetPath);
-    }
-
-    private void ReserveLegacyExamplePlayerPrefabPathForTest()
-    {
-        ReservePlayerPrefabPathForTest(GamingCouchQuickStartSetup.LegacyQuickStartPlayerPrefabAssetPath);
-    }
-
-    private void ReserveLegacyQuickStartPrefabPathForTest()
-    {
-        var playerPrefabFullPath = AssetPathToFullPathUnchecked(GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath);
-        if (Directory.Exists(playerPrefabFullPath) || File.Exists(playerPrefabFullPath))
-        {
-            Assert.Ignore("Skipping quick-start prefab creation test because " + GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath + " already exists on disk.");
-        }
-
-        if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath) != null)
-        {
-            Assert.Ignore("Skipping quick-start prefab creation test because " + GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath + " already exists.");
-        }
-
-        EnsureAssetFolderForTest(
-            GamingCouchQuickStartSetup.ProjectFolderAssetPath,
-            "Assets",
-            "GamingCouch",
-            ref createdExampleProjectFolderForPrefabTest
-        );
-        EnsureAssetFolderForTest(
-            "Assets/GamingCouch/QuickStart",
-            GamingCouchQuickStartSetup.ProjectFolderAssetPath,
-            "QuickStart",
-            ref createdLegacyQuickStartFolderForPrefabTest
-        );
+        ReservePlayerPrefabPathForTest(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath);
     }
 
     private void ReservePlayerPrefabPathForTest(string playerPrefabAssetPath)
@@ -1568,12 +1388,12 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         var playerPrefabFullPath = AssetPathToFullPathUnchecked(playerPrefabAssetPath);
         if (Directory.Exists(playerPrefabFullPath) || File.Exists(playerPrefabFullPath))
         {
-            Assert.Ignore("Skipping quick-start prefab creation test because " + playerPrefabAssetPath + " already exists on disk.");
+            Assert.Ignore("Skipping legacy prefab creation test because " + playerPrefabAssetPath + " already exists on disk.");
         }
 
         if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(playerPrefabAssetPath) != null)
         {
-            Assert.Ignore("Skipping quick-start prefab creation test because " + playerPrefabAssetPath + " already exists.");
+            Assert.Ignore("Skipping legacy prefab creation test because " + playerPrefabAssetPath + " already exists.");
         }
 
         EnsureGCExampleFolderForTest(
@@ -1588,14 +1408,14 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     )
     {
         EnsureAssetFolderForTest(
-            GamingCouchQuickStartSetup.ProjectFolderAssetPath,
+            GamingCouchActiveSceneSetup.ProjectFolderAssetPath,
             "Assets",
             "GamingCouch",
             ref createdProjectFolder
         );
         EnsureAssetFolderForTest(
-            GamingCouchQuickStartSetup.ExampleFolderAssetPath,
-            GamingCouchQuickStartSetup.ProjectFolderAssetPath,
+            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
+            GamingCouchActiveSceneSetup.ProjectFolderAssetPath,
             "GCExample",
             ref createdExampleFolder
         );
@@ -1652,24 +1472,11 @@ public sealed class GamingCouchQuickStartSetupAssetTests
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
     }
 
-    private void DeleteQuickStartPrefabTestAssets()
+    private void DeleteExamplePrefabTestAssets()
     {
         DeleteCreatedAssetFileForTest(
-            GamingCouchQuickStartSetup.PlayerPrefabAssetPath,
+            GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath,
             ref createdUnifiedPlayerPrefabForPrefabTest
-        );
-        DeleteCreatedAssetFileForTest(
-            GamingCouchQuickStartSetup.LegacyQuickStartPlayerPrefabAssetPath,
-            ref createdLegacyExamplePlayerPrefabForPrefabTest
-        );
-        DeleteCreatedAssetFileForTest(
-            GamingCouchQuickStartSetup.LegacyPlayerPrefabAssetPath,
-            ref createdLegacyQuickStartPrefabForPrefabTest
-        );
-
-        DeleteEmptyAssetFolderCreatedForTest(
-            "Assets/GamingCouch/QuickStart",
-            ref createdLegacyQuickStartFolderForPrefabTest
         );
         DeleteCreatedGCExampleFolders(
             ref createdExampleProjectFolderForPrefabTest,
@@ -1713,11 +1520,11 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     private void DeleteGeneratedScriptPathCollisionTestAssets()
     {
         DeleteGeneratedScriptPathCollisionTestAsset(
-            GamingCouchQuickStartSetup.ActiveSceneGameScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
             ref createdExampleGameScriptPathCollisionForTest
         );
         DeleteGeneratedScriptPathCollisionTestAsset(
-            GamingCouchQuickStartSetup.ActiveScenePlayerScriptAssetPath,
+            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
             ref createdExamplePlayerScriptPathCollisionForTest
         );
         DeleteCreatedGCExampleFolders(
@@ -1733,11 +1540,11 @@ public sealed class GamingCouchQuickStartSetupAssetTests
     )
     {
         DeleteEmptyAssetFolderCreatedForTest(
-            GamingCouchQuickStartSetup.ExampleFolderAssetPath,
+            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
             ref createdExampleFolder
         );
         DeleteEmptyAssetFolderCreatedForTest(
-            GamingCouchQuickStartSetup.ProjectFolderAssetPath,
+            GamingCouchActiveSceneSetup.ProjectFolderAssetPath,
             ref createdProjectFolder
         );
     }
