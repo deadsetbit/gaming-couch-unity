@@ -43,6 +43,9 @@ namespace DSB.GC
         [DllImport("__Internal")]
         private static extern void GamingCouchSendProjectInfo(string projectName);
 
+        [DllImport("__Internal")]
+        private static extern void GamingCouchRegisterRuntimeInfo(string runtimeInfoJson);
+
         private static int MAX_PLAYERS = 8;
         private static float AUDIO_FADE_SECONDS = 3.0f;
         private static GamingCouch instance = null;
@@ -163,6 +166,8 @@ namespace DSB.GC
                 }
             }
 #else
+            SendRuntimeInfo();
+
             if (!onlineMultiplayerSupport)
             {
                 GamingCouchInstanceStarted();
@@ -339,6 +344,13 @@ namespace DSB.GC
             {
                 GamingCouchSendProjectInfo(projectName);
             }
+#endif
+        }
+
+        private void SendRuntimeInfo()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchRegisterRuntimeInfo(GCRuntimeInfo.ToJson());
 #endif
         }
 

@@ -21,6 +21,9 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(message.projectRootPath, Is.EqualTo("/tmp/gaming-couch-test"));
         Assert.That(message.projectName, Is.EqualTo("Test Game"));
         Assert.That(message.platform, Is.EqualTo("unity"));
+        Assert.That(message.packageName, Is.EqualTo("com.dsb.gamingcouch"));
+        Assert.That(message.packageVersion, Is.EqualTo("0.1.0-alpha.3"));
+        Assert.That(message.gameProtocolVersion, Is.EqualTo(1));
         Assert.That(message.rendererMode, Is.EqualTo("external"));
         Assert.That(message.displayName, Is.EqualTo("Unity Editor"));
         Assert.That(json, Does.Contain("\"type\":\"runtime_register\""));
@@ -28,6 +31,9 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(json, Does.Contain("\"projectRootPath\":\"/tmp/gaming-couch-test\""));
         Assert.That(json, Does.Contain("\"projectName\":\"Test Game\""));
         Assert.That(json, Does.Contain("\"platform\":\"unity\""));
+        Assert.That(json, Does.Contain("\"packageName\":\"com.dsb.gamingcouch\""));
+        Assert.That(json, Does.Contain("\"packageVersion\":\"0.1.0-alpha.3\""));
+        Assert.That(json, Does.Contain("\"gameProtocolVersion\":1"));
         Assert.That(json, Does.Contain("\"rendererMode\":\"external\""));
         Assert.That(json, Does.Contain("\"displayName\":\"Unity Editor\""));
     }

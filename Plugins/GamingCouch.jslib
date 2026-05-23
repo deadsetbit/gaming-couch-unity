@@ -72,4 +72,14 @@ mergeInto(LibraryManager.library, {
     var projectName = UTF8ToString(projectNameString);
     window.gamingCouchSendProjectInfo(projectName);
   },
+
+  GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString) {
+    if (!window.gamingCouchRegisterRuntimeInfo) {
+      console.error("gamingCouchRegisterRuntimeInfo is not defined");
+      return;
+    }
+
+    var runtimeInfo = JSON.parse(UTF8ToString(runtimeInfoJsonString));
+    window.gamingCouchRegisterRuntimeInfo(runtimeInfo);
+  },
 });

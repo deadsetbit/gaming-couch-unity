@@ -11,7 +11,6 @@ namespace DSB.GC.Dev
         internal const string RuntimeSnapshotType = "runtime_snapshot";
         internal const string RuntimeGameOverType = "runtime_game_over";
         internal const string RuntimeKind = "unity_editor";
-        internal const string Platform = "unity";
         internal const string RendererMode = "external";
         internal const string DisplayName = "Unity Editor";
 
@@ -21,6 +20,7 @@ namespace DSB.GC.Dev
         )
         {
             projectRootResolver = projectRootResolver ?? new GCUnityLocalProjectRootResolver();
+            var runtimeInfo = GCRuntimeInfo.Create();
             return new RuntimeRegisterMessage
             {
                 type = RuntimeRegisterType,
@@ -28,7 +28,10 @@ namespace DSB.GC.Dev
                 runtimeKind = RuntimeKind,
                 projectRootPath = projectRootResolver.ResolveProjectRootPath(),
                 projectName = projectRootResolver.ResolveProjectName(),
-                platform = Platform,
+                platform = runtimeInfo.platform,
+                packageName = runtimeInfo.packageName,
+                packageVersion = runtimeInfo.packageVersion,
+                gameProtocolVersion = runtimeInfo.gameProtocolVersion,
                 rendererMode = RendererMode,
                 displayName = DisplayName,
             };
@@ -167,6 +170,9 @@ namespace DSB.GC.Dev
         public string projectRootPath;
         public string projectName;
         public string platform;
+        public string packageName;
+        public string packageVersion;
+        public int gameProtocolVersion;
         public string rendererMode;
         public string displayName;
     }
