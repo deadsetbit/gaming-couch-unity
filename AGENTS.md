@@ -20,6 +20,14 @@
 - Always ask permission from the user if making changes to outside repos.
 - Do not add machine-local absolute paths to this tracked file. Put them in `AGENTS.local.md`.
 
+## Runtime API compatibility
+
+- The Unity package exposes runtime identity to the Gaming Couch platform.
+- Keep WebGL and Editor/devapp registration payloads in sync.
+- `packageVersion` identifies the package release for diagnostics.
+- `gameProtocolVersion` identifies the platform integration contract for compatibility.
+- When changing package/platform APIs, question whether `gameProtocolVersion` must be bumped. Treat the bump as a user decision: explain the compatibility risk and suggest practical alternatives that preserve legacy support without changing the protocol.
+
 ## Unity package test execution
 
 - When validating changes to this Unity package, prefer the open-Editor test bridge over launching a second Unity process.

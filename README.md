@@ -12,6 +12,10 @@ Follow the integration steps below to get started.
 
 This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can remove Unity splash/logo branding.
 
+## Platform compatibility
+
+The package reports its package version and runtime protocol version to the Gaming Couch platform. `packageVersion` is used for diagnostics, while `gameProtocolVersion` identifies the integration contract the platform should support.
+
 # Configure the Editor
 
 - From _Build Settings_, switch the platform to "WebGL"
