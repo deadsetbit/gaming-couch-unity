@@ -70,23 +70,207 @@ def assert_runtime_info_has_no_package_metadata_constants(source):
     return failures
 
 
-def strip_code_comments(source):
-    return re.sub(r"//.*?$|/\*.*?\*/", "", source, flags=re.MULTILINE | re.DOTALL)
-
-
 def source_contains_string_literal(source, value):
-    code = strip_code_comments(source)
-    return re.search(r'@?"{0}"'.format(re.escape(value)), code) is not None or re.search(
-        r"'{0}'".format(re.escape(value)),
-        code,
-    ) is not None
+    return _source_contains_string_literal(source, value, 0, len(source))
+
+
+# Small lexer for exact package-value literals: skip comments, avoid substring
+# matches inside larger literals, and recurse into interpolation expressions.
+def _source_contains_string_literal(source, value, start_index, end_index):
+    index = start_index
+    while index < end_index:
+        current = source[index]
+        next_char = source[index + 1] if index + 1 < end_index else ""
+
+        if current == "/" and next_char == "/":
+            index = skip_line_comment(source, index + 2, end_index)
+            continue
+
+        if current == "/" and next_char == "*":
+            index = skip_block_comment(source, index + 2, end_index)
+            continue
+
+        literal = try_read_string_literal(source, index, end_index)
+        if literal is not None:
+            literal_value, next_index, interpolation_ranges = literal
+            if literal_value == value:
+                return True
+
+            for interpolation_start, interpolation_end in interpolation_ranges:
+                if _source_contains_string_literal(
+                    source,
+                    value,
+                    interpolation_start,
+                    interpolation_end,
+                ):
+                    return True
+
+            index = next_index
+            continue
+
+        index += 1
+
+    return False
+
+
+def try_read_string_literal(source, start_index, end_index):
+    literal_start = try_get_string_literal_start(source, start_index, end_index)
+    if literal_start is None:
+        return None
+
+    quote_index, quote, is_verbatim, is_interpolated = literal_start
+    literal_parts = []
+    interpolation_ranges = []
+    index = quote_index + 1
+
+    while index < end_index:
+        current = source[index]
+        next_char = source[index + 1] if index + 1 < end_index else ""
+
+        if quote == "`":
+            if current == "\\" and index + 1 < end_index:
+                literal_parts.append(current)
+                literal_parts.append(next_char)
+                index += 2
+                continue
+
+            if current == "$" and next_char == "{":
+                interpolation_end = find_interpolation_end(source, index + 2, end_index)
+                if interpolation_end >= 0:
+                    interpolation_ranges.append((index + 2, interpolation_end))
+                    index = interpolation_end + 1
+                    continue
+
+            if current == quote:
+                return ("".join(literal_parts), index + 1, interpolation_ranges)
+
+        if quote == '"' and is_interpolated:
+            if current == "{" and next_char == "{":
+                literal_parts.append(current)
+                literal_parts.append(next_char)
+                index += 2
+                continue
+
+            if current == "{":
+                interpolation_end = find_interpolation_end(source, index + 1, end_index)
+                if interpolation_end >= 0:
+                    interpolation_ranges.append((index + 1, interpolation_end))
+                    index = interpolation_end + 1
+                    continue
+
+            if current == "}" and next_char == "}":
+                literal_parts.append(current)
+                literal_parts.append(next_char)
+                index += 2
+                continue
+
+        if is_verbatim and quote == '"':
+            if current == '"' and next_char == '"':
+                literal_parts.append(current)
+                literal_parts.append(next_char)
+                index += 2
+                continue
+
+            if current == quote:
+                return ("".join(literal_parts), index + 1, interpolation_ranges)
+        else:
+            if current == "\\" and index + 1 < end_index:
+                literal_parts.append(current)
+                literal_parts.append(next_char)
+                index += 2
+                continue
+
+            if current == quote:
+                return ("".join(literal_parts), index + 1, interpolation_ranges)
+
+        literal_parts.append(current)
+        index += 1
+
+    return ("".join(literal_parts), end_index, interpolation_ranges)
+
+
+def try_get_string_literal_start(source, start_index, end_index):
+    current = source[start_index]
+    next_char = source[start_index + 1] if start_index + 1 < end_index else ""
+    following = source[start_index + 2] if start_index + 2 < end_index else ""
+
+    if current == "$" and next_char == '"':
+        return (start_index + 1, '"', False, True)
+
+    if current == "$" and next_char == "@" and following == '"':
+        return (start_index + 2, '"', True, True)
+
+    if current == "@" and next_char == '"':
+        return (start_index + 1, '"', True, False)
+
+    if current == "@" and next_char == "$" and following == '"':
+        return (start_index + 2, '"', True, True)
+
+    if current in ("'", '"', "`"):
+        return (start_index, current, False, current == "`")
+
+    return None
+
+
+def find_interpolation_end(source, start_index, end_index):
+    depth = 0
+    index = start_index
+    while index < end_index:
+        current = source[index]
+        next_char = source[index + 1] if index + 1 < end_index else ""
+
+        if current == "/" and next_char == "/":
+            index = skip_line_comment(source, index + 2, end_index)
+            continue
+
+        if current == "/" and next_char == "*":
+            index = skip_block_comment(source, index + 2, end_index)
+            continue
+
+        literal = try_read_string_literal(source, index, end_index)
+        if literal is not None:
+            _, next_index, _ = literal
+            index = next_index
+            continue
+
+        if current == "{":
+            depth += 1
+            index += 1
+            continue
+
+        if current == "}":
+            if depth == 0:
+                return index
+            depth -= 1
+            index += 1
+            continue
+
+        index += 1
+
+    return -1
+
+
+def skip_line_comment(source, start_index, end_index):
+    index = start_index
+    while index < end_index and source[index] != "\n":
+        index += 1
+    return index
+
+
+def skip_block_comment(source, start_index, end_index):
+    index = start_index
+    while index + 1 < end_index:
+        if source[index] == "*" and source[index + 1] == "/":
+            return index + 2
+        index += 1
+    return end_index
 
 
 def iter_package_code_paths():
     for directory in PACKAGE_CODE_DIRS:
         if not directory.exists():
             continue
-        for path in directory.rglob("*"):
+        for path in sorted(directory.rglob("*")):
             if path.is_file() and path.suffix in PACKAGE_CODE_SUFFIXES:
                 yield path
 
