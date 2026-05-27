@@ -13,12 +13,12 @@
 - Nightly/unstable: `1.1.0-nightly.YYYYMMDD` (optional metadata like `+commit`).
   - Example: `1.1.0-nightly.20240205+abc123`.
 
-## Runtime identity and upload gates
+## Runtime identity and upload validation follow-up
 - `package.json` is the source of truth for the Unity package name and package version.
 - `gameProtocolVersion` is the Gaming Couch game integration contract version. Bump it only for a required platform/game contract change, not for diagnostics, package metadata, editor tooling, or upload validation changes.
 - Editor code that needs package identity should read package metadata through one shared helper, using Unity package metadata or package-root `package.json`.
-- WebGL export should write a build artifact identity sidecar named `gc.runtime-info.json` at the export root, next to `index.html`.
-- The sidecar should contain the same Unity identity fields used by DevApp registration and WebGL build diagnostics. The package name and version values are illustrative here; generated sidecars read them from `package.json`.
+- WebGL export writes a build artifact identity sidecar named `gc.runtime-info.json` at the export root, next to `index.html`.
+- The sidecar contains the same Unity identity fields used by DevApp registration and WebGL build diagnostics. The package name and version values are illustrative here; generated sidecars read them from `package.json`.
 
 ```json
 {
@@ -30,14 +30,14 @@
 ```
 
 - DevApp Editor runtime registration must not depend on `gc.runtime-info.json`, because local Editor play may happen before any WebGL build exists. It should use the shared editor package identity helper directly.
-- Hosted/upload validation can read `gc.runtime-info.json` before loading the Unity player and reject stale or unsupported builds early.
-- Once a minimum sidecar-writing package version is established, upload validation can require the sidecar for Unity WebGL builds and reject older package versions with an update-and-rebuild message.
-- The sidecar is a quality gate and diagnostics source, not cryptographic proof that the WebGL data/wasm was built with the declared package.
+- Hosted/upload validation can be added in the Gaming Couch main repo as a follow-up that reads `gc.runtime-info.json` before loading the Unity player.
+- Once a minimum sidecar-writing package version is established, that follow-up can define the exact upload policy for missing sidecars, stale package versions, unsupported package versions, or unsupported `gameProtocolVersion` values.
+- The sidecar is a diagnostics source and validation input, not cryptographic proof that the WebGL data/wasm was built with the declared package.
 
 ## Runtime identity implementation notes
-- Do not duplicate `packageVersion` in runtime C# constants once the shared editor package identity helper exists.
+- Do not duplicate `packageVersion` in runtime C# constants; the shared editor package identity helper and sidecar writer read package identity from package metadata.
 - Keep WebGL export identity generation and DevApp Editor runtime registration in sync by routing both through that helper.
-- The unreleased hosted Unity runtime callback path has been removed. Hosted identity should use `gc.runtime-info.json` as the sidecar-first path before loading the Unity player.
+- Hosted identity should use `gc.runtime-info.json` as the sidecar-first path before loading the Unity player.
 - If `gc.runtime-info.json` ever needs its own file schema version, add a separate sidecar schema field or parser migration. Do not use `gameProtocolVersion` for sidecar file schema changes.
 - Main Gaming Couch upload/client validation docs and code live outside this Unity package and should be updated separately with explicit cross-repo permission.
 

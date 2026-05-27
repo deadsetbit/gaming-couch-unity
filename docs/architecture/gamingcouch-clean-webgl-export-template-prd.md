@@ -17,11 +17,12 @@ The v1 template is a clean production/upload shell only. It provides Unity loadi
 - Apply previewed release defaults that are suitable for upload-oriented builds.
 - Require Unity 6 so splash/logo expectations match the supported editor line.
 - Keep setup explicit while reducing manual build prep: the clean WebGL export setup may switch the active build target to WebGL, and readiness still warns if Unity leaves another target active.
+- Emit package/runtime identity beside clean WebGL builds so future upload and hosted-runtime validation can inspect Unity build metadata before loading the Unity player.
 
 ## Requirements
 
 - Package metadata requires Unity `6000.0`.
-- Package version remains `0.1.0-alpha.2`.
+- The package root `package.json` is the source of truth for the Unity package name and version.
 - The setup workflow is available from `GamingCouch/WebGL Build/Preview clean WebGL export setup`.
 - The setup workflow shows a generated preview before mutating project or editor settings.
 - The package owns the source template and copies it into the consuming project at `Assets/WebGLTemplates/GamingCouch`.
@@ -45,6 +46,14 @@ Clean WebGL export setup applies generated release-oriented defaults. The previe
 - The template includes no controller simulation.
 - The template includes no DevApp communication.
 - The template includes no PWA behavior, service worker, manifest, visible toolbar, footer, reload button, fullscreen button, unload button, project title chrome, GamingCouch logo, or Unity logo.
+
+## Runtime Identity Sidecar
+
+- WebGL builds using the selected Gaming Couch template (`PROJECT:GamingCouch`) emit `gc.runtime-info.json` at the build output root, next to `index.html`.
+- The sidecar records `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`.
+- `packageName` and `packageVersion` come from package-root `package.json`; the template and runtime code must not carry separate package-version literals.
+- `gameProtocolVersion` remains the Gaming Couch game integration contract version. Sidecar generation, upload metadata checks, and package-version validation do not require a protocol bump unless the platform/game contract changes.
+- The sidecar enables a Gaming Couch main-repo upload/client validation follow-up to inspect Unity build identity before loading the Unity player. This package PRD does not define upload validation policy.
 
 ## Start Screen Integration
 
@@ -71,9 +80,10 @@ Clean WebGL export setup applies generated release-oriented defaults. The previe
 Available validation in this package-only checkout:
 
 - `git diff --check`.
-- Parse `package.json` as JSON and confirm `unity` is `6000.0`, `version` is `0.1.0-alpha.2`, and stale Unity release-floor metadata is absent.
+- Parse `package.json` as JSON and confirm it owns the package name/version and declares Unity `6000.0`, with stale Unity release-floor metadata absent.
 - Confirm the Unity binary version declared by package metadata is Unity 6.
 - Static inspection of package-owned WebGL template source for the required clean-shell constraints.
+- Focused sidecar checks confirming `gc.runtime-info.json` is written next to `index.html` for `PROJECT:GamingCouch` builds and uses package name/version values sourced from `package.json`.
 
 Pending validation requires a consuming Unity project with package import support:
 

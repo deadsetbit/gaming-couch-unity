@@ -14,7 +14,9 @@ This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can
 
 ## Platform compatibility
 
-The package reports its package version and runtime protocol version to the Gaming Couch platform. `packageVersion` is used for diagnostics, while `gameProtocolVersion` identifies the integration contract the platform should support.
+The package exposes its package version and runtime protocol version to the Gaming Couch platform through DevApp Editor registration and the WebGL runtime-info sidecar. `packageVersion` is used for diagnostics, while `gameProtocolVersion` identifies the integration contract the platform should support. The package root `package.json` owns the Unity package name and version; do not duplicate those values in runtime constants or documentation examples.
+
+`gameProtocolVersion` is not bumped for package metadata, sidecar generation, or upload validation changes. Bump it only when the platform/game integration contract itself changes.
 
 # Configure the Editor
 
@@ -32,6 +34,10 @@ Setup first shows a generated preview of the active build target, template, spla
 If Unity cannot switch the active build target automatically, setup leaves a warning in the result. Run setup again or switch to WebGL manually before building.
 
 The v1 clean template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
+
+When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the package writes `gc.runtime-info.json` to the build output root, next to `index.html`. The sidecar records `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; `packageName` and `packageVersion` come from `package.json`.
+
+The sidecar lets future Gaming Couch upload and hosted-runtime validation inspect Unity build identity before loading the Unity player. Any upload validation policy belongs in the Gaming Couch main repo, not in the Unity template.
 
 # Configure local editor play settings
 
