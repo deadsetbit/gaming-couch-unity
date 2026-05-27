@@ -15,18 +15,18 @@ public sealed class GCEditorPackageIdentityTests
         var runtimeInfo = identity.ToRuntimeInfo();
         var json = JsonUtility.ToJson(identity);
 
-        Assert.That(identity.platform, Is.EqualTo("unity"));
+        Assert.That(identity.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
         Assert.That(identity.packageName, Is.EqualTo(manifest.name));
         Assert.That(identity.packageVersion, Is.EqualTo(manifest.version));
-        Assert.That(identity.gameProtocolVersion, Is.EqualTo(1));
+        Assert.That(identity.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
         Assert.That(runtimeInfo.platform, Is.EqualTo(identity.platform));
         Assert.That(runtimeInfo.packageName, Is.EqualTo(identity.packageName));
         Assert.That(runtimeInfo.packageVersion, Is.EqualTo(identity.packageVersion));
         Assert.That(runtimeInfo.gameProtocolVersion, Is.EqualTo(identity.gameProtocolVersion));
-        Assert.That(json, Does.Contain("\"platform\":\"unity\""));
+        Assert.That(json, Does.Contain("\"platform\":\"" + GCEditorPackageIdentity.Platform + "\""));
         Assert.That(json, Does.Contain("\"packageName\":\"" + manifest.name + "\""));
         Assert.That(json, Does.Contain("\"packageVersion\":\"" + manifest.version + "\""));
-        Assert.That(json, Does.Contain("\"gameProtocolVersion\":1"));
+        Assert.That(json, Does.Contain("\"gameProtocolVersion\":" + GCEditorPackageIdentity.GameProtocolVersion));
     }
 
     [Test]
@@ -40,8 +40,8 @@ public sealed class GCEditorPackageIdentityTests
 
             Assert.That(identity.packageName, Is.EqualTo("com.test.identity"));
             Assert.That(identity.packageVersion, Is.EqualTo("9.8.7-test.0"));
-            Assert.That(identity.platform, Is.EqualTo("unity"));
-            Assert.That(identity.gameProtocolVersion, Is.EqualTo(1));
+            Assert.That(identity.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
+            Assert.That(identity.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
         }
         finally
         {
@@ -56,8 +56,8 @@ public sealed class GCEditorPackageIdentityTests
 
         Assert.That(identity.packageName, Is.EqualTo("com.test.metadata"));
         Assert.That(identity.packageVersion, Is.EqualTo("2.0.0-test.1"));
-        Assert.That(identity.platform, Is.EqualTo("unity"));
-        Assert.That(identity.gameProtocolVersion, Is.EqualTo(1));
+        Assert.That(identity.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
+        Assert.That(identity.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
     }
 
     [Test]

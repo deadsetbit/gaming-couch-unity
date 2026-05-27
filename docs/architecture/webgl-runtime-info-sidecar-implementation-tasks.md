@@ -31,13 +31,13 @@ Decisions:
 - The sidecar is a build artifact identity and upload quality gate, not cryptographic attestation.
 - Main Gaming Couch upload/client validation changes are out of scope for this Unity package task plan unless the user explicitly grants cross-repo edit permission.
 
-Target sidecar shape:
+Target sidecar shape; generated `packageName` and `packageVersion` values come from `package.json`:
 
 ```json
 {
   "platform": "unity",
-  "packageName": "com.dsb.gamingcouch",
-  "packageVersion": "0.1.0-alpha.3",
+  "packageName": "<package.json name>",
+  "packageVersion": "<package.json version>",
   "gameProtocolVersion": 1
 }
 ```
@@ -49,7 +49,7 @@ Target sidecar shape:
 | 1 | Add a shared editor package identity helper | Completed | Editor code can resolve package name and version from Unity package metadata or package-root `package.json`; focused tests cover current manifest values and failure behavior; `package.json` remains the only source of truth for package version. | None | Keep the helper editor-only if it depends on `UnityEditor.PackageManager.PackageInfo`. Provide a small serializable identity DTO or conversion method matching the sidecar/runtime fields. |
 | 2 | Route DevApp Editor runtime registration through the identity helper | Completed | `GCDevAppRuntimeMessages.BuildRuntimeRegisterMessage` uses the shared identity helper for package name/version while preserving the existing `runtime_register` wire fields; tests prove package name/version match `package.json`; no `gc.runtime-info.json` dependency is introduced. | 1 | Keep `gameProtocolVersion` and `platform` in one package-owned identity path. If runtime C# still needs identity for non-editor builds, avoid reintroducing package-version duplication. |
 | 3 | Add WebGL runtime-info sidecar writer for Gaming Couch template builds | Completed | A WebGL build postprocess writes `gc.runtime-info.json` to the build output root only when the active WebGL template is `PROJECT:GamingCouch`; it writes valid JSON with `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; non-WebGL builds and WebGL builds using other templates do not write the sidecar. | 1 | Prefer a testable writer service plus a thin `IPostprocessBuildWithReport` wrapper. Use the build report output path and place the file beside `index.html`. Overwrite stale sidecar output on rebuild. |
-| 4 | Decide and clean up the unreleased hosted runtime callback path | Not started | The implementation intentionally keeps or removes the current WebGL runtime callback path; tests and docs reflect the chosen primary identity path; no duplicate `packageVersion` source remains. | 2, 3 | Since the callback is not released or concretely used, prefer sidecar-first behavior. Keep callback only if there is a clear backward-compatibility reason. |
+| 4 | Decide and clean up the unreleased hosted runtime callback path | Completed | The implementation intentionally keeps or removes the current WebGL runtime callback path; tests and docs reflect the chosen primary identity path; no duplicate `packageVersion` source remains. | 2, 3 | Since the callback is not released or concretely used, prefer sidecar-first behavior. Keep callback only if there is a clear backward-compatibility reason. |
 | 5 | Document sidecar generation and versioning rules | Not started | README, `Documentation~/README.md`, clean WebGL export PRD, and `VERSIONING_PLAN.md` explain that Gaming Couch template WebGL builds emit `gc.runtime-info.json`, that `package.json` owns package version, and that `gameProtocolVersion` is not bumped for sidecar/upload validation. | 3, 4 | Avoid promising main-repo upload rejection behavior unless that code is implemented separately. Phrase upload validation as what the sidecar enables. |
 | 6 | Add focused validation coverage | Not started | Editor tests cover helper parsing, DevApp registration identity, sidecar write/skip behavior, JSON shape, and package-version drift prevention; focused open-Editor EditMode validation passes or any blocker is recorded. | 1, 2, 3, 4, 5 | Prefer tests that call the writer service with temp directories instead of requiring a full WebGL build. Use the open-Editor bridge from `AGENTS.local.md` for final focused validation. |
 

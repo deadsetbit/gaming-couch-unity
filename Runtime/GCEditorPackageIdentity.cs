@@ -30,6 +30,8 @@ namespace DSB.GC
     internal static class GCEditorPackageIdentity
     {
         internal const string PackageManifestFileName = "package.json";
+        internal const string Platform = "unity";
+        internal const int GameProtocolVersion = 1;
 
         internal static GCPackageIdentity Resolve()
         {
@@ -95,10 +97,10 @@ namespace DSB.GC
 
             return new GCPackageIdentity
             {
-                platform = GCRuntimeInfo.Platform,
+                platform = Platform,
                 packageName = packageName,
                 packageVersion = packageVersion,
-                gameProtocolVersion = GCRuntimeInfo.GameProtocolVersion,
+                gameProtocolVersion = GameProtocolVersion,
             };
         }
 
