@@ -1,4 +1,3 @@
-using System;
 using DSB.GC;
 using DSB.GC.Dev;
 using NUnit.Framework;
@@ -7,8 +6,9 @@ using UnityEngine;
 public sealed class GCDevAppRuntimeMessagesTests
 {
     [Test]
-    public void RuntimeRegisterMessageKeepsProjectAndPlatformFields()
+    public void RuntimeRegisterMessageUsesPackageIdentityAndKeepsWireFields()
     {
+        var packageIdentity = GCEditorPackageIdentity.Resolve();
         var message = GCDevAppRuntimeMessages.BuildRuntimeRegisterMessage(
             123456789L,
             new TestProjectRootResolver("/tmp/gaming-couch-test", "Test Game")
@@ -20,20 +20,20 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(message.runtimeKind, Is.EqualTo("unity_editor"));
         Assert.That(message.projectRootPath, Is.EqualTo("/tmp/gaming-couch-test"));
         Assert.That(message.projectName, Is.EqualTo("Test Game"));
-        Assert.That(message.platform, Is.EqualTo("unity"));
-        Assert.That(message.packageName, Is.EqualTo("com.dsb.gamingcouch"));
-        Assert.That(message.packageVersion, Is.EqualTo("0.1.0-alpha.3"));
-        Assert.That(message.gameProtocolVersion, Is.EqualTo(1));
+        Assert.That(message.platform, Is.EqualTo(packageIdentity.platform));
+        Assert.That(message.packageName, Is.EqualTo(packageIdentity.packageName));
+        Assert.That(message.packageVersion, Is.EqualTo(packageIdentity.packageVersion));
+        Assert.That(message.gameProtocolVersion, Is.EqualTo(packageIdentity.gameProtocolVersion));
         Assert.That(message.rendererMode, Is.EqualTo("external"));
         Assert.That(message.displayName, Is.EqualTo("Unity Editor"));
         Assert.That(json, Does.Contain("\"type\":\"runtime_register\""));
         Assert.That(json, Does.Contain("\"runtimeKind\":\"unity_editor\""));
         Assert.That(json, Does.Contain("\"projectRootPath\":\"/tmp/gaming-couch-test\""));
         Assert.That(json, Does.Contain("\"projectName\":\"Test Game\""));
-        Assert.That(json, Does.Contain("\"platform\":\"unity\""));
-        Assert.That(json, Does.Contain("\"packageName\":\"com.dsb.gamingcouch\""));
-        Assert.That(json, Does.Contain("\"packageVersion\":\"0.1.0-alpha.3\""));
-        Assert.That(json, Does.Contain("\"gameProtocolVersion\":1"));
+        Assert.That(json, Does.Contain("\"platform\":\"" + packageIdentity.platform + "\""));
+        Assert.That(json, Does.Contain("\"packageName\":\"" + packageIdentity.packageName + "\""));
+        Assert.That(json, Does.Contain("\"packageVersion\":\"" + packageIdentity.packageVersion + "\""));
+        Assert.That(json, Does.Contain("\"gameProtocolVersion\":" + packageIdentity.gameProtocolVersion));
         Assert.That(json, Does.Contain("\"rendererMode\":\"external\""));
         Assert.That(json, Does.Contain("\"displayName\":\"Unity Editor\""));
     }

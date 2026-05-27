@@ -20,7 +20,7 @@ namespace DSB.GC.Dev
         )
         {
             projectRootResolver = projectRootResolver ?? new GCUnityLocalProjectRootResolver();
-            var runtimeInfo = GCRuntimeInfo.Create();
+            var packageIdentity = GCEditorPackageIdentity.Resolve();
             return new RuntimeRegisterMessage
             {
                 type = RuntimeRegisterType,
@@ -28,10 +28,10 @@ namespace DSB.GC.Dev
                 runtimeKind = RuntimeKind,
                 projectRootPath = projectRootResolver.ResolveProjectRootPath(),
                 projectName = projectRootResolver.ResolveProjectName(),
-                platform = runtimeInfo.platform,
-                packageName = runtimeInfo.packageName,
-                packageVersion = runtimeInfo.packageVersion,
-                gameProtocolVersion = runtimeInfo.gameProtocolVersion,
+                platform = packageIdentity.platform,
+                packageName = packageIdentity.packageName,
+                packageVersion = packageIdentity.packageVersion,
+                gameProtocolVersion = packageIdentity.gameProtocolVersion,
                 rendererMode = RendererMode,
                 displayName = DisplayName,
             };
