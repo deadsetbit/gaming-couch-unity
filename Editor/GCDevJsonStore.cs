@@ -38,21 +38,21 @@ namespace DSB.GC.Dev
 
         internal GCDevJsonReadResult Read()
         {
-            return Read(ReadMetadata());
+            return Read(ReadPlatformData());
         }
 
-        internal GCDevJsonReadResult Read(GCMetadataJsonReadResult metadataReadResult)
+        internal GCDevJsonReadResult Read(GCPlatformDataReadResult platformDataReadResult)
         {
             var path = ResolveFilePath();
-            return GCDevJsonValidation.BuildReadResult(ReadParsedFile(path), metadataReadResult);
+            return GCDevJsonValidation.BuildReadResult(ReadParsedFile(path), platformDataReadResult);
         }
 
         internal GCDevJsonWriteResult Write(GCDevJsonFile data)
         {
-            return Write(data, ReadMetadata());
+            return Write(data, ReadPlatformData());
         }
 
-        internal GCDevJsonWriteResult Write(GCDevJsonFile data, GCMetadataJsonReadResult metadataReadResult)
+        internal GCDevJsonWriteResult Write(GCDevJsonFile data, GCPlatformDataReadResult platformDataReadResult)
         {
             var path = ResolveFilePath();
             if (data == null)
@@ -63,7 +63,7 @@ namespace DSB.GC.Dev
                 );
             }
 
-            var dataValidation = GCDevJsonValidation.ValidateData(data, path, metadataReadResult);
+            var dataValidation = GCDevJsonValidation.ValidateData(data, path, platformDataReadResult);
             if (!dataValidation.IsValid)
             {
                 return GCDevJsonWriteResult.Failed(path, dataValidation);
@@ -125,9 +125,9 @@ namespace DSB.GC.Dev
             return GCDevJsonWriteResult.Succeeded(path, dataValidation);
         }
 
-        private GCMetadataJsonReadResult ReadMetadata()
+        private GCPlatformDataReadResult ReadPlatformData()
         {
-            return new GCMetadataJsonStore(projectRootResolver).Read();
+            return new GCPlatformDataStore(projectRootResolver).Read();
         }
 
         private static GCDevJsonParsedFile ReadParsedFile(string path)

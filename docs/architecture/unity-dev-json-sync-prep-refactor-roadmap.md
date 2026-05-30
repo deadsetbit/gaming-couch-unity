@@ -8,7 +8,7 @@ Owner: Gaming Couch Unity package team
 
 Prepare `gaming-couch-unity` for the DevApp `gc.dev.json` sync PRD through small behavior-neutral refactors.
 
-This roadmap does not implement JSON sync, custom inspector file editing, `gc.metadata.json` parsing, package version bumps, or Newtonsoft dependency changes. The goal is to create deeper modules so the later PRD implementation can swap the editor play settings source without spreading rules across `GamingCouch`, inspector code, restart code, and DevApp runtime snapshots.
+This roadmap does not implement JSON sync, custom inspector file editing, `gc.platform.json` parsing, package version bumps, or Newtonsoft dependency changes. The goal is to create deeper modules so the later PRD implementation can swap the editor play settings source without spreading rules across `GamingCouch`, inspector code, restart code, and DevApp runtime snapshots.
 
 ## Source Context
 
@@ -27,7 +27,7 @@ Important PRD decisions this prep work must preserve:
 
 - `gc.dev.json` will become the canonical Unity editor play settings file for entry, seed, and seats.
 - Unity must not keep old serialized editor play settings as a functional fallback after the PRD implementation.
-- Unity will light-read `gc.metadata.json` for game identity, platform, entry labels, entry limits, bot support, and player colors.
+- Unity will light-read `gc.platform.json` for game identity, platform, entry labels, entry limits, bot support, and player colors.
 - Inspector edits will use an in-memory dirty draft, explicit Apply/Revert, and conflict actions.
 - Entering Play Mode or using Gaming Couch restart will auto-apply a valid non-conflicted draft, then capture editor play config once.
 - Invalid or conflicted drafts will block Play Mode or Gaming Couch restart.
@@ -36,7 +36,7 @@ Important PRD decisions this prep work must preserve:
 
 Out of scope for this roadmap:
 
-- Implementing `gc.dev.json` or `gc.metadata.json` parsing/writing.
+- Implementing `gc.dev.json` or `gc.platform.json` parsing/writing.
 - Adding the custom inspector UI.
 - Adding `com.unity.nuget.newtonsoft-json`.
 - Bumping package version, release notes, or tags.

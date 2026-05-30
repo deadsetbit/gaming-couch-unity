@@ -41,9 +41,9 @@ Next action: None.
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | 1. Editor JSON dependency and `gc.dev.json` store | Done | GPT-5.5 xhigh subagent | Editor-only JSON dependency and preserving `gc.dev.json` store complete; second review-and-patch pass complete; parent validation passed. |
-| 2. `gc.metadata.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Metadata light-read and validation gates complete; both review passes complete; parent validation passed. |
+| 2. `gc.platform.json` light read and validation gates | Done | GPT-5.5 xhigh subagent | Platform data light-read and validation gates complete; both review passes complete; parent validation passed. |
 | 3. File-backed editor play capture | Done | GPT-5.5 xhigh subagent | File-backed editor capture complete; callback bypass patched in review pass 2; parent validation passed. |
-| 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, metadata-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
+| 4. Active custom inspector and Apply/Revert draft | Done | GPT-5.5 xhigh subagent | Active inspector, in-memory draft UI, Apply/Revert, platform-data-backed labels/colors, raw fallback, and validation display complete; parent validation passed. |
 | 5. External reload, dirty draft, conflict, and pending play state | Done | GPT-5.5 xhigh subagent | Polling, conflict actions, metadata refresh, and play-mode pending-change status complete; parent validation passed. |
 | 6. Play Mode and Gaming Couch restart gates | Done | GPT-5.5 xhigh subagent | Play Mode entry and Gaming Couch restart gates auto-apply valid drafts, block invalid/conflicted state, and recapture on restart boundaries; parent validation passed. |
 | 7. Documentation, package release metadata, and final validation | Done | GPT-5.5 xhigh subagent | Docs, dependency notes, changelog, package version, and final validation record complete; both review passes complete; parent validation passed. |
@@ -95,7 +95,7 @@ Do not touch these files unless a later user instruction explicitly changes scop
 ## Product Rules To Preserve
 
 - Root `gc.dev.json` is required for Unity editor play settings.
-- Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.metadata.json` in v1.
+- Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.platform.json` in v1.
 - Old serialized editor play settings are hidden and ignored:
   - `gameModeId`
   - `playerData`
@@ -120,17 +120,17 @@ Do not touch these files unless a later user instruction explicitly changes scop
   - 6: `pink`
   - 7: `cyan`
   - 8: `brown`
-- Missing or invalid `gc.metadata.json` is warning-only. Unity still displays raw `gc.dev.json` and can apply structurally valid raw edits.
-- Valid metadata gates Apply and Play:
+- Missing or invalid `gc.platform.json` is warning-only. Unity still displays raw `gc.dev.json` and can apply structurally valid raw edits.
+- Valid platform data gates Apply and Play:
   - `platform.id` must be `unity`.
   - selected `entryKey` must exist.
   - enabled-seat count must be at least one and no more than selected entry `maxPlayers`.
   - production `minPlayers` remains parsed and displayed, but does not raise the local dev seat minimum.
-- Valid metadata with enabled bot seats on an entry where `botSupport: false` is warning-only.
+- Valid platform data with enabled bot seats on an entry where `botSupport: false` is warning-only.
 - External `gc.dev.json` changes auto-reload in edit mode only when the inspector draft is clean.
 - External `gc.dev.json` changes while the inspector draft is dirty must not overwrite inspector values and must enter conflict state.
 - Conflict state must offer `Reload from disk` and `Write draft`.
-- External `gc.metadata.json` changes refresh display and validation context.
+- External `gc.platform.json` changes refresh display and validation context.
 - Entering Unity Play Mode or triggering Gaming Couch restart auto-applies a valid, non-conflicted dirty draft before capture.
 - Invalid or conflicted drafts block Unity Play Mode or Gaming Couch restart until resolved.
 - Editor play captures config once per Play Mode entry and once per Gaming Couch restart.
@@ -170,13 +170,13 @@ Manual Unity scenarios to cover before release:
 5. Dirty inspector plus external `gc.dev.json` edit enters conflict state.
 6. `Reload from disk` discards draft and shows current file state.
 7. `Write draft` validates and overwrites `gc.dev.json`.
-8. External `gc.metadata.json` edits update labels, limits, and color swatches.
+8. External `gc.platform.json` edits update labels, limits, and color swatches.
 9. Missing `gc.dev.json` blocks Apply and Play with a clear error.
 10. Invalid `gc.dev.json` blocks Apply and Play with a clear error.
-11. Missing or invalid metadata allows structurally valid raw `gc.dev.json` Apply with warning.
-12. Valid metadata with non-`unity` platform blocks Apply and Play.
-13. Valid metadata with missing selected entry blocks Apply and Play.
-14. Valid metadata with zero enabled seats or more than `maxPlayers` enabled seats blocks Apply and Play.
+11. Missing or invalid platform data allows structurally valid raw `gc.dev.json` Apply with warning.
+12. Valid platform data with non-`unity` platform blocks Apply and Play.
+13. Valid platform data with missing selected entry blocks Apply and Play.
+14. Valid platform data with zero enabled seats or more than `maxPlayers` enabled seats blocks Apply and Play.
 15. Enabled bot seats warn, but do not block, when selected entry has `botSupport: false`.
 16. Unity Package Manager resolves `com.unity.nuget.newtonsoft-json`.
 17. Entering Play Mode auto-applies a valid non-conflicted draft before capture.
@@ -217,7 +217,7 @@ If the implementer chooses different new file names, update this task before edi
 7. Implement read behavior from the project root resolved by `GCUnityLocalProjectRootResolver`.
 8. Implement write behavior by loading the current file as `JObject`, replacing only canonical top-level fields, writing indented JSON, and ending with a trailing newline.
 9. Preserve unknown top-level fields on write.
-10. Do not write `gc.metadata.json`.
+10. Do not write `gc.platform.json`.
 11. Do not alter `GamingCouch` editor play flow in this task.
 
 ### Verification
@@ -260,7 +260,7 @@ Validation:
 - `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"`: passed.
 - `package.json` dependency check: `com.unity.nuget.newtonsoft-json` present at `3.2.1`.
 - Store inspection: missing `gc.dev.json` returns `GCDevJsonIssueCode.MissingFile` for read and write; no bootstrap path is implemented.
-- Writer inspection: write path loads current `gc.dev.json` with `JToken.Parse`, requires a `JObject`, replaces only `devVersion`, `entryKey`, `seed`, and `seats`, writes `Formatting.Indented` plus a trailing newline, and does not reference or write `gc.metadata.json`.
+- Writer inspection: write path loads current `gc.dev.json` with `JToken.Parse`, requires a `JObject`, replaces only `devVersion`, `entryKey`, `seed`, and `seats`, writes `Formatting.Indented` plus a trailing newline, and does not reference or write `gc.platform.json`.
 - `git status --short`: only Task 1 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
 
 Skipped validation:
@@ -303,28 +303,28 @@ Review pass 2 validation:
 
 - `git diff --check`: passed.
 - `node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); const deps=pkg.dependencies||{}; if (deps['com.unity.nuget.newtonsoft-json'] !== '3.2.1') throw new Error('missing dependency');"`: passed.
-- Scoped inspection confirmed Newtonsoft/JObject references are inside `#if UNITY_EDITOR` files, missing `gc.dev.json` remains an error for read/write, writes load the current file as `JObject`, and no `gc.metadata.json` write path exists.
+- Scoped inspection confirmed Newtonsoft/JObject references are inside `#if UNITY_EDITOR` files, missing `gc.dev.json` remains an error for read/write, writes load the current file as `JObject`, and no `gc.platform.json` write path exists.
 - `which Unity`: Unity not found; Unity 2022.3 compile/import remains skipped in this shell.
 
 Parent validation:
 
 - `git diff --check`: passed.
 - `node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); if(p.dependencies['com.unity.nuget.newtonsoft-json']!=='3.2.1') throw new Error('missing newtonsoft');"`: passed.
-- Parent inspection confirmed no `gc.metadata.json` writes, no `GamingCouch` editor play flow changes, and no public DTO changes in Task 1.
+- Parent inspection confirmed no `gc.platform.json` writes, no `GamingCouch` editor play flow changes, and no public DTO changes in Task 1.
 - Unity 2022.3 compile/import skipped because Unity is unavailable in this shell.
 
-## Task 2: `gc.metadata.json` Light Read And Validation Gates
+## Task 2: `gc.platform.json` Light Read And Validation Gates
 
 ### Objective
 
-Add `gc.metadata.json` parsing and validation context for labels, colors, platform, entry `maxPlayers`, and bot support. Missing or invalid metadata must be warning-only, while valid metadata must gate Apply and Play.
+Add `gc.platform.json` parsing and validation context for labels, colors, platform, entry `maxPlayers`, and bot support. Missing or invalid platform data must be warning-only, while valid metadata must gate Apply and Play.
 
 ### Owned Files
 
-- `Runtime/Dev/GCMetadataJsonFile.cs`
-- `Runtime/Dev/GCMetadataJsonFile.cs.meta`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCPlatformDataFile.cs`
+- `Runtime/Dev/GCPlatformDataFile.cs.meta`
+- `Runtime/Dev/GCPlatformDataStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs.meta`
 - `Runtime/Dev/GCDevJsonValidation.cs`
 - `Runtime/Dev/GCDevJsonValidation.cs.meta`
 - `Runtime/Dev/GCDevJsonStore.cs`
@@ -342,7 +342,7 @@ Add `gc.metadata.json` parsing and validation context for labels, colors, platfo
    - `game.entries[entryKey].maxPlayers`
    - `game.entries[entryKey].botSupport`
    - `properties.colors.players`
-3. Treat missing or invalid metadata as warning-only.
+3. Treat missing or invalid platform data as warning-only.
 4. Keep raw `gc.dev.json` editing possible when metadata is missing or invalid.
 5. When metadata is valid, block Apply and Play if `platform.id` is not `unity`.
 6. When metadata is valid, block Apply and Play if selected `entryKey` is missing.
@@ -373,10 +373,10 @@ Status: Done
 
 Changed paths:
 
-- `Runtime/Dev/GCMetadataJsonFile.cs`
-- `Runtime/Dev/GCMetadataJsonFile.cs.meta`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCPlatformDataFile.cs`
+- `Runtime/Dev/GCPlatformDataFile.cs.meta`
+- `Runtime/Dev/GCPlatformDataStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs.meta`
 - `Runtime/Dev/GCDevJsonValidation.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
@@ -385,8 +385,8 @@ Validation:
 
 - `git diff --check`: passed.
 - `git diff --check --no-index /dev/null <new Task 2 file>`: no whitespace output for new metadata files; command exits non-zero because `/dev/null` differs from each new file.
-- Metadata read inspection: `GCMetadataJsonStore` only reads project-root `gc.metadata.json`; no metadata write path was added.
-- Missing/invalid metadata inspection: metadata missing, invalid JSON, invalid root, read error, or invalid required fields produce `GCDevJsonIssueSeverity.Warning` issues and `GCMetadataJsonReadResult.data == null`; `GCDevJsonValidation` returns before metadata gates unless `metadataReadResult.IsValid`.
+- Metadata read inspection: `GCPlatformDataStore` only reads project-root `gc.platform.json`; no metadata write path was added.
+- Missing/invalid platform data inspection: platform data missing, invalid JSON, invalid root, read error, or invalid required fields produce `GCDevJsonIssueSeverity.Warning` issues and `GCPlatformDataReadResult.data == null`; `GCDevJsonValidation` returns before platform data gates unless `platformDataReadResult.IsValid`.
 - Apply/Play gate inspection: valid metadata adds blocking errors for `platform.id != "unity"`, missing selected entry, and enabled seats above `maxPlayers`; zero enabled seats remain blocked by structural `gc.dev.json` validation, while enabled seats below production `minPlayers` are allowed for local dev. Enabled bot seats with `botSupport == false` add a warning only.
 - Structurally valid dev-file inspection: `GCDevJsonReadResult.data` remains available after metadata gate errors while `GCDevJsonReadResult.IsValid` is false, so later inspector work can still show raw `gc.dev.json` values.
 - Store inspection: normal `GCDevJsonStore.Read()` and `Write()` read metadata and use combined validation; overloads accept a pre-read metadata result for later inspector/play capture reuse.
@@ -401,23 +401,23 @@ Decisions:
 - Metadata parsing reads only the PRD-required fields: `game.key`, `game.name`, `platform.id`, `game.entries[entryKey].name`, `minPlayers`, `maxPlayers`, `botSupport`, and `properties.colors.players`.
 - `platform.id` is considered structurally valid when it is a non-empty string; any valid metadata value other than `unity` then becomes a blocking metadata gate error.
 - Required metadata fields, including player color variants, must parse for metadata-derived labels and gates to activate. Malformed required metadata remains warning-only.
-- No visible inspector UI, GamingCouch editor play flow changes, public runtime DTO changes, or `gc.metadata.json` writes were added.
+- No visible inspector UI, GamingCouch editor play flow changes, public runtime DTO changes, or `gc.platform.json` writes were added.
 
 Review pass 1 findings:
 
-- Patched one metadata-validity hardening issue: a manually constructed `GCMetadataJsonReadResult` with both `data` and warning issues could previously report `IsValid == true`, which could activate valid-metadata gates accidentally.
-- No blocking defects found after the patch. Structurally valid `gc.dev.json` data remains available when valid metadata gate errors exist, and enabled bot seats with `botSupport: false` remain warning-only.
+- Patched one metadata-validity hardening issue: a manually constructed `GCPlatformDataReadResult` with both `data` and warning issues could previously report `IsValid == true`, which could activate valid-platform data gates accidentally.
+- No blocking defects found after the patch. Structurally valid `gc.dev.json` data remains available when valid platform data gate errors exist, and enabled bot seats with `botSupport: false` remain warning-only.
 
 Review pass 1 patches:
 
 - Moved Task 2 back to `In review`; Task 3 now waits for review pass 2 and parent validation.
-- Hardened `GCMetadataJsonReadResult.IsValid` so metadata gates activate only when parsed metadata data exists and metadata validation has no errors or warnings.
+- Hardened `GCPlatformDataReadResult.IsValid` so platform data gates activate only when parsed metadata data exists and metadata validation has no errors or warnings.
 
 Review pass 1 validation:
 
 - `git diff --check`: passed.
 - `rg -n "[ \t]+$" <Task 2 scoped files>`: no trailing whitespace matches.
-- Metadata write inspection: no write API or write method references in `GCMetadataJsonFile.cs`, `GCMetadataJsonStore.cs`, or metadata validation code.
+- Metadata write inspection: no write API or write method references in `GCPlatformDataFile.cs`, `GCPlatformDataStore.cs`, or metadata validation code.
 - Inspector/play-flow inspection: no `CustomEditor`, `OnInspectorGUI`, or `GamingCouch` editor play references in scoped Task 2 runtime-dev files.
 - `which Unity`: Unity not found; Unity 2022.3 compile/import remains skipped in this shell.
 - `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -425,9 +425,9 @@ Review pass 1 validation:
 Review pass 2 findings:
 
 - No blocking Task 2 implementation defects found.
-- `GCMetadataJsonReadResult.IsValid` requiring zero warnings still surfaces missing or invalid metadata warnings through combined dev validation while preventing metadata gates from activating.
+- `GCPlatformDataReadResult.IsValid` requiring zero warnings still surfaces missing or invalid platform data warnings through combined dev validation while preventing platform data gates from activating.
 - `GCDevJsonReadResult.data` remains available when structurally valid `gc.dev.json` has valid-metadata gate errors.
-- `GCDevJsonStore.Write` blocks valid-metadata gate errors and allows warning-only missing or invalid metadata results.
+- `GCDevJsonStore.Write` blocks valid-metadata gate errors and allows warning-only missing or invalid platform data results.
 
 Review pass 2 patches:
 
@@ -438,9 +438,9 @@ Review pass 2 validation:
 
 - `git diff --check`: passed.
 - `rg -n "[ \t]+$" <Task 2 scoped files>`: no trailing whitespace matches.
-- Metadata gate inspection: `GCDevJsonValidation` copies metadata warnings into the validation result, returns before gates unless `metadataReadResult.IsValid`, and uses error severity only for valid metadata platform, entry, and seat-count gates.
-- Store inspection: `GCDevJsonStore.Write` fails only when combined validation has errors; warning-only metadata validation can return a successful write result with warnings.
-- Scoped inspection confirmed no visible inspector UI, GamingCouch play-flow changes, public runtime DTO changes, or `gc.metadata.json` writes were added.
+- Platform data gate inspection: `GCDevJsonValidation` copies platform data warnings into the validation result, returns before gates unless `platformDataReadResult.IsValid`, and uses error severity only for valid platform data platform, entry, and seat-count gates.
+- Store inspection: `GCDevJsonStore.Write` fails only when combined validation has errors; warning-only platform data validation can return a successful write result with warnings.
+- Scoped inspection confirmed no visible inspector UI, GamingCouch play-flow changes, public runtime DTO changes, or `gc.platform.json` writes were added.
 - Unity 2022.3 compile/import remains skipped because no Unity editor/CI command is available in this shell.
 - `git status --short`: only Task 2 owned files were touched beyond the pre-existing unrelated untracked files listed in the blocker log.
 
@@ -448,7 +448,7 @@ Parent validation:
 
 - `git diff --check`: passed.
 - `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"`: passed.
-- Scoped write inspection: Task 2 adds no `gc.metadata.json` write path; only the existing Task 1 `GCDevJsonStore.Write` and `File.WriteAllText` references remain for `gc.dev.json`.
+- Scoped write inspection: Task 2 adds no `gc.platform.json` write path; only the existing Task 1 `GCDevJsonStore.Write` and `File.WriteAllText` references remain for `gc.dev.json`.
 - Scoped UI/play inspection: Task 2 files add no `CustomEditor`, `OnInspectorGUI`, or `GamingCouch` editor play-flow references.
 - Public runtime DTO inspection: `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` remain untouched.
 - `git status --short`: only Task 2 owned files are modified or untracked beyond the pre-existing unrelated files listed in the blocker log.
@@ -521,12 +521,12 @@ Validation:
 
 - `git diff --check`: passed.
 - Serialized editor play source inspection: `GamingCouch` no longer creates editor setup/play snapshots from `gameModeId`, `playerData`, `numberOfPlayers`, or `randomizePlayerIds`; those fields remain only as hidden deserialization remnants and are not read by setup/play capture.
-- File-backed setup inspection: `GCEditorPlayCapture.Capture()` reads through `GCDevJsonStore.Read()`, so Task 2 metadata gates are applied when metadata is valid; setup options are built with `mode = GCMode.Development`, `isServer = true`, and `gameModeId = data.entryKey`.
+- File-backed setup inspection: `GCEditorPlayCapture.Capture()` reads through `GCDevJsonStore.Read()`, so Task 2 platform data gates are applied when metadata is valid; setup options are built with `mode = GCMode.Development`, `isServer = true`, and `gameModeId = data.entryKey`.
 - File-backed play inspection: enabled seats are the only players; `activePlayerIndex + 1` creates dense runtime player IDs from sparse seats while `GCSeatIdentity.sourceSeatIndex` preserves the original one-based seat slot.
 - Color mapping inspection: source seat slots map through the fixed order `blue`, `red`, `green`, `yellow`, `purple`, `pink`, `cyan`, `brown`; disabled seats do not compress the color source slot.
 - Seed inspection: `seed: "random"` resolves once during `GCEditorPlayCapture.Capture()` with `UnityEngine.Random.Range(1, 1000000)`; fixed seed strings are parsed after existing `gc.dev.json` validation.
 - Invalid capture inspection: missing or invalid `gc.dev.json`, or valid-metadata gate errors, produce `success = false`; `GamingCouch` logs clear errors and returns before `listener.SendMessage("GamingCouchSetup", ...)` or `Play(...)` can call the listener with invalid options.
-- Warning-only metadata inspection: missing or invalid metadata issues are logged as warnings and do not block capture because `GCDevJsonReadResult.IsValid` only requires zero errors.
+- Warning-only metadata inspection: missing or invalid platform data issues are logged as warnings and do not block capture because `GCDevJsonReadResult.IsValid` only requires zero errors.
 - Public DTO shape inspection: `Runtime/GCSetupOptions.cs` and `Runtime/GCPlayOptions.cs` were not changed; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` public fields remain unchanged.
 - Custom inspector inspection: no `Editor/` files, `CustomEditor`, or `OnInspectorGUI` changes were added.
 - `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -544,7 +544,7 @@ Review pass 1 findings:
 
 - No blocking Task 3 code defects found.
 - `GCEditorPlayCapture.Capture()` reads through validated `GCDevJsonStore.Read()` and fails capture for missing or invalid `gc.dev.json` and for valid-metadata gate errors.
-- Missing or invalid metadata stays warning-only because capture success follows `GCDevJsonReadResult.IsValid`, which allows warnings and blocks only errors.
+- Missing or invalid platform data stays warning-only because capture success follows `GCDevJsonReadResult.IsValid`, which allows warnings and blocks only errors.
 - Scoped old-field inspection found `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds` only as hidden deserialization fields; setup/play capture no longer reads them as input.
 - Sparse enabled seats map to dense runtime player IDs while `GCSeatIdentity.sourceSeatIndex` preserves one-based source seat slots; player colors use fixed source seat order.
 - `seed: "random"` resolves once in the cached editor capture with the inclusive `1..999999` range; fixed seed strings pass through after existing validation.
@@ -623,7 +623,7 @@ Activate a custom `GamingCouch` inspector that draws normal component fields and
 - `Editor/GCDevJsonInspectorView.cs`
 - `Editor/GCDevJsonInspectorView.cs.meta`
 - `Runtime/Dev/GCDevJsonFile.cs`
-- `Runtime/Dev/GCMetadataJsonFile.cs`
+- `Runtime/Dev/GCPlatformDataFile.cs`
 - `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 If implementation uses fewer or differently named editor helper files, update this task with the final ownership.
@@ -638,9 +638,9 @@ If implementation uses fewer or differently named editor helper files, update th
    - `numberOfPlayers`
    - `randomizePlayerIds`
 4. Load project-root `gc.dev.json` into an in-memory draft.
-5. Load project-root `gc.metadata.json` for labels, limits, bot-support warnings, and color swatches.
-6. Show raw entry-key editing fallback when metadata is missing or invalid.
-7. Show metadata-backed entry dropdown when metadata is valid.
+5. Load project-root `gc.platform.json` for labels, limits, bot-support warnings, and color swatches.
+6. Show raw entry-key editing fallback when platform data is missing or invalid.
+7. Show platform-data-backed entry dropdown when platform data is valid.
 8. Show seed mode and fixed seed controls.
 9. Show eight stable seat rows with seat number, color swatch when available, name, enabled toggle, and bot toggle.
 10. Track clean versus dirty draft state.
@@ -657,8 +657,8 @@ If implementation uses fewer or differently named editor helper files, update th
 - Confirm normal component fields remain visible.
 - Confirm Apply writes only `gc.dev.json`.
 - Confirm Revert reloads from disk.
-- Confirm missing/invalid metadata warning still allows structurally valid raw Apply.
-- Confirm valid metadata gates Apply.
+- Confirm missing/invalid platform data warning still allows structurally valid raw Apply.
+- Confirm valid platform data gates Apply.
 - Compile/import in Unity 2022.3 if available.
 
 ### Status Update Rules
@@ -701,11 +701,11 @@ Validation:
 - Active inspector inspection: `Editor/GamingCouchEditor.cs` registers `[CustomEditor(typeof(GamingCouch))]` and implements `OnInspectorGUI`.
 - Serialized field inspection: `GamingCouchEditor.OnInspectorGUI` calls `GamingCouchInspectorHost.DrawSerializedFields(serializedObject)` before drawing file-backed local play settings, so normal component fields remain visible.
 - Obsolete field inspection: `GamingCouchInspectorHost` still excludes `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`.
-- Apply inspection: editor Apply calls only `GCDevJsonStore.Write(Draft.ToFile(), metadataReadResult)`; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
-- Revert inspection: the Revert button calls `GCDevJsonInspectorState.Reload()`, which re-reads project-root `gc.metadata.json` and `gc.dev.json` from disk and rebuilds the clean draft.
+- Apply inspection: editor Apply calls only `GCDevJsonStore.Write(Draft.ToFile(), platformDataReadResult)`; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
+- Revert inspection: the Revert button calls `GCDevJsonInspectorState.Reload()`, which re-reads project-root `gc.platform.json` and `gc.dev.json` from disk and rebuilds the clean draft.
 - Missing/invalid `gc.dev.json` inspection: when `GCDevJsonStore.Read()` cannot produce data, the inspector has no draft, displays structured issues, and `CanApply` is false.
-- Missing/invalid metadata inspection: invalid metadata makes the view use raw `Entry Key` editing; draft validation copies metadata warnings, but `CanApply` follows `GCDevJsonValidationResult.IsValid`, which blocks only errors.
-- Valid metadata gate inspection: draft validation calls `GCDevJsonValidation.ValidateData(Draft.ToFile(), DevJsonPath, metadataReadResult)`, so valid metadata platform, entry existence, and enabled-seat count gates disable Apply through validation errors.
+- Missing/invalid platform data inspection: invalid platform data makes the view use raw `Entry Key` editing; draft validation copies platform data warnings, but `CanApply` follows `GCDevJsonValidationResult.IsValid`, which blocks only errors.
+- Valid platform data gate inspection: draft validation calls `GCDevJsonValidation.ValidateData(Draft.ToFile(), DevJsonPath, platformDataReadResult)`, so valid platform data platform, entry existence, and enabled-seat count gates disable Apply through validation errors.
 - Local play setting serialization inspection: file-backed controls mutate only the editor draft after `serializedObject.ApplyModifiedProperties()` has already run for normal component fields; no obsolete serialized editor play settings are written by the inspector.
 - Task 5 scope inspection: no `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, external timestamp polling, conflict state, or pending-play hooks are present in the Task 4 editor files.
 - `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -716,7 +716,7 @@ Validation:
 - Pass 2 IMGUI inspection: Task 4 editor UI uses Unity 2022.3-safe IMGUI calls (`EditorGUILayout.Popup`, `EditorGUILayout.IntField`, `EditorGUILayout.GetControlRect`, `EditorGUI.DrawRect`, `EditorGUI.DisabledScope`, and `EditorGUILayout.HorizontalScope`) without unavailable overloads.
 - Pass 2 draft read-state inspection: `GCDevJsonDraft.FromFile` is called only when `GCDevJsonStore.Read()` produced non-null parsed data; invalid read states leave the inspector without a draft and cannot throw through draft construction.
 - Pass 2 apply/revert inspection: Apply is disabled without a dirty valid draft, delegates to `GCDevJsonStore.Write`, and the store rejects missing `gc.dev.json`; Revert calls `Reload()` to re-read both root JSON files and rebuild the clean draft.
-- Pass 2 metadata behavior inspection: missing or invalid metadata remains warning-only and uses raw entry-key editing, while valid metadata still gates Apply through platform, entry existence, and enabled-seat count validation errors.
+- Pass 2 metadata behavior inspection: missing or invalid platform data remains warning-only and uses raw entry-key editing, while valid metadata still gates Apply through platform, entry existence, and enabled-seat count validation errors.
 - Pass 2 Task 5 scope inspection: no polling, conflict state, pending-play state, `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, `LastWriteTime`, or timestamp tracking exists in the Task 4 editor files.
 - Pass 2 `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
 
@@ -728,17 +728,17 @@ Skipped validation:
 Decisions:
 
 - No `Runtime/Dev/GCDevJsonStore.cs` or `Runtime/Dev/GCDevJsonValidation.cs` helper changes were needed.
-- `Runtime/Dev/GCDevJsonFile.cs` and `Runtime/Dev/GCMetadataJsonFile.cs` were left unchanged because existing internal models exposed enough data for safe editor draft cloning and display.
+- `Runtime/Dev/GCDevJsonFile.cs` and `Runtime/Dev/GCPlatformDataFile.cs` were left unchanged because existing internal models exposed enough data for safe editor draft cloning and display.
 - External polling, conflict state, metadata refresh on disk changes, and pending play state were left for Task 5.
 
 Parent validation:
 
 - `git diff --check`: passed.
 - `rg -n "[ \t]+$" <Task 4 editor files, metas, and task record>`: no trailing whitespace matches.
-- Write-path inspection: Task 4 editor code calls `GCDevJsonStore.Write(Draft.ToFile(), metadataReadResult)` only; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
-- Revert inspection: `GCDevJsonInspectorState.Reload()` re-reads root `gc.metadata.json` and `gc.dev.json` and rebuilds the clean draft from disk.
+- Write-path inspection: Task 4 editor code calls `GCDevJsonStore.Write(Draft.ToFile(), platformDataReadResult)` only; the only `File.WriteAllText` path remains the existing preserving `gc.dev.json` writer in `Runtime/Dev/GCDevJsonStore.cs`.
+- Revert inspection: `GCDevJsonInspectorState.Reload()` re-reads root `gc.platform.json` and `gc.dev.json` and rebuilds the clean draft from disk.
 - Obsolete serialized field inspection: `GamingCouchEditor` draws normal fields through `GamingCouchInspectorHost`, which still excludes `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds`; local play controls mutate only the in-memory draft.
-- Metadata behavior inspection: missing or invalid metadata uses raw entry-key editing and warning-only validation, while valid metadata gates Apply through existing platform, entry existence, and enabled-seat-count errors.
+- Metadata behavior inspection: missing or invalid platform data uses raw entry-key editing and warning-only validation, while valid platform data gates Apply through existing platform, entry existence, and enabled-seat-count errors.
 - Task 5 scope inspection: no polling, conflict state, pending-play state, `EditorApplication.update`, `playModeStateChanged`, `FileSystemWatcher`, `LastWriteTime`, or timestamp tracking exists in the Task 4 editor files.
 - `.meta` inspection: new Task 4 script GUIDs are present once each in the repository.
 - `git status --short`: only Task 4 owned editor files and this task record are touched beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -757,12 +757,12 @@ Add file polling and state transitions for external JSON edits, dirty drafts, co
 - `Editor/GCDevJsonInspectorState.cs`
 - `Editor/GCDevJsonInspectorView.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs`
 - `<this-repo>/docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 ### Implementation Steps
 
-1. Poll root `gc.dev.json` and `gc.metadata.json` through `EditorApplication.update` while the inspector state is active.
+1. Poll root `gc.dev.json` and `gc.platform.json` through `EditorApplication.update` while the inspector state is active.
 2. Use `LastWriteTimeUtc`, content hash, or another deterministic lightweight root-file change check.
 3. Do not use `FileSystemWatcher` in v1.
 4. In edit mode with a clean draft, auto-reload external `gc.dev.json` changes into the inspector.
@@ -770,7 +770,7 @@ Add file polling and state transitions for external JSON edits, dirty drafts, co
 6. Dirty draft plus external `gc.dev.json` change must enter conflict state.
 7. Add conflict action `Reload from disk` to discard draft and load current file.
 8. Add conflict action `Write draft` to validate draft and overwrite current `gc.dev.json`.
-9. Refresh display and validation context when external `gc.metadata.json` changes.
+9. Refresh display and validation context when external `gc.platform.json` changes.
 10. If metadata refresh makes a dirty draft invalid, keep the draft dirty and show validation errors.
 11. During active Play Mode, external JSON changes must not mutate captured setup/play state.
 12. During active Play Mode, show pending play change state so the user knows changes apply on restart or next Play Mode entry.
@@ -814,7 +814,7 @@ Changed paths:
 - `Editor/GCDevJsonInspectorState.cs`
 - `Editor/GCDevJsonInspectorView.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs`
 - `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
 
 Validation:
@@ -822,9 +822,9 @@ Validation:
 - `git diff --check`: passed.
 - Clean external `gc.dev.json` edit inspection: `GamingCouchEditor` polls through `EditorApplication.update`, `GCDevJsonInspectorState.PollForExternalChanges()` detects root-file stamp changes, and edit-mode clean dev-file changes call `ReloadFromDisk(false)` to replace the inspector draft from disk.
 - Dirty external `gc.dev.json` edit inspection: when `IsDirty` or an existing conflict is present, dev-file stamp changes call `EnterConflict()` without calling `ReloadFromDisk`, preserving inspector draft values.
-- `Reload from disk` inspection: the conflict button calls `GCDevJsonInspectorState.Reload()`, which discards the draft, clears conflict state, reads current `gc.metadata.json`, reads current `gc.dev.json`, rebuilds the clean draft, and refreshes file stamps.
+- `Reload from disk` inspection: the conflict button calls `GCDevJsonInspectorState.Reload()`, which discards the draft, clears conflict state, reads current `gc.platform.json`, reads current `gc.dev.json`, rebuilds the clean draft, and refreshes file stamps.
 - `Write draft` inspection: the conflict button calls `GCDevJsonInspectorState.WriteDraft()`, which validates the current draft and writes through `GCDevJsonStore.Write()`, preserving unrelated top-level `gc.dev.json` fields through the existing `JObject` writer.
-- Metadata refresh inspection: metadata-file stamp changes call `RefreshMetadata()`, re-read `gc.metadata.json`, keep any existing draft in memory, and re-run draft validation so metadata-derived labels and errors update without discarding dirty edits.
+- Metadata refresh inspection: metadata-file stamp changes call `RefreshPlatformData()`, re-read `gc.platform.json`, keep any existing draft in memory, and re-run draft validation so metadata-derived labels and errors update without discarding dirty edits.
 - Active Play Mode pending inspection: play-mode file changes set `HasPendingPlayChange`; clean `gc.dev.json` changes during active Play Mode are deferred as unloaded disk changes until edit mode returns, dirty/pending edits enter conflict before writing, and no play capture, auto-apply, or blocking code was added.
 - Polling implementation inspection: root file stamps use path, existence, `LastWriteTimeUtc`, byte length, and SHA-256 content hash; no `FileSystemWatcher` code was added.
 - `git status --short`: only Task 5 owned files were modified beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -840,9 +840,9 @@ Review pass 1 validation:
 - File stamp inspection: root JSON polling uses `GCRootJsonFileStamp` with path, existence, `LastWriteTimeUtc`, byte length, and SHA-256 content hash. No `FileSystemWatcher` references are present.
 - Clean edit-mode `gc.dev.json` inspection: when the dev-file stamp changes with no dirty draft or conflict, `PollForExternalChanges()` calls `ReloadFromDisk(false)`, rebuilding the inspector draft from disk and refreshing file stamps.
 - Dirty edit-mode `gc.dev.json` inspection: when the dev-file stamp changes with `IsDirty` or an existing conflict, `EnterConflict()` is called without reloading, preserving the draft values.
-- Conflict action inspection: `Reload from disk` calls `Reload()` and discards the draft by reading current `gc.metadata.json` and `gc.dev.json`; `Write draft` calls `WriteDraft()`, validates `Draft.ToFile()`, and writes through `GCDevJsonStore.Write()`.
+- Conflict action inspection: `Reload from disk` calls `Reload()` and discards the draft by reading current `gc.platform.json` and `gc.dev.json`; `Write draft` calls `WriteDraft()`, validates `Draft.ToFile()`, and writes through `GCDevJsonStore.Write()`.
 - Preserving writer inspection: the only Task 5 write path still delegates to `GCDevJsonStore.Write()`, which loads the current file as a `JObject`, replaces canonical fields, and writes indented JSON plus a trailing newline.
-- Metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep an existing draft in memory, and re-run validation so dirty drafts stay dirty while labels and metadata-derived errors refresh.
+- Metadata refresh inspection: metadata stamp changes call `RefreshPlatformData()`, keep an existing draft in memory, and re-run validation so dirty drafts stay dirty while labels and metadata-derived errors refresh.
 - Active Play Mode inspection: Play Mode dev-file changes set pending state and do not call `ReloadFromDisk()` for clean changes until edit mode returns; no Task 6 auto-apply, Play Mode entry blocking, or restart-gate code was added.
 - Task 6 scope inspection: `Runtime/GamingCouch.cs` and `Runtime/Dev/GCEditorPlayCapture.cs` have no Task 5 diff; scoped search for Play Mode entry blocking, restart gates, auto-apply, and cancellation terms in Task 5 files matched only the pending-state user-facing message.
 - Static write/path inspection: `rg -n "FileSystemWatcher|File.WriteAllText|WriteDraft|Apply\\(|EnterConflict|ReloadFromDisk|HandlePlayModeStateChanged" Editor Runtime/Dev` matched only the expected polling, conflict, preserving write, and existing store-write paths.
@@ -856,7 +856,7 @@ Review pass 2 findings:
 
 - No concrete code defects found.
 - Own write inspection: `Apply()` and conflict `WriteDraft()` both write through `WriteDraftToDisk()`, which delegates to the preserving `GCDevJsonStore.Write()` path and then calls `ReloadFromDisk(...)`; that reload clears conflict state, rebuilds clean data from current disk, and refreshes file stamps so the next poll does not treat the just-written file as an external edit.
-- Dirty metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep an existing draft in memory, and re-run `ValidateDraft()`, so dirty drafts remain dirty while new metadata-derived validation errors can appear.
+- Dirty metadata refresh inspection: metadata stamp changes call `RefreshPlatformData()`, keep an existing draft in memory, and re-run `ValidateDraft()`, so dirty drafts remain dirty while new metadata-derived validation errors can appear.
 - Clean edit-mode dev-file inspection: clean `gc.dev.json` stamp changes outside Play Mode call `ReloadFromDisk(false)` and replace the inspector draft with current disk state.
 - Play-mode pending inspection: active Play Mode dev-file changes set pending state and either defer clean disk reloads through `hasUnloadedPlayDevJsonChange` or enter conflict for dirty drafts; no active setup/play capture objects are mutated by the inspector poll path.
 - Conflict action inspection: `Reload from disk` calls `Reload()` and clears conflict through `ReloadFromDisk(...)`; `Write draft` validates, overwrites current disk through `GCDevJsonStore.Write()`, then reloads and clears conflict after a successful write.
@@ -871,7 +871,7 @@ Review pass 2 patches:
 Review pass 2 validation:
 
 - `git diff --check`: passed.
-- `rg -n "FileSystemWatcher" Editor/GCDevJsonInspectorState.cs Editor/GCDevJsonInspectorView.cs Editor/GamingCouchEditor.cs Runtime/Dev/GCDevJsonStore.cs Runtime/Dev/GCMetadataJsonStore.cs`: no matches.
+- `rg -n "FileSystemWatcher" Editor/GCDevJsonInspectorState.cs Editor/GCDevJsonInspectorView.cs Editor/GamingCouchEditor.cs Runtime/Dev/GCDevJsonStore.cs Runtime/Dev/GCPlatformDataStore.cs`: no matches.
 - Expected write path inspection: `rg -n "File\\.WriteAllText|devStore\\.Write|WriteDraftToDisk|WriteDraft\\(|Apply\\(" Editor/GCDevJsonInspectorState.cs Editor/GCDevJsonInspectorView.cs Runtime/Dev/GCDevJsonStore.cs` matched only the inspector Apply/WriteDraft calls, `WriteDraftToDisk()`, `devStore.Write(...)`, and the preserving store's existing `File.WriteAllText(...)`.
 - Task 6 scope inspection: scoped search for Play Mode blocking, auto-apply, restart gates, cancellation, and play-mode entry terms in Task 5 files matched only `playModeStateChanged`, `EnteredPlayMode` bookkeeping, and the pending-state user-facing message.
 - `git diff -- Runtime/GamingCouch.cs Runtime/Dev/GCEditorPlayCapture.cs`: no output.
@@ -896,7 +896,7 @@ Parent validation:
 - Clean edit-mode external dev-file inspection: stamp changes with no dirty draft or conflict call `ReloadFromDisk(false)` and rebuild the inspector draft from current disk state.
 - Dirty external dev-file inspection: stamp changes with `IsDirty` or conflict call `EnterConflict()` without reloading, preserving draft values.
 - Conflict action inspection: `Reload from disk` calls `Reload()` and clears conflict through `ReloadFromDisk(...)`; `Write draft` validates then overwrites current disk through `GCDevJsonStore.Write()` and reloads after successful write.
-- Metadata refresh inspection: metadata stamp changes call `RefreshMetadata()`, keep any existing draft, and re-run validation so metadata-derived labels and errors update without discarding dirty edits.
+- Metadata refresh inspection: metadata stamp changes call `RefreshPlatformData()`, keep any existing draft, and re-run validation so metadata-derived labels and errors update without discarding dirty edits.
 - Active Play Mode inspection: file changes set pending state and defer clean disk reloads until edit mode returns; Task 5 files do not call play capture, auto-apply, block Play Mode entry, or add restart gates.
 - Task 6 scope inspection: `git diff -- Runtime/GamingCouch.cs Runtime/Dev/GCEditorPlayCapture.cs` produced no diff.
 - `git diff --name-only`: only Task 5 owned files and this task plan are modified.
@@ -981,7 +981,7 @@ Validation:
 - Capture notification inspection: `NotifyCaptureSucceeded()` reloads inspector state only when it is clean and non-conflicted, preserves dirty/conflicted drafts by updating stamps only, and `EnteredPlayMode` no longer masks a JSON edit that lands after capture notification.
 - Gaming Couch restart auto-apply and recapture inspection: restart paths call the editor preflight bridge before resetting/reloading, valid dirty drafts are written first, public `Restart()` recaptures before calling `Start()`, and scene-reload restart relies on the new `Awake` capture before setup/play callbacks run.
 - Gaming Couch restart blocking inspection: restart preflight returns without clearing state, reloading the scene, or calling setup/play when the active draft is conflicted, invalid, or root `gc.dev.json` fails read/metadata validation.
-- Logging inspection: blocked Play Mode entry, blocked restart, missing/invalid `gc.dev.json`, and valid metadata gate failures log boundary-specific errors plus formatted issue code/path/field details.
+- Logging inspection: blocked Play Mode entry, blocked restart, missing/invalid `gc.dev.json`, and valid platform data gate failures log boundary-specific errors plus formatted issue code/path/field details.
 - Editor-only guard and assembly inspection: Task 6 runtime-dev preflight/capture/formatter types are guarded by `#if UNITY_EDITOR`, `Runtime/GamingCouch.cs` calls them only inside `#if UNITY_EDITOR`, `Runtime/dsb.gamingcouch.runtime.asmdef` has no editor assembly reference, and `Editor/dsb.gamingcouch.editor.asmdef` references the runtime assembly.
 - Production/WebGL inspection: new preflight and capture-notification calls are guarded by `#if UNITY_EDITOR`; non-editor and `UNITY_WEBGL && !UNITY_EDITOR` platform callback behavior remains on existing paths.
 - DTO/package scope inspection: `git diff -- package.json Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs Runtime/GCPlayerOptions.cs` produced no output.
@@ -1030,7 +1030,7 @@ Do not edit `VERSIONING_PLAN.md` or `VERSIONING_PLAN.md.meta` unless the user ex
 1. Update `README.md` with the root `gc.dev.json` local play settings behavior.
 2. Update `Documentation~/README.md` with the same package-facing guidance.
 3. Document that Unity requires existing root `gc.dev.json` for editor play and does not bootstrap it.
-4. Document that missing or invalid `gc.metadata.json` is warning-only, while valid metadata gates Apply and Play.
+4. Document that missing or invalid `gc.platform.json` is warning-only, while valid platform data gates Apply and Play.
 5. Document that the package uses `com.unity.nuget.newtonsoft-json` for editor-only JSON sync.
 6. Update `CHANGELOG.md` for `0.1.0-alpha.2`.
 7. Update `package.json` version to `0.1.0-alpha.2`.
@@ -1093,7 +1093,7 @@ Parent validation:
 
 - `git diff --check`: passed.
 - `node -e "const p=require('./package.json'); if (p.version !== '0.1.0-alpha.2') throw new Error('version '+p.version); const d=p.dependencies && p.dependencies['com.unity.nuget.newtonsoft-json']; if (d !== '3.2.1') throw new Error('newtonsoft '+d); console.log('ok version='+p.version+' newtonsoft='+d);"`: passed with `ok version=0.1.0-alpha.2 newtonsoft=3.2.1`.
-- Documentation grep confirmed `README.md`, `Documentation~/README.md`, and `CHANGELOG.md` mention root `gc.dev.json`, `gc.metadata.json`, editor-only Newtonsoft JSON sync, no bootstrap/repair behavior, Play Mode/restart gates, and release version `0.1.0-alpha.2`.
+- Documentation grep confirmed `README.md`, `Documentation~/README.md`, and `CHANGELOG.md` mention root `gc.dev.json`, `gc.platform.json`, editor-only Newtonsoft JSON sync, no bootstrap/repair behavior, Play Mode/restart gates, and release version `0.1.0-alpha.2`.
 - `git diff --name-only`: only Task 7 owned tracked files are modified.
 - Protected-file diff check produced no output; the protected files remain untouched.
 - Main repo status check still shows only unrelated pre-existing main-repo changes; Task 7 made no writes outside `<this-repo>`.
@@ -1114,7 +1114,7 @@ Non-blocking follow-up:
 
 ### Objective
 
-Deepen the Local Play Contract module without changing user-facing behavior. Move root JSON file stores, file stamps, and inspector draft models out of the inspector state file, then add executable fixture coverage for the current `gc.dev.json` and `gc.metadata.json` contract.
+Deepen the Local Play Contract module without changing user-facing behavior. Move root JSON file stores, file stamps, and inspector draft models out of the inspector state file, then add executable fixture coverage for the current `gc.dev.json` and `gc.platform.json` contract.
 
 This task treats portability as contract-level alignment across engine packages. Do not add Godot code, shared cross-repo packages, or main-repo changes in this task.
 
@@ -1125,8 +1125,8 @@ This task treats portability as contract-level alignment across engine packages.
 - `Editor/GCDevJsonDraft.cs.meta`
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `Runtime/Dev/GCDevJsonStore.cs.meta`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCPlatformDataStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs.meta`
 - `Runtime/Dev/GCRootJsonFileStamp.cs`
 - `Runtime/Dev/GCRootJsonFileStamp.cs.meta`
 - `Editor/GCEditorPlayJsonCapture.cs`
@@ -1142,15 +1142,15 @@ If implementation discovers another file is required, update this task with the 
 ### Implementation Steps
 
 1. Keep `CONTEXT.md` as the domain glossary for this task. Do not rewrite it unless implementation discovers a naming mismatch.
-2. Move `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCMetadataJsonStore`, and `GCRootJsonFileStamp` out of `Editor/GCDevJsonInspectorState.cs` into the `Runtime/Dev` files listed above.
+2. Move `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCPlatformDataStore`, and `GCRootJsonFileStamp` out of `Editor/GCDevJsonInspectorState.cs` into the `Runtime/Dev` files listed above.
 3. Keep the moved types `internal`, under the existing dev/runtime namespace, and editor-guarded consistently with current JSON sync code so player builds do not acquire editor JSON behavior.
 4. Move `GCDevJsonDraft` and `GCDevJsonSeatDraft` into `Editor/GCDevJsonDraft.cs`. Keep them inspector-only and behavior-neutral.
-5. Update existing inspector, readiness, and capture call sites to use the extracted types. Preserve existing validation issue codes, message text, missing/invalid metadata warning behavior, conflict behavior, and JSON write formatting.
+5. Update existing inspector, readiness, and capture call sites to use the extracted types. Preserve existing validation issue codes, message text, missing/invalid platform data warning behavior, conflict behavior, and JSON write formatting.
 6. Add a small internal test seam to `Editor/GCEditorPlayJsonCapture.cs` only if needed so fixture tests can capture from a prepared `GCDevJsonReadResult` without depending on the real Unity project root.
-7. Add `Tests/Editor/GCDevJsonContractFixtureTests.cs` with fixture helpers that write real root files named exactly `gc.dev.json` and `gc.metadata.json` into a temporary root through a fake `IGCLocalProjectRootResolver`.
+7. Add `Tests/Editor/GCDevJsonContractFixtureTests.cs` with fixture helpers that write real root files named exactly `gc.dev.json` and `gc.platform.json` into a temporary root through a fake `IGCLocalProjectRootResolver`.
 8. Cover these contract cases:
    - valid sparse roster: seats 1, 3, and 8 enabled, fixed seed, valid Unity metadata, dense active player IDs, and stable source-seat identity
-   - missing metadata: valid `gc.dev.json` remains readable with warning-only metadata issues
+   - missing platform data: valid `gc.dev.json` remains readable with warning-only platform data issues
    - metadata max-player gate: too many enabled seats for the selected entry fails validation and capture
    - invalid dev structure: wrong seat count or unsupported `devVersion` fails with the existing issue code
    - preserving write: updating canonical fields keeps unrelated top-level `gc.dev.json` fields
@@ -1192,8 +1192,8 @@ Changed paths:
 - `Editor/GCEditorPlayJsonCapture.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `Runtime/Dev/GCDevJsonStore.cs.meta`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs.meta`
+- `Runtime/Dev/GCPlatformDataStore.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs.meta`
 - `Runtime/Dev/GCRootJsonFileStamp.cs`
 - `Runtime/Dev/GCRootJsonFileStamp.cs.meta`
 - `Runtime/GamingCouch.cs`
@@ -1207,13 +1207,13 @@ Validation:
 - Review pass 2 `git diff --check`: passed.
 - `git diff --check --no-index /dev/null <new Task 8 file>` for each new Task 8 source/meta file: no whitespace output; commands exit non-zero because each new file differs from `/dev/null`.
 - Review pass 2 `git diff --check --no-index /dev/null <new Task 8 file>` for new Task 8 source/meta files, including `CONTEXT.md` and `CONTEXT.md.meta`: no whitespace output; commands exit non-zero because each new file differs from `/dev/null`.
-- Type extraction inspection: `Editor/GCDevJsonInspectorState.cs` no longer defines `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCMetadataJsonStore`, `GCRootJsonFileStamp`, `GCDevJsonDraft`, or `GCDevJsonSeatDraft`; each moved type has exactly one definition in its Task 8 destination file.
+- Type extraction inspection: `Editor/GCDevJsonInspectorState.cs` no longer defines `GCDevJsonStore`, `GCDevJsonWriteResult`, `GCPlatformDataStore`, `GCRootJsonFileStamp`, `GCDevJsonDraft`, or `GCDevJsonSeatDraft`; each moved type has exactly one definition in its Task 8 destination file.
 - Review pass 2 type extraction inspection: moved store/stamp/draft types still have exactly one definition in the intended Task 8 destination files.
 - Public DTO inspection: `git diff -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs` produced no output; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` shapes remain unchanged.
 - JSON writer inspection: preserving write path remains `JObject` replacement of canonical fields plus `Formatting.Indented` and a trailing newline in `Runtime/Dev/GCDevJsonStore.cs`.
 - Review pass 2 Unity `.meta` inspection: new Task 8 C# files use `MonoImporter`, `CONTEXT.md.meta` uses `TextScriptImporter`, and `rg -o "^guid: [0-9a-f]+" -g "*.meta" | sed "s/.*guid: //" | sort | uniq -d` produced no duplicate GUID output.
 - `git status --short --untracked-files=all`: Task 8 paths changed; pre-existing unrelated untracked files remain present and untouched.
-- Review pass 2 fixture inspection: `GCDevJsonContractFixtureTests` writes exact `gc.dev.json` and `gc.metadata.json` root files through a fake `IGCLocalProjectRootResolver`; sparse roster, missing metadata, metadata max-player gate, invalid structure, unsupported `devVersion`, and preserving-write cases align with the Task 8 contract bullets.
+- Review pass 2 fixture inspection: `GCDevJsonContractFixtureTests` writes exact `gc.dev.json` and `gc.platform.json` root files through a fake `IGCLocalProjectRootResolver`; sparse roster, missing platform data, platform data max-player gate, invalid structure, unsupported `devVersion`, and preserving-write cases align with the Task 8 contract bullets.
 - Parent validation `git diff --check`: passed.
 - Parent type extraction scan confirmed the moved store/stamp/draft types have one intended definition each in their Task 8 destination files.
 - Parent public DTO diff check for `Runtime/GCSetupOptions.cs`, `Runtime/GCPlayOptions.cs`, and `Runtime/GCPlayerOptions.cs` produced no output.
@@ -1269,7 +1269,7 @@ If implementation discovers another file is required, update this task with the 
 6. Keep `GCDevJsonInspectorState` responsible for inspector draft, conflict, dirty state, pending play change state, and Apply/Write Draft behavior.
 7. Keep `GamingCouchEditor` as the editor **Adapter** that registers inspector states and handles Unity Play Mode entry, but delegate root validation and session callbacks through the Local Play Session Module.
 8. Retire `Editor/GCEditorPlayJsonCapture.cs` if its behavior has moved into `GCLocalPlaySession`; otherwise leave only a deliberate compatibility shim and record why.
-9. Preserve existing validation issue codes, message intent, missing/invalid metadata warning behavior, valid metadata gates, conflict behavior, JSON write formatting, active-play stability, and restart blocking behavior.
+9. Preserve existing validation issue codes, message intent, missing/invalid platform data warning behavior, valid platform data gates, conflict behavior, JSON write formatting, active-play stability, and restart blocking behavior.
 10. Do not rename or change public runtime payload shapes:
     - `GCSetupOptions`
     - `GCPlayOptions`
@@ -1438,7 +1438,7 @@ Only edit the editor test asmdef if the test corpus reader needs an explicit JSO
 1. Create `ContractFixtures/LocalPlay` at the package root with Unity `.meta` hygiene for the new folder and files.
 2. Represent each **Contract Fixture** as one case folder containing:
    - `gc.dev.json`
-   - optional `gc.metadata.json`
+   - optional `gc.platform.json`
    - `expected.json`
 3. Promote only the six existing `GCDevJsonContractFixtureTests` cases into the corpus:
    - valid sparse roster **Capture**
@@ -1448,7 +1448,7 @@ Only edit the editor test asmdef if the test corpus reader needs an explicit JSO
    - unsupported `devVersion` failure
    - preserving write keeps unrelated top-level `gc.dev.json` fields
 4. Keep `expected.json` as the portable fixture **Interface**: expected validity, issue codes/severities, **Capture** setup/play data, **Seat** identity data, and write assertions where needed.
-5. Update `GCDevJsonContractFixtureTests` so it enumerates or loads those corpus cases and writes their real `gc.dev.json` and optional `gc.metadata.json` files into a temporary root before using `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession`.
+5. Update `GCDevJsonContractFixtureTests` so it enumerates or loads those corpus cases and writes their real `gc.dev.json` and optional `gc.platform.json` files into a temporary root before using `GCDevJsonStore`, `GCPlatformDataStore`, and `GCLocalPlaySession`.
 6. Keep Unity-specific loading and NUnit assertions in tests. Do not move Unity implementation code into the corpus.
 7. Preserve public runtime payload shapes:
    - `GCSetupOptions`
@@ -1483,7 +1483,7 @@ Status: Done
 
 Review pass 1 findings:
 
-- The Task 10 implementation promoted the six required **Contract Fixture** cases into `ContractFixtures/LocalPlay`, and `GCDevJsonContractFixtureTests` now copies each case's real `gc.dev.json` and optional `gc.metadata.json` files into a temporary project root before reading through `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession`.
+- The Task 10 implementation promoted the six required **Contract Fixture** cases into `ContractFixtures/LocalPlay`, and `GCDevJsonContractFixtureTests` now copies each case's real `gc.dev.json` and optional `gc.platform.json` files into a temporary project root before reading through `GCDevJsonStore`, `GCPlatformDataStore`, and `GCLocalPlaySession`.
 - No compile-risk patch was needed for `UnityEngine.JsonUtility` expected-file parsing, `UnityEditor.PackageManager.PackageInfo` corpus discovery, or `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef` references.
 - Successful Capture and write fixture assertions now validate required nested expected data before dereferencing it, so malformed `expected.json` files fail with targeted NUnit assertions instead of null-reference failures.
 - The task plan was prematurely marked fully `Done` and advanced to final architecture follow-up completion before review pass 1, review pass 2, and parent validation had completed.
@@ -1497,7 +1497,7 @@ Review pass 2 findings:
 
 - `expected.json` for the successful Capture case carried Unity adapter payload fields (`setup.mode`, `setup.isServer`, and `setup.gameModeId`) as corpus data, which weakened the intended portable **Contract Fixture** Interface for future engine Adapters.
 - Static C# inspection found no compile-risk patches needed for `UnityEngine.JsonUtility`, private nested `[Serializable]` expected-data classes, `UnityEditor.PackageManager.PackageInfo`, array assertions, temp path handling, or optional metadata copying.
-- The six promoted corpus cases still match the original executable test behaviors: sparse roster Capture, missing metadata warning, metadata max-player gate failure, wrong Seat count failure, unsupported `devVersion`, and preserving-write retention of unrelated top-level `gc.dev.json` fields.
+- The six promoted corpus cases still match the original executable test behaviors: sparse roster Capture, missing platform data warning, platform data max-player gate failure, wrong Seat count failure, unsupported `devVersion`, and preserving-write retention of unrelated top-level `gc.dev.json` fields.
 
 Review pass 2 patches:
 
@@ -1508,8 +1508,8 @@ Review pass 2 patches:
 Review pass 2 validation:
 
 - `git diff --check`: passed.
-- Static corpus schema check: parsed every `ContractFixtures/LocalPlay/**/*.json`, confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, optional `gc.metadata.json` parsing, no `capture.setup`/`capture.play` payload-shaped fields, and portable success Capture fields `entryKey`, `seed`, `activePlayers`, and `seatIdentities`.
-- Static test-consumption check: `GCDevJsonContractFixtureTests` still discovers `ContractFixtures/LocalPlay`, loads `expected.json` with `JsonUtility`, copies corpus `gc.dev.json` and optional `gc.metadata.json` into a temp root, and exercises `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession.Capture`.
+- Static corpus schema check: parsed every `ContractFixtures/LocalPlay/**/*.json`, confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, optional `gc.platform.json` parsing, no `capture.setup`/`capture.play` payload-shaped fields, and portable success Capture fields `entryKey`, `seed`, `activePlayers`, and `seatIdentities`.
+- Static test-consumption check: `GCDevJsonContractFixtureTests` still discovers `ContractFixtures/LocalPlay`, loads `expected.json` with `JsonUtility`, copies corpus `gc.dev.json` and optional `gc.platform.json` into a temp root, and exercises `GCDevJsonStore`, `GCPlatformDataStore`, and `GCLocalPlaySession.Capture`.
 - Inline-builder removal check: no `BuildDevJson`, `BuildMetadataJson`, `BuildSeats`, `StringBuilder`, `WriteDevJson`, `WriteMetadataJson`, or `AppendLine` matches remain in `GCDevJsonContractFixtureTests`.
 - Unity `.meta` hygiene and GUID check: every `ContractFixtures` directory/file has a sibling `.meta`, folder metas use `DefaultImporter`, JSON metas use `TextScriptImporter`, and the repo-wide `.meta` GUID scan found no duplicate GUIDs.
 - Public runtime payload static check: no diffs for `Runtime/GCSetupOptions.cs`, `Runtime/GCPlayOptions.cs`, `Runtime/GCPlayerSetupOptions.cs`, `Runtime/GCPlayer.cs`, or `Tests/Editor/dsb.gamingcouch.editor.tests.asmdef`.
@@ -1523,8 +1523,8 @@ Changed paths:
 - `ContractFixtures.meta`
 - `ContractFixtures/LocalPlay.meta`
 - `ContractFixtures/LocalPlay/valid-sparse-roster-capture/**`
-- `ContractFixtures/LocalPlay/missing-metadata-warning-only/**`
-- `ContractFixtures/LocalPlay/metadata-max-player-gate-failure/**`
+- `ContractFixtures/LocalPlay/missing-platform-data-warning-only/**`
+- `ContractFixtures/LocalPlay/platform-data-max-player-gate-failure/**`
 - `ContractFixtures/LocalPlay/wrong-seat-count-failure/**`
 - `ContractFixtures/LocalPlay/unsupported-dev-version-failure/**`
 - `ContractFixtures/LocalPlay/preserving-write-unrelated-top-level-fields/**`
@@ -1535,7 +1535,7 @@ Validation:
 
 - `git diff --check`: passed.
 - Static corpus check: parsed every `ContractFixtures/LocalPlay/**/*.json` file and confirmed exactly six case folders with required `gc.dev.json` and `expected.json` files.
-- Static test-consumption check: `GCDevJsonContractFixtureTests` references `ContractFixtures/LocalPlay`, loads `expected.json`, copies corpus `gc.dev.json`/optional `gc.metadata.json` files into the temporary root, and uses `GCDevJsonStore`, `GCMetadataJsonStore`, and `GCLocalPlaySession.Capture`.
+- Static test-consumption check: `GCDevJsonContractFixtureTests` references `ContractFixtures/LocalPlay`, loads `expected.json`, copies corpus `gc.dev.json`/optional `gc.platform.json` files into the temporary root, and uses `GCDevJsonStore`, `GCPlatformDataStore`, and `GCLocalPlaySession.Capture`.
 - Inline-builder removal check: `rg -n "BuildDevJson|BuildMetadataJson|BuildSeats|StringBuilder|WriteDevJson|WriteMetadataJson|AppendLine" Tests/Editor/GCDevJsonContractFixtureTests.cs` returned no matches.
 - Unity `.meta` hygiene check: every new `ContractFixtures` directory and JSON file has a sibling `.meta` file.
 - Public runtime payload static check: `git diff --name-only -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs Runtime/GCPlayerSetupOptions.cs` produced no output, so `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` were not changed.
@@ -1547,7 +1547,7 @@ Skipped validation:
 Parent validation:
 
 - `git diff --check`: passed.
-- Parent corpus JSON parse check: parsed all `ContractFixtures/LocalPlay` `gc.dev.json`, optional `gc.metadata.json`, and `expected.json` files; confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, matching expected ids, `valid`, `issues`, `capture`, and `write` fields, and no Unity-shaped `capture.setup` or `capture.play` fields.
+- Parent corpus JSON parse check: parsed all `ContractFixtures/LocalPlay` `gc.dev.json`, optional `gc.platform.json`, and `expected.json` files; confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, matching expected ids, `valid`, `issues`, `capture`, and `write` fields, and no Unity-shaped `capture.setup` or `capture.play` fields.
 - Parent inline-builder removal check: `rg -n "BuildDevJson|BuildMetadataJson|BuildSeats|StringBuilder|WriteDevJson|WriteMetadataJson|AppendLine" Tests/Editor/GCDevJsonContractFixtureTests.cs` returned no matches.
 - Parent public payload/package/assembly diff check produced no changes for `GCSetupOptions`, `GCPlayOptions`, `GCPlayerOptions`, `GCPlayer`, `package.json`, runtime/editor asmdefs, or the editor test asmdef.
 - Parent Unity `.meta` hygiene check: every new `ContractFixtures` directory and JSON file has a sibling `.meta`, and the repo-wide `.meta` GUID duplicate scan produced no duplicate GUID output.
@@ -1982,8 +1982,8 @@ Done.
 - `Runtime/Dev/GCDevJsonFile.cs`
 - `Runtime/Dev/GCDevJsonStore.cs`
 - `Runtime/Dev/GCDevJsonValidation.cs`
-- `Runtime/Dev/GCMetadataJsonFile.cs`
-- `Runtime/Dev/GCMetadataJsonStore.cs`
+- `Runtime/Dev/GCPlatformDataFile.cs`
+- `Runtime/Dev/GCPlatformDataStore.cs`
 - `Runtime/Dev/GCRootJsonFileStamp.cs`
 - `Runtime/dsb.gamingcouch.runtime.asmdef`
 - `Editor/GCDevJsonDraft.cs`
@@ -2005,11 +2005,11 @@ Preserve Unity `.meta` hygiene when moving existing files. If implementation dis
 
 ### Implementation Steps
 
-1. Keep `GCLocalPlaySession` in Runtime as the **Local Play Session** **Seam**, but remove all dependencies on `GCDevJson*`, `GCMetadataJson*`, `JObject`, `JToken`, and `Unity.Newtonsoft.Json`.
+1. Keep `GCLocalPlaySession` in Runtime as the **Local Play Session** **Seam**, but remove all dependencies on `GCDevJson*`, `GCPlatformData*`, `JObject`, `JToken`, and `Unity.Newtonsoft.Json`.
 2. Add Runtime-owned neutral session types for a registered provider, capture/preflight results, issue severity, and issue display data.
 3. Make the Runtime session cache successful capture results and expose setup/play options and **Seat** identities exactly as before.
 4. Make Runtime session logging consume neutral session issues only; JSON issue codes and JSON-specific formatting must not cross the Runtime boundary.
-5. Add an Editor-owned JSON-backed Local Play Contract Adapter registered at editor load. It should read/write/validate `gc.dev.json`, read `gc.metadata.json`, build `GCSetupOptions`, build `GCPlayOptions`, build `GCSeatIdentity[]`, and map JSON validation results to neutral session issues.
+5. Add an Editor-owned JSON-backed Local Play Contract Adapter registered at editor load. It should read/write/validate `gc.dev.json`, read `gc.platform.json`, build `GCSetupOptions`, build `GCPlayOptions`, build `GCSeatIdentity[]`, and map JSON validation results to neutral session issues.
 6. Move JSON implementation files and models into the Editor assembly while preserving their existing namespace unless a compile boundary requires otherwise.
 7. Keep `GCLocalProjectRootResolver` in Runtime because DevApp runtime message construction still uses it and it has no JSON dependency.
 8. Remove `Unity.Newtonsoft.Json` from `Runtime/dsb.gamingcouch.runtime.asmdef`; keep the dependency in the Editor asmdef and `package.json`.
@@ -2024,7 +2024,7 @@ Preserve Unity `.meta` hygiene when moving existing files. If implementation dis
 - Run `git diff --check`.
 - Statically confirm `Runtime/dsb.gamingcouch.runtime.asmdef` no longer references `Unity.Newtonsoft.Json`.
 - Statically confirm `Runtime` no longer contains Newtonsoft/JObject/JToken references.
-- Statically confirm Runtime `GCLocalPlaySession` no longer references `GCDevJson*` or `GCMetadataJson*` types.
+- Statically confirm Runtime `GCLocalPlaySession` no longer references `GCDevJson*` or `GCPlatformData*` types.
 - Run focused Unity editor tests:
   - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`
   - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`
@@ -2044,10 +2044,10 @@ Changed paths:
 - `Editor/GCDevJsonStore.cs.meta`
 - `Editor/GCDevJsonValidation.cs`
 - `Editor/GCDevJsonValidation.cs.meta`
-- `Editor/GCMetadataJsonFile.cs`
-- `Editor/GCMetadataJsonFile.cs.meta`
-- `Editor/GCMetadataJsonStore.cs`
-- `Editor/GCMetadataJsonStore.cs.meta`
+- `Editor/GCPlatformDataFile.cs`
+- `Editor/GCPlatformDataFile.cs.meta`
+- `Editor/GCPlatformDataStore.cs`
+- `Editor/GCPlatformDataStore.cs.meta`
 - `Editor/GCRootJsonFileStamp.cs`
 - `Editor/GCRootJsonFileStamp.cs.meta`
 - `Editor/GCDevJsonInspectorState.cs`
@@ -2065,16 +2065,16 @@ Changed paths:
 Validation:
 
 - `git diff --check`: passed.
-- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
+- `rg -n "GCDevJson|GCPlatformData|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
 - `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only Editor asmdef retains the reference.
-- `rg -n "GCDevJson|GCMetadataJson" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
+- `rg -n "GCDevJson|GCPlatformData" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
 - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
 - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: bridge returned `An unexpected error happened while running tests.` before creating result XML.
 
 Review pass 2 findings:
 
 - No compile, test, or behavior defects requiring product-code patches were found.
-- Runtime boundary inspection confirmed `Runtime/Dev/GCLocalPlaySession.cs` contains only neutral Local Play Session provider/result/issue types and no `GCDevJson*`, `GCMetadataJson*`, Newtonsoft, `JObject`, or `JToken` references.
+- Runtime boundary inspection confirmed `Runtime/Dev/GCLocalPlaySession.cs` contains only neutral Local Play Session provider/result/issue types and no `GCDevJson*`, `GCPlatformData*`, Newtonsoft, `JObject`, or `JToken` references.
 - Editor adapter inspection confirmed `GCDevJsonLocalPlaySessionProvider` owns JSON read/capture/preflight mapping, builds setup/play options and seat identities, maps validation warnings/errors to neutral issues, and keeps bot-support-disabled as a warning-only validation result.
 - `.meta` inspection confirmed moved JSON files kept their existing Unity GUIDs.
 - Task status was corrected to keep Task 15 in review with parent validation pending instead of marking the architecture follow-up complete.
@@ -2086,10 +2086,10 @@ Review pass 2 patches:
 Review pass 2 validation:
 
 - `git diff --check`: passed.
-- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
+- `rg -n "GCDevJson|GCPlatformData|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime`: no matches.
 - `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only `Editor/dsb.gamingcouch.editor.asmdef` matched.
-- `rg -n "GCDevJson|GCMetadataJson" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
-- `rg -n "[ \t]+$" Editor/GCDevJsonFile.cs Editor/GCDevJsonFile.cs.meta Editor/GCDevJsonStore.cs Editor/GCDevJsonStore.cs.meta Editor/GCDevJsonValidation.cs Editor/GCDevJsonValidation.cs.meta Editor/GCMetadataJsonFile.cs Editor/GCMetadataJsonFile.cs.meta Editor/GCMetadataJsonStore.cs Editor/GCMetadataJsonStore.cs.meta Editor/GCRootJsonFileStamp.cs Editor/GCRootJsonFileStamp.cs.meta docs/architecture/unity-dev-json-sync-implementation-tasks.md`: no matches.
+- `rg -n "GCDevJson|GCPlatformData" Runtime/Dev/GCLocalPlaySession.cs Tests/Editor/GCLocalPlaySessionTests.cs`: no matches.
+- `rg -n "[ \t]+$" Editor/GCDevJsonFile.cs Editor/GCDevJsonFile.cs.meta Editor/GCDevJsonStore.cs Editor/GCDevJsonStore.cs.meta Editor/GCDevJsonValidation.cs Editor/GCDevJsonValidation.cs.meta Editor/GCPlatformDataFile.cs Editor/GCPlatformDataFile.cs.meta Editor/GCPlatformDataStore.cs Editor/GCPlatformDataStore.cs.meta Editor/GCRootJsonFileStamp.cs Editor/GCRootJsonFileStamp.cs.meta docs/architecture/unity-dev-json-sync-implementation-tasks.md`: no matches.
 
 Review pass 2 skipped validation:
 
@@ -2100,7 +2100,7 @@ Parent validation:
 - Parent inspection confirmed `GCLocalPlaySession` owns neutral Local Play Session provider/result/issue types and no longer depends on JSON implementation types.
 - Parent inspection confirmed `GCDevJsonLocalPlaySessionProvider` is Editor-owned, registered at editor load, maps JSON validation codes to neutral issue strings, and builds setup/play options plus **Seat** identities.
 - `git diff --check`: passed.
-- `rg -n "GCDevJson|GCMetadataJson|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime -g '*.cs' -g '*.asmdef'`: no matches.
+- `rg -n "GCDevJson|GCPlatformData|Newtonsoft|JObject|JToken|Unity\.Newtonsoft\.Json" Runtime -g '*.cs' -g '*.asmdef'`: no matches.
 - `rg -n "Unity\.Newtonsoft\.Json" Runtime/dsb.gamingcouch.runtime.asmdef Editor/dsb.gamingcouch.editor.asmdef package.json`: only `Editor/dsb.gamingcouch.editor.asmdef` matched.
 - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCLocalPlaySessionTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-58a70d87afec45778cc1d9aef323a04e.json`, and did not create result XML.
 - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --test GCDevJsonContractFixtureTests --timeout 300`: Unity bridge returned `error: An unexpected error happened while running tests.`, wrote status `/tmp/gaming-couch-unity-test-6af45e302e6740d9bd839fe3a92e5e87.json`, and did not create result XML.

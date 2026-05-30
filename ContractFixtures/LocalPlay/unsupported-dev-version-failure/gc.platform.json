@@ -1,4 +1,5 @@
 {
+  "platformDataVersion": 1,
   "game": {
     "key": "contract-game",
     "name": "Contract Game",

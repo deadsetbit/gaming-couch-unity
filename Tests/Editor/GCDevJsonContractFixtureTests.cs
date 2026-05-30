@@ -18,15 +18,15 @@ public sealed class GCDevJsonContractFixtureTests
     }
 
     [Test]
-    public void MissingMetadataKeepsValidDevJsonReadableWithWarningOnlyIssue()
+    public void MissingPlatformDataKeepsValidDevJsonReadableWithWarningOnlyIssue()
     {
-        RunContractFixtureCase("missing-metadata-warning-only");
+        RunContractFixtureCase("missing-platform-data-warning-only");
     }
 
     [Test]
-    public void MetadataMaxPlayerGateFailsValidationAndCapture()
+    public void PlatformDataMaxPlayerGateFailsValidationAndCapture()
     {
-        RunContractFixtureCase("metadata-max-player-gate-failure");
+        RunContractFixtureCase("platform-data-max-player-gate-failure");
     }
 
     [Test]
@@ -56,8 +56,8 @@ public sealed class GCDevJsonContractFixtureTests
         {
             fixture.CopyCorpusFiles(casePath);
 
-            var metadataReadResult = fixture.MetadataStore.Read();
-            var readResult = fixture.DevStore.Read(metadataReadResult);
+            var platformDataReadResult = fixture.PlatformDataStore.Read();
+            var readResult = fixture.DevStore.Read(platformDataReadResult);
 
             AssertReadResult(readResult, expected);
             AssertCapture(fixture, readResult, expected.capture);
@@ -218,7 +218,7 @@ public sealed class GCDevJsonContractFixtureTests
         }
 
         Assert.That(expected.data, Is.Not.Null, "Write fixture must include canonical gc.dev.json data.");
-        var writeResult = fixture.DevStore.Write(ToDevJsonFile(expected.data), fixture.MetadataStore.Read());
+        var writeResult = fixture.DevStore.Write(ToDevJsonFile(expected.data), fixture.PlatformDataStore.Read());
         Assert.That(writeResult.success, Is.EqualTo(expected.success));
         Assert.That(writeResult.validation, Is.Not.Null);
         Assert.That(writeResult.validation.IsValid, Is.EqualTo(expected.resultValid));
@@ -267,7 +267,7 @@ public sealed class GCDevJsonContractFixtureTests
             return;
         }
 
-        var readResult = fixture.DevStore.Read(fixture.MetadataStore.Read());
+        var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
         Assert.That(readResult.IsValid, Is.EqualTo(expected.valid));
         Assert.That(readResult.data, Is.Not.Null);
         Assert.That(readResult.data.devVersion, Is.EqualTo(expected.devVersion));
@@ -320,31 +320,31 @@ public sealed class GCDevJsonContractFixtureTests
             Directory.CreateDirectory(rootPath);
             var resolver = new FakeLocalProjectRootResolver(rootPath);
             DevStore = new GCDevJsonStore(resolver);
-            MetadataStore = new GCMetadataJsonStore(resolver);
+            PlatformDataStore = new GCPlatformDataStore(resolver);
         }
 
         internal GCDevJsonStore DevStore { get; private set; }
 
-        internal GCMetadataJsonStore MetadataStore { get; private set; }
+        internal GCPlatformDataStore PlatformDataStore { get; private set; }
 
         internal string DevJsonPath
         {
             get { return Path.Combine(rootPath, GCDevJsonFile.FileName); }
         }
 
-        private string MetadataJsonPath
+        private string PlatformDataJsonPath
         {
-            get { return Path.Combine(rootPath, GCMetadataJsonFile.FileName); }
+            get { return Path.Combine(rootPath, GCPlatformDataFile.FileName); }
         }
 
         internal void CopyCorpusFiles(string casePath)
         {
             CopyRequiredFile(Path.Combine(casePath, GCDevJsonFile.FileName), DevJsonPath);
 
-            var metadataSourcePath = Path.Combine(casePath, GCMetadataJsonFile.FileName);
-            if (File.Exists(metadataSourcePath))
+            var platformDataSourcePath = Path.Combine(casePath, GCPlatformDataFile.FileName);
+            if (File.Exists(platformDataSourcePath))
             {
-                File.Copy(metadataSourcePath, MetadataJsonPath, true);
+                File.Copy(platformDataSourcePath, PlatformDataJsonPath, true);
             }
         }
 

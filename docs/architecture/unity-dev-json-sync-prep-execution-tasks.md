@@ -31,7 +31,7 @@ Repos and bridge placeholders:
 - Before each task, run `git status --short` and preserve unrelated untracked files, especially `VERSIONING_PLAN.md` and `VERSIONING_PLAN.md.meta`.
 - After each task, update this file and the roadmap status table.
 - Do not edit the Gaming Couch main repo unless separately approved.
-- Do not implement `gc.dev.json` sync, `gc.metadata.json` parsing, JSON file writes, inspector Apply/Revert, dirty/conflict state, Newtonsoft dependency, package version bumps, release notes, or tags in these prep tasks.
+- Do not implement `gc.dev.json` sync, `gc.platform.json` parsing, JSON file writes, inspector Apply/Revert, dirty/conflict state, Newtonsoft dependency, package version bumps, release notes, or tags in these prep tasks.
 
 ## Global Compatibility Rules
 

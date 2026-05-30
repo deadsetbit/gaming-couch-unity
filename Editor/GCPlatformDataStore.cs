@@ -7,16 +7,16 @@ using Newtonsoft.Json.Linq;
 
 namespace DSB.GC.Dev
 {
-    internal sealed class GCMetadataJsonStore
+    internal sealed class GCPlatformDataStore
     {
         private readonly IGCLocalProjectRootResolver projectRootResolver;
 
-        internal GCMetadataJsonStore()
+        internal GCPlatformDataStore()
             : this(new GCUnityLocalProjectRootResolver())
         {
         }
 
-        internal GCMetadataJsonStore(IGCLocalProjectRootResolver projectRootResolver)
+        internal GCPlatformDataStore(IGCLocalProjectRootResolver projectRootResolver)
         {
             if (projectRootResolver == null)
             {
@@ -28,7 +28,7 @@ namespace DSB.GC.Dev
 
         internal string ResolveFilePath()
         {
-            return Path.Combine(projectRootResolver.ResolveProjectRootPath(), GCMetadataJsonFile.FileName);
+            return Path.Combine(projectRootResolver.ResolveProjectRootPath(), GCPlatformDataFile.FileName);
         }
 
         internal GCRootJsonFileStamp ReadFileStamp()
@@ -36,16 +36,16 @@ namespace DSB.GC.Dev
             return GCRootJsonFileStamp.Read(ResolveFilePath());
         }
 
-        internal GCMetadataJsonReadResult Read()
+        internal GCPlatformDataReadResult Read()
         {
-            return GCMetadataJsonValidation.BuildReadResult(ReadParsedFile(ResolveFilePath()));
+            return GCPlatformDataValidation.BuildReadResult(ReadParsedFile(ResolveFilePath()));
         }
 
-        private static GCMetadataJsonParsedFile ReadParsedFile(string path)
+        private static GCPlatformDataParsedFile ReadParsedFile(string path)
         {
             if (!File.Exists(path))
             {
-                return GCMetadataJsonParsedFile.Missing(path);
+                return GCPlatformDataParsedFile.Missing(path);
             }
 
             try
@@ -54,18 +54,18 @@ namespace DSB.GC.Dev
                 var jsonObject = token as JObject;
                 if (jsonObject == null)
                 {
-                    return GCMetadataJsonParsedFile.InvalidRoot(path);
+                    return GCPlatformDataParsedFile.InvalidRoot(path);
                 }
 
-                return GCMetadataJsonParsedFile.Parsed(path, jsonObject);
+                return GCPlatformDataParsedFile.Parsed(path, jsonObject);
             }
             catch (JsonException exception)
             {
-                return GCMetadataJsonParsedFile.InvalidJson(path, "gc.metadata.json is not valid JSON: " + exception.Message);
+                return GCPlatformDataParsedFile.InvalidJson(path, "gc.platform.json is not valid JSON: " + exception.Message);
             }
             catch (Exception exception)
             {
-                return GCMetadataJsonParsedFile.ReadError(path, "gc.metadata.json could not be read: " + exception.Message);
+                return GCPlatformDataParsedFile.ReadError(path, "gc.platform.json could not be read: " + exception.Message);
             }
         }
     }

@@ -1,9 +1,9 @@
 {
-  "id": "metadata-max-player-gate-failure",
+  "id": "platform-data-max-player-gate-failure",
   "valid": false,
   "issues": [
     {
-      "code": "MetadataEnabledSeatsAboveMaximum",
+      "code": "PlatformDataEnabledSeatsAboveMaximum",
       "severity": "Error"
     }
   ],

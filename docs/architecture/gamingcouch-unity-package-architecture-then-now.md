@@ -52,8 +52,8 @@ Now the package keeps Unity side effects in editor/runtime adapters, but the dec
 ```mermaid
 flowchart LR
   subgraph Contract["Local Play Contract"]
-    Stores["GCDevJsonStore + GCMetadataJsonStore<br/>GCRootJsonFileStamp<br/>root file IO and external change stamps"]
-    Validation["GCDevJsonValidation<br/>dev structure, metadata gates,<br/>warnings and issue formatting"]
+    Stores["GCDevJsonStore + GCPlatformDataStore<br/>GCRootJsonFileStamp<br/>root file IO and external change stamps"]
+    Validation["GCDevJsonValidation<br/>dev structure, platform data gates,<br/>warnings and issue formatting"]
     JsonAdapter["GCDevJsonLocalPlaySessionProvider<br/>Editor JSON adapter to neutral session results"]
     Fixtures["ContractFixtures/LocalPlay<br/>portable fixture corpus"]
   end
@@ -109,9 +109,9 @@ flowchart LR
 | Concern | Then owner | Now owner | Pattern |
 | --- | --- | --- | --- |
 | Root `gc.dev.json` IO | `GCDevJsonInspectorState.cs` held `GCDevJsonStore` inline. | `Editor/GCDevJsonStore.cs` and `Editor/GCDevJsonFile.cs`. | Move file contract behavior out of inspector state and keep JSON dependencies editor-only. |
-| Root `gc.metadata.json` IO | `GCDevJsonInspectorState.cs` held `GCMetadataJsonStore` inline. | `Editor/GCMetadataJsonStore.cs` and `Editor/GCMetadataJsonFile.cs`. | Keep metadata as a light-read contract input, not a second settings store. |
+| Root `gc.platform.json` IO | `GCDevJsonInspectorState.cs` held `GCPlatformDataStore` inline. | `Editor/GCPlatformDataStore.cs` and `Editor/GCPlatformDataFile.cs`. | Keep platform data as a light-read contract input, not a second settings store. |
 | File change detection | `GCDevJsonInspectorState.cs` held `GCRootJsonFileStamp` inline. | `Editor/GCRootJsonFileStamp.cs`. | Share root file polling primitives without making inspector state own them or Runtime carry JSON file IO. |
-| Structure and metadata gates | Validation existed, but store/state ownership was mixed with the inspector. | `Editor/GCDevJsonValidation.cs` validates `gc.dev.json`, metadata warnings, entry gates, seat counts, seed rules, and bot warnings. | Keep contract decisions near the contract and out of Runtime. |
+| Structure and platform data gates | Validation existed, but store/state ownership was mixed with the inspector. | `Editor/GCDevJsonValidation.cs` validates `gc.dev.json`, platform data warnings, entry gates, seat counts, seed rules, and bot warnings. | Keep contract decisions near the contract and out of Runtime. |
 | Inspector draft state | Draft classes lived inside `GCDevJsonInspectorState.cs`. | `Editor/GCDevJsonDraft.cs` plus `GCDevJsonInspectorState.cs`. | Separate editable model from state machine and view. |
 | Play/restart preflight and Capture | `GamingCouch.cs`, `GamingCouchEditor.cs`, `GCEditorPlayCapture.cs`, and `GCEditorPlayJsonCapture.cs` shared capture/preflight work. | `Runtime/Dev/GCLocalPlaySession.cs` owns the neutral seam; `GCDevJsonLocalPlaySessionProvider` in Editor adapts JSON to setup/play payloads. | Put active **Capture** and restart boundaries behind one session module without coupling Runtime to JSON. |
 | Runtime setup/play payload shape | Public DTOs stayed stable. | Public DTOs still stay stable: `GCSetupOptions`, `GCPlayOptions`, `GCPlayerOptions`. | Deepen internal modules without changing public payload contracts. |
@@ -124,8 +124,8 @@ flowchart LR
 ## Reading The Now-State
 
 - `gc.dev.json` is read and written by Editor `GCDevJsonStore`, structurally represented by `GCDevJsonFile`, validated by `GCDevJsonValidation`, edited through `GCDevJsonDraft` and `GCDevJsonInspectorState`, and captured for runtime through the Editor JSON adapter registered with `GCLocalPlaySession`.
-- `gc.metadata.json` is read by `GCMetadataJsonStore`, represented by `GCMetadataJsonFile`, validated as warning or gate context, and never written by the Unity package.
-- `GCLocalPlaySession` remains in Runtime but depends only on neutral provider, capture, preflight, and issue types. It does not reference Newtonsoft, `JObject`, `JToken`, `GCDevJson*`, or `GCMetadataJson*`.
+- `gc.platform.json` is read by `GCPlatformDataStore`, represented by `GCPlatformDataFile`, validated as warning or gate context, and never written by the Unity package.
+- `GCLocalPlaySession` remains in Runtime but depends only on neutral provider, capture, preflight, and issue types. It does not reference Newtonsoft, `JObject`, `JToken`, `GCDevJson*`, or `GCPlatformData*`.
 - **Start Screen Readiness** answers "what is true and what action is available"; Start Screen setup actions answer "what should happen when this action is clicked"; **Active Scene Setup** applies safe setup to the user's current scene and related editor launch settings while creating or reusing **Example Assets**.
 - `GCDevAppRuntimeMessages` exists so outgoing `runtime_register` and `runtime_snapshot` payloads can be tested without opening a WebSocket. `GCDevAppIntegration` remains the transport and inbound-command adapter.
 - The test harness split is deliberate: each deeper module now has a focused test home, while `GamingCouchStartScreenEditorSmokeTests` keeps only cross-module smoke coverage.

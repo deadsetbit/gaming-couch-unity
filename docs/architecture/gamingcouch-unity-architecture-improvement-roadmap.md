@@ -35,7 +35,7 @@ Tasks 8 through 10 and Task 15 completed the local play architecture follow-up:
 - **Local Play Session Module**: active **Capture**, root Local Play Contract preflight, restart preflight/recapture, and issue logging coordination now sit behind one deeper Runtime **Seam** with neutral provider/result/issue types.
 - **Editor Local Play Contract Adapter**: JSON-backed parsing, writing, validation, Newtonsoft usage, setup/play option construction, and **Seat** identity construction are registered from Editor at load time.
 - **Contract Fixture Corpus**: package-root `ContractFixtures/LocalPlay` cases are portable data consumed by Unity editor tests.
-- **Leverage gained**: tests can exercise real `gc.dev.json` and `gc.metadata.json` file behavior, active **Capture**, and portable **Contract Fixture** cases through smaller **Interfaces**.
+- **Leverage gained**: tests can exercise real `gc.dev.json` and `gc.platform.json` file behavior, active **Capture**, and portable **Contract Fixture** cases through smaller **Interfaces**.
 - **Locality gained**: root file parsing/writing rules, local play session rules, and fixture expectations now live in their owning areas instead of being embedded in inspector state or broad test code.
 
 Remaining friction observed in the current code shape:

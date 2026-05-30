@@ -49,7 +49,7 @@ public sealed class GCLocalPlaySessionTests
         {
             CaptureHandler = () => CreateFailedCapture(
                 "/tmp/gc.dev.json",
-                "Valid metadata gate failed because enabled seat count exceeds the selected entry maximum."
+                "Valid platform data gate failed because enabled seat count exceeds the selected entry maximum."
             ),
         };
 
@@ -118,7 +118,7 @@ public sealed class GCLocalPlaySessionTests
                 "Unity Play Mode entry blocked by root validation.",
                 "/tmp/gc.dev.json",
                 GCLocalPlaySessionValidationResult.FromIssue(GCLocalPlaySessionIssue.Error(
-                    "Valid metadata gate failed because enabled seat count exceeds the selected entry maximum.",
+                    "Valid platform data gate failed because enabled seat count exceeds the selected entry maximum.",
                     "/tmp/gc.dev.json"
                 ))
             ),
@@ -181,7 +181,7 @@ public sealed class GCLocalPlaySessionTests
             CaptureHandler = () => shouldFail
                 ? CreateFailedCapture(
                     "/tmp/gc.dev.json",
-                    "Valid metadata gate failed because enabled seat count exceeds the selected entry maximum."
+                    "Valid platform data gate failed because enabled seat count exceeds the selected entry maximum."
                 )
                 : CreateSuccessfulCapture("duel", 12345, 1),
         };

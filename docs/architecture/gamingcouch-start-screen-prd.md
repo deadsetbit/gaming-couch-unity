@@ -90,7 +90,7 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 - The generated player prefab is named `GCPlayerExample.prefab`, has `GCPlayerExample` on its root, and includes a simple visible placeholder that applies GamingCouch player colors.
 - The generated listener object is named `Game`, has `GCGameExample`, and demonstrates `GamingCouchSetup`, `GamingCouchPlay`, `SetupGameVersus`, `SetupDone`, `SetupPlayers<GCPlayerExample>`, randomized final scores, and `GameOver()`.
 - When the assigned listener is generated `GCGameExample`, player prefab readiness requires the assigned prefab root to have `GCPlayerExample`. Custom listener scripts keep the existing reference-only player prefab readiness behavior.
-- The package detects missing or invalid local play JSON and reports it clearly, but does not create, bootstrap, migrate, or repair `gc.dev.json` or `gc.metadata.json`.
+- The package detects missing or invalid local play JSON and reports it clearly, but does not create, bootstrap, migrate, or repair `gc.dev.json` or `gc.platform.json`.
 
 ## Launch Readiness
 

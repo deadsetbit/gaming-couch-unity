@@ -30,7 +30,7 @@ internal sealed class GCDevJsonInspectorView
 
         EditorGUILayout.LabelField("Local Play Settings", EditorStyles.boldLabel);
         EditorGUILayout.LabelField("File", state.DevJsonPath);
-        DrawMetadataSummary(state);
+        DrawPlatformDataSummary(state);
         DrawStateMessages(state);
         DrawIssues(state.GetDisplayIssues());
 
@@ -57,16 +57,16 @@ internal sealed class GCDevJsonInspectorView
         DrawActions(state);
     }
 
-    private static void DrawMetadataSummary(GCDevJsonInspectorState state)
+    private static void DrawPlatformDataSummary(GCDevJsonInspectorState state)
     {
-        var metadata = state.MetadataReadResult != null ? state.MetadataReadResult.data : null;
-        if (!state.HasValidMetadata || metadata == null)
+        var platformData = state.PlatformDataReadResult != null ? state.PlatformDataReadResult.data : null;
+        if (!state.HasValidPlatformData || platformData == null)
         {
             return;
         }
 
-        EditorGUILayout.LabelField("Game", metadata.gameName + " (" + metadata.gameKey + ")");
-        EditorGUILayout.LabelField("Platform", metadata.platformId);
+        EditorGUILayout.LabelField("Game", platformData.gameName + " (" + platformData.gameKey + ")");
+        EditorGUILayout.LabelField("Platform", platformData.platformId);
     }
 
     private static void DrawStateMessages(GCDevJsonInspectorState state)
@@ -90,13 +90,13 @@ internal sealed class GCDevJsonInspectorView
 
     private static void DrawEntry(GCDevJsonInspectorState state)
     {
-        if (!state.HasValidMetadata)
+        if (!state.HasValidPlatformData)
         {
             state.Draft.entryKey = EditorGUILayout.TextField("Entry Key", state.Draft.entryKey ?? string.Empty);
             return;
         }
 
-        var options = BuildEntryOptions(state.MetadataReadResult.data, state.Draft.entryKey);
+        var options = BuildEntryOptions(state.PlatformDataReadResult.data, state.Draft.entryKey);
         var labels = new string[options.Count];
         var selectedIndex = 0;
         for (var index = 0; index < options.Count; index++)
@@ -115,11 +115,11 @@ internal sealed class GCDevJsonInspectorView
         }
     }
 
-    private static List<EntryOption> BuildEntryOptions(GCMetadataJsonFile metadata, string currentEntryKey)
+    private static List<EntryOption> BuildEntryOptions(GCPlatformDataFile platformData, string currentEntryKey)
     {
         var options = new List<EntryOption>();
         var keys = new List<string>();
-        foreach (var pair in metadata.entries)
+        foreach (var pair in platformData.entries)
         {
             keys.Add(pair.Key);
         }
@@ -130,7 +130,7 @@ internal sealed class GCDevJsonInspectorView
         for (var index = 0; index < keys.Count; index++)
         {
             var key = keys[index];
-            var entry = metadata.entries[key];
+            var entry = platformData.entries[key];
             var isSelected = string.Equals(key, currentEntryKey, StringComparison.Ordinal);
             currentFound = currentFound || isSelected;
             options.Add(new EntryOption(
@@ -210,14 +210,14 @@ internal sealed class GCDevJsonInspectorView
     private static bool TryGetSeatColor(GCDevJsonInspectorState state, int seatIndex, out Color color)
     {
         color = default(Color);
-        var metadata = state.MetadataReadResult != null ? state.MetadataReadResult.data : null;
-        if (!state.HasValidMetadata || metadata == null || seatIndex < 0 || seatIndex >= SeatColorKeys.Length)
+        var platformData = state.PlatformDataReadResult != null ? state.PlatformDataReadResult.data : null;
+        if (!state.HasValidPlatformData || platformData == null || seatIndex < 0 || seatIndex >= SeatColorKeys.Length)
         {
             return false;
         }
 
-        GCMetadataJsonColorVariants variants;
-        if (!metadata.playerColors.TryGetValue(SeatColorKeys[seatIndex], out variants) || variants == null)
+        GCPlatformDataColorVariants variants;
+        if (!platformData.playerColors.TryGetValue(SeatColorKeys[seatIndex], out variants) || variants == null)
         {
             return false;
         }

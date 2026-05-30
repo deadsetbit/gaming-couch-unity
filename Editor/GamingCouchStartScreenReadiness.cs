@@ -1206,7 +1206,7 @@ internal static class GCStartScreenReadinessService
             return new GCStartScreenLocalPlayJsonReadiness(
                 readResult.IsValid,
                 readResult.parsedFile != null ? readResult.parsedFile.path : null,
-                readResult.IsValid ? null : "gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates.",
+                readResult.IsValid ? null : "gc.dev.json is missing, invalid, or rejected by valid platform data gates.",
                 validation
             );
         }

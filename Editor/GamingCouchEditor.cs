@@ -320,7 +320,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         }
 
         var message = GCLocalPlaySession.GetBoundaryDisplayName(context) +
-                      " blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates.";
+                      " blocked because root gc.dev.json is missing, invalid, or rejected by valid platform data gates.";
         return GCLocalPlaySessionPreflightResult.Failed(
             message,
             GetPath(readResult),

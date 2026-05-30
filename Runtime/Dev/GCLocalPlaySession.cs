@@ -331,7 +331,7 @@ namespace DSB.GC.Dev
             seatIdentities = Array.Empty<GCSeatIdentity>();
             Debug.LogError(
                 "[GamingCouch] " + source +
-                " blocked because root gc.dev.json is missing, invalid, or rejected by valid gc.metadata.json gates. Fix gc.dev.json and re-enter Play Mode."
+                " blocked because root gc.dev.json is missing, invalid, or rejected by valid platform data gates. Fix gc.dev.json and re-enter Play Mode."
             );
             return false;
         }

@@ -40,7 +40,7 @@ Next action: Stop here unless explicitly asked to continue with another pending 
 | 2 | NGO/WebGL transport hardening | Pending | Duplicate/stale `.jslib` bridge behavior, payload slicing, static server state, unused transport helpers, and missing transport tests are addressed through a focused bug-hardening slice. | None | Treat as behavior work. Validate with tests and WebGL build/smoke coverage where feasible. |
 | 3 | Runtime API deprecation cleanup | Pending | Deprecated or internal-looking Runtime public surfaces are reviewed with compatibility rules, migration notes, and staged deprecation/removal decisions. | None | Candidates include `GCNameTag`, `GCPlayerStoreInput`, mutable store views, and public internal setup/dev methods. Do not casually delete serialized compatibility shims. |
 | 4 | Active Scene Setup terminology cleanup | Completed | The unreachable generated scene route is removed, setup code is named for Active Scene Setup, and docs use Start Screen, Start Screen Readiness, Active Scene Setup, and Example Assets vocabulary. | None | Generated editable Example Assets stay available for Active Scene Setup. Legacy generated prefab replacement checks remain for compatibility. |
-| 5 | Contract Fixture warning-only assertion | Pending | The missing-metadata warning-only Contract Fixture asserts successful Capture behavior if that is still intended. | None | Small test-hardening task; do not bundle with UI cleanup. |
+| 5 | Contract Fixture warning-only assertion | Pending | The missing-platform-data warning-only Contract Fixture asserts successful Capture behavior if that is still intended. | None | Small test-hardening task; do not bundle with UI cleanup. |
 
 ## Task 1 Details
 

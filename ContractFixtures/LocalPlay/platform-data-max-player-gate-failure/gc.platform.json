@@ -1,4 +1,5 @@
 {
+  "platformDataVersion": 1,
   "game": {
     "key": "contract-game",
     "name": "Contract Game",
@@ -6,7 +7,7 @@
       "duel": {
         "name": "Contract Entry",
         "minPlayers": 1,
-        "maxPlayers": 4,
+        "maxPlayers": 2,
         "botSupport": true
       }
     }

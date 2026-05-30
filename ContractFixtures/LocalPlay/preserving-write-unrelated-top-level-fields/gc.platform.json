@@ -1,10 +1,17 @@
 {
+  "platformDataVersion": 1,
   "game": {
     "key": "contract-game",
     "name": "Contract Game",
     "entries": {
       "duel": {
-        "name": "Contract Entry",
+        "name": "Duel",
+        "minPlayers": 1,
+        "maxPlayers": 4,
+        "botSupport": true
+      },
+      "coop": {
+        "name": "Co-op",
         "minPlayers": 1,
         "maxPlayers": 4,
         "botSupport": true

@@ -43,7 +43,7 @@ The sidecar lets future Gaming Couch upload and hosted-runtime validation inspec
 
 Unity editor play settings are read from the root `gc.dev.json` file in your Unity project. The package uses this file as the source of truth for local play entry, seed, and the eight-seat player roster, matching the Gaming Couch DevApp local project format.
 
-The root `gc.dev.json` file must already exist. Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.metadata.json`; create or update those files through DevApp before using editor play. The `GamingCouch` inspector edits only the canonical `gc.dev.json` fields:
+The root `gc.dev.json` file must already exist. Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.platform.json`; create or update those files through DevApp before using editor play. The `GamingCouch` inspector edits only the canonical `gc.dev.json` fields:
 
 - `devVersion`
 - `entryKey`
@@ -52,7 +52,7 @@ The root `gc.dev.json` file must already exist. Unity does not create, bootstrap
 
 Inspector writes preserve unrelated top-level `gc.dev.json` fields. Local play settings are no longer stored in scene-serialized editor fields, so changing entry, seed, or seats should not dirty the scene.
 
-When `gc.metadata.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When metadata is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must be at least one and no more than the selected entry's `maxPlayers`. Production `minPlayers` metadata is still displayed and exported unchanged, but local editor playtests may run with one enabled seat. Enabled bot seats on an entry without bot support are warning-only.
+When `gc.platform.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When platform data is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must be at least one and no more than the selected entry's `maxPlayers`. Production `minPlayers` platform data is still displayed and exported unchanged, but local editor playtests may run with one enabled seat. Enabled bot seats on an entry without bot support are warning-only.
 
 Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a valid, non-conflicted draft before capture. Invalid or conflicted drafts block Play Mode or restart until you apply, revert, reload from disk, or fix validation errors. Changes made to root JSON files during active Play Mode apply after a Gaming Couch restart or the next Play Mode entry.
 

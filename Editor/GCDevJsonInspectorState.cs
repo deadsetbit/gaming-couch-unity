@@ -7,15 +7,15 @@ internal sealed class GCDevJsonInspectorState
     private const double PollIntervalSeconds = 0.25;
 
     private readonly GCDevJsonStore devStore;
-    private readonly GCMetadataJsonStore metadataStore;
+    private readonly GCPlatformDataStore platformDataStore;
 
     private GCDevJsonFile cleanData;
     private GCDevJsonReadResult devReadResult;
-    private GCMetadataJsonReadResult metadataReadResult;
+    private GCPlatformDataReadResult platformDataReadResult;
     private GCDevJsonValidationResult draftValidation;
     private GCDevJsonWriteResult lastWriteResult;
     private GCRootJsonFileStamp devFileStamp;
-    private GCRootJsonFileStamp metadataFileStamp;
+    private GCRootJsonFileStamp platformDataFileStamp;
     private bool hasConflict;
     private bool hasPendingPlayChange;
     private bool hasUnloadedPlayDevJsonChange;
@@ -25,7 +25,7 @@ internal sealed class GCDevJsonInspectorState
     {
         var projectRootResolver = new GCUnityLocalProjectRootResolver();
         devStore = new GCDevJsonStore(projectRootResolver);
-        metadataStore = new GCMetadataJsonStore(projectRootResolver);
+        platformDataStore = new GCPlatformDataStore(projectRootResolver);
         Reload();
     }
 
@@ -36,9 +36,9 @@ internal sealed class GCDevJsonInspectorState
         get { return devReadResult; }
     }
 
-    internal GCMetadataJsonReadResult MetadataReadResult
+    internal GCPlatformDataReadResult PlatformDataReadResult
     {
-        get { return metadataReadResult; }
+        get { return platformDataReadResult; }
     }
 
     internal GCDevJsonValidationResult DraftValidation
@@ -56,9 +56,9 @@ internal sealed class GCDevJsonInspectorState
         get { return Draft != null; }
     }
 
-    internal bool HasValidMetadata
+    internal bool HasValidPlatformData
     {
-        get { return metadataReadResult != null && metadataReadResult.IsValid; }
+        get { return platformDataReadResult != null && platformDataReadResult.IsValid; }
     }
 
     internal bool IsDirty
@@ -119,11 +119,11 @@ internal sealed class GCDevJsonInspectorState
 
         nextPollTime = now + PollIntervalSeconds;
 
-        var nextMetadataFileStamp = metadataStore.ReadFileStamp();
+        var nextPlatformDataFileStamp = platformDataStore.ReadFileStamp();
         var nextDevFileStamp = devStore.ReadFileStamp();
-        var metadataChanged = !nextMetadataFileStamp.IsSameAs(metadataFileStamp);
+        var platformDataChanged = !nextPlatformDataFileStamp.IsSameAs(platformDataFileStamp);
         var devChanged = !nextDevFileStamp.IsSameAs(devFileStamp);
-        if (!metadataChanged && !devChanged)
+        if (!platformDataChanged && !devChanged)
         {
             return false;
         }
@@ -131,10 +131,10 @@ internal sealed class GCDevJsonInspectorState
         var changedState = false;
         var isPlaying = EditorApplication.isPlaying;
 
-        if (metadataChanged)
+        if (platformDataChanged)
         {
-            metadataFileStamp = nextMetadataFileStamp;
-            RefreshMetadata();
+            platformDataFileStamp = nextPlatformDataFileStamp;
+            RefreshPlatformData();
             changedState = true;
             if (isPlaying)
             {
@@ -315,7 +315,7 @@ internal sealed class GCDevJsonInspectorState
 
         return CombineIssues(
             devReadResult != null ? devReadResult.validation : null,
-            metadataReadResult != null ? metadataReadResult.validation : null
+            platformDataReadResult != null ? platformDataReadResult.validation : null
         );
     }
 
@@ -326,8 +326,8 @@ internal sealed class GCDevJsonInspectorState
         hasConflict = false;
         hasPendingPlayChange = pendingPlayChange;
         hasUnloadedPlayDevJsonChange = false;
-        metadataReadResult = metadataStore.Read();
-        devReadResult = devStore.Read(metadataReadResult);
+        platformDataReadResult = platformDataStore.Read();
+        devReadResult = devStore.Read(platformDataReadResult);
         cleanData = devReadResult != null && devReadResult.data != null ? devReadResult.data.Clone() : null;
         Draft = cleanData != null ? GCDevJsonDraft.FromFile(cleanData) : null;
         ValidateDraft();
@@ -347,7 +347,7 @@ internal sealed class GCDevJsonInspectorState
 
     private bool WriteDraftToDisk()
     {
-        lastWriteResult = devStore.Write(Draft.ToFile(), metadataReadResult);
+        lastWriteResult = devStore.Write(Draft.ToFile(), platformDataReadResult);
         if (lastWriteResult != null && lastWriteResult.success)
         {
             if (EditorApplication.isPlaying)
@@ -362,13 +362,13 @@ internal sealed class GCDevJsonInspectorState
         return false;
     }
 
-    private void RefreshMetadata()
+    private void RefreshPlatformData()
     {
         lastWriteResult = null;
-        metadataReadResult = metadataStore.Read();
+        platformDataReadResult = platformDataStore.Read();
         if (Draft == null)
         {
-            devReadResult = devStore.Read(metadataReadResult);
+            devReadResult = devStore.Read(platformDataReadResult);
             cleanData = devReadResult != null && devReadResult.data != null ? devReadResult.data.Clone() : null;
             Draft = cleanData != null ? GCDevJsonDraft.FromFile(cleanData) : null;
         }
@@ -385,7 +385,7 @@ internal sealed class GCDevJsonInspectorState
 
     private void UpdateFileStamps()
     {
-        metadataFileStamp = metadataStore.ReadFileStamp();
+        platformDataFileStamp = platformDataStore.ReadFileStamp();
         devFileStamp = devStore.ReadFileStamp();
     }
 
@@ -397,7 +397,7 @@ internal sealed class GCDevJsonInspectorState
             return;
         }
 
-        draftValidation = GCDevJsonValidation.ValidateData(Draft.ToFile(), DevJsonPath, metadataReadResult);
+        draftValidation = GCDevJsonValidation.ValidateData(Draft.ToFile(), DevJsonPath, platformDataReadResult);
     }
 
     private static GCDevJsonIssue[] GetIssues(GCDevJsonValidationResult validation)

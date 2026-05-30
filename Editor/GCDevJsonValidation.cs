@@ -23,15 +23,15 @@ namespace DSB.GC.Dev
         NoEnabledSeats,
         ReadError,
         WriteError,
-        MissingMetadataFile,
-        InvalidMetadataJson,
-        InvalidMetadataRoot,
-        InvalidMetadataFields,
-        MetadataReadError,
-        MetadataPlatformMismatch,
-        MetadataEntryMissing,
-        MetadataEnabledSeatsAboveMaximum,
-        MetadataBotSupportDisabled,
+        MissingPlatformDataFile,
+        InvalidPlatformDataJson,
+        InvalidPlatformDataRoot,
+        InvalidPlatformDataFields,
+        PlatformDataReadError,
+        PlatformDataPlatformMismatch,
+        PlatformDataEntryMissing,
+        PlatformDataEnabledSeatsAboveMaximum,
+        PlatformDataBotSupportDisabled,
     }
 
     internal sealed class GCDevJsonIssue
@@ -152,8 +152,8 @@ namespace DSB.GC.Dev
                 return string.Empty;
             }
 
-            var message = IsValidMetadataGateIssue(issue.code)
-                ? "Valid metadata gate failed. "
+            var message = IsValidPlatformDataGateIssue(issue.code)
+                ? "Valid platform data gate failed. "
                 : string.Empty;
 
             message += issue.code + ": " + issue.message;
@@ -175,11 +175,11 @@ namespace DSB.GC.Dev
             return message;
         }
 
-        private static bool IsValidMetadataGateIssue(GCDevJsonIssueCode code)
+        private static bool IsValidPlatformDataGateIssue(GCDevJsonIssueCode code)
         {
-            return code == GCDevJsonIssueCode.MetadataPlatformMismatch ||
-                   code == GCDevJsonIssueCode.MetadataEntryMissing ||
-                   code == GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum;
+            return code == GCDevJsonIssueCode.PlatformDataPlatformMismatch ||
+                   code == GCDevJsonIssueCode.PlatformDataEntryMissing ||
+                   code == GCDevJsonIssueCode.PlatformDataEnabledSeatsAboveMaximum;
         }
     }
 
@@ -190,7 +190,7 @@ namespace DSB.GC.Dev
             return BuildReadResult(parsedFile, null);
         }
 
-        internal static GCDevJsonReadResult BuildReadResult(GCDevJsonParsedFile parsedFile, GCMetadataJsonReadResult metadataReadResult)
+        internal static GCDevJsonReadResult BuildReadResult(GCDevJsonParsedFile parsedFile, GCPlatformDataReadResult platformDataReadResult)
         {
             if (parsedFile == null)
             {
@@ -217,7 +217,7 @@ namespace DSB.GC.Dev
                 return InvalidReadResult(parsedFile, GCDevJsonIssueCode.ReadError, parsedFile.message);
             }
 
-            return ValidateParsedObject(parsedFile, metadataReadResult);
+            return ValidateParsedObject(parsedFile, platformDataReadResult);
         }
 
         internal static GCDevJsonValidationResult ValidateData(GCDevJsonFile data, string path = null)
@@ -225,13 +225,13 @@ namespace DSB.GC.Dev
             return ValidateData(data, path, null);
         }
 
-        internal static GCDevJsonValidationResult ValidateData(GCDevJsonFile data, string path, GCMetadataJsonReadResult metadataReadResult)
+        internal static GCDevJsonValidationResult ValidateData(GCDevJsonFile data, string path, GCPlatformDataReadResult platformDataReadResult)
         {
             var issues = new List<GCDevJsonIssue>();
             AddDataIssues(data, path, issues);
             if (!HasErrors(issues))
             {
-                AddMetadataContextIssues(data, path, metadataReadResult, issues);
+                AddPlatformDataContextIssues(data, path, platformDataReadResult, issues);
             }
 
             return GCDevJsonValidationResult.FromIssues(issues);
@@ -263,7 +263,7 @@ namespace DSB.GC.Dev
             AddSeatIssues(data.seats, path, issues);
         }
 
-        private static GCDevJsonReadResult ValidateParsedObject(GCDevJsonParsedFile parsedFile, GCMetadataJsonReadResult metadataReadResult)
+        private static GCDevJsonReadResult ValidateParsedObject(GCDevJsonParsedFile parsedFile, GCPlatformDataReadResult platformDataReadResult)
         {
             var jsonObject = parsedFile.jsonObject;
             var path = parsedFile.path;
@@ -321,7 +321,7 @@ namespace DSB.GC.Dev
                 return new GCDevJsonReadResult(parsedFile, structuralValidation, null);
             }
 
-            var validation = ValidateData(data, path, metadataReadResult);
+            var validation = ValidateData(data, path, platformDataReadResult);
             return new GCDevJsonReadResult(parsedFile, validation, data);
         }
 
@@ -447,44 +447,44 @@ namespace DSB.GC.Dev
             }
         }
 
-        private static void AddMetadataContextIssues(
+        private static void AddPlatformDataContextIssues(
             GCDevJsonFile data,
             string path,
-            GCMetadataJsonReadResult metadataReadResult,
+            GCPlatformDataReadResult platformDataReadResult,
             List<GCDevJsonIssue> issues
         )
         {
-            if (metadataReadResult == null)
+            if (platformDataReadResult == null)
             {
                 return;
             }
 
-            AddValidationIssues(metadataReadResult.validation, issues);
-            if (!metadataReadResult.IsValid)
+            AddValidationIssues(platformDataReadResult.validation, issues);
+            if (!platformDataReadResult.IsValid)
             {
                 return;
             }
 
-            var metadata = metadataReadResult.data;
-            var metadataPath = metadataReadResult.parsedFile != null ? metadataReadResult.parsedFile.path : null;
-            if (metadata.platformId != GCMetadataJsonFile.UnityPlatformId)
+            var platformData = platformDataReadResult.data;
+            var platformDataPath = platformDataReadResult.parsedFile != null ? platformDataReadResult.parsedFile.path : null;
+            if (platformData.platformId != GCPlatformDataFile.UnityPlatformId)
             {
                 issues.Add(GCDevJsonIssue.Error(
-                    GCDevJsonIssueCode.MetadataPlatformMismatch,
-                    "gc.metadata.json platform.id must be \"unity\" for Unity editor play settings.",
-                    metadataPath,
+                    GCDevJsonIssueCode.PlatformDataPlatformMismatch,
+                    "gc.platform.json platform.id must be \"unity\" for Unity editor play settings.",
+                    platformDataPath,
                     0,
                     "platform.id"
                 ));
             }
 
-            GCMetadataJsonEntry entry;
-            if (!metadata.TryGetEntry(data.entryKey, out entry))
+            GCPlatformDataEntry entry;
+            if (!platformData.TryGetEntry(data.entryKey, out entry))
             {
                 issues.Add(GCDevJsonIssue.Error(
-                    GCDevJsonIssueCode.MetadataEntryMissing,
-                    "Entry \"" + data.entryKey + "\" was not found in gc.metadata.json.",
-                    metadataPath,
+                    GCDevJsonIssueCode.PlatformDataEntryMissing,
+                    "Entry \"" + data.entryKey + "\" was not found in gc.platform.json.",
+                    platformDataPath,
                     0,
                     "game.entries",
                     data.entryKey
@@ -497,7 +497,7 @@ namespace DSB.GC.Dev
             if (enabledSeatCount > entry.maxPlayers)
             {
                 issues.Add(GCDevJsonIssue.Error(
-                    GCDevJsonIssueCode.MetadataEnabledSeatsAboveMaximum,
+                    GCDevJsonIssueCode.PlatformDataEnabledSeatsAboveMaximum,
                     "gc.dev.json must enable at most " + entry.maxPlayers + " seats for \"" + data.entryKey + "\".",
                     path,
                     0,
@@ -509,7 +509,7 @@ namespace DSB.GC.Dev
             if (!entry.botSupport && HasEnabledBotSeats(data))
             {
                 issues.Add(GCDevJsonIssue.Warning(
-                    GCDevJsonIssueCode.MetadataBotSupportDisabled,
+                    GCDevJsonIssueCode.PlatformDataBotSupportDisabled,
                     "Entry \"" + data.entryKey + "\" does not declare bot support, but enabled bot seats are present.",
                     path,
                     0,
@@ -632,130 +632,136 @@ namespace DSB.GC.Dev
         }
     }
 
-    internal static class GCMetadataJsonValidation
+    internal static class GCPlatformDataValidation
     {
-        internal static GCMetadataJsonReadResult BuildReadResult(GCMetadataJsonParsedFile parsedFile)
+        internal static GCPlatformDataReadResult BuildReadResult(GCPlatformDataParsedFile parsedFile)
         {
             if (parsedFile == null)
             {
-                parsedFile = GCMetadataJsonParsedFile.ReadError(null, "gc.metadata.json could not be read because parser state was missing.");
+                parsedFile = GCPlatformDataParsedFile.ReadError(null, "gc.platform.json could not be read because parser state was missing.");
             }
 
-            if (parsedFile.state == GCMetadataJsonParseState.MissingFile)
+            if (parsedFile.state == GCPlatformDataParseState.MissingFile)
             {
-                return WarningReadResult(parsedFile, GCDevJsonIssueCode.MissingMetadataFile, parsedFile.message);
+                return WarningReadResult(parsedFile, GCDevJsonIssueCode.MissingPlatformDataFile, parsedFile.message);
             }
 
-            if (parsedFile.state == GCMetadataJsonParseState.InvalidJson)
+            if (parsedFile.state == GCPlatformDataParseState.InvalidJson)
             {
-                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidMetadataJson, parsedFile.message);
+                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidPlatformDataJson, parsedFile.message);
             }
 
-            if (parsedFile.state == GCMetadataJsonParseState.InvalidRoot)
+            if (parsedFile.state == GCPlatformDataParseState.InvalidRoot)
             {
-                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidMetadataRoot, parsedFile.message);
+                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidPlatformDataRoot, parsedFile.message);
             }
 
-            if (parsedFile.state == GCMetadataJsonParseState.ReadError)
+            if (parsedFile.state == GCPlatformDataParseState.ReadError)
             {
-                return WarningReadResult(parsedFile, GCDevJsonIssueCode.MetadataReadError, parsedFile.message);
+                return WarningReadResult(parsedFile, GCDevJsonIssueCode.PlatformDataReadError, parsedFile.message);
             }
 
             return ValidateParsedObject(parsedFile);
         }
 
-        private static GCMetadataJsonReadResult ValidateParsedObject(GCMetadataJsonParsedFile parsedFile)
+        private static GCPlatformDataReadResult ValidateParsedObject(GCPlatformDataParsedFile parsedFile)
         {
             var jsonObject = parsedFile.jsonObject;
             if (jsonObject == null)
             {
-                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidMetadataRoot, "gc.metadata.json must be a JSON object.");
+                return WarningReadResult(parsedFile, GCDevJsonIssueCode.InvalidPlatformDataRoot, "gc.platform.json must be a JSON object.");
+            }
+
+            int platformDataVersion;
+            if (!TryReadNonNegativeInteger(jsonObject["platformDataVersion"], out platformDataVersion))
+            {
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json must include integer platformDataVersion.", "platformDataVersion");
             }
 
             var gameObject = jsonObject["game"] as JObject;
             if (gameObject == null)
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.metadata.json must include game.", "game");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json must include game.", "game");
             }
 
             string gameKey;
             if (!TryReadNonEmptyString(gameObject["key"], out gameKey))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.metadata.json game.key must be a non-empty string.", "game.key");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.key must be a non-empty string.", "game.key");
             }
 
             string gameName;
             if (!TryReadNonEmptyString(gameObject["name"], out gameName))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.metadata.json game.name must be a non-empty string.", "game.name");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.name must be a non-empty string.", "game.name");
             }
 
             var platformObject = jsonObject["platform"] as JObject;
             string platformId;
             if (platformObject == null || !TryReadNonEmptyString(platformObject["id"], out platformId))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.metadata.json platform.id must be a non-empty string.", "platform.id");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json platform.id must be a non-empty string.", "platform.id");
             }
 
-            Dictionary<string, GCMetadataJsonEntry> entries;
+            Dictionary<string, GCPlatformDataEntry> entries;
             if (!TryReadEntries(gameObject["entries"], parsedFile, out entries, out var entryIssue))
             {
-                return new GCMetadataJsonReadResult(
+                return new GCPlatformDataReadResult(
                     parsedFile,
                     GCDevJsonValidationResult.FromIssue(entryIssue),
                     null
                 );
             }
 
-            Dictionary<string, GCMetadataJsonColorVariants> playerColors;
+            Dictionary<string, GCPlatformDataColorVariants> playerColors;
             if (!TryReadPlayerColors(jsonObject["properties"], parsedFile, out playerColors, out var colorIssue))
             {
-                return new GCMetadataJsonReadResult(
+                return new GCPlatformDataReadResult(
                     parsedFile,
                     GCDevJsonValidationResult.FromIssue(colorIssue),
                     null
                 );
             }
 
-            return new GCMetadataJsonReadResult(
+            return new GCPlatformDataReadResult(
                 parsedFile,
                 GCDevJsonValidationResult.Valid(),
-                new GCMetadataJsonFile(gameKey, gameName, platformId, entries, playerColors)
+                new GCPlatformDataFile(gameKey, gameName, platformId, entries, playerColors)
             );
         }
 
-        private static GCMetadataJsonReadResult WarningReadResult(GCMetadataJsonParsedFile parsedFile, GCDevJsonIssueCode code, string message)
+        private static GCPlatformDataReadResult WarningReadResult(GCPlatformDataParsedFile parsedFile, GCDevJsonIssueCode code, string message)
         {
-            return new GCMetadataJsonReadResult(
+            return new GCPlatformDataReadResult(
                 parsedFile,
                 GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Warning(code, message, parsedFile.path)),
                 null
             );
         }
 
-        private static GCMetadataJsonReadResult InvalidFieldsReadResult(GCMetadataJsonParsedFile parsedFile, string message, string fieldName)
+        private static GCPlatformDataReadResult InvalidFieldsReadResult(GCPlatformDataParsedFile parsedFile, string message, string fieldName)
         {
-            return new GCMetadataJsonReadResult(
+            return new GCPlatformDataReadResult(
                 parsedFile,
-                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Warning(GCDevJsonIssueCode.InvalidMetadataFields, message, parsedFile.path, 0, fieldName)),
+                GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Warning(GCDevJsonIssueCode.InvalidPlatformDataFields, message, parsedFile.path, 0, fieldName)),
                 null
             );
         }
 
         private static bool TryReadEntries(
             JToken entriesToken,
-            GCMetadataJsonParsedFile parsedFile,
-            out Dictionary<string, GCMetadataJsonEntry> entries,
+            GCPlatformDataParsedFile parsedFile,
+            out Dictionary<string, GCPlatformDataEntry> entries,
             out GCDevJsonIssue issue
         )
         {
-            entries = new Dictionary<string, GCMetadataJsonEntry>();
+            entries = new Dictionary<string, GCPlatformDataEntry>();
             issue = null;
 
             var entriesObject = entriesToken as JObject;
             if (entriesObject == null)
             {
-                issue = InvalidMetadataFieldsIssue(parsedFile, "gc.metadata.json game.entries must be an object.", "game.entries");
+                issue = InvalidPlatformDataFieldsIssue(parsedFile, "gc.platform.json game.entries must be an object.", "game.entries");
                 return false;
             }
 
@@ -763,46 +769,46 @@ namespace DSB.GC.Dev
             {
                 if (string.IsNullOrWhiteSpace(entryProperty.Name))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "gc.metadata.json entry keys must be non-empty strings.", "game.entries");
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "gc.platform.json entry keys must be non-empty strings.", "game.entries");
                     return false;
                 }
 
                 var entryObject = entryProperty.Value as JObject;
                 if (entryObject == null)
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json game entry must be an object.", "game.entries." + entryProperty.Name, entryProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must be an object.", "game.entries." + entryProperty.Name, entryProperty.Name);
                     return false;
                 }
 
                 string name;
                 if (!TryReadNonEmptyString(entryObject["name"], out name))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json game entry must include a non-empty name.", "game.entries." + entryProperty.Name + ".name", entryProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must include a non-empty name.", "game.entries." + entryProperty.Name + ".name", entryProperty.Name);
                     return false;
                 }
 
                 int minPlayers;
                 if (!TryReadNonNegativeInteger(entryObject["minPlayers"], out minPlayers))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json game entry must include non-negative integer minPlayers.", "game.entries." + entryProperty.Name + ".minPlayers", entryProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must include non-negative integer minPlayers.", "game.entries." + entryProperty.Name + ".minPlayers", entryProperty.Name);
                     return false;
                 }
 
                 int maxPlayers;
                 if (!TryReadNonNegativeInteger(entryObject["maxPlayers"], out maxPlayers) || maxPlayers < minPlayers)
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json game entry must include maxPlayers greater than or equal to minPlayers.", "game.entries." + entryProperty.Name + ".maxPlayers", entryProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must include maxPlayers greater than or equal to minPlayers.", "game.entries." + entryProperty.Name + ".maxPlayers", entryProperty.Name);
                     return false;
                 }
 
                 bool botSupport;
                 if (!TryReadBool(entryObject["botSupport"], out botSupport))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json game entry must include boolean botSupport.", "game.entries." + entryProperty.Name + ".botSupport", entryProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must include boolean botSupport.", "game.entries." + entryProperty.Name + ".botSupport", entryProperty.Name);
                     return false;
                 }
 
-                entries[entryProperty.Name] = new GCMetadataJsonEntry(entryProperty.Name, name, minPlayers, maxPlayers, botSupport);
+                entries[entryProperty.Name] = new GCPlatformDataEntry(entryProperty.Name, name, minPlayers, maxPlayers, botSupport);
             }
 
             return true;
@@ -810,12 +816,12 @@ namespace DSB.GC.Dev
 
         private static bool TryReadPlayerColors(
             JToken propertiesToken,
-            GCMetadataJsonParsedFile parsedFile,
-            out Dictionary<string, GCMetadataJsonColorVariants> playerColors,
+            GCPlatformDataParsedFile parsedFile,
+            out Dictionary<string, GCPlatformDataColorVariants> playerColors,
             out GCDevJsonIssue issue
         )
         {
-            playerColors = new Dictionary<string, GCMetadataJsonColorVariants>();
+            playerColors = new Dictionary<string, GCPlatformDataColorVariants>();
             issue = null;
 
             var propertiesObject = propertiesToken as JObject;
@@ -823,7 +829,7 @@ namespace DSB.GC.Dev
             var playersObject = colorsObject != null ? colorsObject["players"] as JObject : null;
             if (playersObject == null)
             {
-                issue = InvalidMetadataFieldsIssue(parsedFile, "gc.metadata.json properties.colors.players must be an object.", "properties.colors.players");
+                issue = InvalidPlatformDataFieldsIssue(parsedFile, "gc.platform.json properties.colors.players must be an object.", "properties.colors.players");
                 return false;
             }
 
@@ -831,37 +837,37 @@ namespace DSB.GC.Dev
             {
                 if (string.IsNullOrWhiteSpace(colorProperty.Name))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "gc.metadata.json player color keys must be non-empty strings.", "properties.colors.players");
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "gc.platform.json player color keys must be non-empty strings.", "properties.colors.players");
                     return false;
                 }
 
                 var variantsObject = colorProperty.Value as JObject;
                 if (variantsObject == null)
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json player color must include base, muted, and mutedDarker RGB arrays.", "properties.colors.players." + colorProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json player color must include base, muted, and mutedDarker RGB arrays.", "properties.colors.players." + colorProperty.Name);
                     return false;
                 }
 
-                GCMetadataJsonRgbColor baseColor;
-                GCMetadataJsonRgbColor mutedColor;
-                GCMetadataJsonRgbColor mutedDarkerColor;
+                GCPlatformDataRgbColor baseColor;
+                GCPlatformDataRgbColor mutedColor;
+                GCPlatformDataRgbColor mutedDarkerColor;
                 if (!TryReadRgbColor(variantsObject["base"], out baseColor) ||
                     !TryReadRgbColor(variantsObject["muted"], out mutedColor) ||
                     !TryReadRgbColor(variantsObject["mutedDarker"], out mutedDarkerColor))
                 {
-                    issue = InvalidMetadataFieldsIssue(parsedFile, "Each gc.metadata.json player color must include base, muted, and mutedDarker RGB arrays.", "properties.colors.players." + colorProperty.Name);
+                    issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json player color must include base, muted, and mutedDarker RGB arrays.", "properties.colors.players." + colorProperty.Name);
                     return false;
                 }
 
-                playerColors[colorProperty.Name] = new GCMetadataJsonColorVariants(baseColor, mutedColor, mutedDarkerColor);
+                playerColors[colorProperty.Name] = new GCPlatformDataColorVariants(baseColor, mutedColor, mutedDarkerColor);
             }
 
             return true;
         }
 
-        private static GCDevJsonIssue InvalidMetadataFieldsIssue(GCMetadataJsonParsedFile parsedFile, string message, string fieldName, string entryKey = null)
+        private static GCDevJsonIssue InvalidPlatformDataFieldsIssue(GCPlatformDataParsedFile parsedFile, string message, string fieldName, string entryKey = null)
         {
-            return GCDevJsonIssue.Warning(GCDevJsonIssueCode.InvalidMetadataFields, message, parsedFile.path, 0, fieldName, entryKey);
+            return GCDevJsonIssue.Warning(GCDevJsonIssueCode.InvalidPlatformDataFields, message, parsedFile.path, 0, fieldName, entryKey);
         }
 
         private static bool TryReadNonEmptyString(JToken token, out string value)
@@ -906,9 +912,9 @@ namespace DSB.GC.Dev
             return true;
         }
 
-        private static bool TryReadRgbColor(JToken token, out GCMetadataJsonRgbColor color)
+        private static bool TryReadRgbColor(JToken token, out GCPlatformDataRgbColor color)
         {
-            color = default(GCMetadataJsonRgbColor);
+            color = default(GCPlatformDataRgbColor);
             var array = token as JArray;
             if (array == null || array.Count != 3)
             {
@@ -925,7 +931,7 @@ namespace DSB.GC.Dev
                 return false;
             }
 
-            color = new GCMetadataJsonRgbColor(r, g, b);
+            color = new GCPlatformDataRgbColor(r, g, b);
             return true;
         }
 

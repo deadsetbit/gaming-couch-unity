@@ -12,8 +12,8 @@ _Avoid_: Unity settings format, engine-specific settings
 The selected entry, seed, and eight-seat roster stored in `gc.dev.json`.
 _Avoid_: serialized editor play settings, scene play settings
 
-**Metadata**:
-The game identity, platform, entries, player limits, bot support, and player colors read from `gc.metadata.json`.
+**Platform Data**:
+The game identity, platform, entries, player limits, bot support, and player colors read from `gc.platform.json`.
 _Avoid_: secondary settings store
 
 **Seat**:
@@ -33,7 +33,7 @@ The Runtime-owned editor-only boundary that caches **Capture**, runs preflight, 
 _Avoid_: JSON session, runtime JSON parser
 
 **Editor Local Play Contract Adapter**:
-The Editor-owned implementation that reads, writes, and validates `gc.dev.json` and `gc.metadata.json`, then maps the result into the **Local Play Session Seam**.
+The Editor-owned implementation that reads, writes, and validates `gc.dev.json` and `gc.platform.json`, then maps the result into the **Local Play Session Seam**.
 _Avoid_: runtime contract adapter, shared JSON implementation
 
 **Contract Fixture**:
@@ -58,7 +58,7 @@ _Avoid_: package samples
 
 ## Relationships
 
-- The **Local Play Contract** consists of **Local Play Settings** and **Metadata**.
+- The **Local Play Contract** consists of **Local Play Settings** and **Platform Data**.
 - **Local Play Settings** contain exactly eight **Seats**.
 - Enabled **Seats** become **Active Players** during **Capture**.
 - A **Capture** is stable for the active editor run until restart or the next Play Mode entry.
