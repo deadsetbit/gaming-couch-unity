@@ -71,6 +71,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
 
 - `GCPlayerStore` keeps broad uneliminated/eliminated concepts and adds state-specific collections.
 - State-filtered player collections use `Players...` prefix naming for discoverability:
+  - `PlayersUneliminated`
   - `PlayersEliminated`
   - `PlayersEliminatedPermanent`
   - `PlayersEliminatedRevokable`
@@ -78,12 +79,17 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `PlayersFinishedPermanent`
   - `PlayersFinishedRevokable`
 - Bot and non-bot variants are fully symmetric:
-  - Example: `PlayersEliminatedPermanentBot`, `PlayersEliminatedPermanentNonBot`, `PlayersFinishedRevokableBot`, `PlayersFinishedRevokableNonBot`.
-- Old store collection names hard-break with good substitute guidance instead of silently aliasing:
-  - `EliminatedPlayers` -> `PlayersEliminated`
-  - `UneliminatedPlayers` -> `PlayersUneliminated`
-  - `EliminatedPlayersEnumerable` -> `PlayersEliminated`
-  - ID-named store lookup APIs -> `GetPlayerByIndex(int playerIndex)`
+  - Example: `PlayersUneliminatedBot`, `PlayersUneliminatedNonBot`, `PlayersEliminatedPermanentBot`, `PlayersEliminatedPermanentNonBot`, `PlayersFinishedRevokableBot`, `PlayersFinishedRevokableNonBot`.
+- Old store collection, enumerable, count, and lookup names hard-break with good substitute guidance instead of silently aliasing:
+  - `UneliminatedPlayers` and `UneliminatedPlayersEnumerable` -> `PlayersUneliminated`
+  - `UneliminatedBotPlayers` and `UneliminatedBotPlayersEnumerable` -> `PlayersUneliminatedBot`
+  - `UneliminatedNonBotPlayers` and `UneliminatedNonBotPlayersEnumerable` -> `PlayersUneliminatedNonBot`
+  - `UneliminatedPlayerCount` -> `PlayersUneliminated.Count`
+  - `EliminatedPlayers` and `EliminatedPlayersEnumerable` -> `PlayersEliminated`
+  - `EliminatedBotPlayers` and `EliminatedBotPlayersEnumerable` -> `PlayersEliminatedBot`
+  - `EliminatedNonBotPlayers` and `EliminatedNonBotPlayersEnumerable` -> `PlayersEliminatedNonBot`
+  - `EliminatedPlayerCount` -> `PlayersEliminated.Count`
+  - ID-named store lookup APIs, including `GetPlayerById(int playerId)`, -> `GetPlayerByIndex(int playerIndex)`
 - Hard-obsolete placeholders may stay temporarily only to provide compiler messages such as "Use PlayersEliminated; broad eliminated includes permanent and revokable elimination." They are removed after the post-legacy cleanup condition is met.
 - Keep `Uneliminated` terminology for now under the `Players...` prefix. A broader naming pass is deferred.
 - Built-in placement criteria stay broad:
