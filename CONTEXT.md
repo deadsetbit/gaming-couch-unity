@@ -17,12 +17,16 @@ The game identity, platform, entries, player limits, bot support, and player col
 _Avoid_: secondary settings store
 
 **Seat**:
-One stable local play slot in the eight-seat roster.
-_Avoid_: player index, controller
+One stable local development and DevApp roster slot in the eight-seat roster.
+_Avoid_: player index, active player, controller
 
 **Active Player**:
-An enabled **Seat** captured into runtime play with a dense player id.
-_Avoid_: source seat
+An enabled **Seat** captured into runtime play and addressed by an **Active Player Index**.
+_Avoid_: source seat, platform player
+
+**Active Player Index**:
+A zero-based, dense, game-facing participant position for captured runtime play.
+_Avoid_: player id, platform id, seat index
 
 **Capture**:
 The snapshot of valid **Local Play Settings** used for setup and play until restart or the next Play Mode entry.
@@ -56,11 +60,17 @@ _Avoid_: generated scene setup
 Generated editable project assets in `Assets/GamingCouch/GCExample`, including `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`.
 _Avoid_: package samples
 
+**Platform Player Id**:
+A platform-owned participant identity used outside the game-facing Runtime API for infrastructure correlation.
+_Avoid_: active player id, game player id
+
 ## Relationships
 
 - The **Local Play Contract** consists of **Local Play Settings** and **Platform Data**.
 - **Local Play Settings** contain exactly eight **Seats**.
 - Enabled **Seats** become **Active Players** during **Capture**.
+- **Active Players** are addressed by **Active Player Index** in game-facing runtime code.
+- **Seats** are local development and DevApp-facing; **Active Player Index** is game-facing.
 - A **Capture** is stable for the active editor run until restart or the next Play Mode entry.
 - The **Editor Local Play Contract Adapter** owns JSON parsing, writing, validation, and Newtonsoft usage.
 - The **Local Play Session Seam** owns active **Capture** caching and consumes only neutral provider results and issues.
@@ -77,4 +87,6 @@ _Avoid_: package samples
 ## Flagged Ambiguities
 
 - "player" can mean a configured **Seat** or a runtime **Active Player**. Use **Seat** for the root roster slot and **Active Player** for captured runtime play.
+- "player id" can mean **Platform Player Id** or **Active Player Index**. Use **Platform Player Id** only for platform-owned correlation outside game-facing runtime code, and **Active Player Index** for game-facing runtime identity.
+- "seat index" and **Active Player Index** are not interchangeable. Seat indexes are one-based local development and DevApp roster positions; **Active Player Index** is zero-based and dense for runtime game code.
 - "portable" means preserving the **Local Play Contract** and **Contract Fixtures** across engine packages, not forcing shared implementation code.
