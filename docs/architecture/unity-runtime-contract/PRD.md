@@ -49,7 +49,7 @@ It is not yet an implementation-ready task list. Several areas below require foc
 
 ## Recommended Planning Sequence
 
-1. Active Player Index mapping, because it affects Unity API, DevApp, hosted WebGL, HUD, game-over, future randomization, and the JavaScript follow-up.
+1. Active Player Index mapping, because it affects Unity API, DevApp, hosted WebGL, HUD, game-over, deterministic active-player shuffle, and the JavaScript follow-up.
 2. Diagnostics spine, because API deprecation warnings, invalid state warnings, metadata warnings, and unsupported API warnings should all use the final path from the start.
 3. Unity API migration and player state model, because these are the developer-facing breaking changes.
 4. Runtime events/results, because the result schema and durable event envelope need product brainstorming before they become legacy.
@@ -96,7 +96,7 @@ It is not yet an implementation-ready task list. Several areas below require foc
 36. As a Unity game developer, I want generated examples to remain small, so that they explain integration without becoming a full sample game.
 37. As a package maintainer, I want unsupported multiplayer APIs hidden by default behind an explicit define, so that developers do not mistake them for a supported contract.
 38. As a package maintainer, I want the `gameProtocolVersion` decision isolated in rollout planning, so that we can choose a protocol bump, internal-game migration, compatibility adapter, or staged combination with clear tradeoffs.
-39. As a package maintainer, I want active-player randomization deferred but prepared for, so that the first migration stays focused while the future privacy feature has a clear place to land.
+39. As a platform engineer, I want active-player indices shuffled deterministically for each run, so that Unity games cannot infer stable player identity or give a persistent advantage to roster order.
 40. As a client engineer, I want JS game contract migration planned as the next tightly coupled follow-up, so that Unity-first changes do not leave long-lived JS/Unity semantic drift under the same platform vocabulary.
 
 ## Implementation Decisions
@@ -104,17 +104,18 @@ It is not yet an implementation-ready task list. Several areas below require foc
 - The game-facing participant term is **Active Player Index**: zero-based, dense, and local to the active runtime play.
 - The local development roster term is **Seat**: one-based, DevApp/local-play facing, and not a runtime game identity.
 - The platform-owned participant term is **Platform Player Id**: infrastructure-only and unavailable to Unity game code.
-- New or changed runtime payloads use `playerIndex` and `playerIndicesByPlacement` naming.
+- New or changed runtime payloads use `playerIndex` and object-wrapped result payloads. The initial game-over result object carries `playerIndicesByPlacement` so it is unambiguous from the legacy array shape and can grow later.
 - Platform/client adapters own all ID-to-index and index-to-ID mapping.
 - Hosted Unity input maps platform player IDs to player indices before Unity receives input.
 - Hosted Unity game over maps player indices back to platform player IDs before playlist and stats bookkeeping.
 - Hosted Unity HUD payloads map player indices back to platform player IDs before existing host HUD rendering consumes them.
 - DevApp runtime control keeps `seatIndex` for local development routing while Unity runtime messages expose active player indices.
-- Active player index randomization is intentionally not part of this PRD, but the mapping module must make a deterministic shuffle possible later.
+- Active player mapping includes deterministic shuffle in this PRD. Shuffle uses a run seed and participant stable key at the platform boundary so Unity game code only sees dense shuffled indices.
 - `GCPlayer.Index` is canonical.
 - Old game-facing `Id` and `playerId` APIs are source-level compile breaks with migration guidance where possible. Already-built older games are handled by a short-lived platform/client/SDK runtime bridge planned in rollout.
 - `PlayerName` is removed from the Unity runtime API with no replacement.
-- Unity setup and play data no longer provide player names to runtime game code.
+- Unity setup and play data no longer provide player names or platform player IDs to runtime game code. This is an intentional privacy and fairness boundary: games should not be able to discriminate by stable platform identity or display name.
+- The new game-facing active-player DTO contains only `playerIndex`, player type, and player color. Package-internal or adapter-owned DTOs that need platform IDs, names, or seat routing must stay outside the Unity game-facing runtime API.
 - Old generic state methods `SetEliminated(reason)`, `SetUneliminated(reason)`, and `SetFinished(reason)` are source-level compile breaks with migration guidance.
 - Elimination state is explicit: `None`, `Revokable`, or `Permanent`.
 - Finish state is explicit: `None`, `Revokable`, or `Permanent`.
@@ -130,7 +131,7 @@ It is not yet an implementation-ready task list. Several areas below require foc
 - Runtime-to-platform events use a strict, versionable catalog, not arbitrary untyped custom event names. The concrete event envelope, catalog, and validation rules require child planning before implementation.
 - Initial event catalog should include player state events and game lifecycle/result events, but the exact payload schemas are not yet implementation-ready.
 - Permanent elimination event support is included, but platform/client enforcement behavior is not. No input suppression is required in this PRD.
-- Structured GC diagnostics are a first-class runtime output with stable code, severity, source area, emitter timestamp, optional run context, optional player index, bounded details, and bounded debug evidence. The detailed spine lives in `05-diagnostics-spine.md`.
+- Structured GC diagnostics are a first-class runtime output with stable code, severity, source area, emitter timestamp, optional run context, optional player index, bounded details, and bounded debug evidence. Diagnostic codes use the current hard-break and permanent/revokable state vocabulary; stale deprecated-ID and out-of-action terms are not part of the v1 catalog. The detailed spine lives in `05-diagnostics-spine.md`.
 - GC diagnostics must not depend on the package log level to be emitted.
 - Optional Unity warning/error log capture is development-only, externally launch-controlled, off by default, and limited to warnings, errors, asserts, and exceptions.
 - DevApp stores recent active-run diagnostics with sink-side aggregation, a 200-row ring buffer, and a hidden-by-default virtualized diagnostics console behind the existing Settings diagnostics toggle.
@@ -142,7 +143,7 @@ It is not yet an implementation-ready task list. Several areas below require foc
 - Unity must not create, repair, or write `gc.platform.json`.
 - Generated examples demonstrate setup, play, input polling by `playerIndex`, console logging, HUD essentials, explicit player state actions, diagnostics, and game over.
 - Generated examples remain a wiring demo and do not become a polished mini-game.
-- Unsupported multiplayer APIs are hidden by default and compile only when a legacy project opts in with `GC_ENABLE_UNSUPPORTED_MULTIPLAYER`.
+- Unsupported multiplayer APIs are contained by default. Passive support checks may remain only when they return `false`; actionable multiplayer calls either compile only under `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` or throw a clear unsupported error with diagnostics when retained for source-transition reasons.
 - `gameProtocolVersion` bump vs internal-game migration vs compatibility adapter is a rollout decision, not a resolved implementation decision in this orchestration plan.
 - DevApp versioning and compatibility policy is deferred to cross-repo rollout planning.
 
@@ -152,7 +153,7 @@ It is not yet an implementation-ready task list. Several areas below require foc
 - Deep modules should be extracted around identity mapping, player state transitions, diagnostics emission, platform metadata fallback, and runtime message translation.
 - Unity EditMode tests should cover canonical index setup, `playerIndex` DTO/HUD payloads, old ID/name/state API compile-break guidance where practical, explicit permanent/revokable elimination and finish transitions, wrong-state warnings, HUD state projection, diagnostics emission, log-level bypass, Unity console mirroring, end-of-frame diagnostics batching, and launch-only Unity log capture filtering.
 - Unity local-play and DevApp message tests should cover seat-to-index routing, runtime snapshot identity, game-over placements, diagnostics ingress, active-run filtering, malformed diagnostics batch rejection, sink-side aggregation, 200-row ring-buffer eviction, hidden diagnostics rail behavior, and diagnostics UI update batching.
-- Client/SDK tests should cover hosted Unity ID-to-index input mapping, index-to-ID game-over mapping, HUD state mapping, temporary legacy bridge behavior for older built games, diagnostics callback validation, public `playerIndex`-only diagnostics identity, and strict rejection of malformed runtime events.
+- Client/SDK tests should cover hosted Unity ID-to-index input mapping, index-to-ID game-over mapping, new object-wrapped game-over result handling, temporary legacy array bridge behavior for older built games, HUD state mapping, diagnostics callback validation, public `playerIndex`-only diagnostics identity, and strict rejection of malformed runtime events.
 - DevApp tests should cover visible diagnostics for active Unity Editor runs, virtualized diagnostics rendering, diagnostic retention/reset across runs, manual clear/filter/search behavior, and local runtime input routing by active player index.
 - Platform metadata tests should cover valid platform data, missing platform data fallback to `notdefined`, invalid platform data fallback, persistent warnings, runtime visibility, and no write-back.
 - Generated-example tests should assert that the example source demonstrates lifecycle, inputs by `playerIndex`, HUD essentials, explicit player-state actions, diagnostics, and game over.
@@ -166,27 +167,26 @@ It is not yet an implementation-ready task list. Several areas below require foc
 | ID | Task | Status | Done when | Dependencies | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Task 0 | Complete child planning and grilling gates. | Not started | Active Player Index mapping, diagnostics spine, runtime events/results, platform metadata fallback, Unity API migration, player state model, and cross-repo rollout plans are reviewed and marked implementation-ready. | None | This orchestration PRD is intentionally broad; child plans own the concrete contracts. |
-| Task 1 | Introduce the Active Player Index contract across Unity setup, play, input, HUD, and game-over flows. | Not started | Unity game code receives player indices, emits player indices, and no runtime game-facing payload exposes platform player IDs or player names. | Task 0 | Current runtime uses `playerId` in setup/play options, input routing, HUD, stores, and placements. |
-| Task 2 | Add hosted Unity boundary mapping for IDs and indices. | Not started | Hosted Unity maps platform IDs to player indices for game input and maps player indices back to platform IDs for HUD/game-over bookkeeping without exposing IDs to Unity. | Task 0, Task 1 | The client SDK currently forwards platform player IDs directly to Unity. |
-| Task 3 | Add DevApp seat-to-index runtime routing. | Not started | Unity Editor runtime messages and routed inputs use active player indices while DevApp retains seat indices for local controller assignment. | Task 0, Task 1 | Seats are local development concepts and should not become game-facing identity. |
-| Task 4 | Migrate Unity player identity API. | Needs update | `Index` is canonical, public game-facing DTO/payload fields use `playerIndex`, old ID/name APIs fail at source level with migration guidance where possible, and input/store APIs are index-named. | Task 0, Task 1 | Source API breaks intentionally; older built-game compatibility belongs to the rollout bridge. |
+| Task 1 | Introduce the Active Player Index contract across Unity setup, play, input, HUD, and game-over flows. | Needs update | Unity game code receives deterministically shuffled player indices, emits player indices, and no runtime game-facing payload exposes platform player IDs or player names. | Task 0 | Current runtime uses `playerId` in setup/play options, input routing, HUD, stores, and placements. |
+| Task 2 | Add hosted Unity boundary mapping for IDs and indices. | Needs update | Hosted Unity maps platform IDs to shuffled player indices for game input and maps player indices back to platform IDs for HUD/game-over bookkeeping without exposing IDs to Unity. | Task 0, Task 1 | The client SDK currently forwards platform player IDs directly to Unity. |
+| Task 3 | Add DevApp seat-to-index runtime routing. | Needs update | Unity Editor runtime messages and routed inputs use active player indices while DevApp retains seat indices for local controller assignment and display only. | Task 0, Task 1 | Seats are local development concepts and should not become game-facing identity. |
+| Task 4 | Migrate Unity player identity API. | Needs update | `Index` is canonical, public game-facing DTO/payload fields use `playerIndex`, active-player DTOs contain no names or platform IDs, old ID/name APIs fail at source level with migration guidance where possible, and input/store APIs are index-named. | Task 0, Task 1 | Source API breaks intentionally; older built-game compatibility belongs to the rollout bridge. |
 | Task 5 | Replace ambiguous player state APIs with explicit permanent/revokable state. | Needs update | Old generic state methods fail at source level, permanent/revokable elimination and finish methods are implemented, invalid transitions emit diagnostics and no-op, and post-game-over mutations no-op. | Task 0, Task 4 | Current elimination is a reversible boolean and finish is a single timestamp. |
-| Task 6 | Update player store, placement, and HUD state semantics. | Needs update | Player collections expose `Players...` state-filtered lists with bot/non-bot symmetry, broad placement criteria work with permanent/revokable state, and HUD data projects canonical runtime state. | Task 5 | Existing store tracks eliminated/uneliminated lists only and HUD currently exposes a boolean eliminated field. |
+| Task 6 | Update player store, placement, and HUD state semantics. | Needs update | Player collections expose `Players...` state-filtered lists with bot/non-bot symmetry, old store collection names hard-break with substitute messages, broad placement criteria work with permanent/revokable state, and HUD data projects canonical runtime state. | Task 5 | Existing store tracks eliminated/uneliminated lists only and HUD currently exposes a boolean eliminated field. |
 | Task 7 | Add strict runtime event stream for player and game events. | Needs update | Unity can emit structured player/game events with player indices and the same elimination/finish state vocabulary used by `GCPlayer`; DevApp/host adapters validate the event catalog. | Task 0, Task 1, Task 5 | Event stream should become the future source of truth for state; platform-to-runtime implementation is deferred, but ingress envelope planning is required. |
-| Task 8 | Add structured GC API diagnostics and development log capture. | Not started | GC API misuse emits stable diagnostics visible in DevApp, hosted WebGL receives structured diagnostics, and optional Unity log capture is filtered and rate-limited. | Task 0 | DevApp is visible in v1; hosted diagnostics UI is future work. |
+| Task 8 | Add structured GC API diagnostics and development log capture. | Needs update | GC API misuse, legacy bridge use, invalid state transitions, metadata fallback, and unsupported API access emit stable current-vocabulary diagnostics visible in DevApp; hosted WebGL receives structured diagnostics, and optional Unity log capture is filtered and rate-limited. | Task 0 | DevApp is visible in v1; hosted diagnostics UI is future work. |
 | Task 9 | Expose read-only `gc.platform.json` data to Unity runtime with fallback defaults. | Not started | Unity runtime receives platform entries, limits, bot support, and colors when valid; missing or invalid data falls back to `notdefined` and emits persistent editor/runtime warnings. | Task 0 | Existing platform data reader is editor-focused and warning-only. |
 | Task 10 | Stabilize essential HUD APIs around player indices and canonical state projection. | Needs update | Score, lives, status, text, meter, placement, elimination state, and finish state HUD flows are index-based, documented, and covered by tests in local and hosted paths. | Task 1, Task 6 | HUD remains configurable, but state data should be projected from canonical runtime state. |
 | Task 11 | Expand generated/example setup to demonstrate the correct integration path. | Needs update | Generated examples show setup, play, input polling by `playerIndex`, console logs, HUD essentials, explicit state actions, diagnostics, and game over without becoming a full mini-game. | Task 4, Task 5, Task 8, Task 10 | Existing active scene setup already generates example scripts and should be evolved. |
-| Task 12 | Hide unsupported multiplayer APIs behind an explicit legacy define. | Needs update | Multiplayer-facing APIs are absent by default, compile only with `GC_ENABLE_UNSUPPORTED_MULTIPLAYER`, and are documented as unsupported temporary internal migration surface. | Task 8 | This is containment, not multiplayer feature work. |
+| Task 12 | Contain unsupported multiplayer APIs behind explicit legacy behavior. | Needs update | Multiplayer capability checks return false by default, actionable APIs are absent or throw clear unsupported errors unless `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` is enabled, and all retained use is documented as unsupported temporary internal migration surface. | Task 8 | This is containment, not multiplayer feature work. |
 | Task 13 | Update documentation and domain glossary for the runtime contract. | Needs update | Docs consistently explain Seat, Active Player Index, Platform Player Id, permanent/revokable elimination, permanent/revokable finish, diagnostics, and platform metadata fallback. | Task 1, Task 5, Task 8, Task 9 | Existing docs mention `player.Id`, `PlayerName`, generic `SetEliminated`, `SetFinished`, and player-id HUD patterns. |
-| Task 14 | Add cross-repo validation for the Unity-first runtime contract. | Needs update | Unity tests, DevApp/client tests, temporary older-built-game bridge tests, and focused integration checks pass for index mapping, diagnostics, platform metadata fallback, HUD, and generated examples. | Task 2, Task 3, Task 8, Task 11 | Use the open-Editor Unity test bridge for package validation where practical. |
+| Task 14 | Add cross-repo validation for the Unity-first runtime contract. | Needs update | Unity tests, DevApp/client tests, temporary older-built-game bridge tests, and focused integration checks pass for shuffled index mapping, object game-over results, diagnostics, platform metadata fallback, HUD, and generated examples. | Task 2, Task 3, Task 8, Task 11 | Use the open-Editor Unity test bridge for package validation where practical. |
 
 ## Out of Scope
 
 - No `gameProtocolVersion` bump implementation in this Unity-first slice until rollout planning chooses whether to bump, migrate internal games, add an adapter, or stage the change.
 - No full DevApp versioning or incompatible-version UX redesign.
 - No JavaScript game runtime migration in this Unity-first slice. JS migration should be planned as the next tightly coupled follow-up.
-- No active-player randomization implementation.
 - No platform-to-runtime event stream implementation beyond reserving the future ingress shape during runtime events/results planning.
 - No hosted diagnostics UI.
 - No player-client death screen, death sound, winning-player sound, or playlist victory sound implementation.
@@ -197,7 +197,6 @@ It is not yet an implementation-ready task list. Several areas below require foc
 
 ## Further Notes
 
-- Future active-player randomization should be deterministic per round and fit behind the same platform-boundary mapping introduced here.
 - Future player-client elimination and victory features should consume runtime events rather than requiring Unity games to be updated.
 - Future HUD rendering should treat HUD as a configurable projection of canonical runtime state rather than the source of state truth.
 - Future runtime/platform capability planning should leave room for capability versioning, either as versioned capability names or explicit version fields.
@@ -205,18 +204,32 @@ It is not yet an implementation-ready task list. Several areas below require foc
 - The fallback platform entry name is `notdefined`, intentionally avoiding `undefined`.
 - Developer diagnostics should be treated as product infrastructure, not just logging, because they are the bridge to better DevApp and hosted developer tools.
 
+## Post-Legacy Cleanup Ledger
+
+Remove these temporary surfaces after all internal games are migrated off the older built-game bridge and source-level hard-obsolete APIs:
+
+- Remove legacy `playerIdsByPlacement` / array-shaped game-over result acceptance from platform, client, SDK, DevApp, and Unity local-play adapters.
+- Remove temporary platform/client/SDK mapping code that adapts already-built ID-based Unity games.
+- Remove hard-obsolete Unity source symbols after their substitute messages have served the migration, including old ID/name APIs, old state methods, and old store collection names.
+- Remove temporary HUD adapters that derive old boolean `eliminated` payloads after platform/client HUD rendering consumes canonical state.
+- Remove `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` and any retained unsupported multiplayer stubs once no migrated game needs the legacy path.
+
 ## Temporary Update Notes
 
 Remove this section after all listed PRD updates have been reconciled in implementation.
 
 | Task | Type | Summary | Cleanup condition |
 | --- | --- | --- | --- |
-| Task 4: Migrate Unity player identity API. | Needs update | Old game-facing ID/name APIs now hard-break at source level instead of warning aliases. | Remove after the updated identity API migration is implemented and validated. |
+| Task 1: Introduce the Active Player Index contract across Unity setup, play, input, HUD, and game-over flows. | Needs update | Active-player deterministic shuffle is now in scope and runtime payloads must stay name/ID-free. | Remove after shuffled index mapping is implemented and validated. |
+| Task 2: Add hosted Unity boundary mapping for IDs and indices. | Needs update | Hosted mapping must handle shuffled indices and object-wrapped game-over results while keeping platform IDs adapter-only. | Remove after hosted adapter mapping and tests are implemented. |
+| Task 3: Add DevApp seat-to-index runtime routing. | Needs update | DevApp keeps `seatIndex` for local routing/display, but Unity runtime messages use active players and `playerIndex`. | Remove after DevApp local routing and runtime messages are updated and validated. |
+| Task 4: Migrate Unity player identity API. | Needs update | Old game-facing ID/name APIs now hard-break, active-player DTOs expose no names or platform IDs, and shuffle is in scope. | Remove after the updated identity API migration is implemented and validated. |
 | Task 5: Replace ambiguous player state APIs with explicit permanent/revokable state. | Needs update | The state contract pivoted from out-of-action to explicit permanent/revokable elimination and finish APIs. | Remove after the new state model is implemented and validated. |
-| Task 6: Update player store, placement, and HUD state semantics. | Needs update | Store/HUD/placement must use canonical elimination and finish state rather than out-of-action semantics. | Remove after store, placement, and HUD state behavior is implemented and validated. |
+| Task 6: Update player store, placement, and HUD state semantics. | Needs update | Store/HUD/placement must use canonical elimination/finish state and hard-break old store collection names with substitutes. | Remove after store, placement, and HUD state behavior is implemented and validated. |
 | Task 7: Add strict runtime event stream for player and game events. | Needs update | Runtime events should reuse canonical elimination and finish state vocabulary and support HUD-as-projection later. | Remove after runtime event planning and implementation are reconciled with the state model. |
+| Task 8: Add structured GC API diagnostics and development log capture. | Needs update | Diagnostics catalog must use removed/hard-obsolete API terms, legacy bridge diagnostics, and permanent/revokable state codes. | Remove after diagnostics spine implementation and tests use the updated code catalog. |
 | Task 10: Stabilize essential HUD APIs around player indices and canonical state projection. | Needs update | HUD is now a projection of canonical runtime state and needs explicit elimination/finish state fields. | Remove after HUD payload and adapter behavior are implemented and validated. |
 | Task 11: Expand generated/example setup to demonstrate the correct integration path. | Needs update | Examples must show `playerIndex` input and explicit permanent/revokable state methods. | Remove after generated examples are updated and tested. |
-| Task 12: Hide unsupported multiplayer APIs behind an explicit legacy define. | Needs update | Unsupported multiplayer changed from compile-compatible warnings to default absence with `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` opt-in. | Remove after the unsupported multiplayer surface is gated and documented. |
+| Task 12: Contain unsupported multiplayer APIs behind explicit legacy behavior. | Needs update | Unsupported multiplayer checks/actions need false-or-throw default behavior and explicit `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` opt-in for retained legacy paths. | Remove after the unsupported multiplayer surface is gated and documented. |
 | Task 13: Update documentation and domain glossary for the runtime contract. | Needs update | Docs need the new permanent/revokable state language and migration guidance for removed old APIs. | Remove after docs and glossary are updated. |
-| Task 14: Add cross-repo validation for the Unity-first runtime contract. | Needs update | Cross-repo validation must cover the temporary older-built-game runtime bridge. | Remove after rollout bridge tests and integration checks are implemented. |
+| Task 14: Add cross-repo validation for the Unity-first runtime contract. | Needs update | Cross-repo validation must cover deterministic shuffle, object game-over results, and the temporary legacy array/runtime bridge. | Remove after rollout bridge tests and integration checks are implemented. |

@@ -79,7 +79,13 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `PlayersFinishedRevokable`
 - Bot and non-bot variants are fully symmetric:
   - Example: `PlayersEliminatedPermanentBot`, `PlayersEliminatedPermanentNonBot`, `PlayersFinishedRevokableBot`, `PlayersFinishedRevokableNonBot`.
-- Keep `Uneliminated` terminology for now. A broader naming pass is deferred.
+- Old store collection names hard-break with good substitute guidance instead of silently aliasing:
+  - `EliminatedPlayers` -> `PlayersEliminated`
+  - `UneliminatedPlayers` -> `PlayersUneliminated`
+  - `EliminatedPlayersEnumerable` -> `PlayersEliminated`
+  - ID-named store lookup APIs -> `GetPlayerByIndex(int playerIndex)`
+- Hard-obsolete placeholders may stay temporarily only to provide compiler messages such as "Use PlayersEliminated; broad eliminated includes permanent and revokable elimination." They are removed after the post-legacy cleanup condition is met.
+- Keep `Uneliminated` terminology for now under the `Players...` prefix. A broader naming pass is deferred.
 - Built-in placement criteria stay broad:
   - `Eliminated` criteria treat both permanent and revokable elimination as eliminated.
   - `Finished` criteria treat both permanent and revokable finish as finished.
@@ -97,7 +103,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
 ## Testing Decisions
 
 - Tests cover valid transitions, duplicate no-ops, invalid revoke attempts, revokable-to-permanent promotion, finish/elimination coexistence, and post-game-over no-ops.
-- Tests cover state event args, timestamps, derived booleans, store collections including bot/non-bot variants, and placement with broad eliminated/finished criteria.
+- Tests cover state event args, timestamps, derived booleans, store collections including bot/non-bot variants, hard-obsolete substitute messages for old store names, and placement with broad eliminated/finished criteria.
 - Tests cover HUD projection payload state fields and temporary adapter-derived boolean behavior where that adapter exists.
 - Tests confirm input routing continues for all active participants regardless of elimination or finish state.
 
