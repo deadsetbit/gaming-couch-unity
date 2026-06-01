@@ -4,7 +4,7 @@ Status: Core contract decisions captured. Implementation planning can proceed af
 
 ## Purpose
 
-Define the runtime state model for permanent and revokable elimination, permanent and revokable finish, score/lives/status/meter, placement, HUD projection, input expectations, and invalid transition behavior.
+Define the runtime state model for permanent and revokable elimination, permanent and revokable finish, score/lives/status/meter, placement, runtime state output, HUD rendering, input expectations, and invalid transition behavior.
 
 ## State Model
 
@@ -44,7 +44,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `IsFinished`
   - `IsFinishedPermanent`
   - `IsFinishedRevokable`
-- Keep `reason` as a free-form string in this slice. Stable reason codes are deferred to runtime-events/results planning.
+- Keep `reason` as a free-form string in this slice. Stable reason codes are deferred to runtime output planning.
 - Public timestamp names match the method names, for example:
   - `LastSetEliminatedPermanentTime`
   - `LastSetEliminatedRevokableTime`
@@ -67,7 +67,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `changedAt`
 - Event args structs leave room for future stable reason codes without another callback migration.
 
-## Store, Placement, And HUD
+## Store, Placement, Runtime Output, And HUD
 
 - `GCPlayerStore` keeps broad uneliminated/eliminated concepts and adds state-specific collections.
 - State-filtered player collections use `Players...` prefix naming for discoverability:
@@ -96,8 +96,10 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `Eliminated` criteria treat both permanent and revokable elimination as eliminated.
   - `Finished` criteria treat both permanent and revokable finish as finished.
   - Complex state-aware ordering is deferred to a future custom placement comparer API.
-- Runtime player state is canonical. HUD remains configurable, but HUD data is a projection of runtime state.
-- HUD payloads should expose `playerIndex`, `eliminationState`, `finishState`, `placement`, `value`, and `meter`.
+- Runtime player state is canonical. HUD remains configurable, but HUD rendering consumes runtime state, screen-space anchors, and HUD configuration instead of owning the semantic data model.
+- Runtime state snapshots should expose dynamic player fields: `playerIndex`, score, lives, status/statusText, meter, placement, `eliminationState`, and `finishState`.
+- Static player type and color belong to the active-run roster/setup context, not to every dynamic state snapshot.
+- `screen_space` carries view-derived overhead and player-position anchors separately from semantic player state.
 - Temporary receiving-end adapters may derive old boolean `eliminated` behavior while platform/client code catches up.
 
 ## Diagnostics
@@ -110,12 +112,12 @@ Define the runtime state model for permanent and revokable elimination, permanen
 
 - Tests cover valid transitions, duplicate no-ops, invalid revoke attempts, revokable-to-permanent promotion, finish/elimination coexistence, and post-game-over no-ops.
 - Tests cover state event args, timestamps, derived booleans, store collections including bot/non-bot variants, hard-obsolete substitute messages for old store names, and placement with broad eliminated/finished criteria.
-- Tests cover HUD projection payload state fields and temporary adapter-derived boolean behavior where that adapter exists.
+- Tests cover runtime state snapshot fields, HUD rendering from runtime state, screen-space anchors, and temporary adapter-derived boolean behavior where that adapter exists.
 - Tests confirm input routing continues for all active participants regardless of elimination or finish state.
 
 ## Ready When
 
 - The explicit elimination and finish state tables are implemented and tested.
-- Placement, HUD, store collections, and input behavior are defined for every state.
+- Placement, runtime output, HUD rendering, store collections, and input behavior are defined for every state.
 - Diagnostics are emitted for invalid state usage.
-- Runtime-events/results planning reuses the same state names rather than introducing parallel HUD-only terms.
+- Runtime output planning reuses the same state names rather than introducing parallel HUD-only terms.

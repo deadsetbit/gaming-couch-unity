@@ -29,7 +29,7 @@ This plan depends on:
   - `GCPlayer.PlayerName`
   - `GamingCouch.GetInputsByPlayerId(int)`
   - player-store lookup APIs named by player ID
-  - game-facing option, play, result, and HUD DTO fields named `playerId`
+  - game-facing option, play, result, runtime output, and HUD-facing DTO fields named `playerId`
   - game-facing DTO fields named `name`
 - The new input polling API is `GamingCouch.GetInputsByPlayerIndex(int playerIndex)`.
 - The new player store lookup API is `GetPlayerByIndex(int playerIndex)`.
@@ -79,7 +79,7 @@ This plan depends on:
 
 ## Testing Decisions
 
-- EditMode tests cover canonical `Index`, `playerIndex` DTO/HUD payloads, new input API names, state API compile-break attributes/source guidance, and generated example source updates.
+- EditMode tests cover canonical `Index`, `playerIndex` DTO/runtime output payloads, new input API names, state API compile-break attributes/source guidance, and generated example source updates.
 - Old compile-breaking APIs should be tested through attribute/source inspection or focused compile-fixture strategy that does not make the normal test assembly uncompilable.
 - Unsupported multiplayer tests verify default symbol absence and opt-in assembly/API availability under `GC_ENABLE_UNSUPPORTED_MULTIPLAYER`.
 - Tests cover any retained default multiplayer probe/action behavior: probes return false, actions throw the documented unsupported error, and diagnostics are emitted where runtime code can execute.
