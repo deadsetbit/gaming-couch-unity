@@ -189,5 +189,10 @@ public sealed class GamingCouchWebGLRuntimeInfoSidecarPostprocess : IPostprocess
             report.summary.outputPath,
             PlayerSettings.WebGL.template
         );
+
+        GCUnityBuildInfoSidecarWriter.WriteForBuild(
+            report,
+            PlayerSettings.WebGL.template
+        );
     }
 }
