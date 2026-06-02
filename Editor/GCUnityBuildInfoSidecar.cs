@@ -97,10 +97,7 @@ internal static class GCUnityBuildInfoSidecarWriter
 
         if (!string.Equals(webGLTemplate, GamingCouchWebGLExportSetup.ProjectTemplateIdentifier, StringComparison.Ordinal))
         {
-            return new GCUnityBuildInfoSidecarWriteResult(
-                GCUnityBuildInfoSidecarWriteStatus.SkippedTemplate,
-                TryResolveSidecarPath(buildOutputPath)
-            );
+            return SkipTemplateBuild(buildOutputPath);
         }
 
         if (packageIdentity == null)
@@ -135,6 +132,20 @@ internal static class GCUnityBuildInfoSidecarWriter
 
         return new GCUnityBuildInfoSidecarWriteResult(
             GCUnityBuildInfoSidecarWriteStatus.Written,
+            sidecarPath
+        );
+    }
+
+    private static GCUnityBuildInfoSidecarWriteResult SkipTemplateBuild(string buildOutputPath)
+    {
+        var sidecarPath = TryResolveSidecarPath(buildOutputPath);
+        if (!string.IsNullOrEmpty(sidecarPath) && File.Exists(sidecarPath))
+        {
+            File.Delete(sidecarPath);
+        }
+
+        return new GCUnityBuildInfoSidecarWriteResult(
+            GCUnityBuildInfoSidecarWriteStatus.SkippedTemplate,
             sidecarPath
         );
     }
