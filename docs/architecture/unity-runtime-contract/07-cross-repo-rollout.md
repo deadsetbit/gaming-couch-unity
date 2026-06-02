@@ -16,6 +16,7 @@ Define how the Unity package, Gaming Couch client, SDK, DevApp, and internal gam
 - New Unity terminal placement submissions use an object shape rather than a bare array so effectful runtime messages can expand later. The initial object carries `playerIndicesByPlacement` only; no one-off version field is introduced for this method.
 - During the temporary bridge, adapters distinguish new versus legacy terminal placement output by shape and message path: a `runtime_messages` effectful placement object means new active-player-index result, while legacy `runtime_game_over.playerIdsByPlacement` or hosted bare array means legacy platform IDs. This avoids ambiguity around `playerIndex: 0` versus old positive platform IDs.
 - The Unity-first migration uses a staged adapter rollout with no immediate `gameProtocolVersion` bump. A future bump remains available as a later public compatibility boundary after internal games and JavaScript runtime semantics are aligned.
+- Launch policy for diagnostics is staged with the runtime output work: Unity log capture is package/runtime-owned and emitted as structured `gc.diagnostic` messages when enabled, while WebGL loader `print`/`printErr` mirroring and browser console capture remain host-owned debug controls outside the Unity runtime contract.
 - Target Unity package release line for the source API migration is `0.2.0-alpha.1`.
 
 ## Release Decision
@@ -86,8 +87,8 @@ Hosted WebGL bridge:
 ## Branch Order
 
 1. Unity package planning/docs and fixtures branch captures the final contracts.
-2. Client/SDK adapter branch adds shape-discriminated Unity terminal placement handling, active-player mapping helpers, `runtime_messages`/`screen_space` validation, diagnostics callback validation, and tests while preserving legacy behavior.
-3. DevApp branch adds local `runtime_messages`, `screen_space`, active seat-to-index routing, metadata fallback health, diagnostics UI ingestion, and tests while preserving legacy `runtime_game_over.playerIdsByPlacement`.
+2. Client/SDK adapter branch adds shape-discriminated Unity terminal placement handling, active-player mapping helpers, `runtime_messages`/`screen_space` validation, diagnostics callback validation, hosted launch policy for Unity log capture and host-owned console mirroring, and tests while preserving legacy behavior.
+3. DevApp branch adds local `runtime_messages`, `screen_space`, active seat-to-index routing, metadata fallback health, diagnostics UI ingestion, launch-only Unity log capture controls, host-owned console mirroring controls where needed, and tests while preserving legacy `runtime_game_over.playerIdsByPlacement`.
 4. Unity package implementation branch migrates source APIs, state model, runtime output, diagnostics, metadata view, examples, and local runtime messages.
 5. Internal game migration branches update game source to `Index`, `playerIndex`, explicit state APIs, and object-shaped terminal placement behavior.
 6. Hosted rollout branch/release enables the new Unity adapter path after client/SDK tests pass.
@@ -132,7 +133,7 @@ Client/SDK:
 DevApp:
 
 - Runtime message validation tests for `runtime_messages`, `screen_space`, effectful terminal placement, legacy `playerIdsByPlacement`, malformed hybrid messages, diagnostics ingress, active-run filtering, ring-buffer aggregation, seat-to-index routing, metadata fallback warnings, and upload/publish blocking.
-- Browser/UI tests for the hidden diagnostics rail and persistent project health warnings.
+- Browser/UI tests for the hidden diagnostics rail, persistent project health warnings, and the separation between runtime-owned Unity log capture and host-owned WebGL/browser console mirroring controls.
 
 Cross-repo integration:
 
@@ -147,7 +148,7 @@ Cross-repo integration:
 - Keep the legacy bridge deployed until after migrated internal games are verified in hosted and local play.
 - If hosted runtime rejects new object results, roll back internal game builds/package recommendation while leaving DevApp/client legacy bridge support in place.
 - If DevApp local runtime support fails, block package `0.2.0-alpha.1` in DevApp compatibility messaging and continue using the old package for local tests.
-- If diagnostics or non-effectful runtime messages are noisy but core terminal placement mapping works, keep the core adapter path and disable only optional diagnostics visibility, state snapshots, `screen_space`, or optional Unity log capture.
+- If diagnostics or non-effectful runtime messages are noisy but core terminal placement mapping works, keep the core adapter path and disable only optional diagnostics visibility, state snapshots, `screen_space`, optional Unity log capture, WebGL loader mirroring, or browser console capture.
 - Do not remove legacy support in the same release that first enables new package support.
 
 ## JS Follow-Up

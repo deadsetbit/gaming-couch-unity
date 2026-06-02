@@ -15,9 +15,11 @@ Reserve platform-to-runtime ingress shape without implementing inbound behavior 
 - Unity has two physical runtime output paths in v1:
   - `runtime_messages` for semantic state, transitions, diagnostics, and effectful platform-state submissions.
   - `screen_space` for hot latest-state screen-coordinate anchors.
+- Host-owned WebGL loader output and browser console mirroring are not runtime output paths. They may be useful for local debugging, but `runtime_messages` and `screen_space` are the only v1 Unity runtime contract outputs.
 - Static active-player facts live in the active-run roster/setup context: `playerIndex`, player type, and player color. Dynamic state snapshots reference `playerIndex` and do not repeat type or color.
 - Runtime message vocabulary reuses the `GCPlayer` state model from `03-player-state-model.md`: elimination state and finish state are each `None`, `Revokable`, or `Permanent`.
 - Runtime messages are not a public custom message API in v1. The Unity package emits cataloged messages from supported GC runtime APIs only.
+- The Unity package must not mirror runtime messages through `Debug.Log` or browser console output. Logging runtime messages would double the runtime output work and make console text look like a contract source.
 - Terminal placement submission is the first v1 effectful runtime message. Future effectful messages may submit other platform-owned game facts, but v1 only accepts total placement order.
 - The immediate terminal placement migration uses an object-wrapped result payload instead of a bare array. Initial shape is `GameOverResult { playerIndicesByPlacement: int[] }`.
 - The legacy bare array bridge is migration-only and must not receive new result semantics.
@@ -126,13 +128,15 @@ Payload rules:
 
 ## Diagnostics Message
 
-Structured GC diagnostics are carried as `gc.diagnostic` runtime messages.
+Structured GC diagnostics and captured Unity log records are carried as `gc.diagnostic` runtime messages.
 
 - The diagnostic payload uses the stable contract from `05-diagnostics-spine.md`.
 - Diagnostic timing uses the enclosing message `sequence` and `runtimeTimeMs`.
 - Receiver wall-clock time is ingest metadata, not runtime truth.
 - Unity-originated diagnostics may be disabled at boot for profiling, but receiver-side validation failures may still be logged by the receiver.
-- Optional non-GC Unity warning/error log capture remains development-only, externally launch-controlled, and off by default.
+- Optional non-GC Unity log capture remains development-only, externally launch-controlled, and off by default. Warning/error capture is the normal development mode; full normal-log capture is available only by explicit launch policy and must stay filtered, rate-limited, and bounded.
+- Captured Unity logs do not natively contain `sequence` or `runtimeTimeMs`. The Unity package stamps captured log records with the same active-run clock and sequence source used by other runtime messages before emitting them.
+- Raw WebGL loader `print`/`printErr` output and browser console records are host-owned debug output. They are not assumed to have runtime-relative timing and are not merged into the canonical runtime message sequence unless a host explicitly wraps and stamps them as a supported diagnostic input.
 - Diagnostics are runtime messages, not transition messages. Do not encode player state changes as diagnostics.
 
 ## Effectful Terminal Placement Message
@@ -210,11 +214,19 @@ All useful runtime outputs default on:
 - `screen_space`
 - effectful messages
 
-Boot-time profiling configuration may disable:
+Boot-time profiling configuration may disable runtime/package-owned optional outputs:
 
 - state snapshots
 - Unity-originated diagnostics
+- Unity log capture
 - `screen_space`
+
+Host-owned debug output has separate launch controls and is not part of the Unity runtime contract:
+
+- WebGL loader stdout/stderr mirroring through `createUnityInstance` `print`/`printErr`
+- browser console monkey-patch or DevTools capture
+
+Those host controls do not need to reach Unity runtime unless the host wants to expose them as status metadata. They are not gated by Unity log capture.
 
 Transition messages remain enabled by default when snapshots are disabled. Effectful messages cannot be disabled by profiling config because they carry platform-state submissions.
 
@@ -267,9 +279,10 @@ Reserved ingress rules:
 - Runtime messages have strict validation, sequence ordering, runtime-relative timing, and active-run context resolution.
 - Full state snapshots are emitted on play start, meaningful semantic changes, and before terminal placement submission unless disabled at boot.
 - Transition catalog covers score, lives, status, meter, elimination state, and finish state changes.
-- Diagnostics use the runtime message path while preserving the diagnostics spine contract.
+- Diagnostics and captured Unity logs use the runtime message path while preserving the diagnostics spine contract.
 - `screen_space` carries player-indexed overhead and player-position anchors as latest-state view data.
 - Terminal placement submission accepts only the object-wrapped total placement payload and keeps the legacy bare array bridge separate.
+- Runtime messages are not duplicated through Unity/browser console logging, and host-owned console mirroring is documented as non-contract debug output.
 - Future death screens, personal sounds, victory sounds, stats, moderation, replay, telemetry, and AI support can consume v1 runtime messages or clearly require future message types.
 
 ## Test Scenarios
@@ -285,5 +298,9 @@ Reserved ingress rules:
 - Terminal placement with every active player index exactly once is accepted and updates platform result state.
 - Terminal placement with a missing, duplicate, or out-of-range index is rejected and does not publish platform result state.
 - A malformed runtime message is rejected and diagnosed.
+- A captured Unity warning record is emitted as `gc.diagnostic` with active-run `sequence` and `runtimeTimeMs` when Unity log capture is enabled.
+- With Unity log capture disabled, third-party `Debug.LogWarning` output does not enter `runtime_messages`.
+- Normal third-party `Debug.Log` output enters `runtime_messages` only when full-log capture is explicitly enabled by launch policy.
+- Toggling WebGL loader `print`/`printErr` mirroring does not enable or disable Unity runtime log capture.
 - A v1 terminal placement payload containing reserved future result fields is rejected rather than partially accepted.
 - A legacy bare terminal placement array is accepted only through the temporary bridge and diagnosed as `gc.api.legacy_runtime_payload`.

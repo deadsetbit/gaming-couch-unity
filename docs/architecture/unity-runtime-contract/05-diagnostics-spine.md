@@ -4,7 +4,7 @@ Status: Core contract decisions captured; implementation-ready for the diagnosti
 
 ## Purpose
 
-Define the structured diagnostics path before API migration and state-model work begin. Removed or hard-obsolete API guidance, invalid state warnings, mapping validation failures, metadata fallback warnings, unsupported API warnings, and optional Unity warning/error log capture should all use this spine from the start.
+Define the structured diagnostics path before API migration and state-model work begin. Removed or hard-obsolete API guidance, invalid state warnings, mapping validation failures, metadata fallback warnings, unsupported API warnings, and optional Unity log capture should all use this spine from the start. Runtime diagnostics must not depend on `Debug.Log`, WebGL loader output, or browser console history.
 
 ## Stable Contract
 
@@ -24,6 +24,7 @@ Define the structured diagnostics path before API migration and state-model work
 - Mapping diagnostics may include an optional `mapping` object with bounded run-scoped context such as `mappingId`, seed, participant count, and the offending reference.
 - `details` is flat, bounded, fingerprint-friendly data: primitive values, bounded strings, and small primitive arrays.
 - `debug` is optional, bounded, non-fingerprinted troubleshooting data, collapsed by default in UI. Use it for evidence such as stack traces, raw message previews, or notes.
+- Captured Unity logs do not natively include runtime-message sequencing. When capture is enabled, the Unity package stamps each captured log with the active-run runtime clock and sequence before emitting it as a `gc.diagnostic` runtime message.
 
 ## Code Taxonomy
 
@@ -50,6 +51,7 @@ Define the structured diagnostics path before API migration and state-model work
   - `gc.metadata.missing_platform_data`
   - `gc.metadata.invalid_platform_data`
   - `gc.metadata.fallback_active`
+  - `gc.log.unity_log`
   - `gc.log.unity_warning`
   - `gc.log.unity_error`
 
@@ -58,6 +60,7 @@ Define the structured diagnostics path before API migration and state-model work
 - The Unity package exposes an internal diagnostics emitter for package code. Do not add a public game-developer custom diagnostic API in v1.
 - GC diagnostics must be emitted independently of `GCLog.logLevel`.
 - GC diagnostic warnings and errors always mirror to the Unity console. `info` diagnostics are structured-only in v1.
+- Unity console mirroring is a human-facing copy of structured GC diagnostics, not the transport. Do not emit GC diagnostics by first writing `Debug.LogWarning` or `Debug.LogError` and then scraping Unity/browser logs.
 - Source-level hard breaks should prefer compiler guidance through `[Obsolete(..., true)]` or removal errors. The runtime diagnostic codes for removed APIs are used only where a retained stub or temporary bridge can still execute.
 - Temporary legacy bridge diagnostics, such as accepting an old array-shaped game-over payload, use `gc.api.legacy_runtime_payload` and include the legacy field or payload kind in bounded `details`.
 - Unity runtime emits diagnostics as `gc.diagnostic` records inside `runtime_messages` batches.
@@ -65,6 +68,16 @@ Define the structured diagnostics path before API migration and state-model work
 - DevApp validates diagnostic records during `runtime_messages` ingress. A malformed diagnostic record is rejected and recorded/logged as an ingress validation warning, but it does not close the runtime connection.
 - Hosted WebGL receives structured diagnostics through a validated callback path before hosted diagnostics UI exists. The host may store, forward, or ignore diagnostics until product UI is added.
 - Future uploaded-game validation can reuse the same envelope and code taxonomy.
+
+## Launch-Owned Capture Policy
+
+- Runtime diagnostics, optional Unity log capture, WebGL loader mirroring, and browser console capture are separate launch concerns.
+- `runtime_messages` is the only contract path for GC diagnostics and captured Unity log records.
+- Unity log capture is package/runtime-owned after startup configuration is read. Launch policy may choose `off`, exception/error-only, warning-and-error, or explicit full-log capture.
+- WebGL loader `print`/`printErr` mirroring is HTML/JavaScript host-owned and does not need to reach Unity runtime unless the host reports it as status metadata.
+- Browser console capture is HTML/JavaScript host-owned and is not gated by Unity log capture.
+- Slow-device launch profiles may disable Unity log capture, WebGL loader mirroring, browser console capture, state snapshots, and `screen_space`. Effectful platform submissions must remain enabled.
+- Raw browser console history is not treated as a durable or coherently timestamped diagnostics source.
 
 ## Retention And Aggregation
 
@@ -93,12 +106,15 @@ Define the structured diagnostics path before API migration and state-model work
 - Non-GC Unity log capture is optional, development-only, externally controlled at launch, and off by default.
 - Launch control applies to the next run only. Changing the setting during a run does not alter capture until restart.
 - DevApp exposes the launch-only capture toggle in the Diagnostics right rail controls.
-- Capture only Unity `Warning`, `Error`, `Assert`, and `Exception` log types.
+- The normal development mode captures Unity `Warning`, `Error`, `Assert`, and `Exception` log types.
+- Full-log capture may include normal Unity `Log` output only when explicitly requested by launch policy, and must stay filtered, rate-limited, and bounded.
+- Map Unity `Log` to diagnostic severity `info`.
 - Map Unity `Warning` to diagnostic severity `warning`.
 - Map Unity `Error`, `Assert`, and `Exception` to diagnostic severity `error`.
-- Do not capture normal Unity `Log` output in v1.
-- Captured non-GC Unity logs use `sourceArea: unity_log` and codes `gc.log.unity_warning` or `gc.log.unity_error`.
+- Captured non-GC Unity logs use `sourceArea: unity_log` and codes `gc.log.unity_log`, `gc.log.unity_warning`, or `gc.log.unity_error`.
 - Unity-specific fields such as Unity log type and bounded stack trace belong in `details` or `debug`.
+- Install v1 capture with a startup hook before scene `Awake` where practical, then use main-thread Unity log callbacks for capture. Multi-threaded capture is out of scope for v1; if it is added later, the threaded callback must only enqueue thread-safe data and a main-thread drain must emit diagnostics.
+- The package may attempt to set Unity logger filtering to the requested launch level, but third-party logs remain best-effort: developer code can disable or compile out log emission. Critical GC diagnostics must bypass Unity logging entirely.
 
 ## Versioning And Rollout
 
@@ -109,10 +125,10 @@ Define the structured diagnostics path before API migration and state-model work
 ## Ready When
 
 - Unity package has an internal diagnostics emitter and all GC diagnostic warnings/errors bypass package log level.
-- Removed/hard-obsolete identity, name, state, and store APIs have source guidance; any retained stubs or temporary bridges emit planned diagnostics. Invalid mapping references, invalid state transitions, metadata fallback, unsupported multiplayer APIs, malformed runtime messages, invalid terminal placement, malformed screen-space anchors, and captured Unity warning/error logs emit planned codes.
+- Removed/hard-obsolete identity, name, state, and store APIs have source guidance; any retained stubs or temporary bridges emit planned diagnostics. Invalid mapping references, invalid state transitions, metadata fallback, unsupported multiplayer APIs, malformed runtime messages, invalid terminal placement, malformed screen-space anchors, and captured Unity logs emit planned codes.
 - DevApp accepts diagnostic records through `runtime_messages`, rejects malformed diagnostics without disconnecting the runtime, aggregates by fingerprint, keeps a 200-row active-run ring buffer, and renders the hidden-by-default virtualized console.
 - Hosted WebGL has a validated structured diagnostics callback path with no hosted UI requirement.
-- Tests cover log-level bypass, Unity console mirroring, end-of-frame batching, sink aggregation, ring-buffer eviction, active-run filtering, DevApp ingress validation, hidden diagnostics rail behavior, UI batching, hosted callback validation, and launch-only Unity log capture filtering.
+- Tests cover log-level bypass, Unity console mirroring, captured-log runtime timestamp stamping, end-of-frame batching, sink aggregation, ring-buffer eviction, active-run filtering, DevApp ingress validation, hidden diagnostics rail behavior, UI batching, hosted callback validation, launch-only Unity log capture filtering, and separation between Unity log capture and host-owned console mirroring.
 
 ## Remaining Dependencies
 
