@@ -184,6 +184,14 @@ These child plans were stabilized in this dependency order. Cross-repo implement
 - Existing active-scene setup asset tests should be extended for generated example behavior.
 - Existing client unit tests around game integration, runtime output, HUD rendering, and DevApp protocol should be extended for mapping and diagnostics.
 
+## Implementation Review Rules
+
+For every implementation task, the implementer and both review passes must check whether the change introduces, removes, renames, or changes behavior for any public Unity API, runtime message schema, DevApp/client/SDK protocol, diagnostics code or source area, metadata projection, generated example contract, or launch/configuration behavior.
+
+Before marking a task `Completed`, update `## Breaking Change Ledger` with the task ID and affected surface, or record that the task introduced no API/protocol/runtime-contract break. The ledger is for release and migration accounting; it does not mean legacy behavior should be preserved beyond the staged bridge decisions in this PRD.
+
+Review passes should treat a missing, vague, or incorrect ledger update as an actionable finding for the task under review.
+
 ## Tasks
 
 Task status reflects implementation state. `Not started` means the work remains to be implemented against the current contract; it does not imply the current code already matches the plan.
@@ -208,6 +216,13 @@ Task IDs are stable. Dependency order controls execution order, so later-added t
 | Task 13 | Update documentation and domain glossary for the runtime contract. | Not started | Docs consistently explain Seat, Active Player Index, Platform Player Id, permanent/revokable elimination, permanent/revokable finish, runtime messages, screen-space anchors, diagnostics, and platform metadata fallback. | Task 1, Task 5, Task 7, Task 8, Task 9 | Existing docs mention `player.Id`, `PlayerName`, generic `SetEliminated`, `SetFinished`, and player-id HUD patterns. |
 | Task 14 | Add cross-repo validation for the Unity-first runtime contract. | Not started | Unity tests, DevApp/client tests, temporary older-built-game bridge tests, and focused integration checks pass for shuffled index mapping, object terminal placement, runtime messages, screen-space anchors, diagnostics, platform metadata fallback, HUD, and generated examples. | Task 2, Task 3, Task 7, Task 8, Task 11, Task 15 | Use the open-Editor Unity test bridge for package validation where practical. |
 | Task 15 | Install runtime output foundation and core diagnostics emitter before API/state/metadata migrations. | Not started | GC diagnostics can be emitted as `gc.diagnostic` runtime messages through a minimal `runtime_messages` foundation: active-run clock, monotonic sequence, diagnostic payload schema, source-area/code validation, package-log-level bypass, and warning/error Unity console mirroring. | Task 0 | This foundation intentionally runs before Tasks 1, 5, 7, 8, 9, and 12 despite the appended stable ID; Task 7 owns full runtime output schemas, batching, state/transition/effectful messages, and `screen_space`, while Task 8 owns DevApp sinks, hosted callback exposure, and optional Unity log capture. |
+
+## Breaking Change Ledger
+
+Track implementation-time API/protocol/runtime-contract breaks here as each task completes. Include intentional breaks and any accidental or discovered breakages that implementation exposes. If a task introduces no break, add a row that records `None` for the affected surface so reviewers can verify the check happened.
+
+| Task | Affected surface | Change | Intentional? | Compatibility / follow-up |
+| --- | --- | --- | --- | --- |
 
 ## Out of Scope
 
