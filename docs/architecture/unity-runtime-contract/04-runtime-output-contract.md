@@ -185,7 +185,7 @@ Structured GC diagnostics and captured Unity log records are carried as `gc.diag
 - The diagnostic payload uses the stable contract from `05-diagnostics-spine.md`.
 - Diagnostic timing uses the enclosing message `sequence` and `runtimeTimeMs`.
 - Receiver wall-clock time is ingest metadata, not runtime truth.
-- Unity-originated diagnostics may be disabled at boot for profiling, but receiver-side validation failures may still be logged by the receiver.
+- Optional Unity-originated informational diagnostics may be disabled at boot for profiling, but core GC validation diagnostics remain enabled and receiver-side validation failures may still be logged by the receiver.
 - Optional non-GC Unity log capture remains development-only, externally launch-controlled, and off by default. Warning/error capture is the normal development mode; full normal-log capture is available only by explicit launch policy and must stay filtered, rate-limited, and bounded.
 - Captured Unity logs do not natively contain `sequence` or `runtimeTimeMs`. The Unity package stamps captured log records with the same active-run clock and sequence source used by other runtime messages before emitting them.
 - Raw WebGL loader `print`/`printErr` output and browser console records are host-owned debug output. They are not assumed to have runtime-relative timing and are not merged into the canonical runtime message sequence unless a host explicitly wraps and stamps them as a supported diagnostic input.
@@ -322,9 +322,11 @@ All useful runtime outputs default on:
 Boot-time profiling configuration may disable runtime/package-owned optional outputs:
 
 - state snapshots
-- Unity-originated diagnostics
+- optional Unity-originated informational diagnostics
 - Unity log capture
 - `screen_space`
+
+Core GC validation diagnostics remain enabled even under profiling configuration. This includes diagnostics for rejected runtime messages, invalid terminal placement, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings.
 
 Host-owned debug output has separate launch controls and is not part of the Unity runtime contract:
 

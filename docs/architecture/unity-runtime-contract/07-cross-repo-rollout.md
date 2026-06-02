@@ -88,7 +88,7 @@ Hosted WebGL bridge:
 ## Branch Order
 
 1. Unity package planning/docs and fixtures branch captures the final contracts.
-2. Client/SDK adapter branch adds shape-discriminated Unity terminal placement handling, active-player mapping helpers, `runtime_messages`/`screen_space` validation, diagnostics callback validation, hosted launch policy for Unity log capture and host-owned console mirroring, and tests while preserving legacy behavior.
+2. Client/SDK adapter branch adds shape-discriminated Unity terminal placement handling, active-player mapping helpers, platform/session active-run seed resolution and validation before Unity play payload creation, `runtime_messages`/`screen_space` validation, diagnostics callback validation, hosted launch policy for Unity log capture and host-owned console mirroring, and tests while preserving legacy behavior.
 3. DevApp branch adds local `runtime_messages`, `screen_space`, active seat-to-index routing, metadata fallback health, diagnostics UI ingestion, launch-only Unity log capture controls, host-owned console mirroring controls where needed, and tests while preserving legacy `runtime_game_over.playerIdsByPlacement`.
 4. Unity package implementation branch migrates source APIs, state model, runtime output, diagnostics, metadata view, examples, and local runtime messages.
 5. Internal game migration branches update game source to `Index`, `playerIndex`, explicit state APIs, and object-shaped terminal placement behavior.
@@ -128,7 +128,7 @@ Unity package:
 
 Client/SDK:
 
-- Unit tests for ID-to-index input mapping, index-to-ID terminal placement/runtime-message/screen-space mapping, object terminal placement validation, legacy array bridge, malformed hybrid rejection, diagnostics callback validation, and hosted skew behavior.
+- Unit tests for platform/session active-run seed validation, ID-to-index input mapping, index-to-ID terminal placement/runtime-message/screen-space mapping, object terminal placement validation, legacy array bridge, malformed hybrid rejection, diagnostics callback validation, and hosted skew behavior.
 - Cross-language deterministic shuffle fixtures for TypeScript and C#.
 
 DevApp:

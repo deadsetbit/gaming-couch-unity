@@ -78,7 +78,7 @@ Define the structured diagnostics path before API migration and state-model work
 - Unity log capture is package/runtime-owned after startup configuration is read. Launch policy may choose `off`, exception/error-only, warning-and-error, or explicit full-log capture.
 - WebGL loader `print`/`printErr` mirroring is HTML/JavaScript host-owned and does not need to reach Unity runtime unless the host reports it as status metadata.
 - Browser console capture is HTML/JavaScript host-owned and is not gated by Unity log capture.
-- Slow-device launch profiles may disable Unity log capture, WebGL loader mirroring, browser console capture, state snapshots, and `screen_space`. Effectful platform submissions must remain enabled.
+- Slow-device launch profiles may disable Unity log capture, WebGL loader mirroring, browser console capture, state snapshots, `screen_space`, and optional Unity-originated informational diagnostics. Core GC validation diagnostics for rejected runtime messages, invalid terminal placement, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings must remain enabled. Effectful platform submissions must remain enabled.
 - Raw browser console history is not treated as a durable or coherently timestamped diagnostics source.
 
 ## Retention And Aggregation

@@ -19,6 +19,7 @@ Define the exact mapping contract between platform-owned player identity, DevApp
 ## Mapping Owners
 
 - Hosted WebGL: the SDK Unity adapter owns the mapping at the Unity platform boundary. It translates platform `playerId` to Unity `playerIndex` for inputs and translates Unity `playerIndex` back to platform `playerId` for screen-space anchors, runtime messages that drive platform/player-client features, and terminal placement submission. Public diagnostics stay `playerIndex`-only; hosted adapters may correlate them to platform player IDs only in private adapter state after validation. Platform IDs and player names stay in adapter data and never enter game-facing Unity DTOs.
+- Hosted Client/SDK adapter implementation owns resolving and validating the platform/session active-run seed before the mapping is built. Production hosted play must fail before Unity play payload creation when the seed is absent.
 - Unity Editor local play: the Unity package local-play capture/runtime seam owns the mapping from enabled `gc.dev.json` seats to game-facing `playerIndex` values.
 - DevApp keeps one-based `seatIndex` as the controller routing and display concept. Any message crossing into Unity game-facing runtime behavior must use the captured mapping rather than inferring seat or player identity in multiple places. DevApp-local message names may keep `seatIndex` for controller assignment, but Unity runtime messages use `activePlayers`, `playerIndex`, and result objects rather than `playerId`.
 
@@ -52,6 +53,7 @@ Required cross-language fixtures:
 ## Boundary Validation
 
 - All mapping translation happens through one run-scoped mapping object per adapter. Input, `screen_space`, `runtime_messages`, diagnostics, and terminal placement paths must not each reimplement mapping rules.
+- Core diagnostics foundation must be available before mapping migration so invalid mapping references can emit stable diagnostics without waiting for the full runtime-output catalog.
 - Unity play payloads expose the shuffled active-player roster as `activePlayers[]` records with `playerIndex`, player type, and color. Legacy `players[]` payloads with `playerId` or `name` are adapter/internal only during migration.
 - Runtime input delivered to Unity uses `playerIndex`. DevApp/controller routing may start from `seatIndex`, and hosted routing may start from platform `playerId`, but both are translated before Unity game code sees input.
 - Platform-side input from unmapped post-play participants is dropped at the adapter boundary. The mapping is not mutated during the run.
