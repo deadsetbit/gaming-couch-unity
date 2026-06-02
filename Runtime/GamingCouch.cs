@@ -10,6 +10,7 @@ using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using DSB.GC.Dev;
+using DSB.GC.RuntimeMessages;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Gaming Couch - Netcode for GameObjects")]
@@ -378,6 +379,7 @@ namespace DSB.GC
 
             playOptions = CopyPlayOptions(options);
             playSeatIdentities = CopySeatIdentities(resolvedSeatIdentities);
+            GCRuntimeMessageOutput.BeginActiveRun();
             listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
         }

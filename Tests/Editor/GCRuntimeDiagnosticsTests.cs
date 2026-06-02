@@ -1,0 +1,221 @@
+using System;
+using System.Text.RegularExpressions;
+using DSB.GC.Log;
+using DSB.GC.RuntimeMessages;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+public sealed class GCRuntimeDiagnosticsTests
+{
+    private double nowSeconds;
+
+    [SetUp]
+    public void SetUp()
+    {
+        nowSeconds = 10.0;
+        GCRuntimeMessageOutput.ResetForTests(() => nowSeconds);
+        GCRuntimeMessageOutput.BeginActiveRun();
+        GCLog.logLevel = LogLevel.None;
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        GCRuntimeMessageOutput.ResetForTests(null);
+        GCLog.logLevel = LogLevel.None;
+    }
+
+    [Test]
+    public void DiagnosticWarningEmitsRuntimeMessagesEnvelopeWithDiagnosticPayload()
+    {
+        string emittedJson = null;
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += json => emittedJson = json;
+        nowSeconds = 10.125;
+
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.state\.clamped_value: Lives were clamped\.")
+        );
+
+        var envelopeJson = GCDiagnostics.Emit(
+            GCDiagnosticCodes.ClampedValue,
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.State,
+            "Lives were clamped.",
+            new GCDiagnosticContext()
+                .WithPlayerIndex(0)
+                .AddDetail("field", "lives")
+                .AddDetail("inputValue", -2)
+                .AddDetail("allowedRange", new[] { 0, 99 })
+                .AddDebug("note", "test")
+        );
+
+        Assert.That(envelopeJson, Is.EqualTo(emittedJson));
+        Assert.That(envelopeJson, Does.Contain("\"type\":\"runtime_messages\""));
+        Assert.That(envelopeJson, Does.Contain("\"schemaVersion\":1"));
+        Assert.That(envelopeJson, Does.Contain("\"messageType\":\"gc.diagnostic\""));
+        Assert.That(envelopeJson, Does.Contain("\"sequence\":1"));
+        Assert.That(envelopeJson, Does.Contain("\"runtimeTimeMs\":125"));
+        Assert.That(envelopeJson, Does.Contain("\"payload\":{\"code\":\"gc.state.clamped_value\""));
+        Assert.That(envelopeJson, Does.Contain("\"severity\":\"warning\""));
+        Assert.That(envelopeJson, Does.Contain("\"sourceArea\":\"state\""));
+        Assert.That(envelopeJson, Does.Contain("\"message\":\"Lives were clamped.\""));
+        Assert.That(envelopeJson, Does.Contain("\"playerIndex\":0"));
+        Assert.That(envelopeJson, Does.Contain("\"details\":{\"field\":\"lives\",\"inputValue\":-2,\"allowedRange\":[0,99]}"));
+        Assert.That(envelopeJson, Does.Contain("\"debug\":{\"note\":\"test\"}"));
+    }
+
+    [Test]
+    public void DiagnosticSequenceIsOneBasedMonotonicPerActiveRun()
+    {
+        nowSeconds = 20.0;
+        GCRuntimeMessageOutput.BeginActiveRun();
+        nowSeconds = 20.001;
+        var first = GCDiagnostics.Emit(
+            GCDiagnosticCodes.FallbackActive,
+            GCDiagnosticSeverity.Info,
+            GCDiagnosticSourceAreas.Metadata,
+            "Fallback metadata is active."
+        );
+
+        nowSeconds = 20.250;
+        var second = GCDiagnostics.Emit(
+            GCDiagnosticCodes.MissingPlatformData,
+            GCDiagnosticSeverity.Info,
+            GCDiagnosticSourceAreas.Metadata,
+            "Platform data is missing."
+        );
+
+        Assert.That(first, Does.Contain("\"sequence\":1"));
+        Assert.That(first, Does.Contain("\"runtimeTimeMs\":1"));
+        Assert.That(second, Does.Contain("\"sequence\":2"));
+        Assert.That(second, Does.Contain("\"runtimeTimeMs\":250"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void DiagnosticPayloadSupportsBoundedMappingContext()
+    {
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.mapping\.invalid_player_index: Player index is outside the active mapping\.")
+        );
+
+        var envelopeJson = GCDiagnostics.Emit(
+            GCDiagnosticCodes.InvalidPlayerIndex,
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.Mapping,
+            "Player index is outside the active mapping.",
+            new GCDiagnosticContext()
+                .WithPlayerIndex(0)
+                .WithMapping(new GCDiagnosticMappingContext()
+                    .WithMappingId("run-map-1")
+                    .WithSeed(12345)
+                    .WithParticipantCount(2)
+                    .WithOffendingReference("playerIndex:9"))
+        );
+
+        Assert.That(envelopeJson, Does.Contain("\"sourceArea\":\"mapping\""));
+        Assert.That(envelopeJson, Does.Contain("\"playerIndex\":0"));
+        Assert.That(envelopeJson, Does.Contain("\"mapping\":{\"mappingId\":\"run-map-1\",\"seed\":12345,\"participantCount\":2,\"offendingReference\":\"playerIndex:9\"}"));
+    }
+
+    [Test]
+    public void DiagnosticWarningAndErrorMirrorToConsoleEvenWhenPackageLogLevelIsNone()
+    {
+        GCLog.logLevel = LogLevel.None;
+
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.runtime\.malformed_message: Malformed runtime message\.")
+        );
+        GCDiagnostics.Emit(
+            GCDiagnosticCodes.MalformedMessage,
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.RuntimeMessages,
+            "Malformed runtime message."
+        );
+
+        LogAssert.Expect(
+            LogType.Error,
+            new Regex(@"\[GC\] Diagnostic gc\.runtime\.invalid_terminal_placement: Terminal placement was rejected\.")
+        );
+        GCDiagnostics.Emit(
+            GCDiagnosticCodes.InvalidTerminalPlacement,
+            GCDiagnosticSeverity.Error,
+            GCDiagnosticSourceAreas.RuntimeMessages,
+            "Terminal placement was rejected."
+        );
+    }
+
+    [Test]
+    public void DiagnosticInfoIsStructuredOnly()
+    {
+        GCDiagnostics.Emit(
+            GCDiagnosticCodes.FallbackActive,
+            GCDiagnosticSeverity.Info,
+            GCDiagnosticSourceAreas.Metadata,
+            "Fallback metadata is active."
+        );
+
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void DiagnosticValidationRejectsUnknownCodeAndSourceArea()
+    {
+        Assert.Throws<ArgumentException>(() => GCDiagnostics.Emit(
+            "gc.state.not_in_catalog",
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.State,
+            "Invalid code."
+        ));
+
+        Assert.Throws<ArgumentException>(() => GCDiagnostics.Emit(
+            GCDiagnosticCodes.ClampedValue,
+            GCDiagnosticSeverity.Warning,
+            "hud",
+            "Invalid source area."
+        ));
+
+        Assert.Throws<ArgumentException>(() => GCDiagnostics.Emit(
+            GCDiagnosticCodes.ClampedValue,
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.RuntimeMessages,
+            "Mismatched source area."
+        ));
+
+        Assert.Throws<ArgumentException>(() => GCDiagnostics.Emit(
+            GCDiagnosticCodes.MalformedScreenSpace,
+            GCDiagnosticSeverity.Warning,
+            GCDiagnosticSourceAreas.RuntimeMessages,
+            "Screen-space diagnostics use the screen_space source area."
+        ));
+    }
+
+    [Test]
+    public void DiagnosticFieldsRejectNestedDataAndPlatformPlayerIdKeys()
+    {
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDetail(
+            "nested",
+            new object[] { new[] { "not-flat" } }
+        ));
+
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDetail("playerId", 123));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GCDiagnosticContext().WithPlayerIndex(-1));
+    }
+
+    [Test]
+    public void DiagnosticMappingContextRejectsUnboundedValues()
+    {
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticMappingContext().WithMappingId(""));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GCDiagnosticMappingContext().WithParticipantCount(-1));
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticMappingContext().WithMappingId(
+            new string('m', GCDiagnosticMappingContext.MaxMappingIdLength + 1)
+        ));
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticMappingContext().WithOffendingReference(
+            new string('r', GCDiagnosticMappingContext.MaxOffendingReferenceLength + 1)
+        ));
+    }
+}
