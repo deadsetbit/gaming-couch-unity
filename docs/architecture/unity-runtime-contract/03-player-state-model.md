@@ -45,14 +45,23 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `IsFinishedPermanent`
   - `IsFinishedRevokable`
 - Keep `reason` as a free-form string in this slice. Stable reason codes are deferred to runtime output planning.
-- Public timestamp names match the method names, for example:
-  - `LastSetEliminatedPermanentTime`
-  - `LastSetEliminatedRevokableTime`
-  - `LastSetRevokeEliminatedTime`
-  - `LastSetFinishedPermanentTime`
-  - `LastSetFinishedRevokableTime`
-  - `LastSetRevokeFinishedTime`
-- Also expose convenience timestamps for common logic that should not branch by permanence, such as the latest eliminated, finished, and revoke times.
+- Public game-facing timestamp names match the method names and use a `GameTime` suffix, for example:
+  - `LastSetEliminatedPermanentGameTime`
+  - `LastSetEliminatedRevokableGameTime`
+  - `LastSetRevokeEliminatedGameTime`
+  - `LastSetFinishedPermanentGameTime`
+  - `LastSetFinishedRevokableGameTime`
+  - `LastSetRevokeFinishedGameTime`
+- Also expose convenience game-time timestamps for common logic that should not branch by permanence, such as the latest eliminated, finished, and revoke times.
+
+## Timestamp Timebase
+
+- New game-facing state timestamp properties and state event timestamps use scaled Unity game time in seconds. They advance with `Time.timeScale`, stop while game time is paused, and are suitable for game logic such as respawn delays, slow-motion checks, and rule timers.
+- `changedAtGameTime` in state event args is this scaled game-time value. Do not expose an ambiguous `changedAt` field.
+- Runtime messages, diagnostics, captured Unity log records, and receiver ordering use unscaled active-run-relative `runtimeTimeMs`. Do not use game-time timestamps for runtime output ordering.
+- If a future callback needs both game-rule timing and runtime-output ordering, expose separate fields such as `changedAtGameTime` and `runtimeTimeMs` rather than overloading one timestamp.
+- Existing pre-PRD timestamp properties, such as `LastSetEliminatedTime`, `LastSetUneliminatedTime`, and `FinishedTime`, already use scaled Unity `Time.time`; if retained temporarily as obsolete compatibility surfaces, they may preserve that behavior until removal.
+- Placement criteria that sort by elimination or finish timing should use the new scaled game-time timestamps for permanent/revokable state and an internal monotonic state-change order as a tie-breaker for same-time changes.
 
 ## State Events
 
@@ -64,7 +73,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - `oldState`
   - `newState`
   - `reason`
-  - `changedAt`
+  - `changedAtGameTime`
 - Event args structs leave room for future stable reason codes without another callback migration.
 
 ## Store, Placement, Runtime Output, And HUD

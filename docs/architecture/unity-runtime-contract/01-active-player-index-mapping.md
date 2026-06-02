@@ -26,15 +26,28 @@ Define the exact mapping contract between platform-owned player identity, DevApp
 
 - Shuffle is part of the initial contract, not a future-only seam. This prevents games from accidentally relying on stable roster order or giving `playerIndex: 0` persistent advantage.
 - Shuffle the participant records, not a list of IDs. Color and type move with the participant through shuffle.
+- The authoritative seed is resolved before the active-player mapping is built and is frozen with the active run:
+  - Hosted WebGL uses the platform/session active-run seed. If production hosted play lacks a seed, adapter validation fails before play and before the active-player mapping is built.
+  - Unity Editor local play uses the captured `gc.dev.json` seed. Fixed seeds are integer strings from `1..999999`; `"random"` resolves once at capture time to an integer in that range. The resolved integer, not the literal `"random"`, is used for mapping.
+  - A resolved local `"random"` seed is replayable only inside the active captured Editor run. The package must not write the resolved seed back to `gc.dev.json`.
 - Use hash-sort for deterministic cross-language parity:
-  - Hash input: `"{seed}:{participantStableKey}"`.
-  - Hash algorithm: FNV-1a 32-bit.
-  - Sort ascending by hash.
+  - Hash input string: `"{seed}:{participantStableKey}"`, where `seed` is the decimal resolved seed and `participantStableKey` is the stable key string exactly as captured by the adapter.
+  - Hash input bytes: UTF-8 without BOM.
+  - Hash algorithm: FNV-1a 32-bit with offset basis `2166136261` and prime `16777619`.
+  - Apply unsigned 32-bit wraparound after every multiply. C# implementations should use `unchecked uint`; TypeScript/JavaScript implementations should use `Math.imul(..., 0x01000193) >>> 0`.
+  - Sort ascending by unsigned 32-bit hash.
   - Tie-break by captured roster order.
   - Assign `playerIndex` from `0` after sorting.
 - Hosted participant stable key is platform `playerId`.
 - Local participant stable key is one-based source `seatIndex`.
 - Never derive player color from `playerIndex`. If Seat 3 is green and shuffle assigns it to `playerIndex: 0`, Unity sees `playerIndex: 0` with green.
+
+Required cross-language fixtures:
+
+| Scenario | Seed | Captured roster order | Expected sorted order after hash-sort |
+| --- | --- | --- | --- |
+| Local sparse seats | `111` | source seats `1, 3, 8` | seat `8` hash `426892096` -> `playerIndex: 0`; seat `1` hash `577890667` -> `playerIndex: 1`; seat `3` hash `611445905` -> `playerIndex: 2` |
+| Hosted platform IDs | `424242` | platform IDs `player-a, player-b, player-c, player-d` | `player-d` hash `264058611` -> `playerIndex: 0`; `player-a` hash `314391468` -> `playerIndex: 1`; `player-c` hash `347946706` -> `playerIndex: 2`; `player-b` hash `364724325` -> `playerIndex: 3` |
 
 ## Boundary Validation
 

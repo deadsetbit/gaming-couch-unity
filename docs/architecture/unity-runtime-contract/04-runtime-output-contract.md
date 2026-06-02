@@ -58,12 +58,34 @@ Unity emits `runtime_messages` batches for semantic and effectful records:
 - Normal semantic messages are coalesced and flushed at most once per rendered frame after Unity simulation updates for that frame.
 - Effectful messages must preserve ordering by flushing pending state before, or in the same ordered batch as, the effectful message.
 - Batches are transport optimization, not product semantics. Consumers should process individual typed messages in sequence order.
-- Use strict bounds: maximum runtime JSON is about `64 KiB`, and maximum messages per batch is `64` unless later profiling deliberately changes the limits.
+- Payloads must be bounded, but arbitrary numeric caps such as total JSON bytes, messages per batch, string lengths, and debug preview sizes are implementation defaults, not PRD-level compatibility commitments in this planning slice. Task 7 and adapter implementation must choose, document, and test concrete ingress limits before release.
 - A malformed batch envelope is rejected as a whole and diagnosed.
 - A valid batch with one malformed non-effectful message keeps valid messages and rejects only the malformed message.
 - Unknown non-effectful `messageType` values are ignored and diagnosed. Unknown effectful message types are not applied.
 - Sinks validate exact per-type schema, field types, string bounds, array bounds, known catalog membership, `playerIndex` mapping, unknown fields, and prototype-pollution keys before storing or forwarding messages.
+- Unity emitters should produce bounded, well-formed payloads and may clamp or truncate informational fields, but DevApp/client/hosted ingress is authoritative because games and emitted payloads cannot be trusted.
 - Public runtime messages and diagnostics never include platform player IDs. Hosted adapters may correlate `playerIndex` to platform player IDs in private adapter state after validation.
+
+Common `runtime_messages` envelope schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `type` | Yes | exact string `runtime_messages` | Physical runtime output path. |
+| `schemaVersion` | Yes | integer `1` | Envelope schema version. |
+| `runId` | Transport-dependent | non-empty bounded string | Only for transports that are not strictly scoped to one active run; exact max length is an ingress implementation limit. |
+| `messages` | Yes | bounded non-empty array | Each item is validated independently after the envelope is accepted; exact max count is an ingress implementation limit. |
+
+Common runtime message record schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `schemaVersion` | Yes | integer `1` | Message record schema version. |
+| `messageType` | Yes | known v1 message type string | Unknown non-effectful types are ignored and diagnosed; unknown effectful types are not applied. |
+| `sequence` | Yes | integer, `>= 1` | One-based and monotonic per active run. |
+| `runtimeTimeMs` | Yes | integer, `>= 0` | Unscaled milliseconds since active run start. |
+| `payload` | Yes | object | Exact schema depends on `messageType`; unknown fields reject that message. |
+
+All integer fields are JSON numbers that must be finite integers. Unless a field has a narrower bound, sinks must reject values outside the JavaScript safe integer range.
 
 ## State Snapshot Message
 
@@ -97,13 +119,30 @@ Unity emits `runtime_messages` batches for semantic and effectful records:
 ```
 
 - Snapshots are full current run state, not deltas or patch operations.
-- Snapshots emit on play start, meaningful semantic state changes, and immediately before accepted terminal placement submission.
+- Snapshots emit on play start, meaningful semantic state changes, and before terminal placement submission. Unity flushes pending state snapshot output before, or in the same ordered batch immediately before, the terminal placement submission message; receiver acceptance happens after validation.
 - Snapshot emission is change-driven and coalesced. Do not emit every frame unless a semantic state value changes every frame.
 - Snapshot payloads include all active players exactly once.
 - Player type and color are read from the active-run roster/setup context, not repeated in each dynamic snapshot.
 - Score, lives, status, status text, meter, placement, elimination state, finish state, and game status are v1 canonical semantic fields.
 - Arbitrary game-defined custom data is out of scope for v1.
 - State snapshots may be disabled at boot for profiling. Transition messages and effectful messages remain enabled by default.
+
+`gc.state.snapshot` payload schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `game` | Yes | object | Exact fields below. |
+| `game.status` | Yes | enum `pending_setup`, `setup_done`, `playing`, `game_over` | Normalized runtime game status. |
+| `players` | Yes | array length equals active-player count | Contains every active `playerIndex` exactly once. |
+| `players[].playerIndex` | Yes | integer `0..activePlayerCount - 1` | Game-facing active-player index. |
+| `players[].score` | Yes | integer | Current score. |
+| `players[].lives` | Yes | integer `>= 0` | Current lives after clamping. |
+| `players[].status` | Yes | enum `Neutral`, `Pending`, `Success`, `Failure`, `Warning`, `Alert` | Mirrors `GCPlayerStatus`. |
+| `players[].statusText` | Yes | bounded string | Empty string is allowed; exact max length is an ingress implementation limit. |
+| `players[].meter` | Yes | integer `-1..100` | `-1` means no meter value. |
+| `players[].placement` | Yes | integer `1..activePlayerCount` | One-based current placement rank from configured broad placement order. |
+| `players[].eliminationState` | Yes | enum `None`, `Revokable`, `Permanent` | Uses the state model vocabulary. |
+| `players[].finishState` | Yes | enum `None`, `Revokable`, `Permanent` | Uses the state model vocabulary. |
 
 ## Transition Message Catalog V1
 
@@ -118,13 +157,26 @@ Initial player transition messages:
 - `gc.player.elimination_state_changed`
 - `gc.player.finish_state_changed`
 
-Payload rules:
+Common transition payload rules:
 
 - `playerIndex` is required.
 - Each transition carries `previousValue`, `value`, and bounded `reasonText` when the public API supplies a reason.
 - Elimination and finish transition values are `None`, `Revokable`, or `Permanent`.
 - Duplicate calls and invalid transitions that no-op emit diagnostics, not transition messages.
 - Permanent elimination is represented for future phone death screens, personal death sounds, and player-facing elimination UI. No v1 input suppression is implied.
+
+Transition payload schemas:
+
+| Message type | `previousValue` / `value` type | Additional fields |
+| --- | --- | --- |
+| `gc.player.score_changed` | integer | `playerIndex`; optional bounded `reasonText` |
+| `gc.player.lives_changed` | integer `>= 0` | `playerIndex`; optional bounded `reasonText` |
+| `gc.player.status_changed` | object `{ "status": GCPlayerStatus enum, "statusText": bounded string }` | `playerIndex`; optional bounded `reasonText` |
+| `gc.player.meter_changed` | integer `-1..100` | `playerIndex`; optional bounded `reasonText` |
+| `gc.player.elimination_state_changed` | enum `None`, `Revokable`, `Permanent` | `playerIndex`; optional bounded `reasonText` |
+| `gc.player.finish_state_changed` | enum `None`, `Revokable`, `Permanent` | `playerIndex`; optional bounded `reasonText` |
+
+Every transition payload rejects unknown fields. `reasonText` is omitted when no public API reason exists; it is not emitted as `null`.
 
 ## Diagnostics Message
 
@@ -138,6 +190,19 @@ Structured GC diagnostics and captured Unity log records are carried as `gc.diag
 - Captured Unity logs do not natively contain `sequence` or `runtimeTimeMs`. The Unity package stamps captured log records with the same active-run clock and sequence source used by other runtime messages before emitting them.
 - Raw WebGL loader `print`/`printErr` output and browser console records are host-owned debug output. They are not assumed to have runtime-relative timing and are not merged into the canonical runtime message sequence unless a host explicitly wraps and stamps them as a supported diagnostic input.
 - Diagnostics are runtime messages, not transition messages. Do not encode player state changes as diagnostics.
+
+`gc.diagnostic` payload schema summary:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `code` | Yes | known lowercase namespaced diagnostic code | Catalog lives in `05-diagnostics-spine.md`. |
+| `severity` | Yes | enum `info`, `warning`, `error` | Based on behavior impact. |
+| `sourceArea` | Yes | known source area | Includes `runtime_messages` and `screen_space` as distinct sources. |
+| `message` | Yes | bounded string | Human text is not contractual; exact max length is an ingress implementation limit. |
+| `playerIndex` | No | integer `0..activePlayerCount - 1` | Only when the diagnostic is about a game-facing active player. |
+| `mapping` | No | object | Bounded run-scoped mapping context from the diagnostics spine. |
+| `details` | No | flat object | Primitive values, bounded strings, and small primitive arrays only. |
+| `debug` | No | bounded object | Non-fingerprinted troubleshooting evidence. |
 
 ## Effectful Terminal Placement Message
 
@@ -157,11 +222,28 @@ Rules:
 - Every active `playerIndex` must appear exactly once.
 - `playerIndex: 0` is valid.
 - Missing, duplicate, non-integer, negative, out-of-range, extra, or unknown placement values reject the effectful message and do not publish platform result state.
+- Unknown payload fields reject the effectful message. Reserved future result fields also reject in v1.
 - V1 represents a total placement order only. It does not represent ties, DNF, teams, abandoned rounds, no-contest outcomes, score snapshots, or structured result reasons.
 - Receiver-side accept/reject semantics are required. Accepted messages update platform-owned result state once. Rejected messages do not update result state and emit diagnostics.
 - No Unity-facing acknowledgement response is required in v1. A future bidirectional acknowledgement contract is reserved.
 - Pending state snapshot output must be flushed before, or in the same ordered batch immediately before, terminal placement submission.
 - The legacy bare array bridge remains array-shaped and is interpreted only as `playerIdsByPlacement` for already-built older Unity games.
+
+Terminal placement acceptance is first-accepted-wins per active run:
+
+- The receiver tracks whether terminal placement has already been accepted for the active run.
+- The first valid terminal placement message updates platform-owned result state and freezes that result for the active run.
+- Rejected messages before any accepted terminal placement do not freeze the result; a later valid terminal placement may still be accepted.
+- Any later terminal placement message after the first accepted one is rejected and diagnosed with `gc.runtime.invalid_terminal_placement`, even if the later payload is byte-for-byte identical. V1 does not have a Unity acknowledgement or retry contract that would make identical duplicates idempotently accepted.
+- If one ordered batch contains multiple terminal placement messages, process them by `sequence`: the first valid one may be accepted, and every later one is rejected after the result is frozen.
+- Rejections for duplicate, replayed, or second terminal placement messages must not mutate playlist, stats, or platform result state again.
+
+`gc.game.terminal_placement_submitted` payload schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `playerIndicesByPlacement` | Yes | array length equals active-player count | Total one-based placement order encoded as zero-based `playerIndex` values. |
+| `playerIndicesByPlacement[]` | Yes | integer `0..activePlayerCount - 1` | Each active player appears exactly once. |
 
 ## Screen Space Path
 
@@ -203,6 +285,29 @@ Unity emits `screen_space` batches for latest-state screen-coordinate anchors:
 - Screen-space sampling should happen late enough to reflect final camera/object positions for the rendered frame.
 - `screen_space` can be disabled at boot for profiling.
 - `screen_space` is view-derived presentation data, not durable semantic game truth.
+
+`screen_space` envelope schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `type` | Yes | exact string `screen_space` | Physical runtime output path. |
+| `schemaVersion` | Yes | integer `1` | Envelope schema version. |
+| `runId` | Transport-dependent | non-empty bounded string | Only for transports that are not strictly scoped to one active run; exact max length is an ingress implementation limit. |
+| `frameIndex` | Yes | integer `>= 0` | Monotonic rendered-frame index for the active run. |
+| `runtimeTimeMs` | Yes | integer `>= 0` | Unscaled milliseconds since active run start for this batch. |
+| `anchors` | Yes | array, max `2 * activePlayerCount` items | Empty array is allowed and means no anchors are visible in this latest batch. This bound is contractual because v1 has exactly two player anchor types. |
+
+`screen_space` anchor schema:
+
+| Field | Required | Type/bounds | Notes |
+| --- | --- | --- | --- |
+| `anchorType` | Yes | enum `playerOverhead`, `playerPosition` | V1 anchor catalog. |
+| `playerIndex` | Yes | integer `0..activePlayerCount - 1` | Game-facing active-player index. |
+| `x` | Yes | finite number `0..1` | Normalized and clamped horizontal screen coordinate. |
+| `y` | Yes | finite number `0..1` | Normalized and clamped vertical screen coordinate. |
+| `isOffScreen` | Yes | boolean | True when the source point is outside the camera view; `x` and `y` still carry the clamped normalized coordinate. |
+
+Unknown `screen_space` envelope or anchor fields are rejected. A batch may include at most one anchor per `(anchorType, playerIndex)` pair; duplicates make the batch malformed and produce `gc.runtime.malformed_screen_space` with `sourceArea: screen_space`.
 
 ## Boot-Time Output Configuration
 
@@ -297,6 +402,7 @@ Reserved ingress rules:
 - `screen_space` can be disabled at boot without disabling terminal placement submission.
 - Terminal placement with every active player index exactly once is accepted and updates platform result state.
 - Terminal placement with a missing, duplicate, or out-of-range index is rejected and does not publish platform result state.
+- After one valid terminal placement is accepted, any duplicate, replayed, or second terminal placement message is rejected and does not mutate platform result state again.
 - A malformed runtime message is rejected and diagnosed.
 - A captured Unity warning record is emitted as `gc.diagnostic` with active-run `sequence` and `runtimeTimeMs` when Unity log capture is enabled.
 - With Unity log capture disabled, third-party `Debug.LogWarning` output does not enter `runtime_messages`.

@@ -16,7 +16,7 @@ Define the structured diagnostics path before API migration and state-model work
   - `error`: runtime output was rejected or blocked.
   - `warning`: behavior degraded, no-oped, fell back, hit a legacy bridge, or used unsupported API.
   - `info`: notable non-problem diagnostic state.
-- `sourceArea` is one of `api`, `mapping`, `state`, `runtime_messages`, `metadata`, or `unity_log`.
+- `sourceArea` is one of `api`, `mapping`, `state`, `runtime_messages`, `screen_space`, `metadata`, or `unity_log`.
 - Diagnostic timing uses the enclosing `runtime_messages` record `sequence` and unscaled `runtimeTimeMs`.
 - `runId` is active-run context metadata resolved by the receiver or adapter. In DevApp local play it identifies the active runtime play run and is not stable across restart.
 - `playerIndex` is optional but top-level when a diagnostic is about a game-facing active player. Public diagnostics must not expose platform player IDs.
@@ -54,6 +54,8 @@ Define the structured diagnostics path before API migration and state-model work
   - `gc.log.unity_log`
   - `gc.log.unity_warning`
   - `gc.log.unity_error`
+- Runtime message envelope, message catalog, and terminal placement validation diagnostics use `sourceArea: runtime_messages`.
+- Screen-space envelope and anchor validation diagnostics, including `gc.runtime.malformed_screen_space`, use `sourceArea: screen_space`.
 
 ## Emitters And Sinks
 

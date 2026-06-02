@@ -75,6 +75,7 @@ Rules:
 - New terminal placement payloads must not contain legacy ID fields.
 - Local DevApp and hosted adapters map accepted `playerIndicesByPlacement` through the active-player mapping before updating platform-facing `LatestGameOverResult.playerIdsByPlacement`.
 - Platform-facing playlist/stats surfaces may keep `playerIdsByPlacement` while platform state still uses platform player IDs.
+- Terminal placement acceptance is first-accepted-wins per active run across both the new runtime message path and the temporary legacy bridge. After one new or legacy result is accepted, later duplicate, replayed, or second result messages are rejected, diagnosed, and must not mutate playlist, stats, or platform result state again.
 - Accepting a legacy array/message emits `gc.api.legacy_runtime_payload`.
 
 Hosted WebGL bridge:
