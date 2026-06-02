@@ -282,7 +282,13 @@ internal static class GCUnityBuildInfoBuildSummaryCapture
         }
 
         var summary = report.summary;
-        var normalizedOutputPath = GCUnityBuildInfoPathNormalizer.Normalize(
+        return Create(
+            summary.result.ToString(),
+            summary.totalSize,
+            summary.totalTime,
+            summary.totalWarnings,
+            summary.totalErrors,
+            summary.guid.ToString(),
             summary.outputPath,
             new GCUnityBuildInfoPathNormalizationContext(
                 ResolveProjectRootPath(),
@@ -290,15 +296,29 @@ internal static class GCUnityBuildInfoBuildSummaryCapture
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             )
         );
+    }
+
+    internal static GCUnityBuildInfoBuildSummary Create(
+        string result,
+        ulong totalSizeBytes,
+        TimeSpan totalTime,
+        int totalWarnings,
+        int totalErrors,
+        string guid,
+        string outputPath,
+        GCUnityBuildInfoPathNormalizationContext pathContext
+    )
+    {
+        var normalizedOutputPath = GCUnityBuildInfoPathNormalizer.Normalize(outputPath, pathContext);
 
         return new GCUnityBuildInfoBuildSummary
         {
-            result = summary.result.ToString(),
-            totalSizeBytes = ClampToInt64(summary.totalSize),
-            totalTimeSeconds = Math.Round(summary.totalTime.TotalSeconds, 3),
-            totalWarnings = summary.totalWarnings,
-            totalErrors = summary.totalErrors,
-            guid = summary.guid.ToString(),
+            result = result,
+            totalSizeBytes = ClampToInt64(totalSizeBytes),
+            totalTimeSeconds = Math.Round(totalTime.TotalSeconds, 3),
+            totalWarnings = totalWarnings,
+            totalErrors = totalErrors,
+            guid = guid,
             outputPath = normalizedOutputPath.ShouldEmitValue ? normalizedOutputPath.value : null,
             outputPathKind = FormatPathKind(normalizedOutputPath.kind),
             outputPathRedacted = normalizedOutputPath.WasRedacted,
