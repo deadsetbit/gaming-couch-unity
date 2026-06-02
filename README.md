@@ -39,6 +39,12 @@ When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the p
 
 The sidecar lets future Gaming Couch upload and hosted-runtime validation inspect Unity build identity before loading the Unity player. Any upload validation policy belongs in the Gaming Couch main repo, not in the Unity template.
 
+The same Gaming Couch WebGL build also writes `gc.unity-build-info.json` next to `index.html`. This separate diagnostic sidecar is schema-versioned and records capture metadata, Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
+
+Build diagnostic paths are normalized before JSON serialization. Build-output paths are written relative to the build output, project paths are written relative to the Unity project, user-home paths use a `${USER_HOME}` prefix, and unknown absolute paths are redacted instead of emitted verbatim.
+
+Adding or changing these sidecars does not require a `gameProtocolVersion` bump unless the platform/game integration contract itself changes.
+
 # Configure local editor play settings
 
 Unity editor play settings are read from the root `gc.dev.json` file in your Unity project. The package uses this file as the source of truth for local play entry, seed, and the eight-seat player roster, matching the Gaming Couch DevApp local project format.
@@ -301,6 +307,8 @@ GCPlayer.ColorOffWhite
 When you are ready to build your project for Gaming Couch, run the clean WebGL export setup before creating the build. Review the generated preview, then apply the target, template, splash/logo, and release-profile changes needed for a clean export.
 
 If setup warns that the active build target is still not WebGL, run setup again or switch the project to WebGL manually before building.
+
+Gaming Couch WebGL builds produce two package-owned JSON sidecars at the build output root: `gc.runtime-info.json` for narrow runtime identity and `gc.unity-build-info.json` for privacy-preserving Unity build diagnostics.
 
 # What next?
 

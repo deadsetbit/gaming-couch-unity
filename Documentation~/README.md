@@ -22,7 +22,11 @@ When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the p
 
 The sidecar enables a Gaming Couch upload/client validation follow-up to inspect Unity build identity before loading the Unity player. This package does not define upload validation policy; that policy belongs in the Gaming Couch main repo.
 
-`gameProtocolVersion` identifies the Gaming Couch game integration contract. Sidecar generation, package metadata, and upload validation rules do not require a protocol bump unless the platform/game contract changes.
+Gaming Couch WebGL builds also write `gc.unity-build-info.json` beside `index.html`. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract and does not extend `gc.runtime-info.json`.
+
+Build diagnostic paths are normalized before JSON serialization: build-output paths are build-output-relative, project paths are project-relative, user-home paths use `${USER_HOME}`, and unknown absolute paths are redacted.
+
+`gameProtocolVersion` identifies the Gaming Couch game integration contract. Sidecar generation, package metadata, build diagnostics, and upload validation rules do not require a protocol bump unless the platform/game contract changes.
 
 ## Local Editor Play Settings
 
