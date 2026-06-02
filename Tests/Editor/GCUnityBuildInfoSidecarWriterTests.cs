@@ -135,7 +135,7 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
     }
 
     [Test]
-    public void SkipsOtherWebGLTemplatesAndRemovesStaleBuildInfoSidecar()
+    public void WritesBuildInfoSidecarForOtherWebGLTemplatesAndOverwritesStaleDiagnostics()
     {
         var outputRootPath = CreateTemporaryBuildOutputRoot();
 
@@ -148,17 +148,56 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
                 BuildTarget.WebGL,
                 outputRootPath,
                 "PROJECT:OtherTemplate",
-                null,
-                null,
-                null,
-                null,
-                null
+                CreatePackageIdentity(),
+                CreateBuildSummary(outputRootPath),
+                CreateWebGLSettings(),
+                "6000.0.0f1-test",
+                "2026-01-02T03:04:05Z"
             );
+            var json = File.ReadAllText(sidecarPath);
+            var sidecar = JsonUtility.FromJson<GCUnityBuildInfoSidecar>(json);
 
-            Assert.That(result.WasWritten, Is.False);
-            Assert.That(result.status, Is.EqualTo(GCUnityBuildInfoSidecarWriteStatus.SkippedTemplate));
+            Assert.That(result.WasWritten, Is.True);
+            Assert.That(result.status, Is.EqualTo(GCUnityBuildInfoSidecarWriteStatus.Written));
             Assert.That(result.sidecarPath, Is.EqualTo(sidecarPath));
-            Assert.That(File.Exists(sidecarPath), Is.False);
+            Assert.That(json, Does.Not.Contain("\"stale\""));
+            Assert.That(sidecar.build.template, Is.EqualTo("PROJECT:OtherTemplate"));
+        }
+        finally
+        {
+            DeleteTemporaryPath(outputRootPath);
+        }
+    }
+
+    [Test]
+    public void PostprocessSeamWritesOtherTemplateBuildInfoAndRemovesStaleRuntimeInfo()
+    {
+        var outputRootPath = CreateTemporaryBuildOutputRoot();
+
+        try
+        {
+            var runtimeSidecarPath = Path.Combine(outputRootPath, GCWebGLRuntimeInfoSidecarWriter.SidecarFileName);
+            var buildInfoSidecarPath = Path.Combine(outputRootPath, GCUnityBuildInfoSidecarWriter.SidecarFileName);
+            File.WriteAllText(runtimeSidecarPath, "{\"staleRuntime\":true}");
+            File.WriteAllText(buildInfoSidecarPath, "{\"staleBuildInfo\":true}");
+
+            GCWebGLBuildSidecarPostprocessWriter.WriteForBuild(
+                BuildTarget.WebGL,
+                outputRootPath,
+                "PROJECT:OtherTemplate",
+                CreatePackageIdentity(),
+                CreateBuildSummary(outputRootPath),
+                CreateWebGLSettings(),
+                "6000.0.0f1-test",
+                "2026-01-02T03:04:05Z"
+            );
+            var buildInfoJson = File.ReadAllText(buildInfoSidecarPath);
+            var buildInfoSidecar = JsonUtility.FromJson<GCUnityBuildInfoSidecar>(buildInfoJson);
+
+            Assert.That(File.Exists(runtimeSidecarPath), Is.False);
+            Assert.That(File.Exists(buildInfoSidecarPath), Is.True);
+            Assert.That(buildInfoJson, Does.Not.Contain("\"staleBuildInfo\""));
+            Assert.That(buildInfoSidecar.build.template, Is.EqualTo("PROJECT:OtherTemplate"));
         }
         finally
         {
@@ -303,6 +342,7 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
         var buildOutputRoot = "/Users/alice/game/BuildOutput";
         var userHome = "/Users/alice";
         var unknownAbsolutePath = "/private/secret/build/index.html";
+        var userHomePath = userHome + "/Library/Unity/cache";
         var pathContext = new GCUnityBuildInfoPathNormalizationContext(projectRoot, buildOutputRoot, userHome);
         var summary = GCUnityBuildInfoBuildSummaryCapture.Create(
             "Succeeded",
@@ -324,11 +364,23 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             unknownAbsolutePath,
             pathContext
         );
+        var userHomeSummary = GCUnityBuildInfoBuildSummaryCapture.Create(
+            "Succeeded",
+            2048,
+            TimeSpan.FromSeconds(3.5d),
+            1,
+            0,
+            "build-guid",
+            userHomePath,
+            pathContext
+        );
 
         Assert.That(summary.outputPath, Is.EqualTo("Build/game.wasm"));
         Assert.That(summary.outputPathKind, Is.EqualTo("buildOutputRelative"));
         Assert.That(redactedSummary.outputPath, Is.Null);
         Assert.That(redactedSummary.outputPathRedacted, Is.True);
+        Assert.That(userHomeSummary.outputPath, Is.EqualTo(GCUnityBuildInfoPathNormalizer.UserHomeToken + "/Library/Unity/cache"));
+        Assert.That(userHomeSummary.outputPathKind, Is.EqualTo("userHomeRelative"));
 
         var sidecar = GCUnityBuildInfoSidecarFactory.Create(
             BuildTarget.WebGL,
@@ -348,14 +400,26 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             "6000.0.0f1-test",
             "2026-01-02T03:04:05Z"
         );
+        var userHomeSidecar = GCUnityBuildInfoSidecarFactory.Create(
+            BuildTarget.WebGL,
+            GamingCouchWebGLExportSetup.ProjectTemplateIdentifier,
+            CreatePackageIdentity(),
+            userHomeSummary,
+            CreateWebGLSettings(),
+            "6000.0.0f1-test",
+            "2026-01-02T03:04:05Z"
+        );
         var json = JsonUtility.ToJson(sidecar, true);
         var redactedJson = JsonUtility.ToJson(redactedSidecar, true);
+        var userHomeJson = JsonUtility.ToJson(userHomeSidecar, true);
 
         Assert.That(json, Does.Not.Contain(projectRoot));
         Assert.That(json, Does.Not.Contain(buildOutputRoot));
         Assert.That(json, Does.Not.Contain(userHome));
         Assert.That(redactedJson, Does.Not.Contain(unknownAbsolutePath));
         Assert.That(redactedJson, Does.Contain("\"outputPathRedacted\""));
+        Assert.That(userHomeJson, Does.Contain(GCUnityBuildInfoPathNormalizer.UserHomeToken + "/Library/Unity/cache"));
+        Assert.That(userHomeJson, Does.Not.Contain(userHome));
     }
 
     private static void AssertNormalized(

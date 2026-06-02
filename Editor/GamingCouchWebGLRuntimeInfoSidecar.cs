@@ -179,6 +179,14 @@ public sealed class GamingCouchWebGLRuntimeInfoSidecarPostprocess : IPostprocess
 
     public void OnPostprocessBuild(BuildReport report)
     {
+        GCWebGLBuildSidecarPostprocessWriter.WriteForBuild(report, PlayerSettings.WebGL.template);
+    }
+}
+
+internal static class GCWebGLBuildSidecarPostprocessWriter
+{
+    internal static void WriteForBuild(BuildReport report, string webGLTemplate)
+    {
         if (report == null)
         {
             throw new ArgumentNullException(nameof(report));
@@ -187,12 +195,36 @@ public sealed class GamingCouchWebGLRuntimeInfoSidecarPostprocess : IPostprocess
         GCWebGLRuntimeInfoSidecarWriter.WriteForBuild(
             report.summary.platform,
             report.summary.outputPath,
-            PlayerSettings.WebGL.template
+            webGLTemplate
         );
 
         GCUnityBuildInfoSidecarWriter.WriteForBuild(
             report,
-            PlayerSettings.WebGL.template
+            webGLTemplate
+        );
+    }
+
+    internal static void WriteForBuild(
+        BuildTarget buildTarget,
+        string buildOutputPath,
+        string webGLTemplate,
+        GCPackageIdentity packageIdentity,
+        GCUnityBuildInfoBuildSummary buildSummary,
+        GCUnityBuildInfoWebGLSettings webGLSettings,
+        string unityVersion,
+        string capturedAtUtc
+    )
+    {
+        GCWebGLRuntimeInfoSidecarWriter.WriteForBuild(buildTarget, buildOutputPath, webGLTemplate);
+        GCUnityBuildInfoSidecarWriter.WriteForBuild(
+            buildTarget,
+            buildOutputPath,
+            webGLTemplate,
+            packageIdentity,
+            buildSummary,
+            webGLSettings,
+            unityVersion,
+            capturedAtUtc
         );
     }
 }

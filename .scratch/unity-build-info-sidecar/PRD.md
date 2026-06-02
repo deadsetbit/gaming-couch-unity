@@ -8,7 +8,7 @@ The diagnostic artifact also must not leak local absolute paths, user home paths
 
 ## Solution
 
-Add a separate versioned build diagnostic sidecar named `gc.unity-build-info.json` beside WebGL build output when the build uses the Gaming Couch WebGL template. Keep `gc.runtime-info.json` unchanged as the identity/preflight contract.
+Add a separate versioned build diagnostic sidecar named `gc.unity-build-info.json` beside any WebGL build output. Keep `gc.runtime-info.json` unchanged as the Gaming Couch template identity/preflight contract.
 
 The build-info sidecar will capture allowlisted, typed Unity WebGL build metadata and selected BuildReport fields. Any path-like values included in the file will be normalized field-by-field before serialization: project paths become project-relative, build output paths become build-output-relative, user home paths become `${USER_HOME}`-relative, and unknown absolute paths are omitted or redacted.
 
@@ -18,10 +18,10 @@ The feature does not change the game runtime contract and does not require a `ga
 
 1. As a Unity package maintainer, I want build diagnostics in a separate sidecar, so that runtime identity stays small and stable.
 2. As a Gaming Couch platform developer, I want to inspect Unity build settings before loading the player, so that upload and hosting issues can be diagnosed earlier.
-3. As a Unity game developer, I want build diagnostic output to appear automatically for Gaming Couch WebGL builds, so that I do not need a manual export step.
-4. As a Unity game developer, I want non-Gaming Couch WebGL builds to avoid Gaming Couch diagnostics, so that unrelated exports are not polluted with platform files.
+3. As a Unity game developer, I want build diagnostic output to appear automatically for WebGL builds, so that I do not need a manual export step.
+4. As a Gaming Couch platform developer, I want non-Gaming Couch WebGL builds to include diagnostics, so that upload validation can warn or reject based on the captured template and settings.
 5. As a Unity game developer, I want non-WebGL builds to skip the build-info sidecar, so that diagnostics match the hosted platform target.
-6. As a maintainer, I want stale build-info files removed when a reused output folder is rebuilt with another WebGL template, so that old diagnostics are not mistaken for the latest build.
+6. As a maintainer, I want stale build-info files overwritten when a reused output folder is rebuilt with another WebGL template, so that diagnostics reflect the latest build.
 7. As a maintainer, I want `gc.runtime-info.json` to remain unchanged, so that upload/runtime identity readers do not need to understand build diagnostics.
 8. As a platform developer, I want the diagnostic file to include a schema version, so that future schema changes can be handled deliberately.
 9. As a platform developer, I want the diagnostic file to include Unity version, so that build issues can be correlated with Unity editor behavior.
@@ -45,8 +45,8 @@ The feature does not change the game runtime contract and does not require a `ga
 
 - Build diagnostics use a new file named `gc.unity-build-info.json`.
 - Runtime identity remains in `gc.runtime-info.json`; the existing runtime sidecar shape is not extended for build settings.
-- The build-info file is emitted only for WebGL builds using the Gaming Couch template identifier.
-- The build-info writer removes stale diagnostic sidecars when a WebGL build uses another template and reuses an existing output folder.
+- The build-info file is emitted for any WebGL build, regardless of template.
+- The build-info writer overwrites stale diagnostic sidecars when a WebGL build reuses an existing output folder.
 - The build-info schema is explicitly versioned with a `schemaVersion` field.
 - The first schema includes capture metadata, Unity editor version, package identity, build target, WebGL template, selected typed WebGL settings, and selected BuildReport summary values.
 - The first schema may include selected output file metadata only when paths are normalized and useful.
@@ -68,7 +68,7 @@ The feature does not change the game runtime contract and does not require a `ga
 ## Testing Decisions
 
 - Tests should verify externally visible file behavior and serialized JSON shape, not private implementation details.
-- Writer tests should mirror existing runtime sidecar tests: write for Gaming Couch WebGL template, skip non-WebGL, skip other templates, delete stale files, and overwrite stale files on rebuild.
+- Writer tests should cover build-info writes for Gaming Couch and non-Gaming-Couch WebGL templates, non-WebGL skip behavior, and stale build-info overwrite. Existing runtime sidecar tests cover template skip and stale runtime-info deletion.
 - Path sanitizer tests should cover Unix absolute paths, Windows absolute paths, project-root paths, build-output paths, user-home paths, and unknown absolute paths.
 - JSON tests should assert that serialized output does not contain the local project root, local build output root, raw user home path, or unknown absolute paths.
 - Settings capture tests should verify stable field names and representative values from typed WebGL settings.
@@ -81,11 +81,11 @@ The feature does not change the game runtime contract and does not require a `ga
 
 | ID | Task | Status | Done when | Dependencies | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Task 1 | Add the versioned build-info DTO and writer service. | Completed | A Gaming Couch WebGL build write call creates `gc.unity-build-info.json` with `schemaVersion`, capture metadata, Unity version, package identity, target, template, typed WebGL settings, and selected build summary values while leaving `gc.runtime-info.json` unchanged. | None | Current runtime sidecar writer already has the right gating pattern and output-root behavior. |
+| Task 1 | Add the versioned build-info DTO and writer service. | Completed | A WebGL build write call creates `gc.unity-build-info.json` with `schemaVersion`, capture metadata, Unity version, package identity, target, template, typed WebGL settings, and selected build summary values while leaving `gc.runtime-info.json` unchanged. | None | Current runtime sidecar writer already has the right output-root behavior. |
 | Task 2 | Add a field-level path normalization module. | Completed | Project-root, build-output, user-home, Unix absolute, Windows absolute, and unknown absolute paths normalize according to policy before serialization. | None | This module should be independently testable and should not rely on raw JSON string replacement. |
 | Task 3 | Integrate path normalization into BuildReport output capture. | Completed | Any included BuildReport paths are useful relative or tokenized values, and unknown absolute paths are omitted or redacted. | Task 1, Task 2 | BuildReport data should remain selected and allowlisted because report fields may not be complete during postprocess. |
-| Task 4 | Match runtime sidecar lifecycle behavior for skip and stale-file cases. | Completed | Non-WebGL builds do not write build-info; other WebGL templates do not write build-info and remove stale `gc.unity-build-info.json`; Gaming Couch WebGL rebuilds overwrite stale build-info. | Task 1 | Keep the diagnostic sidecar gated to Gaming Couch template builds. |
-| Task 5 | Add focused tests for writer behavior, JSON shape, and path hygiene. | Completed | Tests prove write/skip/delete/overwrite behavior, schema fields, selected settings, and absence of raw local project, build output, user home, and unknown absolute paths in serialized JSON. | Task 1, Task 2, Task 3, Task 4 | Existing runtime sidecar tests provide prior art for file behavior tests. |
+| Task 4 | Match diagnostic sidecar lifecycle behavior for skip and stale-file cases. | Completed | Non-WebGL builds do not write build-info; all WebGL templates write build-info and overwrite stale `gc.unity-build-info.json` so upload validation can inspect wrong-template builds. | Task 1 | Keep the runtime identity sidecar gated to Gaming Couch template builds. |
+| Task 5 | Add focused tests for writer behavior, JSON shape, and path hygiene. | Completed | Tests prove write/skip/overwrite behavior, schema fields, selected settings, and absence of raw local project, build output, user home, and unknown absolute paths in serialized JSON. | Task 1, Task 2, Task 3, Task 4 | Existing runtime sidecar tests provide template skip and stale runtime-info deletion coverage. |
 | Task 6 | Document runtime identity versus Unity build diagnostics. | Completed | README, package documentation, and versioning guidance explain `gc.runtime-info.json`, `gc.unity-build-info.json`, path hygiene, and why no `gameProtocolVersion` bump is needed. | Task 1, Task 5 | Documentation should avoid defining main-repo upload policy beyond what the sidecar enables. |
 | Task 7 | Run focused validation. | Completed | Static/package checks and focused open-Editor EditMode tests pass, or any Unity Editor bridge blocker is recorded with retry guidance. | Task 5, Task 6 | Prefer the open-Editor bridge and the host Unity project from the local bridge file. |
 

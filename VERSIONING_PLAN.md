@@ -29,9 +29,10 @@
 }
 ```
 
-- Gaming Couch WebGL export also writes `gc.unity-build-info.json` at the export root. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values.
+- Any WebGL export also writes `gc.unity-build-info.json` at the export root, even when another WebGL template is selected. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values.
 - `gc.unity-build-info.json` normalizes path-like values before JSON serialization. Build-output paths are build-output-relative, project paths are project-relative, user-home paths use `${USER_HOME}`, and unknown absolute paths are redacted.
 - Build diagnostics do not require a `gameProtocolVersion` bump because they do not change the platform/game runtime contract.
+- Upload validation may use `gc.unity-build-info.json` for template and WebGL settings warnings or rejections; `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
 - DevApp Editor runtime registration must not depend on `gc.runtime-info.json`, because local Editor play may happen before any WebGL build exists. It should use the shared editor package identity helper directly.
 - Hosted/upload validation can be added in the Gaming Couch main repo as a follow-up that reads `gc.runtime-info.json` before loading the Unity player.
 - Once a minimum sidecar-writing package version is established, that follow-up can define the exact upload policy for missing sidecars, stale package versions, unsupported package versions, or unsupported `gameProtocolVersion` values.

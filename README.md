@@ -39,7 +39,9 @@ When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the p
 
 The sidecar lets future Gaming Couch upload and hosted-runtime validation inspect Unity build identity before loading the Unity player. Any upload validation policy belongs in the Gaming Couch main repo, not in the Unity template.
 
-The same Gaming Couch WebGL build also writes `gc.unity-build-info.json` next to `index.html`. This separate diagnostic sidecar is schema-versioned and records capture metadata, Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
+Any WebGL build also writes `gc.unity-build-info.json` next to `index.html`, even when another WebGL template is selected. This separate diagnostic sidecar is schema-versioned and records capture metadata, Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
+
+Gaming Couch upload validation may use `gc.unity-build-info.json` to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
 
 Build diagnostic paths are normalized before JSON serialization. Build-output paths are written relative to the build output, project paths are written relative to the Unity project, user-home paths use a `${USER_HOME}` prefix, and unknown absolute paths are redacted instead of emitted verbatim.
 
@@ -308,7 +310,7 @@ When you are ready to build your project for Gaming Couch, run the clean WebGL e
 
 If setup warns that the active build target is still not WebGL, run setup again or switch the project to WebGL manually before building.
 
-Gaming Couch WebGL builds produce two package-owned JSON sidecars at the build output root: `gc.runtime-info.json` for narrow runtime identity and `gc.unity-build-info.json` for privacy-preserving Unity build diagnostics.
+WebGL builds produce `gc.unity-build-info.json` for privacy-preserving Unity build diagnostics. Builds that use the Gaming Couch template also produce `gc.runtime-info.json` for narrow runtime identity.
 
 # What next?
 

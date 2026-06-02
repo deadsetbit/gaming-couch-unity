@@ -22,7 +22,9 @@ When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the p
 
 The sidecar enables a Gaming Couch upload/client validation follow-up to inspect Unity build identity before loading the Unity player. This package does not define upload validation policy; that policy belongs in the Gaming Couch main repo.
 
-Gaming Couch WebGL builds also write `gc.unity-build-info.json` beside `index.html`. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract and does not extend `gc.runtime-info.json`.
+Any WebGL build also writes `gc.unity-build-info.json` beside `index.html`, even when another WebGL template is selected. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract and does not extend `gc.runtime-info.json`.
+
+Gaming Couch upload validation may use `gc.unity-build-info.json` to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
 
 Build diagnostic paths are normalized before JSON serialization: build-output paths are build-output-relative, project paths are project-relative, user-home paths use `${USER_HOME}`, and unknown absolute paths are redacted.
 

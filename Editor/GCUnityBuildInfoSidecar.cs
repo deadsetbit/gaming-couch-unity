@@ -11,7 +11,6 @@ internal enum GCUnityBuildInfoSidecarWriteStatus
 {
     Written,
     SkippedNonWebGLBuild,
-    SkippedTemplate,
 }
 
 internal sealed class GCUnityBuildInfoSidecarWriteResult
@@ -49,8 +48,7 @@ internal static class GCUnityBuildInfoSidecarWriter
         }
 
         var summary = report.summary;
-        if (summary.platform != BuildTarget.WebGL ||
-            !string.Equals(webGLTemplate, GamingCouchWebGLExportSetup.ProjectTemplateIdentifier, StringComparison.Ordinal))
+        if (summary.platform != BuildTarget.WebGL)
         {
             return WriteForBuild(
                 summary.platform,
@@ -95,11 +93,6 @@ internal static class GCUnityBuildInfoSidecarWriter
             );
         }
 
-        if (!string.Equals(webGLTemplate, GamingCouchWebGLExportSetup.ProjectTemplateIdentifier, StringComparison.Ordinal))
-        {
-            return SkipTemplateBuild(buildOutputPath);
-        }
-
         if (packageIdentity == null)
         {
             throw new ArgumentNullException(nameof(packageIdentity));
@@ -132,20 +125,6 @@ internal static class GCUnityBuildInfoSidecarWriter
 
         return new GCUnityBuildInfoSidecarWriteResult(
             GCUnityBuildInfoSidecarWriteStatus.Written,
-            sidecarPath
-        );
-    }
-
-    private static GCUnityBuildInfoSidecarWriteResult SkipTemplateBuild(string buildOutputPath)
-    {
-        var sidecarPath = TryResolveSidecarPath(buildOutputPath);
-        if (!string.IsNullOrEmpty(sidecarPath) && File.Exists(sidecarPath))
-        {
-            File.Delete(sidecarPath);
-        }
-
-        return new GCUnityBuildInfoSidecarWriteResult(
-            GCUnityBuildInfoSidecarWriteStatus.SkippedTemplate,
             sidecarPath
         );
     }
