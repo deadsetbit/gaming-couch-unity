@@ -69,7 +69,7 @@ internal static class GCUnityBuildInfoSidecarWriter
             summary.outputPath,
             webGLTemplate,
             GCEditorPackageIdentity.Resolve(),
-            GCUnityBuildInfoBuildSummaryCapture.Capture(report),
+            GCUnityBuildInfoBuildSummaryCapture.Capture(report, ResolveOutputRootPath(summary.outputPath)),
             GCUnityBuildInfoWebGLSettingsCapture.Capture(),
             Application.unityVersion,
             GCUnityBuildInfoCaptureClock.CaptureUtcNow()
@@ -156,7 +156,7 @@ internal static class GCUnityBuildInfoSidecarWriter
         }
     }
 
-    private static string ResolveOutputRootPath(string buildOutputPath)
+    internal static string ResolveOutputRootPath(string buildOutputPath)
     {
         if (string.IsNullOrWhiteSpace(buildOutputPath))
         {
@@ -263,7 +263,7 @@ internal static class GCUnityBuildInfoCaptureClock
 
 internal static class GCUnityBuildInfoBuildSummaryCapture
 {
-    internal static GCUnityBuildInfoBuildSummary Capture(BuildReport report)
+    internal static GCUnityBuildInfoBuildSummary Capture(BuildReport report, string buildOutputRootPath)
     {
         if (report == null)
         {
@@ -271,6 +271,15 @@ internal static class GCUnityBuildInfoBuildSummaryCapture
         }
 
         var summary = report.summary;
+        var normalizedOutputPath = GCUnityBuildInfoPathNormalizer.Normalize(
+            summary.outputPath,
+            new GCUnityBuildInfoPathNormalizationContext(
+                ResolveProjectRootPath(),
+                buildOutputRootPath,
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            )
+        );
+
         return new GCUnityBuildInfoBuildSummary
         {
             result = summary.result.ToString(),
@@ -279,12 +288,48 @@ internal static class GCUnityBuildInfoBuildSummaryCapture
             totalWarnings = summary.totalWarnings,
             totalErrors = summary.totalErrors,
             guid = summary.guid.ToString(),
+            outputPath = normalizedOutputPath.ShouldEmitValue ? normalizedOutputPath.value : null,
+            outputPathKind = FormatPathKind(normalizedOutputPath.kind),
+            outputPathRedacted = normalizedOutputPath.WasRedacted,
+            outputPathRedactionReason = normalizedOutputPath.redactionReason,
         };
     }
 
     private static long ClampToInt64(ulong value)
     {
         return value > long.MaxValue ? long.MaxValue : (long)value;
+    }
+
+    private static string ResolveProjectRootPath()
+    {
+        if (string.IsNullOrWhiteSpace(Application.dataPath))
+        {
+            return null;
+        }
+
+        var parent = Directory.GetParent(Application.dataPath);
+        return parent != null ? parent.FullName : null;
+    }
+
+    private static string FormatPathKind(GCUnityBuildInfoNormalizedPathKind kind)
+    {
+        switch (kind)
+        {
+            case GCUnityBuildInfoNormalizedPathKind.Empty:
+                return "empty";
+            case GCUnityBuildInfoNormalizedPathKind.Relative:
+                return "relative";
+            case GCUnityBuildInfoNormalizedPathKind.ProjectRelative:
+                return "projectRelative";
+            case GCUnityBuildInfoNormalizedPathKind.BuildOutputRelative:
+                return "buildOutputRelative";
+            case GCUnityBuildInfoNormalizedPathKind.UserHomeRelative:
+                return "userHomeRelative";
+            case GCUnityBuildInfoNormalizedPathKind.UnknownAbsolute:
+                return "unknownAbsolute";
+            default:
+                return "unknown";
+        }
     }
 }
 
@@ -361,6 +406,10 @@ internal sealed class GCUnityBuildInfoBuildSummary
     public int totalWarnings;
     public int totalErrors;
     public string guid;
+    public string outputPath;
+    public string outputPathKind;
+    public bool outputPathRedacted;
+    public string outputPathRedactionReason;
 }
 
 [Serializable]
