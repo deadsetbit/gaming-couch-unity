@@ -15,6 +15,194 @@ namespace DSB.GC.RuntimeMessages
     internal static class GCRuntimeMessageTypes
     {
         internal const string Diagnostic = "gc.diagnostic";
+        internal const string StateSnapshot = "gc.state.snapshot";
+    }
+
+    internal sealed class GCRuntimeStateSnapshotPayload
+    {
+        internal GCRuntimeStateSnapshotGame game;
+        internal GCRuntimeStateSnapshotPlayer[] players;
+
+        internal string ToJson()
+        {
+            var builder = new StringBuilder();
+            builder.Append("{\"game\":{\"status\":");
+            GCRuntimeJson.AppendString(builder, game.status);
+            builder.Append("},\"players\":[");
+
+            for (var index = 0; index < players.Length; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(",");
+                }
+
+                players[index].AppendJson(builder);
+            }
+
+            builder.Append("]}");
+            return builder.ToString();
+        }
+    }
+
+    internal sealed class GCRuntimeStateSnapshotGame
+    {
+        internal string status;
+    }
+
+    internal sealed class GCRuntimeStateSnapshotPlayer
+    {
+        internal int playerIndex;
+        internal int score;
+        internal int lives;
+        internal string status;
+        internal string statusText;
+        internal int meter;
+        internal int placement;
+        internal string eliminationState;
+        internal string finishState;
+
+        internal void AppendJson(StringBuilder builder)
+        {
+            builder.Append("{\"playerIndex\":").Append(playerIndex);
+            builder.Append(",\"score\":").Append(score);
+            builder.Append(",\"lives\":").Append(lives);
+            builder.Append(",\"status\":");
+            GCRuntimeJson.AppendString(builder, status);
+            builder.Append(",\"statusText\":");
+            GCRuntimeJson.AppendString(builder, statusText);
+            builder.Append(",\"meter\":").Append(meter);
+            builder.Append(",\"placement\":").Append(placement);
+            builder.Append(",\"eliminationState\":");
+            GCRuntimeJson.AppendString(builder, eliminationState);
+            builder.Append(",\"finishState\":");
+            GCRuntimeJson.AppendString(builder, finishState);
+            builder.Append("}");
+        }
+    }
+
+    internal static class GCRuntimeStateSnapshotBuilder
+    {
+        internal static GCRuntimeStateSnapshotPayload BuildPayload(
+            GCStatus gameStatus,
+            IReadOnlyList<GCPlayer> players,
+            IEnumerable<GCPlayer> playersByPlacement
+        )
+        {
+            if (players == null)
+            {
+                throw new ArgumentNullException(nameof(players));
+            }
+
+            var placementsByPlayer = BuildPlacementsByPlayer(players, playersByPlacement);
+            var snapshotPlayers = new GCRuntimeStateSnapshotPlayer[players.Count];
+            var seenPlayerIndices = new bool[players.Count];
+
+            for (var index = 0; index < players.Count; index++)
+            {
+                var player = players[index] ?? throw new ArgumentException("Runtime state snapshots cannot contain null players.", nameof(players));
+                if (player.Index < 0 || player.Index >= players.Count)
+                {
+                    throw new ArgumentException("Runtime state snapshot playerIndex must be within the active player range.", nameof(players));
+                }
+
+                if (seenPlayerIndices[player.Index])
+                {
+                    throw new ArgumentException("Runtime state snapshots cannot contain duplicate playerIndex values.", nameof(players));
+                }
+
+                seenPlayerIndices[player.Index] = true;
+
+                if (!placementsByPlayer.TryGetValue(player, out var placement))
+                {
+                    throw new ArgumentException("Runtime state snapshot placements must contain every active player exactly once.", nameof(playersByPlacement));
+                }
+
+                snapshotPlayers[index] = new GCRuntimeStateSnapshotPlayer
+                {
+                    playerIndex = player.Index,
+                    score = player.Score,
+                    lives = player.Lives,
+                    status = player.Status.ToString(),
+                    statusText = player.StatusText ?? "",
+                    meter = player.Meter,
+                    placement = placement,
+                    eliminationState = player.EliminationState.ToString(),
+                    finishState = player.FinishState.ToString(),
+                };
+            }
+
+            return new GCRuntimeStateSnapshotPayload
+            {
+                game = new GCRuntimeStateSnapshotGame
+                {
+                    status = ToSnapshotGameStatus(gameStatus),
+                },
+                players = snapshotPlayers,
+            };
+        }
+
+        internal static string BuildPayloadJson(
+            GCStatus gameStatus,
+            IReadOnlyList<GCPlayer> players,
+            IEnumerable<GCPlayer> playersByPlacement
+        )
+        {
+            return BuildPayload(gameStatus, players, playersByPlacement).ToJson();
+        }
+
+        private static Dictionary<GCPlayer, int> BuildPlacementsByPlayer(
+            IReadOnlyList<GCPlayer> players,
+            IEnumerable<GCPlayer> playersByPlacement
+        )
+        {
+            if (playersByPlacement == null)
+            {
+                throw new ArgumentNullException(nameof(playersByPlacement));
+            }
+
+            var placementsByPlayer = new Dictionary<GCPlayer, int>();
+            var placement = 1;
+            foreach (var player in playersByPlacement)
+            {
+                if (player == null)
+                {
+                    throw new ArgumentException("Runtime state snapshot placements cannot contain null players.", nameof(playersByPlacement));
+                }
+
+                if (placementsByPlayer.ContainsKey(player))
+                {
+                    throw new ArgumentException("Runtime state snapshot placements cannot contain duplicate players.", nameof(playersByPlacement));
+                }
+
+                placementsByPlayer[player] = placement;
+                placement++;
+            }
+
+            if (placementsByPlayer.Count != players.Count)
+            {
+                throw new ArgumentException("Runtime state snapshot placements must match the active player count.", nameof(playersByPlacement));
+            }
+
+            return placementsByPlayer;
+        }
+
+        private static string ToSnapshotGameStatus(GCStatus status)
+        {
+            switch (status)
+            {
+                case GCStatus.PendingSetup:
+                    return "pending_setup";
+                case GCStatus.SetupDone:
+                    return "setup_done";
+                case GCStatus.Playing:
+                    return "playing";
+                case GCStatus.GameOver:
+                    return "game_over";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown GamingCouch status.");
+            }
+        }
     }
 
     internal sealed class GCRuntimeMessageRecord

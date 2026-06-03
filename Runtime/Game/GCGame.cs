@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DSB.GC.Hud;
 using DSB.GC.Log;
+using DSB.GC.RuntimeMessages;
 
 namespace DSB.GC.Game
 {
@@ -67,7 +68,7 @@ namespace DSB.GC.Game
 
         public void SetupPlayer(GCPlayer player)
         {
-            Debug.Log("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.PlayersEnumerable.Count());
+            Debug.Log("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.Players.Count);
 
             var self = this;
 
@@ -191,6 +192,12 @@ namespace DSB.GC.Game
             return sortedPlayers;
         }
 
+        internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload(GCStatus gameStatus)
+        {
+            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.Players);
+            return GCRuntimeStateSnapshotBuilder.BuildPayload(gameStatus, playerStore.Players, playersByPlacement);
+        }
+
         private string GetPlayerHudValue(GCPlayer player)
         {
             var valueType = options.hud.players.valueTypeEnum;
@@ -217,9 +224,9 @@ namespace DSB.GC.Game
 
         private void UpdatePlayersHud()
         {
-            Debug.Log("UpdatePlayersHud - player count:" + playerStore.PlayersEnumerable.Count());
+            Debug.Log("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
-            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
+            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.Players);
 
             gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData
             {

@@ -629,7 +629,7 @@ namespace DSB.GC
         {
             RequireGameSetupDone("GameOver");
 
-            var players = internalPlayerStore.PlayersEnumerable.ToList();
+            var players = internalPlayerStore.Players.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
             var playerIndicesByPlacement = new int[playersSorted.Count];
@@ -669,6 +669,12 @@ namespace DSB.GC
 #endif
 
             status = GCStatus.GameOver;
+        }
+
+        internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload()
+        {
+            RequireGameSetupDone("BuildRuntimeStateSnapshotPayload");
+            return game.BuildRuntimeStateSnapshotPayload(status);
         }
         #endregion
 
@@ -795,7 +801,7 @@ namespace DSB.GC
                 }
             }
 
-            if (internalPlayerStore.PlayerCount > 0)
+            if (internalPlayerStore.Players.Count > 0)
             {
                 GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
             }
@@ -1060,7 +1066,7 @@ namespace DSB.GC
             }
 
             if (internalPlayerStore == null) return;
-            if (internalPlayerStore.PlayerCount == 0) return;
+            if (internalPlayerStore.Players.Count == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {

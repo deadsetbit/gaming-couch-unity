@@ -9,93 +9,87 @@ namespace DSB.GC
     {
         private List<T> players = new List<T>();
         public List<T> Players => players;
+        private List<T> playersBot = new List<T>();
+        public List<T> PlayersBot => playersBot;
+        private List<T> playersNonBot = new List<T>();
+        public List<T> PlayersNonBot => playersNonBot;
+        private List<T> playersUneliminated = new List<T>();
+        public List<T> PlayersUneliminated => playersUneliminated;
+        private List<T> playersUneliminatedNonBot = new List<T>();
+        public List<T> PlayersUneliminatedNonBot => playersUneliminatedNonBot;
+        private List<T> playersUneliminatedBot = new List<T>();
+        public List<T> PlayersUneliminatedBot => playersUneliminatedBot;
+        private List<T> playersEliminated = new List<T>();
+        public List<T> PlayersEliminated => playersEliminated;
+        private List<T> playersEliminatedNonBot = new List<T>();
+        public List<T> PlayersEliminatedNonBot => playersEliminatedNonBot;
+        private List<T> playersEliminatedBot = new List<T>();
+        public List<T> PlayersEliminatedBot => playersEliminatedBot;
+        private List<T> playersEliminatedPermanent = new List<T>();
+        public List<T> PlayersEliminatedPermanent => playersEliminatedPermanent;
+        private List<T> playersEliminatedPermanentNonBot = new List<T>();
+        public List<T> PlayersEliminatedPermanentNonBot => playersEliminatedPermanentNonBot;
+        private List<T> playersEliminatedPermanentBot = new List<T>();
+        public List<T> PlayersEliminatedPermanentBot => playersEliminatedPermanentBot;
+        private List<T> playersEliminatedRevokable = new List<T>();
+        public List<T> PlayersEliminatedRevokable => playersEliminatedRevokable;
+        private List<T> playersEliminatedRevokableNonBot = new List<T>();
+        public List<T> PlayersEliminatedRevokableNonBot => playersEliminatedRevokableNonBot;
+        private List<T> playersEliminatedRevokableBot = new List<T>();
+        public List<T> PlayersEliminatedRevokableBot => playersEliminatedRevokableBot;
+        private List<T> playersFinished = new List<T>();
+        public List<T> PlayersFinished => playersFinished;
+        private List<T> playersFinishedNonBot = new List<T>();
+        public List<T> PlayersFinishedNonBot => playersFinishedNonBot;
+        private List<T> playersFinishedBot = new List<T>();
+        public List<T> PlayersFinishedBot => playersFinishedBot;
+        private List<T> playersFinishedPermanent = new List<T>();
+        public List<T> PlayersFinishedPermanent => playersFinishedPermanent;
+        private List<T> playersFinishedPermanentNonBot = new List<T>();
+        public List<T> PlayersFinishedPermanentNonBot => playersFinishedPermanentNonBot;
+        private List<T> playersFinishedPermanentBot = new List<T>();
+        public List<T> PlayersFinishedPermanentBot => playersFinishedPermanentBot;
+        private List<T> playersFinishedRevokable = new List<T>();
+        public List<T> PlayersFinishedRevokable => playersFinishedRevokable;
+        private List<T> playersFinishedRevokableNonBot = new List<T>();
+        public List<T> PlayersFinishedRevokableNonBot => playersFinishedRevokableNonBot;
+        private List<T> playersFinishedRevokableBot = new List<T>();
+        public List<T> PlayersFinishedRevokableBot => playersFinishedRevokableBot;
+        [Obsolete("Use Players.", true)]
         public IEnumerable<T> PlayersEnumerable => players;
+        [Obsolete("Use Players.Count.", true)]
         public int PlayerCount => players.Count;
-        private List<T> uneliminatedPlayers = new List<T>();
-        public List<T> UneliminatedPlayers => uneliminatedPlayers;
-        public int UneliminatedPlayerCount => uneliminatedPlayers.Count;
-        public IEnumerable<T> UneliminatedPlayersEnumerable => uneliminatedPlayers;
-        private List<T> uneliminatedNonBotPlayers = new List<T>();
-        public List<T> UneliminatedNonBotPlayers => uneliminatedNonBotPlayers;
-        public IEnumerable<T> UneliminatedNonBotPlayersEnumerable => uneliminatedNonBotPlayers;
-        private List<T> uneliminatedBotPlayers = new List<T>();
-        public List<T> UneliminatedBotPlayers => uneliminatedBotPlayers;
-        public IEnumerable<T> UneliminatedBotPlayersEnumerable => uneliminatedBotPlayers;
-        private List<T> eliminatedPlayers = new List<T>();
-        public List<T> EliminatedPlayers => eliminatedPlayers;
-        public int EliminatedPlayerCount => eliminatedPlayers.Count;
-        public IEnumerable<T> EliminatedPlayersEnumerable => eliminatedPlayers;
-        private List<T> eliminatedNonBotPlayers = new List<T>();
-        public List<T> EliminatedNonBotPlayers => eliminatedNonBotPlayers;
-        public IEnumerable<T> EliminatedNonBotPlayersEnumerable => eliminatedNonBotPlayers;
-        private List<T> eliminatedBotPlayers = new List<T>();
-        public List<T> EliminatedBotPlayers => eliminatedBotPlayers;
-        public IEnumerable<T> EliminatedBotPlayersEnumerable => eliminatedBotPlayers;
+        [Obsolete("Use PlayersUneliminated; broad uneliminated means eliminationState is None.", true)]
+        public List<T> UneliminatedPlayers => throw new InvalidOperationException("Use PlayersUneliminated.");
+        [Obsolete("Use PlayersUneliminated.Count.", true)]
+        public int UneliminatedPlayerCount => throw new InvalidOperationException("Use PlayersUneliminated.Count.");
+        [Obsolete("Use PlayersUneliminated; broad uneliminated means eliminationState is None.", true)]
+        public IEnumerable<T> UneliminatedPlayersEnumerable => throw new InvalidOperationException("Use PlayersUneliminated.");
+        [Obsolete("Use PlayersUneliminatedNonBot.", true)]
+        public List<T> UneliminatedNonBotPlayers => throw new InvalidOperationException("Use PlayersUneliminatedNonBot.");
+        [Obsolete("Use PlayersUneliminatedNonBot.", true)]
+        public IEnumerable<T> UneliminatedNonBotPlayersEnumerable => throw new InvalidOperationException("Use PlayersUneliminatedNonBot.");
+        [Obsolete("Use PlayersUneliminatedBot.", true)]
+        public List<T> UneliminatedBotPlayers => throw new InvalidOperationException("Use PlayersUneliminatedBot.");
+        [Obsolete("Use PlayersUneliminatedBot.", true)]
+        public IEnumerable<T> UneliminatedBotPlayersEnumerable => throw new InvalidOperationException("Use PlayersUneliminatedBot.");
+        [Obsolete("Use PlayersEliminated; broad eliminated includes permanent and revokable elimination.", true)]
+        public List<T> EliminatedPlayers => throw new InvalidOperationException("Use PlayersEliminated.");
+        [Obsolete("Use PlayersEliminated.Count.", true)]
+        public int EliminatedPlayerCount => throw new InvalidOperationException("Use PlayersEliminated.Count.");
+        [Obsolete("Use PlayersEliminated; broad eliminated includes permanent and revokable elimination.", true)]
+        public IEnumerable<T> EliminatedPlayersEnumerable => throw new InvalidOperationException("Use PlayersEliminated.");
+        [Obsolete("Use PlayersEliminatedNonBot.", true)]
+        public List<T> EliminatedNonBotPlayers => throw new InvalidOperationException("Use PlayersEliminatedNonBot.");
+        [Obsolete("Use PlayersEliminatedNonBot.", true)]
+        public IEnumerable<T> EliminatedNonBotPlayersEnumerable => throw new InvalidOperationException("Use PlayersEliminatedNonBot.");
+        [Obsolete("Use PlayersEliminatedBot.", true)]
+        public List<T> EliminatedBotPlayers => throw new InvalidOperationException("Use PlayersEliminatedBot.");
+        [Obsolete("Use PlayersEliminatedBot.", true)]
+        public IEnumerable<T> EliminatedBotPlayersEnumerable => throw new InvalidOperationException("Use PlayersEliminatedBot.");
         private Dictionary<int, T> playerByIndex = new Dictionary<int, T>();
 
         public GCPlayerStore() { }
-
-        private void HandlePlayerEliminated(T player)
-        {
-            if (!uneliminatedPlayers.Contains(player))
-            {
-                Debug.LogWarning($"Player index {player.Index} is not in the uneliminated players list when trying to eliminate them.");
-                return;
-            }
-
-            uneliminatedPlayers.Remove(player);
-            eliminatedPlayers.Add(player);
-
-            if (player.IsBot)
-            {
-                if (uneliminatedBotPlayers.Contains(player))
-                {
-                    uneliminatedBotPlayers.Remove(player);
-                }
-                eliminatedBotPlayers.Add(player);
-            }
-            else
-            {
-                if (uneliminatedNonBotPlayers.Contains(player))
-                {
-                    uneliminatedNonBotPlayers.Remove(player);
-                }
-                eliminatedNonBotPlayers.Add(player);
-            }
-
-            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
-        }
-
-        private void HandlePlayerUneliminated(T player)
-        {
-            if (!eliminatedPlayers.Contains(player))
-            {
-                Debug.LogWarning($"Player index {player.Index} is not in the eliminated players list when trying to revoke elimination.");
-                return;
-            }
-
-            eliminatedPlayers.Remove(player);
-            uneliminatedPlayers.Add(player);
-
-            if (player.IsBot)
-            {
-                if (eliminatedBotPlayers.Contains(player))
-                {
-                    eliminatedBotPlayers.Remove(player);
-                }
-                uneliminatedBotPlayers.Add(player);
-            }
-            else
-            {
-                if (eliminatedNonBotPlayers.Contains(player))
-                {
-                    eliminatedNonBotPlayers.Remove(player);
-                }
-                uneliminatedNonBotPlayers.Add(player);
-            }
-
-            Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
-        }
 
         [Obsolete("GetPlayerById has been removed from the game-facing runtime contract. Use GetPlayerByIndex.", true)]
         public T GetPlayerById(int playerId)
@@ -117,46 +111,28 @@ namespace DSB.GC
         {
             Assert.IsNotNull(player, "Trying to add null player to store. This could be due to invalid player type casting?");
             Assert.IsTrue(player.Index != -1, "Player not properly initialized before adding to store");
+            if (players.Contains(player))
+            {
+                throw new InvalidOperationException("Player already added to store.");
+            }
+
+            if (playerByIndex.ContainsKey(player.Index))
+            {
+                throw new InvalidOperationException("Player index already added to store.");
+            }
 
             players.Add(player);
-
-            if (!player.IsEliminated)
-            {
-                uneliminatedPlayers.Add(player);
-                if (player.IsBot)
-                {
-                    uneliminatedBotPlayers.Add(player);
-                }
-                else
-                {
-                    uneliminatedNonBotPlayers.Add(player);
-                }
-            }
-            else
-            {
-                eliminatedPlayers.Add(player);
-                if (player.IsBot)
-                {
-                    eliminatedBotPlayers.Add(player);
-                }
-                else
-                {
-                    eliminatedNonBotPlayers.Add(player);
-                }
-            }
-
             playerByIndex[player.Index] = player;
+            RebuildStateCollections();
 
             player.OnEliminationStateChanged += args =>
             {
-                if (args.oldState == GCPlayerEliminationState.None && args.newState != GCPlayerEliminationState.None)
-                {
-                    HandlePlayerEliminated(player);
-                }
-                else if (args.oldState != GCPlayerEliminationState.None && args.newState == GCPlayerEliminationState.None)
-                {
-                    HandlePlayerUneliminated(player);
-                }
+                RebuildStateCollections();
+            };
+
+            player.OnFinishStateChanged += args =>
+            {
+                RebuildStateCollections();
             };
         }
 
@@ -168,13 +144,102 @@ namespace DSB.GC
             }
 
             players.Clear();
-            uneliminatedPlayers.Clear();
-            uneliminatedNonBotPlayers.Clear();
-            uneliminatedBotPlayers.Clear();
-            eliminatedPlayers.Clear();
-            eliminatedNonBotPlayers.Clear();
-            eliminatedBotPlayers.Clear();
+            ClearStateCollections();
             playerByIndex.Clear();
+        }
+
+        private void RebuildStateCollections()
+        {
+            ClearStateCollections();
+
+            foreach (var player in players)
+            {
+                AddByBotState(player, playersBot, playersNonBot);
+
+                if (player.IsEliminated)
+                {
+                    AddByBotState(player, playersEliminatedBot, playersEliminatedNonBot);
+                    playersEliminated.Add(player);
+
+                    if (player.IsEliminatedPermanent)
+                    {
+                        playersEliminatedPermanent.Add(player);
+                        AddByBotState(player, playersEliminatedPermanentBot, playersEliminatedPermanentNonBot);
+                    }
+                    else if (player.IsEliminatedRevokable)
+                    {
+                        playersEliminatedRevokable.Add(player);
+                        AddByBotState(player, playersEliminatedRevokableBot, playersEliminatedRevokableNonBot);
+                    }
+                }
+                else
+                {
+                    playersUneliminated.Add(player);
+                    AddByBotState(player, playersUneliminatedBot, playersUneliminatedNonBot);
+                }
+
+                if (!player.IsFinished)
+                {
+                    continue;
+                }
+
+                playersFinished.Add(player);
+                AddByBotState(player, playersFinishedBot, playersFinishedNonBot);
+
+                if (player.IsFinishedPermanent)
+                {
+                    playersFinishedPermanent.Add(player);
+                    AddByBotState(player, playersFinishedPermanentBot, playersFinishedPermanentNonBot);
+                }
+                else if (player.IsFinishedRevokable)
+                {
+                    playersFinishedRevokable.Add(player);
+                    AddByBotState(player, playersFinishedRevokableBot, playersFinishedRevokableNonBot);
+                }
+            }
+
+            Debug.Assert(playersUneliminated.Count + playersEliminated.Count == players.Count, "Player store elimination lists out of sync");
+            Debug.Assert(playersBot.Count + playersNonBot.Count == players.Count, "Player store bot lists out of sync");
+            Debug.Assert(playersEliminatedPermanent.Count + playersEliminatedRevokable.Count == playersEliminated.Count, "Player store eliminated state lists out of sync");
+            Debug.Assert(playersFinishedPermanent.Count + playersFinishedRevokable.Count == playersFinished.Count, "Player store finished state lists out of sync");
+        }
+
+        private void ClearStateCollections()
+        {
+            playersBot.Clear();
+            playersNonBot.Clear();
+            playersUneliminated.Clear();
+            playersUneliminatedNonBot.Clear();
+            playersUneliminatedBot.Clear();
+            playersEliminated.Clear();
+            playersEliminatedNonBot.Clear();
+            playersEliminatedBot.Clear();
+            playersEliminatedPermanent.Clear();
+            playersEliminatedPermanentNonBot.Clear();
+            playersEliminatedPermanentBot.Clear();
+            playersEliminatedRevokable.Clear();
+            playersEliminatedRevokableNonBot.Clear();
+            playersEliminatedRevokableBot.Clear();
+            playersFinished.Clear();
+            playersFinishedNonBot.Clear();
+            playersFinishedBot.Clear();
+            playersFinishedPermanent.Clear();
+            playersFinishedPermanentNonBot.Clear();
+            playersFinishedPermanentBot.Clear();
+            playersFinishedRevokable.Clear();
+            playersFinishedRevokableNonBot.Clear();
+            playersFinishedRevokableBot.Clear();
+        }
+
+        private static void AddByBotState(T player, List<T> botPlayers, List<T> nonBotPlayers)
+        {
+            if (player.IsBot)
+            {
+                botPlayers.Add(player);
+                return;
+            }
+
+            nonBotPlayers.Add(player);
         }
     }
 }

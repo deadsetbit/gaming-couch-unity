@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using DSB.GC;
+using DSB.GC.Game;
 using DSB.GC.Log;
 using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
@@ -240,18 +241,268 @@ public sealed class GCPlayerStateModelTests
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(player);
 
-        Assert.That(store.UneliminatedPlayerCount, Is.EqualTo(1));
-        Assert.That(store.EliminatedPlayerCount, Is.EqualTo(0));
+        Assert.That(store.PlayersUneliminated.Count, Is.EqualTo(1));
+        Assert.That(store.PlayersEliminated.Count, Is.EqualTo(0));
 
         player.SetEliminatedRevokable("temporary");
 
-        Assert.That(store.UneliminatedPlayerCount, Is.EqualTo(0));
-        Assert.That(store.EliminatedPlayerCount, Is.EqualTo(1));
+        Assert.That(store.PlayersUneliminated.Count, Is.EqualTo(0));
+        Assert.That(store.PlayersEliminated.Count, Is.EqualTo(1));
+        Assert.That(store.PlayersEliminatedRevokable, Is.EqualTo(new[] { player }));
+        Assert.That(store.PlayersEliminatedPermanent, Is.Empty);
 
         player.SetEliminatedPermanent("promotion");
 
-        Assert.That(store.UneliminatedPlayerCount, Is.EqualTo(0));
-        Assert.That(store.EliminatedPlayerCount, Is.EqualTo(1));
+        Assert.That(store.PlayersUneliminated.Count, Is.EqualTo(0));
+        Assert.That(store.PlayersEliminated.Count, Is.EqualTo(1));
+        Assert.That(store.PlayersEliminatedRevokable, Is.Empty);
+        Assert.That(store.PlayersEliminatedPermanent, Is.EqualTo(new[] { player }));
+    }
+
+    [Test]
+    public void StoreStateCollectionsExposePlayersPrefixAndBotNonBotSymmetry()
+    {
+        var activePlayer = CreatePlayer(0);
+        var eliminatedBot = CreatePlayer(1, GCPlayerType.bot);
+        var eliminatedNonBot = CreatePlayer(2);
+        var finishedBot = CreatePlayer(3, GCPlayerType.bot);
+        var finishedNonBot = CreatePlayer(4);
+
+        eliminatedBot.SetEliminatedRevokable("temporary");
+        eliminatedNonBot.SetEliminatedPermanent("final");
+        finishedBot.SetFinishedRevokable("checkpoint");
+        finishedNonBot.SetFinishedPermanent("done");
+
+        var store = new GCPlayerStore<GCPlayer>();
+        store.AddPlayer(activePlayer);
+        store.AddPlayer(eliminatedBot);
+        store.AddPlayer(eliminatedNonBot);
+        store.AddPlayer(finishedBot);
+        store.AddPlayer(finishedNonBot);
+
+        Assert.That(store.Players, Is.EqualTo(new[] { activePlayer, eliminatedBot, eliminatedNonBot, finishedBot, finishedNonBot }));
+        Assert.That(store.PlayersBot, Is.EqualTo(new[] { eliminatedBot, finishedBot }));
+        Assert.That(store.PlayersNonBot, Is.EqualTo(new[] { activePlayer, eliminatedNonBot, finishedNonBot }));
+
+        Assert.That(store.PlayersUneliminated, Is.EqualTo(new[] { activePlayer, finishedBot, finishedNonBot }));
+        Assert.That(store.PlayersUneliminatedBot, Is.EqualTo(new[] { finishedBot }));
+        Assert.That(store.PlayersUneliminatedNonBot, Is.EqualTo(new[] { activePlayer, finishedNonBot }));
+
+        Assert.That(store.PlayersEliminated, Is.EqualTo(new[] { eliminatedBot, eliminatedNonBot }));
+        Assert.That(store.PlayersEliminatedBot, Is.EqualTo(new[] { eliminatedBot }));
+        Assert.That(store.PlayersEliminatedNonBot, Is.EqualTo(new[] { eliminatedNonBot }));
+        Assert.That(store.PlayersEliminatedRevokable, Is.EqualTo(new[] { eliminatedBot }));
+        Assert.That(store.PlayersEliminatedRevokableBot, Is.EqualTo(new[] { eliminatedBot }));
+        Assert.That(store.PlayersEliminatedRevokableNonBot, Is.Empty);
+        Assert.That(store.PlayersEliminatedPermanent, Is.EqualTo(new[] { eliminatedNonBot }));
+        Assert.That(store.PlayersEliminatedPermanentBot, Is.Empty);
+        Assert.That(store.PlayersEliminatedPermanentNonBot, Is.EqualTo(new[] { eliminatedNonBot }));
+
+        Assert.That(store.PlayersFinished, Is.EqualTo(new[] { finishedBot, finishedNonBot }));
+        Assert.That(store.PlayersFinishedBot, Is.EqualTo(new[] { finishedBot }));
+        Assert.That(store.PlayersFinishedNonBot, Is.EqualTo(new[] { finishedNonBot }));
+        Assert.That(store.PlayersFinishedRevokable, Is.EqualTo(new[] { finishedBot }));
+        Assert.That(store.PlayersFinishedRevokableBot, Is.EqualTo(new[] { finishedBot }));
+        Assert.That(store.PlayersFinishedRevokableNonBot, Is.Empty);
+        Assert.That(store.PlayersFinishedPermanent, Is.EqualTo(new[] { finishedNonBot }));
+        Assert.That(store.PlayersFinishedPermanentBot, Is.Empty);
+        Assert.That(store.PlayersFinishedPermanentNonBot, Is.EqualTo(new[] { finishedNonBot }));
+    }
+
+    [Test]
+    public void StoreRejectsDuplicatePlayersAndPlayerIndices()
+    {
+        var player = CreatePlayer(0);
+        var duplicateIndexPlayer = CreatePlayer(0);
+        var store = new GCPlayerStore<GCPlayer>();
+        store.AddPlayer(player);
+
+        Assert.Throws<InvalidOperationException>(() => store.AddPlayer(player));
+        Assert.Throws<InvalidOperationException>(() => store.AddPlayer(duplicateIndexPlayer));
+        Assert.That(store.Players, Is.EqualTo(new[] { player }));
+        Assert.That(store.PlayersUneliminated, Is.EqualTo(new[] { player }));
+    }
+
+    [Test]
+    public void BroadPlacementCriteriaTreatPermanentAndRevokableStatesAsCurrent()
+    {
+        var eliminatedRevokable = CreatePlayer(0);
+        var eliminatedPermanent = CreatePlayer(1);
+        var activePlayer = CreatePlayer(2);
+        eliminatedRevokable.SetEliminatedRevokable("temporary");
+        eliminatedPermanent.SetEliminatedPermanent("final");
+
+        var finishedRevokable = CreatePlayer(3);
+        var finishedPermanent = CreatePlayer(4);
+        var unfinishedPlayer = CreatePlayer(5);
+        finishedRevokable.SetFinishedRevokable("checkpoint");
+        finishedPermanent.SetFinishedPermanent("done");
+
+        var eliminatedGame = CreateGameWithPlacementCriteria(GCPlacementSortCriteria.Eliminated);
+        var eliminatedOrder = eliminatedGame.GetPlayersInPlacementOrder(new[] { eliminatedRevokable, eliminatedPermanent, activePlayer });
+        Assert.That(eliminatedOrder, Is.EqualTo(new[] { eliminatedRevokable, eliminatedPermanent, activePlayer }));
+
+        var finishedGame = CreateGameWithPlacementCriteria(GCPlacementSortCriteria.Finished);
+        var finishedOrder = finishedGame.GetPlayersInPlacementOrder(new[] { finishedRevokable, finishedPermanent, unfinishedPlayer });
+        Assert.That(finishedOrder, Is.EqualTo(new[] { finishedRevokable, finishedPermanent, unfinishedPlayer }));
+    }
+
+    [Test]
+    public void RuntimeStateSnapshotProjectsCanonicalDynamicPlayerState()
+    {
+        var leadingPlayer = CreatePlayer(0);
+        var trailingPlayer = CreatePlayer(1, GCPlayerType.bot);
+        leadingPlayer.SetScore(10, "score");
+        leadingPlayer.SetLives(2, "lives");
+        leadingPlayer.SetStatus(GCPlayerStatus.Success, "Finished lap", "status");
+        leadingPlayer.SetMeter(74, "meter");
+        leadingPlayer.SetFinishedRevokable("checkpoint");
+        trailingPlayer.SetScore(5, "score");
+        trailingPlayer.SetEliminatedPermanent("out");
+
+        var store = new GCPlayerStore<GCPlayer>();
+        store.AddPlayer(leadingPlayer);
+        store.AddPlayer(trailingPlayer);
+        var game = new GCGame(null, store, new GCGameSetupOptions
+        {
+            placementCriteria = new[] { GCPlacementSortCriteria.ScoreDescending },
+        });
+
+        var payload = game.BuildRuntimeStateSnapshotPayload(GCStatus.Playing);
+        var json = payload.ToJson();
+
+        Assert.That(payload.game.status, Is.EqualTo("playing"));
+        Assert.That(payload.players, Has.Length.EqualTo(2));
+        AssertSnapshotPlayer(
+            payload.players[0],
+            playerIndex: 0,
+            score: 10,
+            lives: 2,
+            status: "Success",
+            statusText: "Finished lap",
+            meter: 74,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "Revokable"
+        );
+        AssertSnapshotPlayer(
+            payload.players[1],
+            playerIndex: 1,
+            score: 5,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 2,
+            eliminationState: "Permanent",
+            finishState: "None"
+        );
+        Assert.That(json, Does.Contain("\"game\":{\"status\":\"playing\"}"));
+        Assert.That(json, Does.Contain("\"playerIndex\":0"));
+        Assert.That(json, Does.Contain("\"placement\":1"));
+        Assert.That(json, Does.Contain("\"eliminationState\":\"Permanent\""));
+        Assert.That(json, Does.Not.Contain("\"type\""));
+        Assert.That(json, Does.Not.Contain("\"color\""));
+    }
+
+    [Test]
+    public void RuntimeStateSnapshotRequiresCanonicalPlayerIndicesExactlyOnce()
+    {
+        var player = CreatePlayer(0);
+        var duplicateIndexPlayer = CreatePlayer(0);
+        var outOfRangePlayer = CreatePlayer(2);
+
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { player, duplicateIndexPlayer },
+            new[] { player, duplicateIndexPlayer }
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { player, outOfRangePlayer },
+            new[] { player, outOfRangePlayer }
+        ));
+    }
+
+    [Test]
+    public void RuntimeStateSnapshotValidatesPlayerAndPlacementInputs()
+    {
+        var firstPlayer = CreatePlayer(0);
+        var secondPlayer = CreatePlayer(1);
+        var outsidePlayer = CreatePlayer(2);
+
+        Assert.Throws<ArgumentNullException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            null,
+            new[] { firstPlayer }
+        ));
+        Assert.Throws<ArgumentNullException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer },
+            null
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new GCPlayer[] { firstPlayer, null },
+            new[] { firstPlayer, secondPlayer }
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer },
+            new GCPlayer[] { null }
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer, secondPlayer },
+            new[] { firstPlayer, firstPlayer }
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer, secondPlayer },
+            new[] { firstPlayer }
+        ));
+        Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer, secondPlayer },
+            new[] { firstPlayer, outsidePlayer }
+        ));
+    }
+
+    [Test]
+    public void RuntimeStateSnapshotUsesExactNormalizedGameStatusAndOneBasedPlacements()
+    {
+        var firstPlayer = CreatePlayer(0);
+        var secondPlayer = CreatePlayer(1);
+
+        Assert.That(
+            GCRuntimeStateSnapshotBuilder.BuildPayload(GCStatus.PendingSetup, new[] { firstPlayer }, new[] { firstPlayer }).game.status,
+            Is.EqualTo("pending_setup")
+        );
+        Assert.That(
+            GCRuntimeStateSnapshotBuilder.BuildPayload(GCStatus.SetupDone, new[] { firstPlayer }, new[] { firstPlayer }).game.status,
+            Is.EqualTo("setup_done")
+        );
+        Assert.That(
+            GCRuntimeStateSnapshotBuilder.BuildPayload(GCStatus.Playing, new[] { firstPlayer }, new[] { firstPlayer }).game.status,
+            Is.EqualTo("playing")
+        );
+        Assert.That(
+            GCRuntimeStateSnapshotBuilder.BuildPayload(GCStatus.GameOver, new[] { firstPlayer }, new[] { firstPlayer }).game.status,
+            Is.EqualTo("game_over")
+        );
+
+        var reversedPayload = GCRuntimeStateSnapshotBuilder.BuildPayload(
+            GCStatus.Playing,
+            new[] { firstPlayer, secondPlayer },
+            new[] { secondPlayer, firstPlayer }
+        );
+        Assert.That(reversedPayload.players[0].placement, Is.EqualTo(2));
+        Assert.That(reversedPayload.players[1].placement, Is.EqualTo(1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
+            (GCStatus)999,
+            new[] { firstPlayer },
+            new[] { firstPlayer }
+        ));
     }
 
     [Test]
@@ -284,6 +535,25 @@ public sealed class GCPlayerStateModelTests
     }
 
     [Test]
+    public void RemovedStoreCollectionsFailAtSourceWithMigrationGuidance()
+    {
+        var storeType = typeof(GCPlayerStore<GCPlayer>);
+
+        AssertObsoleteError(storeType.GetProperty("PlayersEnumerable"), "Players");
+        AssertObsoleteError(storeType.GetProperty("PlayerCount"), "Players.Count");
+        AssertObsoleteError(storeType.GetProperty("UneliminatedPlayers"), "PlayersUneliminated");
+        AssertObsoleteError(storeType.GetProperty("UneliminatedPlayersEnumerable"), "PlayersUneliminated");
+        AssertObsoleteError(storeType.GetProperty("UneliminatedBotPlayers"), "PlayersUneliminatedBot");
+        AssertObsoleteError(storeType.GetProperty("UneliminatedNonBotPlayers"), "PlayersUneliminatedNonBot");
+        AssertObsoleteError(storeType.GetProperty("UneliminatedPlayerCount"), "PlayersUneliminated.Count");
+        AssertObsoleteError(storeType.GetProperty("EliminatedPlayers"), "PlayersEliminated");
+        AssertObsoleteError(storeType.GetProperty("EliminatedPlayersEnumerable"), "PlayersEliminated");
+        AssertObsoleteError(storeType.GetProperty("EliminatedBotPlayers"), "PlayersEliminatedBot");
+        AssertObsoleteError(storeType.GetProperty("EliminatedNonBotPlayers"), "PlayersEliminatedNonBot");
+        AssertObsoleteError(storeType.GetProperty("EliminatedPlayerCount"), "PlayersEliminated.Count");
+    }
+
+    [Test]
     public void PostGameOverPlayerMutationsDiagnoseAndNoOp()
     {
         CreateGameOverGamingCouch();
@@ -312,7 +582,7 @@ public sealed class GCPlayerStateModelTests
         LogAssert.NoUnexpectedReceived();
     }
 
-    private GCPlayer CreatePlayer(int playerIndex)
+    private GCPlayer CreatePlayer(int playerIndex, GCPlayerType playerType = GCPlayerType.player)
     {
         var gameObject = new GameObject("Player " + playerIndex);
         objectsToDestroy.Add(gameObject);
@@ -320,11 +590,19 @@ public sealed class GCPlayerStateModelTests
         player._InternalGamingCouchSetup(new GCPlayerSetupOptions
         {
             playerIndex = playerIndex,
-            type = GCPlayerType.player,
+            type = playerType,
             colorEnum = GCPlayerColor.blue,
             colorName = "blue",
         });
         return player;
+    }
+
+    private static GCGame CreateGameWithPlacementCriteria(params GCPlacementSortCriteria[] criteria)
+    {
+        return new GCGame(null, new GCPlayerStore<GCPlayer>(), new GCGameSetupOptions
+        {
+            placementCriteria = criteria,
+        });
     }
 
     private void CreateGameOverGamingCouch()
@@ -387,5 +665,29 @@ public sealed class GCPlayerStateModelTests
         Assert.That(args.newState, Is.EqualTo(newState));
         Assert.That(args.reason, Is.EqualTo(reason));
         Assert.That(args.changedAtGameTime, Is.EqualTo(changedAtGameTime));
+    }
+
+    private static void AssertSnapshotPlayer(
+        GCRuntimeStateSnapshotPlayer player,
+        int playerIndex,
+        int score,
+        int lives,
+        string status,
+        string statusText,
+        int meter,
+        int placement,
+        string eliminationState,
+        string finishState
+    )
+    {
+        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
+        Assert.That(player.score, Is.EqualTo(score));
+        Assert.That(player.lives, Is.EqualTo(lives));
+        Assert.That(player.status, Is.EqualTo(status));
+        Assert.That(player.statusText, Is.EqualTo(statusText));
+        Assert.That(player.meter, Is.EqualTo(meter));
+        Assert.That(player.placement, Is.EqualTo(placement));
+        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
+        Assert.That(player.finishState, Is.EqualTo(finishState));
     }
 }
