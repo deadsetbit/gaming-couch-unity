@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using DSB.GC;
 using DSB.GC.Log;
 using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
