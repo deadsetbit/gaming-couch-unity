@@ -253,6 +253,11 @@ namespace DSB.GC.Game
 
         private string GetPlayerHudValue(GCPlayer player)
         {
+            if (options.hud == null)
+            {
+                return null;
+            }
+
             var valueType = options.hud.players.valueTypeEnum;
 
             if (valueType == PlayersHudValueType.None)
@@ -279,19 +284,36 @@ namespace DSB.GC.Game
         {
             GCLog.LogDebug("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
-            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.Players);
+            gamingCouch.Hud.UpdatePlayers(BuildPlayersHudData());
+        }
 
-            gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData
+        internal GCPlayersHudData BuildPlayersHudData()
+        {
+            var snapshot = BuildRuntimeStateSnapshotPayload(gamingCouch?.Status ?? GCStatus.Playing);
+            var playersByIndex = playerStore.Players.ToDictionary(player => player.Index);
+
+            return new GCPlayersHudData
             {
-                players = playersByPlacement.Select((player, index) => new GCPlayersHudDataPlayer
+                players = snapshot.players.Select(playerState =>
                 {
-                    playerIndex = player.Index,
-                    eliminated = player.IsEliminated,
-                    placement = index,
-                    value = GetPlayerHudValue(player),
-                    meter = player.Meter
+                    var player = playersByIndex[playerState.playerIndex];
+
+                    return new GCPlayersHudDataPlayer
+                    {
+                        playerIndex = playerState.playerIndex,
+                        score = playerState.score,
+                        lives = playerState.lives,
+                        status = playerState.status,
+                        statusText = playerState.statusText,
+                        eliminationState = playerState.eliminationState,
+                        finishState = playerState.finishState,
+                        eliminated = playerState.eliminationState != GCPlayerEliminationState.None.ToString(),
+                        placement = playerState.placement,
+                        value = GetPlayerHudValue(player),
+                        meter = playerState.meter,
+                    };
                 }).ToArray()
-            });
+            };
         }
     }
 }

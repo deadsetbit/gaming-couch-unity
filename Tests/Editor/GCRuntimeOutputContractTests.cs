@@ -305,6 +305,51 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.player.status_changed\""));
     }
 
+    [Test]
+    public void PlayersHudDataIsBuiltFromCanonicalRuntimeStateSnapshot()
+    {
+        var context = CreateRuntimeGame(2);
+        context.players[0].SetScore(12, "score");
+        context.players[0].SetLives(3, "lives");
+        context.players[0].SetStatus(GCPlayerStatus.Warning, "low fuel", "status");
+        context.players[0].SetMeter(44, "meter");
+        context.players[1].SetScore(7, "score");
+        context.players[1].SetEliminatedPermanent("out");
+        context.players[1].SetFinishedRevokable("finish");
+
+        var hudData = context.game.BuildPlayersHudData();
+
+        Assert.That(hudData.players, Has.Length.EqualTo(2));
+        AssertHudPlayer(
+            hudData.players[0],
+            playerIndex: 0,
+            score: 12,
+            lives: 3,
+            status: "Warning",
+            statusText: "low fuel",
+            meter: 44,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None",
+            eliminated: false,
+            value: null
+        );
+        AssertHudPlayer(
+            hudData.players[1],
+            playerIndex: 1,
+            score: 7,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 2,
+            eliminationState: "Permanent",
+            finishState: "Revokable",
+            eliminated: true,
+            value: null
+        );
+    }
+
     private RuntimeGameContext CreateRuntimeGame(int playerCount)
     {
         var gameObject = new GameObject("Gaming Couch");
@@ -332,7 +377,7 @@ public sealed class GCRuntimeOutputContractTests
         }
 
         gamingCouch.QueueRuntimeStateSnapshot();
-        return new RuntimeGameContext(gamingCouch, players);
+        return new RuntimeGameContext(gamingCouch, game, players);
     }
 
     private GCPlayer CreatePlayer(int playerIndex)
@@ -406,14 +451,44 @@ public sealed class GCRuntimeOutputContractTests
         return count;
     }
 
+    private static void AssertHudPlayer(
+        GCPlayersHudDataPlayer player,
+        int playerIndex,
+        int score,
+        int lives,
+        string status,
+        string statusText,
+        int meter,
+        int placement,
+        string eliminationState,
+        string finishState,
+        bool eliminated,
+        string value
+    )
+    {
+        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
+        Assert.That(player.score, Is.EqualTo(score));
+        Assert.That(player.lives, Is.EqualTo(lives));
+        Assert.That(player.status, Is.EqualTo(status));
+        Assert.That(player.statusText, Is.EqualTo(statusText));
+        Assert.That(player.meter, Is.EqualTo(meter));
+        Assert.That(player.placement, Is.EqualTo(placement));
+        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
+        Assert.That(player.finishState, Is.EqualTo(finishState));
+        Assert.That(player.eliminated, Is.EqualTo(eliminated));
+        Assert.That(player.value, Is.EqualTo(value));
+    }
+
     private readonly struct RuntimeGameContext
     {
         internal readonly GamingCouch gamingCouch;
+        internal readonly GCGame game;
         internal readonly GCPlayer[] players;
 
-        internal RuntimeGameContext(GamingCouch gamingCouch, GCPlayer[] players)
+        internal RuntimeGameContext(GamingCouch gamingCouch, GCGame game, GCPlayer[] players)
         {
             this.gamingCouch = gamingCouch;
+            this.game = game;
             this.players = players;
         }
     }

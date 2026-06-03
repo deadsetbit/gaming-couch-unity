@@ -67,12 +67,36 @@ namespace DSB.GC.Hud
         /// </summary>
         public int playerIndex;
         /// <summary>
-        /// If the player is out of the game, the HUD can be set to display this player as eliminated.
+        /// Current runtime score for the player.
+        /// </summary>
+        public int score;
+        /// <summary>
+        /// Current runtime lives for the player.
+        /// </summary>
+        public int lives;
+        /// <summary>
+        /// Current runtime status enum name for the player.
+        /// </summary>
+        public string status;
+        /// <summary>
+        /// Current runtime status text for the player.
+        /// </summary>
+        public string statusText;
+        /// <summary>
+        /// Current runtime elimination state enum name for the player.
+        /// </summary>
+        public string eliminationState;
+        /// <summary>
+        /// Current runtime finish state enum name for the player.
+        /// </summary>
+        public string finishState;
+        /// <summary>
+        /// Compatibility projection for older HUD receivers. Prefer eliminationState.
         /// </summary>
         public bool eliminated;
         /// <summary>
-        /// The placement of the player. 0 is first place, 1 is second place, etc.
-        /// Players in the HUD will be sorted based on this value to indicate placements at given time. (HUD sorting not yet implemented)
+        /// One-based runtime placement for the player. 1 is first place, 2 is second place, etc.
+        /// Players in the HUD will be sorted based on this value to indicate placements at given time.
         /// </summary>
         public int placement;
         /// <summary>
