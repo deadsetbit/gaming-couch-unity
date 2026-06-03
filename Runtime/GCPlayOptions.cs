@@ -4,17 +4,22 @@ using System;
 namespace DSB.GC
 {
     [System.Serializable]
-    public struct GCPlayerOptions
+    public struct GCActivePlayerOptions
     {
         public int playerIndex;
         public string type;
         public string color;
     }
 
+    [Obsolete("GCPlayerOptions has been removed from the game-facing runtime contract. Use GCActivePlayerOptions and playerIndex.", true)]
+    public struct GCPlayerOptions
+    {
+    }
+
     [System.Serializable]
     public class GCPlayOptions
     {
-        public GCPlayerOptions[] players;
+        public GCActivePlayerOptions[] players;
         /**
         * Value between 1-999999.
         *
@@ -32,7 +37,7 @@ namespace DSB.GC
         public int seed;
 
         [NonSerialized]
-        internal GCPlayParticipantIdentity[] participantIdentities;
+        internal GCPlatformParticipantIdentity[] participantIdentities;
 
         [NonSerialized]
         internal bool usesMappedActivePlayers;
@@ -49,10 +54,10 @@ namespace DSB.GC
             var usesMappedActivePlayers = players != null && players.Length > 0;
             if ((players == null || players.Length == 0) && transport.players != null)
             {
-                players = new GCPlayerOptions[transport.players.Length];
+                players = new GCActivePlayerOptions[transport.players.Length];
                 for (var index = 0; index < transport.players.Length; index++)
                 {
-                    players[index] = new GCPlayerOptions
+                    players[index] = new GCActivePlayerOptions
                     {
                         playerIndex = index,
                         type = transport.players[index].type,
@@ -70,17 +75,17 @@ namespace DSB.GC
             };
         }
 
-        private static GCPlayParticipantIdentity[] BuildParticipantIdentities(GCPlayerOptionsTransportPlayer[] players)
+        private static GCPlatformParticipantIdentity[] BuildParticipantIdentities(GCPlatformPlayerOptions[] players)
         {
             if (players == null || players.Length == 0)
             {
-                return Array.Empty<GCPlayParticipantIdentity>();
+                return Array.Empty<GCPlatformParticipantIdentity>();
             }
 
-            var identities = new GCPlayParticipantIdentity[players.Length];
+            var identities = new GCPlatformParticipantIdentity[players.Length];
             for (var index = 0; index < players.Length; index++)
             {
-                identities[index] = new GCPlayParticipantIdentity
+                identities[index] = new GCPlatformParticipantIdentity
                 {
                     platformPlayerId = players[index].playerId,
                     stableKey = players[index].playerId > 0 ? players[index].playerId.ToString() : (index + 1).ToString(),
@@ -91,7 +96,7 @@ namespace DSB.GC
         }
     }
 
-    internal struct GCPlayParticipantIdentity
+    internal struct GCPlatformParticipantIdentity
     {
         internal int platformPlayerId;
         internal string stableKey;
@@ -100,13 +105,13 @@ namespace DSB.GC
     [System.Serializable]
     internal sealed class GCPlayOptionsTransport
     {
-        public GCPlayerOptions[] activePlayers;
-        public GCPlayerOptionsTransportPlayer[] players;
+        public GCActivePlayerOptions[] activePlayers;
+        public GCPlatformPlayerOptions[] players;
         public int seed;
     }
 
     [System.Serializable]
-    internal struct GCPlayerOptionsTransportPlayer
+    internal struct GCPlatformPlayerOptions
     {
         public string type;
         public int playerId;

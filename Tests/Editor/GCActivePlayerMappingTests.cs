@@ -241,10 +241,10 @@ public sealed class GCActivePlayerMappingTests
 
     private static GCPlayOptions CreatePlayOptions(int seed, params GCPlayerType[] playerTypes)
     {
-        var players = new GCPlayerOptions[playerTypes.Length];
+        var players = new GCActivePlayerOptions[playerTypes.Length];
         for (var index = 0; index < playerTypes.Length; index++)
         {
-            players[index] = new GCPlayerOptions
+            players[index] = new GCActivePlayerOptions
             {
                 playerIndex = index,
                 type = playerTypes[index].ToString(),
@@ -269,7 +269,7 @@ public sealed class GCActivePlayerMappingTests
             identities[index] = new GCSeatIdentity
             {
                 sourceSeatIndex = source[index].sourceSeatIndex,
-                playerId = source[index].legacyPlayerId,
+                platformPlayerId = source[index].legacyPlayerId,
                 stableKey = source[index].stableKey,
                 label = "Seat " + source[index].sourceSeatIndex,
                 playerType = source[index].playerType,

@@ -200,21 +200,21 @@ public sealed class GCDevAppRuntimeMessagesTests
         {
             new GCSeatIdentity
             {
-                playerId = 1,
+                platformPlayerId = 1,
                 sourceSeatIndex = 4,
                 label = null,
                 playerType = GCPlayerType.bot,
             },
             new GCSeatIdentity
             {
-                playerId = 2,
+                platformPlayerId = 2,
                 sourceSeatIndex = 0,
                 label = string.Empty,
                 playerType = GCPlayerType.player,
             },
             new GCSeatIdentity
             {
-                playerId = 3,
+                platformPlayerId = 3,
                 sourceSeatIndex = 8,
                 label = "Custom Seat",
                 playerType = GCPlayerType.player,

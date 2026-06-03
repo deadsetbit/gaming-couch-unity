@@ -45,7 +45,7 @@ namespace DSB.GC
                 throw new ArgumentNullException(nameof(options));
             }
 
-            var players = options.players ?? Array.Empty<GCPlayerOptions>();
+            var players = options.players ?? Array.Empty<GCActivePlayerOptions>();
             var identities = seatIdentities ?? Array.Empty<GCSeatIdentity>();
             if (identities.Length != players.Length)
             {
@@ -72,7 +72,7 @@ namespace DSB.GC
                     CapturedOrder = capturedOrder,
                     Hash = ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
                     SourceSeatIndex = identity.sourceSeatIndex,
-                    LegacyPlayerId = identity.playerId,
+                    LegacyPlayerId = identity.platformPlayerId,
                     StableKey = stableKey,
                     Type = identity.playerType != GCPlayerType.unset ? identity.playerType : ResolvePlayerType(players[capturedOrder].type),
                     ColorName = identity.playerColor.ToString(),
@@ -99,7 +99,7 @@ namespace DSB.GC
 
         private static GCActivePlayerMapping CreateFromMappedActivePlayers(GCPlayOptions options, GCSeatIdentity[] identities)
         {
-            var players = options.players ?? Array.Empty<GCPlayerOptions>();
+            var players = options.players ?? Array.Empty<GCActivePlayerOptions>();
             var entries = new GCActivePlayerMappingEntry[players.Length];
             var seenPlayerIndices = new bool[players.Length];
 
@@ -128,7 +128,7 @@ namespace DSB.GC
                     playerIndex,
                     capturedOrder,
                     identity.sourceSeatIndex,
-                    identity.playerId,
+                    identity.platformPlayerId,
                     stableKey,
                     ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
                     ResolvePlayerType(player.type),
@@ -157,11 +157,11 @@ namespace DSB.GC
 
         internal GCPlayOptions CreateGameFacingPlayOptions()
         {
-            var players = new GCPlayerOptions[entriesByIndex.Length];
+            var players = new GCActivePlayerOptions[entriesByIndex.Length];
             for (var index = 0; index < entriesByIndex.Length; index++)
             {
                 var entry = entriesByIndex[index];
-                players[index] = new GCPlayerOptions
+                players[index] = new GCActivePlayerOptions
                 {
                     playerIndex = entry.PlayerIndex,
                     type = entry.PlayerType.ToString(),

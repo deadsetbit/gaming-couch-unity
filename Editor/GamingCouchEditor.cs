@@ -447,7 +447,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         var activePlayerCount = data.EnabledSeatCount;
         var options = new GCPlayOptions
         {
-            players = new GCPlayerOptions[activePlayerCount],
+            players = new GCActivePlayerOptions[activePlayerCount],
             seed = seed,
         };
         seatIdentities = new GCSeatIdentity[activePlayerCount];
@@ -463,10 +463,10 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
 
             var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
             var playerColor = SeatColors[sourceSeatIndex];
-            var playerId = activePlayerIndex + 1;
+            var platformPlayerId = activePlayerIndex + 1;
             var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
 
-            options.players[activePlayerIndex] = new GCPlayerOptions
+            options.players[activePlayerIndex] = new GCActivePlayerOptions
             {
                 playerIndex = activePlayerIndex,
                 type = playerType.ToString(),
@@ -475,7 +475,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
 
             seatIdentities[activePlayerIndex] = new GCSeatIdentity
             {
-                playerId = playerId,
+                platformPlayerId = platformPlayerId,
                 sourceSeatIndex = oneBasedSourceSeatIndex,
                 stableKey = oneBasedSourceSeatIndex.ToString(),
                 label = "Seat " + oneBasedSourceSeatIndex,

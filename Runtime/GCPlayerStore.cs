@@ -103,14 +103,14 @@ namespace DSB.GC
             throw new InvalidOperationException("GetPlayerById has been removed. Use GetPlayerByIndex.");
         }
 
-        public T GetPlayerByIndex(int index)
+        public T GetPlayerByIndex(int playerIndex)
         {
-            if (playerByIndex.TryGetValue(index, out var player))
+            if (playerByIndex.TryGetValue(playerIndex, out var player))
             {
                 return player;
             }
 
-            return players[index];
+            return players[playerIndex];
         }
 
         public void AddPlayer(T player)

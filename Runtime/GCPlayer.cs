@@ -132,9 +132,9 @@ namespace DSB.GC
         /// You can access all the properties set by this method, such as Index, Color, etc. in your subclasses Start().
         /// </summary>
         /// <param name="options">Options provided by the platform</param>
-        public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
+        internal void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
-            index = options.index;
+            index = options.playerIndex;
             PlayerType = options.type;
             colorEnum = options.colorEnum;
             colorName = options.colorName;

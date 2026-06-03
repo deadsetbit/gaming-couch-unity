@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace DSB.GC
 {
-    public struct GCPlayerSetupOptions
+    internal struct GCPlayerSetupOptions
     {
         public GCPlayerType type;
-        public int index;
+        public int playerIndex;
         public GCPlayerColor colorEnum;
         public string colorName;
     }

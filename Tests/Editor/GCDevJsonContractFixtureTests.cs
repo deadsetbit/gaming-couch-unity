@@ -178,7 +178,7 @@ public sealed class GCDevJsonContractFixtureTests
         AssertSeatIdentities(capture.seatIdentities, expected.seatIdentities);
     }
 
-    private static void AssertPlayers(GCPlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
+    private static void AssertPlayers(GCActivePlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
     {
         expectedPlayers = expectedPlayers ?? Array.Empty<ExpectedPlayer>();
         Assert.That(players, Has.Length.EqualTo(expectedPlayers.Length));
@@ -202,7 +202,7 @@ public sealed class GCDevJsonContractFixtureTests
         {
             var expectedIdentity = expectedIdentities[index];
             var identity = identities[index];
-            Assert.That(identity.playerId, Is.EqualTo(expectedIdentity.playerId));
+            Assert.That(identity.platformPlayerId, Is.EqualTo(expectedIdentity.playerId));
             Assert.That(identity.sourceSeatIndex, Is.EqualTo(expectedIdentity.sourceSeatIndex));
             Assert.That(identity.stableKey, Is.EqualTo(expectedIdentity.stableKey));
             Assert.That(identity.label, Is.EqualTo(expectedIdentity.label));

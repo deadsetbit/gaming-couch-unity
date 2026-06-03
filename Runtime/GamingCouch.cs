@@ -393,10 +393,10 @@ namespace DSB.GC
                 return null;
             }
 
-            GCPlayerOptions[] players = null;
+            GCActivePlayerOptions[] players = null;
             if (options.players != null)
             {
-                players = new GCPlayerOptions[options.players.Length];
+                players = new GCActivePlayerOptions[options.players.Length];
                 Array.Copy(options.players, players, options.players.Length);
             }
 
@@ -409,14 +409,14 @@ namespace DSB.GC
             };
         }
 
-        private static GCPlayParticipantIdentity[] CopyParticipantIdentities(GCPlayParticipantIdentity[] participantIdentities)
+        private static GCPlatformParticipantIdentity[] CopyParticipantIdentities(GCPlatformParticipantIdentity[] participantIdentities)
         {
             if (participantIdentities == null || participantIdentities.Length == 0)
             {
-                return Array.Empty<GCPlayParticipantIdentity>();
+                return Array.Empty<GCPlatformParticipantIdentity>();
             }
 
-            var copiedParticipantIdentities = new GCPlayParticipantIdentity[participantIdentities.Length];
+            var copiedParticipantIdentities = new GCPlatformParticipantIdentity[participantIdentities.Length];
             Array.Copy(participantIdentities, copiedParticipantIdentities, participantIdentities.Length);
             return copiedParticipantIdentities;
         }
@@ -450,7 +450,7 @@ namespace DSB.GC
                     : default;
                 seatIdentities[index] = new GCSeatIdentity
                 {
-                    playerId = participantIdentity.platformPlayerId,
+                    platformPlayerId = participantIdentity.platformPlayerId,
                     sourceSeatIndex = sourceSeatIndex,
                     stableKey = !string.IsNullOrWhiteSpace(participantIdentity.stableKey) ? participantIdentity.stableKey : sourceSeatIndex.ToString(),
                     label = "Seat " + sourceSeatIndex,
@@ -687,7 +687,7 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
+        private T InstantiatePlayer<T>(GCActivePlayerOptions options, Vector3 position, Quaternion rotation)
         {
             GCLog.LogDebug($"InstantiatePlayer: {options.playerIndex}, {options.color}");
 
@@ -724,13 +724,13 @@ namespace DSB.GC
             }
         }
 
-        internal void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
+        internal void _InternalSetPlayerProperties(GCPlayer player, GCActivePlayerOptions options)
         {
             player.gameObject.name = "Player - " + options.playerIndex;
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
-                index = options.playerIndex,
+                playerIndex = options.playerIndex,
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
                 colorName = options.color,
@@ -764,7 +764,7 @@ namespace DSB.GC
             public Quaternion rotation;
         }
 
-        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
+        public void SetupPlayers<T>(GCActivePlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
             SetupPlayers(playerOptions, null, onPlayerSetupReady);
         }
@@ -776,7 +776,7 @@ namespace DSB.GC
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
         /// <param name="spawnProperties">Spawn properties to define the player spawn position and rotation.</param>
         /// <param name="onPlayerSetupReady">Callback to be called when the player is ready. This is useful to store the player in your own game specific player store to access players by your games player type.</param>
-        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
+        public void SetupPlayers<T>(GCActivePlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
             GCLog.LogInfo("SetupPlayers");
 
@@ -817,7 +817,7 @@ namespace DSB.GC
             }
         }
 
-        public GCPlayerOptions GetPlayerOptions(int playerIndex)
+        public GCActivePlayerOptions GetPlayerOptions(int playerIndex)
         {
             return playOptions.players.Single(p => p.playerIndex == playerIndex);
         }
@@ -1115,14 +1115,14 @@ namespace DSB.GC
             activePlayerMapping = null;
         }
 
-        public GCPlayerOptions[] GetCurrentPlayPlayerOptions()
+        public GCActivePlayerOptions[] GetCurrentPlayPlayerOptions()
         {
             if (playOptions?.players == null)
             {
-                return Array.Empty<GCPlayerOptions>();
+                return Array.Empty<GCActivePlayerOptions>();
             }
 
-            var playerOptions = new GCPlayerOptions[playOptions.players.Length];
+            var playerOptions = new GCActivePlayerOptions[playOptions.players.Length];
             Array.Copy(playOptions.players, playerOptions, playOptions.players.Length);
             return playerOptions;
         }

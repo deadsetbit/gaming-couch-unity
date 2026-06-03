@@ -236,7 +236,7 @@ public sealed class GCLocalPlaySessionTests
         };
         var playOptions = new GCPlayOptions
         {
-            players = new GCPlayerOptions[enabledSeats.Length],
+            players = new GCActivePlayerOptions[enabledSeats.Length],
             seed = seed,
         };
         var seatIdentities = new GCSeatIdentity[enabledSeats.Length];
@@ -244,8 +244,8 @@ public sealed class GCLocalPlaySessionTests
         for (var index = 0; index < enabledSeats.Length; index++)
         {
             var seatIndex = enabledSeats[index];
-            var playerId = index + 1;
-            playOptions.players[index] = new GCPlayerOptions
+            var platformPlayerId = index + 1;
+            playOptions.players[index] = new GCActivePlayerOptions
             {
                 playerIndex = index,
                 type = GCPlayerType.player.ToString(),
@@ -253,7 +253,7 @@ public sealed class GCLocalPlaySessionTests
             };
             seatIdentities[index] = new GCSeatIdentity
             {
-                playerId = playerId,
+                platformPlayerId = platformPlayerId,
                 sourceSeatIndex = seatIndex,
                 stableKey = seatIndex.ToString(),
                 label = "Seat " + seatIndex,

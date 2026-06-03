@@ -11,7 +11,7 @@ public interface GCPlayerStoreOutput<out T> where T : GCPlayer
     int EliminatedPlayerCount { get; }
     [System.Obsolete("GetPlayerById has been removed from the game-facing runtime contract. Use GetPlayerByIndex.", true)]
     T GetPlayerById(int playerId);
-    T GetPlayerByIndex(int index);
+    T GetPlayerByIndex(int playerIndex);
     void Clear();
 }
 
