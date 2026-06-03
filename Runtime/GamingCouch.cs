@@ -82,10 +82,17 @@ namespace DSB.GC
         }
         private GCMode mode = GCMode.Production;
         public GCMode Mode => mode;
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
         [SerializeField]
-        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for server and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
+        [Tooltip("Unsupported temporary internal migration surface. Mark the game to use legacy online multiplayer only while GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.")]
         private bool onlineMultiplayerSupport = false;
         public bool OnlineMultiplayerSupport => onlineMultiplayerSupport;
+#else
+        /// <summary>
+        /// Unsupported temporary internal migration probe. Default package builds do not support Gaming Couch multiplayer.
+        /// </summary>
+        public bool OnlineMultiplayerSupport => false;
+#endif
         private bool onlineMultiplayerReadyCalled = false;
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
@@ -158,7 +165,7 @@ namespace DSB.GC
             status = GCStatus.PendingSetup;
 
 #if UNITY_EDITOR
-            if (!onlineMultiplayerSupport)
+            if (!OnlineMultiplayerSupport)
             {
                 if (TryRequireSetupOptions("Editor setup"))
                 {
@@ -167,7 +174,7 @@ namespace DSB.GC
                 }
             }
 #else
-            if (!onlineMultiplayerSupport)
+            if (!OnlineMultiplayerSupport)
             {
                 GamingCouchInstanceStarted();
                 SendProjectInfo();
@@ -598,10 +605,11 @@ namespace DSB.GC
         #region Methods to be called by the game
 
         /// <summary>
-        /// Inform the platform tha the server is ready to receive multiplayer clients.
+        /// Unsupported temporary internal migration surface. Inform the platform that the server is ready to receive multiplayer clients only when GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.
         /// </summary>
         public void OnlineMultiplayerServerReady()
         {
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
             if (!TryRequireSetupOptions("OnlineMultiplayerServerReady"))
             {
                 return;
@@ -617,13 +625,17 @@ namespace DSB.GC
 #else
             GamingCouchSetup();
 #endif
+#else
+            throw CreateUnsupportedMultiplayerApiException("OnlineMultiplayerServerReady");
+#endif
         }
 
         /// <summary>
-        /// Inform the platform that the client is ready to connect with the multiplayer server.
+        /// Unsupported temporary internal migration surface. Inform the platform that the client is ready to connect with the multiplayer server only when GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.
         /// </summary>
         public void OnlineMultiplayerClientReady()
         {
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
             if (!TryRequireSetupOptions("OnlineMultiplayerClientReady"))
             {
                 return;
@@ -639,7 +651,28 @@ namespace DSB.GC
 #else
             GamingCouchSetup();
 #endif
+#else
+            throw CreateUnsupportedMultiplayerApiException("OnlineMultiplayerClientReady");
+#endif
         }
+
+#if !GC_ENABLE_UNSUPPORTED_MULTIPLAYER
+        private static NotSupportedException CreateUnsupportedMultiplayerApiException(string apiName)
+        {
+            const string message = "Gaming Couch online multiplayer APIs are unsupported in the default Unity runtime contract. Define GC_ENABLE_UNSUPPORTED_MULTIPLAYER only for temporary internal migration of legacy multiplayer games.";
+            GCDiagnostics.Emit(
+                GCDiagnosticCodes.UnsupportedMultiplayerApi,
+                GCDiagnosticSeverity.Error,
+                GCDiagnosticSourceAreas.Api,
+                message,
+                new GCDiagnosticContext()
+                    .AddDetail("api", apiName)
+                    .AddDetail("optInDefine", "GC_ENABLE_UNSUPPORTED_MULTIPLAYER")
+                    .AddDetail("supportStatus", "unsupported_temporary_internal_migration")
+            );
+            return new NotSupportedException(message);
+        }
+#endif
 
         /// <summary>
         /// Call after game setup is done eg. level and other assets are loaded and the game is ready to play intro and spawn players.
