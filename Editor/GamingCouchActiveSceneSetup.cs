@@ -2175,11 +2175,13 @@ public class " + gameTypeName + @" : MonoBehaviour
 
     private readonly GCPlayerStore<" + playerTypeName + @"> players = new GCPlayerStore<" + playerTypeName + @">();
     private Coroutine roundCoroutine;
+    private bool emittedExampleDiagnostic;
 
     private void GamingCouchSetup(GCSetupOptions options)
     {
         var clampedMaxScore = Mathf.Max(1, maxScore);
-        // Configure the game mode and HUD before telling GamingCouch setup is complete.
+        Debug.Log(""GamingCouch setup received. Configure game mode and HUD before SetupDone."");
+
         GamingCouch.Instance.SetupGameVersus(new GCGameVersusSetupOptions
         {
             maxScore = clampedMaxScore,
@@ -2195,6 +2197,7 @@ public class " + gameTypeName + @" : MonoBehaviour
                 players = new GCHudPlayersConfig
                 {
                     valueTypeEnum = PlayersHudValueType.PointsSmall,
+                    meterTypeEnum = PlayersHudMeterType.Bar,
                 },
             },
         });
@@ -2205,11 +2208,17 @@ public class " + gameTypeName + @" : MonoBehaviour
     private void GamingCouchPlay(GCPlayOptions options)
     {
         players.Clear();
-        // Spawn the player prefab assigned on the GamingCouch object and keep typed references.
+        emittedExampleDiagnostic = false;
+        Debug.Log(""GamingCouch play received for "" + options.players.Length + "" active players."");
+
         GamingCouch.Instance.SetupPlayers<" + playerTypeName + @">(options.players, player =>
         {
             players.AddPlayer(player);
             player.ApplyPlayerColor();
+            player.SetLives(3, ""Example play start"");
+            player.SetStatus(GCPlayerStatus.Pending, ""Ready"", ""Example play start"");
+            player.SetMeter(0, ""Example play start"");
+            Debug.Log(""Spawned active player index "" + player.Index + ""."");
         });
 
         if (roundCoroutine != null)
@@ -2220,12 +2229,85 @@ public class " + gameTypeName + @" : MonoBehaviour
         roundCoroutine = StartCoroutine(RunRound());
     }
 
+    private void Update()
+    {
+        if (GamingCouch.Instance == null || GamingCouch.Instance.Status != GCStatus.Playing)
+        {
+            return;
+        }
+
+        foreach (var player in players.Players)
+        {
+            PollInputByPlayerIndex(player);
+        }
+    }
+
+    private void PollInputByPlayerIndex(" + playerTypeName + @" player)
+    {
+        var input = GamingCouch.Instance.GetInputsByPlayerIndex(player.Index);
+        if (input == null)
+        {
+            return;
+        }
+
+        if (input.primary)
+        {
+            player.AddScore(1, ""Primary input"");
+            player.SetStatus(GCPlayerStatus.Success, ""Scored"", ""Primary input"");
+            if (!player.IsFinished)
+            {
+                player.SetFinishedRevokable(""Primary input"");
+            }
+        }
+
+        if (input.secondary)
+        {
+            if (player.IsFinishedRevokable)
+            {
+                player.SetRevokeFinished(""Secondary input"");
+            }
+
+            player.SetStatus(GCPlayerStatus.Pending, ""Playing"", ""Secondary input"");
+        }
+
+        if (input.alt && !player.IsEliminated)
+        {
+            player.SetEliminatedRevokable(""Alt input"");
+        }
+    }
+
     private IEnumerator RunRound()
     {
-        yield return new WaitForSeconds(Mathf.Max(0.1f, roundSeconds));
+        var clampedRoundSeconds = Mathf.Max(0.1f, roundSeconds);
+        yield return new WaitForSeconds(clampedRoundSeconds * 0.5f);
+
+        UpdateRuntimeStateForHud();
+        EmitDiagnosticLogExample();
+
+        yield return new WaitForSeconds(clampedRoundSeconds * 0.5f);
 
         ApplyRandomFinalScores();
         GamingCouch.Instance.GameOver();
+    }
+
+    private void UpdateRuntimeStateForHud()
+    {
+        foreach (var player in players.Players)
+        {
+            player.SetStatus(GCPlayerStatus.Pending, ""Halfway"", ""Example runtime state"");
+            player.SetMeter(50, ""Example runtime state"");
+        }
+    }
+
+    private void EmitDiagnosticLogExample()
+    {
+        if (emittedExampleDiagnostic || players.Players.Count == 0)
+        {
+            return;
+        }
+
+        emittedExampleDiagnostic = true;
+        Debug.Log(""Example diagnostic checkpoint: runtime state and HUD updated for "" + players.Players.Count + "" active players."");
     }
 
     private void ApplyRandomFinalScores()
@@ -2234,6 +2316,11 @@ public class " + gameTypeName + @" : MonoBehaviour
         foreach (var player in players.Players)
         {
             player.SetScore(Random.Range(0, clampedMaxScore + 1), ""Example round complete"");
+            if (player.IsEliminatedRevokable)
+            {
+                player.SetEliminatedPermanent(""Example round complete"");
+            }
+
             player.SetFinishedPermanent(""Example round complete"");
         }
     }
