@@ -42,6 +42,7 @@ namespace DSB.GC.RuntimeMessages
     {
         internal bool stateSnapshotsEnabled = true;
         internal bool screenSpaceEnabled = true;
+        internal string unityLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
 
         internal static GCRuntimeOutputConfiguration FromOptions(GCRuntimeOutputOptions options)
         {
@@ -54,6 +55,7 @@ namespace DSB.GC.RuntimeMessages
             {
                 stateSnapshotsEnabled = options.stateSnapshots,
                 screenSpaceEnabled = options.screenSpace,
+                unityLogCaptureMode = GCUnityLogCapture.NormalizeMode(options.unityLogCapture),
             };
         }
     }
@@ -482,6 +484,7 @@ namespace DSB.GC.RuntimeMessages
             hasActiveRun = true;
             pendingMessages.Clear();
             outputConfiguration = GCRuntimeOutputConfiguration.FromOptions(outputOptions);
+            GCUnityLogCapture.Configure(outputConfiguration.unityLogCaptureMode);
         }
 
         internal static bool IsStateSnapshotsEnabled => outputConfiguration.stateSnapshotsEnabled;
@@ -604,6 +607,7 @@ namespace DSB.GC.RuntimeMessages
             outputConfiguration = new GCRuntimeOutputConfiguration();
             realtimeSecondsProvider = testRealtimeSecondsProvider ?? DefaultRealtimeSecondsProvider;
             RuntimeMessagesEmitted = null;
+            GCUnityLogCapture.ResetForTests();
             GCRuntimeScreenSpaceOutput.ResetForTests();
         }
 

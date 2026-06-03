@@ -6,6 +6,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using DSB.GC;
+using DSB.GC.RuntimeMessages;
 #endif
 
 namespace DSB.GC.Dev
@@ -42,6 +43,16 @@ namespace DSB.GC.Dev
             {
                 Connect();
             }
+        }
+
+        private void OnEnable()
+        {
+            GCRuntimeMessageOutput.RuntimeMessagesEmitted += PublishRuntimeMessages;
+        }
+
+        private void OnDisable()
+        {
+            GCRuntimeMessageOutput.RuntimeMessagesEmitted -= PublishRuntimeMessages;
         }
 
         private void Update()
@@ -167,6 +178,19 @@ namespace DSB.GC.Dev
         IEnumerator SendRuntimeGameOverMessage(RuntimeGameOverMessage message)
         {
             yield return SendJsonMessage(JsonUtility.ToJson(message));
+        }
+
+        void PublishRuntimeMessages(string runtimeMessagesJson)
+        {
+            if (string.IsNullOrEmpty(runtimeMessagesJson) ||
+                string.IsNullOrEmpty(currentRunId) ||
+                websocket == null ||
+                websocket.State != WebSocketState.Open)
+            {
+                return;
+            }
+
+            StartCoroutine(SendJsonMessage(runtimeMessagesJson));
         }
 
         internal void PublishRuntimeGameOver(int[] playerIndicesByPlacement)
@@ -390,6 +414,12 @@ namespace DSB.GC.Dev
                         ApplyTimescaleState(message.payload);
                     }
                     break;
+                case "runtime_output_options":
+                    if (message.payload != null)
+                    {
+                        ApplyRuntimeOutputOptions(message.payload);
+                    }
+                    break;
             }
         }
 
@@ -429,6 +459,16 @@ namespace DSB.GC.Dev
             }
 
             SetPause(message.paused);
+        }
+
+        void ApplyRuntimeOutputOptions(WebSocketDevToolPayload message)
+        {
+            if (message.runtimeOutput == null)
+            {
+                return;
+            }
+
+            GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(message.runtimeOutput.unityLogCapture);
         }
 
 
@@ -555,6 +595,13 @@ namespace DSB.GC.Dev
         public int playerIndex = -1;
         public int playerId;
         public WebSocketInputData inputs;
+        public WebSocketRuntimeOutputOptions runtimeOutput;
+    }
+
+    [Serializable]
+    public class WebSocketRuntimeOutputOptions
+    {
+        public string unityLogCapture;
     }
 
 #endif

@@ -163,6 +163,105 @@ public sealed class GCRuntimeDiagnosticsTests
     }
 
     [Test]
+    public void UnityLogCaptureIsOffByDefault()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        GCUnityLogCapture.CaptureForTests("Ignored normal log.", "", LogType.Log);
+        GCUnityLogCapture.CaptureForTests("Ignored warning.", "", LogType.Warning);
+
+        Assert.That(emitted, Is.Empty);
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void UnityWarningAndErrorCaptureEmitsStructuredLogDiagnostics()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.WarningAndError,
+        });
+        nowSeconds = 10.250;
+
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.log\.unity_warning: Unity warning captured\.")
+        );
+        GCUnityLogCapture.CaptureForTests("Physics warning.", "stack line", LogType.Warning);
+        GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(emitted[0], Does.Contain("\"runtimeTimeMs\":250"));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.unity_warning\""));
+        Assert.That(emitted[0], Does.Contain("\"severity\":\"warning\""));
+        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"debug\":{\"condition\":\"Physics warning.\",\"stackTrace\":\"stack line\"}"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void UnityFullLogCaptureIncludesNormalLogsAsInfo()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+        });
+
+        GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"severity\":\"info\""));
+        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"message\":\"Unity log captured.\""));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void UnityLogCaptureSkipsDiagnosticMirrorLogs()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+        });
+
+        GCUnityLogCapture.CaptureForTests(
+            "[GC] Diagnostic gc.state.clamped_value: Lives were clamped.",
+            "",
+            LogType.Warning
+        );
+
+        Assert.That(emitted, Is.Empty);
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void UnityLogCaptureIsRateLimitedPerFrame()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+        });
+
+        for (var index = 0; index < 25; index++)
+        {
+            GCUnityLogCapture.CaptureForTests("Normal development log " + index, "", LogType.Log);
+        }
+
+        Assert.That(emitted, Has.Count.EqualTo(20));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
     public void DiagnosticValidationRejectsUnknownCodeAndSourceArea()
     {
         Assert.Throws<ArgumentException>(() => GCDiagnostics.Emit(

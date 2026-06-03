@@ -646,4 +646,208 @@ namespace DSB.GC.RuntimeMessages
             }
         }
     }
+
+    internal static class GCUnityLogCapture
+    {
+        private const int MaxCapturedLogsPerFrame = 20;
+        private const string LegacyWarningAndErrorMode = "warningAndError";
+
+        private static string captureMode = GCRuntimeUnityLogCaptureMode.Off;
+        private static bool isSubscribed;
+        private static int currentFrameIndex = -1;
+        private static int capturedLogsThisFrame;
+
+        internal static string NormalizeMode(string mode)
+        {
+            if (string.Equals(mode, GCRuntimeUnityLogCaptureMode.Full, StringComparison.Ordinal))
+            {
+                return GCRuntimeUnityLogCaptureMode.Full;
+            }
+
+            if (string.Equals(mode, GCRuntimeUnityLogCaptureMode.WarningAndError, StringComparison.Ordinal) ||
+                string.Equals(mode, LegacyWarningAndErrorMode, StringComparison.Ordinal))
+            {
+                return GCRuntimeUnityLogCaptureMode.WarningAndError;
+            }
+
+            if (string.Equals(mode, GCRuntimeUnityLogCaptureMode.ErrorOnly, StringComparison.Ordinal) ||
+                string.Equals(mode, "error", StringComparison.Ordinal))
+            {
+                return GCRuntimeUnityLogCaptureMode.ErrorOnly;
+            }
+
+            return GCRuntimeUnityLogCaptureMode.Off;
+        }
+
+        internal static void Configure(string mode)
+        {
+            captureMode = NormalizeMode(mode);
+            currentFrameIndex = -1;
+            capturedLogsThisFrame = 0;
+
+            if (string.Equals(captureMode, GCRuntimeUnityLogCaptureMode.Off, StringComparison.Ordinal))
+            {
+                Unsubscribe();
+                return;
+            }
+
+            Subscribe();
+        }
+
+        internal static void ResetForTests()
+        {
+            captureMode = GCRuntimeUnityLogCaptureMode.Off;
+            currentFrameIndex = -1;
+            capturedLogsThisFrame = 0;
+            Unsubscribe();
+        }
+
+        internal static void CaptureForTests(string condition, string stackTrace, LogType type)
+        {
+            CaptureUnityLog(condition, stackTrace, type);
+        }
+
+        private static void Subscribe()
+        {
+            if (isSubscribed)
+            {
+                return;
+            }
+
+            Application.logMessageReceived += CaptureUnityLog;
+            isSubscribed = true;
+        }
+
+        private static void Unsubscribe()
+        {
+            if (!isSubscribed)
+            {
+                return;
+            }
+
+            Application.logMessageReceived -= CaptureUnityLog;
+            isSubscribed = false;
+        }
+
+        private static void CaptureUnityLog(string condition, string stackTrace, LogType type)
+        {
+            if (!ShouldCapture(type) || IsDiagnosticMirror(condition) || IsRateLimited())
+            {
+                return;
+            }
+
+            var code = ResolveCode(type);
+            var severity = ResolveSeverity(type);
+            var context = new GCDiagnosticContext()
+                .AddDetail("logType", type.ToString())
+                .AddDetail("frameIndex", Time.frameCount)
+                .AddDebug("condition", GCRuntimePayloadBounds.Truncate(condition ?? "", GCDiagnosticFields.MaxStringLength));
+
+            if (!string.IsNullOrEmpty(stackTrace))
+            {
+                context.AddDebug("stackTrace", GCRuntimePayloadBounds.Truncate(stackTrace, GCDiagnosticFields.MaxStringLength));
+            }
+
+            GCDiagnostics.Emit(
+                code,
+                severity,
+                GCDiagnosticSourceAreas.UnityLog,
+                ResolveMessage(type),
+                context
+            );
+        }
+
+        private static bool ShouldCapture(LogType type)
+        {
+            if (string.Equals(captureMode, GCRuntimeUnityLogCaptureMode.Full, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (string.Equals(captureMode, GCRuntimeUnityLogCaptureMode.WarningAndError, StringComparison.Ordinal))
+            {
+                return type == LogType.Warning || IsError(type);
+            }
+
+            if (string.Equals(captureMode, GCRuntimeUnityLogCaptureMode.ErrorOnly, StringComparison.Ordinal))
+            {
+                return IsError(type);
+            }
+
+            return false;
+        }
+
+        private static bool IsError(LogType type)
+        {
+            return type == LogType.Error || type == LogType.Assert || type == LogType.Exception;
+        }
+
+        private static bool IsDiagnosticMirror(string condition)
+        {
+            return !string.IsNullOrEmpty(condition) &&
+                condition.StartsWith("[GC] Diagnostic ", StringComparison.Ordinal);
+        }
+
+        private static bool IsRateLimited()
+        {
+            if (currentFrameIndex != Time.frameCount)
+            {
+                currentFrameIndex = Time.frameCount;
+                capturedLogsThisFrame = 0;
+            }
+
+            if (capturedLogsThisFrame >= MaxCapturedLogsPerFrame)
+            {
+                return true;
+            }
+
+            capturedLogsThisFrame++;
+            return false;
+        }
+
+        private static string ResolveCode(LogType type)
+        {
+            if (type == LogType.Log)
+            {
+                return GCDiagnosticCodes.UnityLog;
+            }
+
+            if (type == LogType.Warning)
+            {
+                return GCDiagnosticCodes.UnityWarning;
+            }
+
+            return GCDiagnosticCodes.UnityError;
+        }
+
+        private static GCDiagnosticSeverity ResolveSeverity(LogType type)
+        {
+            if (type == LogType.Log)
+            {
+                return GCDiagnosticSeverity.Info;
+            }
+
+            if (type == LogType.Warning)
+            {
+                return GCDiagnosticSeverity.Warning;
+            }
+
+            return GCDiagnosticSeverity.Error;
+        }
+
+        private static string ResolveMessage(LogType type)
+        {
+            if (type == LogType.Log)
+            {
+                return "Unity log captured.";
+            }
+
+            if (type == LogType.Warning)
+            {
+                return "Unity warning captured.";
+            }
+
+            return "Unity error captured.";
+        }
+    }
 }

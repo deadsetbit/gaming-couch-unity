@@ -384,6 +384,9 @@ namespace DSB.GC
             activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
             playOptions = activePlayerMapping.CreateGameFacingPlayOptions();
             playOptions.runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions();
+#if UNITY_EDITOR
+            playOptions.runtimeOutput = GCDevAppRuntimeOutputSettings.Apply(playOptions.runtimeOutput);
+#endif
             playSeatIdentities = CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping);
             terminalPlacementAccepted = false;
             isRuntimeStateSnapshotPending = false;

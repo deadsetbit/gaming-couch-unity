@@ -5,6 +5,12 @@ using UnityEngine;
 
 public sealed class GCDevAppRuntimeMessagesTests
 {
+    [TearDown]
+    public void TearDown()
+    {
+        GCDevAppRuntimeOutputSettings.ResetForTests();
+    }
+
     [Test]
     public void RuntimeRegisterMessageUsesPackageIdentityAndKeepsWireFields()
     {
@@ -192,6 +198,33 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(json, Does.Contain("\"runId\":\"run-456\""));
         Assert.That(json, Does.Contain("\"playerIndicesByPlacement\":[3,1,2]"));
         Assert.That(json, Does.Contain("\"timestamp\":555"));
+    }
+
+    [Test]
+    public void RuntimeOutputSettingsPreserveExplicitUnityLogCaptureWithoutDevAppOverride()
+    {
+        var options = new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+        };
+
+        var appliedOptions = GCDevAppRuntimeOutputSettings.Apply(options);
+
+        Assert.That(appliedOptions.unityLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.Full));
+    }
+
+    [Test]
+    public void RuntimeOutputSettingsApplyDevAppUnityLogCaptureOverride()
+    {
+        var options = new GCRuntimeOutputOptions
+        {
+            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+        };
+        GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(GCRuntimeUnityLogCaptureMode.WarningAndError);
+
+        var appliedOptions = GCDevAppRuntimeOutputSettings.Apply(options);
+
+        Assert.That(appliedOptions.unityLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
     }
 
     private static GCSeatIdentity[] CreateSeatIdentities()

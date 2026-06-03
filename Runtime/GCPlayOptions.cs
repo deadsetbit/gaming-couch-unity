@@ -21,6 +21,16 @@ namespace DSB.GC
     {
         public bool stateSnapshots = true;
         public bool screenSpace = true;
+        public string unityLogCapture = GCRuntimeUnityLogCaptureMode.Off;
+    }
+
+    public static class GCRuntimeUnityLogCaptureMode
+    {
+        public const string Off = "off";
+        public const string ErrorOnly = "error_only";
+        public const string Error = ErrorOnly;
+        public const string WarningAndError = "warning_and_error";
+        public const string Full = "full";
     }
 
     [System.Serializable]

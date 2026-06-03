@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using DSB.GC;
+using DSB.GC.RuntimeMessages;
 using UnityEngine;
 
 namespace DSB.GC.Dev
@@ -141,6 +142,41 @@ namespace DSB.GC.Dev
             var copiedPlayerIndicesByPlacement = new int[playerIndicesByPlacement.Length];
             Array.Copy(playerIndicesByPlacement, copiedPlayerIndicesByPlacement, playerIndicesByPlacement.Length);
             return copiedPlayerIndicesByPlacement;
+        }
+    }
+
+    internal static class GCDevAppRuntimeOutputSettings
+    {
+        private static string unityLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
+        private static bool hasUnityLogCaptureModeOverride;
+
+        internal static void SetUnityLogCaptureMode(string mode)
+        {
+            if (string.IsNullOrEmpty(mode))
+            {
+                return;
+            }
+
+            unityLogCaptureMode = GCUnityLogCapture.NormalizeMode(mode);
+            hasUnityLogCaptureModeOverride = true;
+        }
+
+        internal static GCRuntimeOutputOptions Apply(GCRuntimeOutputOptions options)
+        {
+            var outputOptions = options ?? new GCRuntimeOutputOptions();
+            if (!hasUnityLogCaptureModeOverride)
+            {
+                return outputOptions;
+            }
+
+            outputOptions.unityLogCapture = unityLogCaptureMode;
+            return outputOptions;
+        }
+
+        internal static void ResetForTests()
+        {
+            unityLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
+            hasUnityLogCaptureModeOverride = false;
         }
     }
 
