@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using DSB.GC.RuntimeMessages;
 using UnityEngine;
 
 namespace DSB.GC.Hud
@@ -181,10 +182,12 @@ namespace DSB.GC.Hud
         }
 
         private List<GCScreenPointDataPoint> pointDataQueue = new List<GCScreenPointDataPoint>();
+        private List<GCRuntimeScreenSpaceAnchor> screenSpaceQueue = new List<GCRuntimeScreenSpaceAnchor>();
 
         public void QueuePointData(GCScreenPointDataPoint pointData)
         {
             pointDataQueue.Add(pointData);
+            QueueScreenSpaceAnchor(pointData);
         }
 
         public void HandleQueue()
@@ -195,11 +198,69 @@ namespace DSB.GC.Hud
             };
             UpdateScreenPointHud(pointData);
             pointDataQueue.Clear();
+
+            try
+            {
+                GCRuntimeScreenSpaceOutput.Emit(Time.frameCount, screenSpaceQueue.ToArray());
+            }
+            catch (Exception exception)
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.MalformedScreenSpace,
+                    GCDiagnosticSeverity.Warning,
+                    GCDiagnosticSourceAreas.ScreenSpace,
+                    "Malformed screen-space output was rejected.",
+                    new GCDiagnosticContext().AddDetail("reason", exception.Message)
+                );
+            }
+            finally
+            {
+                screenSpaceQueue.Clear();
+            }
         }
 
         public void SetCamera(Camera camera)
         {
             this.camera = camera;
+        }
+
+        private void QueueScreenSpaceAnchor(GCScreenPointDataPoint pointData)
+        {
+            if (!GCRuntimeScreenSpaceAnchorTypes.IsKnown(pointData.type))
+            {
+                return;
+            }
+
+            var gamingCouch = GamingCouch.Instance;
+            if (gamingCouch != null &&
+                gamingCouch.Status == GCStatus.Playing &&
+                !gamingCouch.TryValidateActivePlayerIndex(pointData.playerIndex, "screen_space", out _))
+            {
+                return;
+            }
+
+            try
+            {
+                screenSpaceQueue.Add(new GCRuntimeScreenSpaceAnchor(
+                    pointData.type,
+                    pointData.playerIndex,
+                    pointData.x,
+                    pointData.y,
+                    pointData.isOffScreen
+                ));
+            }
+            catch (Exception exception)
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.MalformedScreenSpace,
+                    GCDiagnosticSeverity.Warning,
+                    GCDiagnosticSourceAreas.ScreenSpace,
+                    "Malformed screen-space anchor was rejected.",
+                    new GCDiagnosticContext()
+                        .AddDetail("anchorType", pointData.type)
+                        .AddDetail("reason", exception.Message)
+                );
+            }
         }
     }
 }

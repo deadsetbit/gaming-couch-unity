@@ -87,6 +87,7 @@ namespace DSB.GC
         public Action<int, int, string> OnLivesChanged;
         public Action<int, int, string> OnMeterChanged;
         public Action<GCPlayerStatus, string, string> OnStatusChanged;
+        internal Action<GCPlayerStatus, string, GCPlayerStatus, string, string> OnStatusTransitionChanged;
         public GCPlayerType PlayerType = GCPlayerType.unset;
         public bool IsBot => PlayerType == GCPlayerType.bot;
         private int index = -1;
@@ -552,14 +553,18 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetStatus")) return;
 
-            if (this.status == status && this.statusText == statusText) return;
+            var normalizedStatusText = statusText ?? "";
+            if (this.status == status && this.statusText == normalizedStatusText) return;
 
-            GCLog.LogInfo($"Player index {index} status set to {status} with text {statusText} - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} status set to {status} with text {normalizedStatusText} - reason: " + reason);
 
+            var oldStatus = this.status;
+            var oldStatusText = this.statusText;
             this.status = status;
-            this.statusText = statusText;
+            this.statusText = normalizedStatusText;
 
-            OnStatusChanged?.Invoke(status, statusText, reason);
+            OnStatusTransitionChanged?.Invoke(oldStatus, oldStatusText, this.status, this.statusText, reason);
+            OnStatusChanged?.Invoke(this.status, this.statusText, reason);
         }
 
         /// <summary>

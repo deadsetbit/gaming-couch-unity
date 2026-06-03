@@ -59,6 +59,8 @@ namespace DSB.GC
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
         private GCActivePlayerMapping activePlayerMapping;
         private bool isRestarting = false;
+        private bool isRuntimeStateSnapshotPending = false;
+        private bool terminalPlacementAccepted = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
         public float CurrentTimescale => paused ? timeScaleOnPause : Time.timeScale;
@@ -184,6 +186,7 @@ namespace DSB.GC
             {
                 game.HandlePlayersHudAutoUpdate();
                 hud.HandleQueue();
+                FlushRuntimeOutput();
             }
         }
 
@@ -380,10 +383,14 @@ namespace DSB.GC
 
             activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
             playOptions = activePlayerMapping.CreateGameFacingPlayOptions();
+            playOptions.runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions();
             playSeatIdentities = CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping);
-            GCRuntimeMessageOutput.BeginActiveRun();
+            terminalPlacementAccepted = false;
+            isRuntimeStateSnapshotPending = false;
+            GCRuntimeMessageOutput.BeginActiveRun(playOptions.runtimeOutput);
             listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
+            QueueRuntimeStateSnapshot();
         }
 
         private static GCPlayOptions CopyPlayOptions(GCPlayOptions options)
@@ -404,6 +411,7 @@ namespace DSB.GC
             {
                 players = players,
                 seed = options.seed,
+                runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions(),
                 participantIdentities = CopyParticipantIdentities(options.participantIdentities),
                 usesMappedActivePlayers = options.usesMappedActivePlayers,
             };
@@ -638,11 +646,6 @@ namespace DSB.GC
                 playerIndicesByPlacement[i] = playersSorted[i].Index;
             }
 
-            if (!TryValidateTerminalPlacement(playerIndicesByPlacement, "game_over"))
-            {
-                return;
-            }
-
             GCLog.LogInfo($"GameOver: {string.Join(",", playerIndicesByPlacement)}");
 
             for (var i = 0; i < playerIndicesByPlacement.Length; i++)
@@ -658,6 +661,11 @@ namespace DSB.GC
                 result[i] = (byte)playerIndicesByPlacement[i];
             }
 
+            if (!TrySubmitTerminalPlacement(playerIndicesByPlacement, out _))
+            {
+                return;
+            }
+
             StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
 
 #if UNITY_EDITOR
@@ -667,14 +675,86 @@ namespace DSB.GC
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchGameEnd(result, result.Length);
 #endif
-
-            status = GCStatus.GameOver;
         }
 
         internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload()
         {
             RequireGameSetupDone("BuildRuntimeStateSnapshotPayload");
             return game.BuildRuntimeStateSnapshotPayload(status);
+        }
+
+        internal bool TrySubmitTerminalPlacement(int[] playerIndicesByPlacement, out string runtimeMessagesJson)
+        {
+            runtimeMessagesJson = null;
+            if (terminalPlacementAccepted)
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.InvalidTerminalPlacement,
+                    GCDiagnosticSeverity.Error,
+                    GCDiagnosticSourceAreas.RuntimeMessages,
+                    "Terminal placement was already accepted for this active run."
+                );
+                return false;
+            }
+
+            if (!TryValidateTerminalPlacement(playerIndicesByPlacement, "game_over"))
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.InvalidTerminalPlacement,
+                    GCDiagnosticSeverity.Error,
+                    GCDiagnosticSourceAreas.RuntimeMessages,
+                    "Terminal placement was rejected."
+                );
+                return false;
+            }
+
+            status = GCStatus.GameOver;
+            QueueRuntimeStateSnapshot();
+            FlushRuntimeStateSnapshotToPending();
+            var terminalRecord = GCRuntimeMessageOutput.CreateRecord(
+                GCRuntimeMessageTypes.TerminalPlacementSubmitted,
+                GCRuntimeTerminalPlacementPayload.BuildJson(playerIndicesByPlacement, internalPlayerStore.Players.Count)
+            );
+            terminalPlacementAccepted = true;
+            runtimeMessagesJson = GCRuntimeMessageOutput.FlushPendingWith(terminalRecord);
+            return true;
+        }
+
+        internal void QueueRuntimeStateSnapshot()
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            isRuntimeStateSnapshotPending = true;
+        }
+
+        internal void QueueRuntimePlayerTransition(string messageType, string payloadJson)
+        {
+            GCRuntimeMessageOutput.QueueTransition(messageType, payloadJson);
+        }
+
+        internal void FlushRuntimeOutput()
+        {
+            FlushRuntimeStateSnapshotToPending();
+            GCRuntimeMessageOutput.FlushPending();
+        }
+
+        private void FlushRuntimeStateSnapshotToPending()
+        {
+            if (!isRuntimeStateSnapshotPending)
+            {
+                return;
+            }
+
+            isRuntimeStateSnapshotPending = false;
+            if (!GCRuntimeMessageOutput.IsStateSnapshotsEnabled || game == null)
+            {
+                return;
+            }
+
+            GCRuntimeMessageOutput.QueueStateSnapshot(BuildRuntimeStateSnapshotPayload().ToJson());
         }
         #endregion
 
@@ -747,6 +827,7 @@ namespace DSB.GC
             // TODO: move as this fnc is for player properties?
             game.SetupPlayer(player);
             internalPlayerStore.AddPlayer(player);
+            QueueRuntimeStateSnapshot();
             SetupPlayerReady?.Invoke(player);
         }
 

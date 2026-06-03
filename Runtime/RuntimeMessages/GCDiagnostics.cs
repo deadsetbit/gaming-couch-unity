@@ -527,7 +527,9 @@ namespace DSB.GC.RuntimeMessages
         {
             ValidateDiagnostic(code, sourceArea, message, context);
             var payloadJson = BuildPayloadJson(code, severity, sourceArea, message, context);
-            var envelopeJson = GCRuntimeMessageOutput.EmitSingle(GCRuntimeMessageTypes.Diagnostic, payloadJson);
+            var envelopeJson = GCRuntimeMessageOutput.FlushPendingWith(
+                GCRuntimeMessageOutput.CreateRecord(GCRuntimeMessageTypes.Diagnostic, payloadJson)
+            );
             MirrorToUnityConsole(code, severity, message);
             return envelopeJson;
         }

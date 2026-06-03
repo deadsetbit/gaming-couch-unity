@@ -17,6 +17,13 @@ namespace DSB.GC
     }
 
     [System.Serializable]
+    public class GCRuntimeOutputOptions
+    {
+        public bool stateSnapshots = true;
+        public bool screenSpace = true;
+    }
+
+    [System.Serializable]
     public class GCPlayOptions
     {
         public GCActivePlayerOptions[] players;
@@ -35,6 +42,7 @@ namespace DSB.GC
         * 2) potentially to generate repayable levels/games if we decide to allow players to define the seed in the future.
         */
         public int seed;
+        public GCRuntimeOutputOptions runtimeOutput = new GCRuntimeOutputOptions();
 
         [NonSerialized]
         internal GCPlatformParticipantIdentity[] participantIdentities;
@@ -70,6 +78,7 @@ namespace DSB.GC
             {
                 players = players,
                 seed = transport.seed,
+                runtimeOutput = transport.runtimeOutput ?? new GCRuntimeOutputOptions(),
                 participantIdentities = BuildParticipantIdentities(transport.players),
                 usesMappedActivePlayers = usesMappedActivePlayers,
             };
@@ -108,6 +117,7 @@ namespace DSB.GC
         public GCActivePlayerOptions[] activePlayers;
         public GCPlatformPlayerOptions[] players;
         public int seed;
+        public GCRuntimeOutputOptions runtimeOutput;
     }
 
     [System.Serializable]

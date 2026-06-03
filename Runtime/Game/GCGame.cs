@@ -68,7 +68,7 @@ namespace DSB.GC.Game
 
         public void SetupPlayer(GCPlayer player)
         {
-            Debug.Log("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.Players.Count);
+            GCLog.LogDebug("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.Players.Count);
 
             var self = this;
 
@@ -80,21 +80,47 @@ namespace DSB.GC.Game
             player.OnEliminationStateChanged += args =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerEliminationStateChanged,
+                    GCRuntimeTransitionPayload.BuildStringJson(
+                        args.playerIndex,
+                        args.oldState.ToString(),
+                        args.newState.ToString(),
+                        args.reason
+                    )
+                );
             };
 
             player.OnFinishStateChanged += args =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerFinishStateChanged,
+                    GCRuntimeTransitionPayload.BuildStringJson(
+                        args.playerIndex,
+                        args.oldState.ToString(),
+                        args.newState.ToString(),
+                        args.reason
+                    )
+                );
             };
 
             player.OnScoreChanged += (oldScore, newScore, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerScoreChanged,
+                    GCRuntimeTransitionPayload.BuildIntJson(player.Index, oldScore, newScore, reason)
+                );
             };
 
             player.OnLivesChanged += (oldLives, newLives, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerLivesChanged,
+                    GCRuntimeTransitionPayload.BuildIntJson(player.Index, oldLives, newLives, reason)
+                );
             };
 
             player.OnStatusChanged += (status, statusText, reason) =>
@@ -102,9 +128,28 @@ namespace DSB.GC.Game
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
+            player.OnStatusTransitionChanged += (oldStatus, oldStatusText, status, statusText, reason) =>
+            {
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerStatusChanged,
+                    GCRuntimeTransitionPayload.BuildStatusJson(
+                        player.Index,
+                        oldStatus,
+                        oldStatusText,
+                        status,
+                        statusText,
+                        reason
+                    )
+                );
+            };
+
             player.OnMeterChanged += (oldMeter, newMeter, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
+                self.QueueRuntimeTransition(
+                    GCRuntimeMessageTypes.PlayerMeterChanged,
+                    GCRuntimeTransitionPayload.BuildIntJson(player.Index, oldMeter, newMeter, reason)
+                );
             };
         }
 
@@ -117,6 +162,8 @@ namespace DSB.GC.Game
             {
                 isPlayersHudAutoUpdatePending = true;
             }
+
+            gamingCouch?.QueueRuntimeStateSnapshot();
         }
 
         private void ValidateOptions(GCGameSetupOptions options)
@@ -198,6 +245,12 @@ namespace DSB.GC.Game
             return GCRuntimeStateSnapshotBuilder.BuildPayload(gameStatus, playerStore.Players, playersByPlacement);
         }
 
+        private void QueueRuntimeTransition(string messageType, string payloadJson)
+        {
+            gamingCouch?.QueueRuntimePlayerTransition(messageType, payloadJson);
+            gamingCouch?.QueueRuntimeStateSnapshot();
+        }
+
         private string GetPlayerHudValue(GCPlayer player)
         {
             var valueType = options.hud.players.valueTypeEnum;
@@ -224,7 +277,7 @@ namespace DSB.GC.Game
 
         private void UpdatePlayersHud()
         {
-            Debug.Log("UpdatePlayersHud - player count:" + playerStore.Players.Count);
+            GCLog.LogDebug("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
             var playersByPlacement = GetPlayersInPlacementOrder(playerStore.Players);
 

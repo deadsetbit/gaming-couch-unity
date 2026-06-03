@@ -10,12 +10,52 @@ namespace DSB.GC.RuntimeMessages
     internal static class GCRuntimeMessagePath
     {
         internal const string RuntimeMessages = "runtime_messages";
+        internal const string ScreenSpace = "screen_space";
     }
 
     internal static class GCRuntimeMessageTypes
     {
         internal const string Diagnostic = "gc.diagnostic";
         internal const string StateSnapshot = "gc.state.snapshot";
+        internal const string PlayerScoreChanged = "gc.player.score_changed";
+        internal const string PlayerLivesChanged = "gc.player.lives_changed";
+        internal const string PlayerStatusChanged = "gc.player.status_changed";
+        internal const string PlayerMeterChanged = "gc.player.meter_changed";
+        internal const string PlayerEliminationStateChanged = "gc.player.elimination_state_changed";
+        internal const string PlayerFinishStateChanged = "gc.player.finish_state_changed";
+        internal const string TerminalPlacementSubmitted = "gc.game.terminal_placement_submitted";
+    }
+
+    internal static class GCRuntimeScreenSpaceAnchorTypes
+    {
+        internal const string PlayerOverhead = "playerOverhead";
+        internal const string PlayerPosition = "playerPosition";
+
+        internal static bool IsKnown(string anchorType)
+        {
+            return string.Equals(anchorType, PlayerOverhead, StringComparison.Ordinal) ||
+                string.Equals(anchorType, PlayerPosition, StringComparison.Ordinal);
+        }
+    }
+
+    internal sealed class GCRuntimeOutputConfiguration
+    {
+        internal bool stateSnapshotsEnabled = true;
+        internal bool screenSpaceEnabled = true;
+
+        internal static GCRuntimeOutputConfiguration FromOptions(GCRuntimeOutputOptions options)
+        {
+            if (options == null)
+            {
+                return new GCRuntimeOutputConfiguration();
+            }
+
+            return new GCRuntimeOutputConfiguration
+            {
+                stateSnapshotsEnabled = options.stateSnapshots,
+                screenSpaceEnabled = options.screenSpace,
+            };
+        }
     }
 
     internal sealed class GCRuntimeStateSnapshotPayload
@@ -124,7 +164,7 @@ namespace DSB.GC.RuntimeMessages
                     score = player.Score,
                     lives = player.Lives,
                     status = player.Status.ToString(),
-                    statusText = player.StatusText ?? "",
+                    statusText = GCRuntimePayloadBounds.Truncate(player.StatusText ?? ""),
                     meter = player.Meter,
                     placement = placement,
                     eliminationState = player.EliminationState.ToString(),
@@ -205,6 +245,162 @@ namespace DSB.GC.RuntimeMessages
         }
     }
 
+    internal static class GCRuntimePayloadBounds
+    {
+        internal const int MaxReasonTextLength = 256;
+        internal const int MaxStatusTextLength = 256;
+
+        internal static string Truncate(string value, int maxLength = MaxStatusTextLength)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            {
+                return value ?? "";
+            }
+
+            return value.Substring(0, maxLength);
+        }
+    }
+
+    internal static class GCRuntimeTransitionPayload
+    {
+        internal static string BuildIntJson(int playerIndex, int previousValue, int value, string reason)
+        {
+            ValidatePlayerIndex(playerIndex);
+            var builder = BeginTransitionPayload(playerIndex);
+            builder.Append(",\"previousValue\":").Append(previousValue);
+            builder.Append(",\"value\":").Append(value);
+            AppendReason(builder, reason);
+            builder.Append("}");
+            return builder.ToString();
+        }
+
+        internal static string BuildStringJson(int playerIndex, string previousValue, string value, string reason)
+        {
+            ValidatePlayerIndex(playerIndex);
+            var builder = BeginTransitionPayload(playerIndex);
+            builder.Append(",\"previousValue\":");
+            GCRuntimeJson.AppendString(builder, previousValue);
+            builder.Append(",\"value\":");
+            GCRuntimeJson.AppendString(builder, value);
+            AppendReason(builder, reason);
+            builder.Append("}");
+            return builder.ToString();
+        }
+
+        internal static string BuildStatusJson(
+            int playerIndex,
+            GCPlayerStatus previousStatus,
+            string previousStatusText,
+            GCPlayerStatus status,
+            string statusText,
+            string reason
+        )
+        {
+            ValidatePlayerIndex(playerIndex);
+            var builder = BeginTransitionPayload(playerIndex);
+            builder.Append(",\"previousValue\":");
+            AppendStatusValue(builder, previousStatus, previousStatusText);
+            builder.Append(",\"value\":");
+            AppendStatusValue(builder, status, statusText);
+            AppendReason(builder, reason);
+            builder.Append("}");
+            return builder.ToString();
+        }
+
+        private static StringBuilder BeginTransitionPayload(int playerIndex)
+        {
+            var builder = new StringBuilder();
+            builder.Append("{\"playerIndex\":").Append(playerIndex);
+            return builder;
+        }
+
+        private static void AppendStatusValue(StringBuilder builder, GCPlayerStatus status, string statusText)
+        {
+            builder.Append("{\"status\":");
+            GCRuntimeJson.AppendString(builder, status.ToString());
+            builder.Append(",\"statusText\":");
+            GCRuntimeJson.AppendString(builder, GCRuntimePayloadBounds.Truncate(statusText ?? ""));
+            builder.Append("}");
+        }
+
+        private static void AppendReason(StringBuilder builder, string reason)
+        {
+            if (reason == null)
+            {
+                return;
+            }
+
+            builder.Append(",\"reasonText\":");
+            GCRuntimeJson.AppendString(builder, GCRuntimePayloadBounds.Truncate(reason, GCRuntimePayloadBounds.MaxReasonTextLength));
+        }
+
+        private static void ValidatePlayerIndex(int playerIndex)
+        {
+            if (playerIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), "Runtime transition playerIndex must be non-negative.");
+            }
+        }
+    }
+
+    internal static class GCRuntimeTerminalPlacementPayload
+    {
+        internal static string BuildJson(int[] playerIndicesByPlacement, int activePlayerCount)
+        {
+            Validate(playerIndicesByPlacement, activePlayerCount);
+
+            var builder = new StringBuilder();
+            builder.Append("{\"playerIndicesByPlacement\":[");
+            for (var index = 0; index < playerIndicesByPlacement.Length; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(",");
+                }
+
+                builder.Append(playerIndicesByPlacement[index]);
+            }
+
+            builder.Append("]}");
+            return builder.ToString();
+        }
+
+        private static void Validate(int[] playerIndicesByPlacement, int activePlayerCount)
+        {
+            if (activePlayerCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(activePlayerCount), "Active player count must be non-negative.");
+            }
+
+            if (playerIndicesByPlacement == null)
+            {
+                throw new ArgumentNullException(nameof(playerIndicesByPlacement));
+            }
+
+            if (playerIndicesByPlacement.Length != activePlayerCount)
+            {
+                throw new ArgumentException("Terminal placement must contain every active player exactly once.", nameof(playerIndicesByPlacement));
+            }
+
+            var seen = new bool[activePlayerCount];
+            for (var index = 0; index < playerIndicesByPlacement.Length; index++)
+            {
+                var playerIndex = playerIndicesByPlacement[index];
+                if (playerIndex < 0 || playerIndex >= activePlayerCount)
+                {
+                    throw new ArgumentException("Terminal placement playerIndex is outside the active player range.", nameof(playerIndicesByPlacement));
+                }
+
+                if (seen[playerIndex])
+                {
+                    throw new ArgumentException("Terminal placement cannot contain duplicate playerIndex values.", nameof(playerIndicesByPlacement));
+                }
+
+                seen[playerIndex] = true;
+            }
+        }
+    }
+
     internal sealed class GCRuntimeMessageRecord
     {
         internal const int SchemaVersion = 1;
@@ -264,6 +460,8 @@ namespace DSB.GC.RuntimeMessages
         private static bool hasActiveRun;
         private static double activeRunStartSeconds;
         private static Func<double> realtimeSecondsProvider = DefaultRealtimeSecondsProvider;
+        private static readonly List<GCRuntimeMessageRecord> pendingMessages = new List<GCRuntimeMessageRecord>();
+        private static GCRuntimeOutputConfiguration outputConfiguration = new GCRuntimeOutputConfiguration();
 
         internal static event Action<string> RuntimeMessagesEmitted;
 
@@ -274,10 +472,20 @@ namespace DSB.GC.RuntimeMessages
 
         internal static void BeginActiveRun()
         {
+            BeginActiveRun(null);
+        }
+
+        internal static void BeginActiveRun(GCRuntimeOutputOptions outputOptions)
+        {
             activeRunStartSeconds = NowSeconds();
             sequence = 0;
             hasActiveRun = true;
+            pendingMessages.Clear();
+            outputConfiguration = GCRuntimeOutputConfiguration.FromOptions(outputOptions);
         }
+
+        internal static bool IsStateSnapshotsEnabled => outputConfiguration.stateSnapshotsEnabled;
+        internal static bool IsScreenSpaceEnabled => outputConfiguration.screenSpaceEnabled;
 
         internal static GCRuntimeMessageRecord CreateRecord(string messageType, string payloadJson)
         {
@@ -288,6 +496,49 @@ namespace DSB.GC.RuntimeMessages
                 ResolveRuntimeTimeMs(),
                 payloadJson
             );
+        }
+
+        internal static void QueueStateSnapshot(string payloadJson)
+        {
+            if (!IsStateSnapshotsEnabled)
+            {
+                return;
+            }
+
+            QueueMessage(GCRuntimeMessageTypes.StateSnapshot, payloadJson);
+        }
+
+        internal static void QueueTransition(string messageType, string payloadJson)
+        {
+            QueueMessage(messageType, payloadJson);
+        }
+
+        internal static void QueueMessage(string messageType, string payloadJson)
+        {
+            pendingMessages.Add(CreateRecord(messageType, payloadJson));
+        }
+
+        internal static string FlushPending()
+        {
+            if (pendingMessages.Count == 0)
+            {
+                return null;
+            }
+
+            var messages = pendingMessages.ToArray();
+            pendingMessages.Clear();
+            return EmitBatch(messages);
+        }
+
+        internal static string FlushPendingWith(GCRuntimeMessageRecord message)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            pendingMessages.Add(message);
+            return FlushPending();
         }
 
         internal static string EmitSingle(string messageType, string payloadJson)
@@ -349,8 +600,11 @@ namespace DSB.GC.RuntimeMessages
             sequence = 0;
             hasActiveRun = false;
             activeRunStartSeconds = 0;
+            pendingMessages.Clear();
+            outputConfiguration = new GCRuntimeOutputConfiguration();
             realtimeSecondsProvider = testRealtimeSecondsProvider ?? DefaultRealtimeSecondsProvider;
             RuntimeMessagesEmitted = null;
+            GCRuntimeScreenSpaceOutput.ResetForTests();
         }
 
         private static void EnsureActiveRun()
@@ -367,6 +621,12 @@ namespace DSB.GC.RuntimeMessages
             return (long)Math.Floor(elapsedSeconds * 1000.0);
         }
 
+        internal static long ResolveRuntimeTimeMsForOutput()
+        {
+            EnsureActiveRun();
+            return ResolveRuntimeTimeMs();
+        }
+
         private static double NowSeconds()
         {
             return realtimeSecondsProvider();
@@ -375,6 +635,148 @@ namespace DSB.GC.RuntimeMessages
         private static double DefaultRealtimeSecondsProvider()
         {
             return Time.realtimeSinceStartupAsDouble;
+        }
+    }
+
+    internal sealed class GCRuntimeScreenSpaceAnchor
+    {
+        internal readonly string anchorType;
+        internal readonly int playerIndex;
+        internal readonly float x;
+        internal readonly float y;
+        internal readonly bool isOffScreen;
+
+        internal GCRuntimeScreenSpaceAnchor(string anchorType, int playerIndex, float x, float y, bool isOffScreen)
+        {
+            if (!GCRuntimeScreenSpaceAnchorTypes.IsKnown(anchorType))
+            {
+                throw new ArgumentException("Unknown screen_space anchor type.", nameof(anchorType));
+            }
+
+            if (playerIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), "Screen-space playerIndex must be non-negative.");
+            }
+
+            if (float.IsNaN(x) || float.IsInfinity(x) || float.IsNaN(y) || float.IsInfinity(y))
+            {
+                throw new ArgumentException("Screen-space coordinates must be finite.");
+            }
+
+            this.anchorType = anchorType;
+            this.playerIndex = playerIndex;
+            this.x = Mathf.Clamp01(x);
+            this.y = Mathf.Clamp01(y);
+            this.isOffScreen = isOffScreen;
+        }
+
+        internal void AppendJson(StringBuilder builder)
+        {
+            builder.Append("{\"anchorType\":");
+            GCRuntimeJson.AppendString(builder, anchorType);
+            builder.Append(",\"playerIndex\":").Append(playerIndex);
+            builder.Append(",\"x\":").Append(x.ToString("R", CultureInfo.InvariantCulture));
+            builder.Append(",\"y\":").Append(y.ToString("R", CultureInfo.InvariantCulture));
+            builder.Append(",\"isOffScreen\":").Append(isOffScreen ? "true" : "false");
+            builder.Append("}");
+        }
+    }
+
+    internal static class GCRuntimeScreenSpaceOutput
+    {
+        internal const int EnvelopeSchemaVersion = 1;
+
+        internal static event Action<string> ScreenSpaceEmitted;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern void GamingCouchScreenSpace(string screenSpaceJson);
+#endif
+
+        internal static string Emit(long frameIndex, IReadOnlyList<GCRuntimeScreenSpaceAnchor> anchors)
+        {
+            if (!GCRuntimeMessageOutput.IsScreenSpaceEnabled)
+            {
+                return null;
+            }
+
+            var json = BuildEnvelopeJson(frameIndex, GCRuntimeMessageOutput.ResolveRuntimeTimeMsForOutput(), anchors);
+            ScreenSpaceEmitted?.Invoke(json);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GamingCouchScreenSpace(json);
+#endif
+
+            return json;
+        }
+
+        internal static string BuildEnvelopeJson(long frameIndex, long runtimeTimeMs, IReadOnlyList<GCRuntimeScreenSpaceAnchor> anchors)
+        {
+            if (frameIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(frameIndex), "Screen-space frameIndex must be non-negative.");
+            }
+
+            if (runtimeTimeMs < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(runtimeTimeMs), "Screen-space runtimeTimeMs must be non-negative.");
+            }
+
+            if (anchors == null)
+            {
+                throw new ArgumentNullException(nameof(anchors));
+            }
+
+            ValidateUniqueAnchors(anchors);
+
+            var builder = new StringBuilder();
+            builder.Append("{\"type\":");
+            GCRuntimeJson.AppendString(builder, GCRuntimeMessagePath.ScreenSpace);
+            builder.Append(",\"schemaVersion\":").Append(EnvelopeSchemaVersion);
+            builder.Append(",\"frameIndex\":").Append(frameIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(",\"runtimeTimeMs\":").Append(runtimeTimeMs.ToString(CultureInfo.InvariantCulture));
+            builder.Append(",\"anchors\":[");
+
+            for (var index = 0; index < anchors.Count; index++)
+            {
+                if (anchors[index] == null)
+                {
+                    throw new ArgumentException("Screen-space batches cannot contain null anchors.", nameof(anchors));
+                }
+
+                if (index > 0)
+                {
+                    builder.Append(",");
+                }
+
+                anchors[index].AppendJson(builder);
+            }
+
+            builder.Append("]}");
+            return builder.ToString();
+        }
+
+        internal static void ResetForTests()
+        {
+            ScreenSpaceEmitted = null;
+        }
+
+        private static void ValidateUniqueAnchors(IReadOnlyList<GCRuntimeScreenSpaceAnchor> anchors)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var index = 0; index < anchors.Count; index++)
+            {
+                if (anchors[index] == null)
+                {
+                    continue;
+                }
+
+                var key = anchors[index].anchorType + ":" + anchors[index].playerIndex;
+                if (!seen.Add(key))
+                {
+                    throw new ArgumentException("Screen-space batches cannot contain duplicate anchor type/playerIndex pairs.", nameof(anchors));
+                }
+            }
         }
     }
 
