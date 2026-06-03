@@ -85,9 +85,9 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(message.paused, Is.False);
         Assert.That(message.timescale, Is.EqualTo(1.5f));
         Assert.That(message.seats, Has.Length.EqualTo(3));
-        Assert.That(message.seats[0].playerId, Is.EqualTo(1));
-        Assert.That(message.seats[1].playerId, Is.EqualTo(2));
-        Assert.That(message.seats[2].playerId, Is.EqualTo(3));
+        Assert.That(message.seats[0].playerIndex, Is.EqualTo(0));
+        Assert.That(message.seats[1].playerIndex, Is.EqualTo(1));
+        Assert.That(message.seats[2].playerIndex, Is.EqualTo(2));
     }
 
     [Test]
@@ -102,15 +102,15 @@ public sealed class GCDevAppRuntimeMessagesTests
         );
 
         Assert.That(state.seats, Has.Length.EqualTo(3));
-        Assert.That(state.seats[0].playerId, Is.EqualTo(1));
+        Assert.That(state.seats[0].playerIndex, Is.EqualTo(0));
         Assert.That(state.seats[0].seatIndex, Is.EqualTo(4));
         Assert.That(state.seats[0].label, Is.EqualTo("Seat 4"));
         Assert.That(state.seats[0].type, Is.EqualTo("bot"));
-        Assert.That(state.seats[1].playerId, Is.EqualTo(2));
+        Assert.That(state.seats[1].playerIndex, Is.EqualTo(1));
         Assert.That(state.seats[1].seatIndex, Is.EqualTo(2));
         Assert.That(state.seats[1].label, Is.EqualTo("Seat 2"));
         Assert.That(state.seats[1].type, Is.EqualTo("player"));
-        Assert.That(state.seats[2].playerId, Is.EqualTo(3));
+        Assert.That(state.seats[2].playerIndex, Is.EqualTo(2));
         Assert.That(state.seats[2].seatIndex, Is.EqualTo(8));
         Assert.That(state.seats[2].label, Is.EqualTo("Custom Seat"));
         Assert.That(state.seats[2].type, Is.EqualTo("player"));
@@ -168,7 +168,7 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(json, Does.Contain("\"isRunning\":true"));
         Assert.That(json, Does.Contain("\"capabilities\""));
         Assert.That(json, Does.Contain("\"seats\""));
-        Assert.That(json, Does.Contain("\"playerId\":1"));
+        Assert.That(json, Does.Contain("\"playerIndex\":0"));
         Assert.That(json, Does.Contain("\"seatIndex\":4"));
         Assert.That(json, Does.Contain("\"label\":\"Seat 4\""));
         Assert.That(json, Does.Contain("\"type\":\"bot\""));
@@ -187,10 +187,10 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(message.type, Is.EqualTo("runtime_game_over"));
         Assert.That(message.timestamp, Is.EqualTo(555L));
         Assert.That(message.runId, Is.EqualTo("run-456"));
-        Assert.That(message.playerIdsByPlacement, Is.EqualTo(new[] { 3, 1, 2 }));
+        Assert.That(message.playerIndicesByPlacement, Is.EqualTo(new[] { 3, 1, 2 }));
         Assert.That(json, Does.Contain("\"type\":\"runtime_game_over\""));
         Assert.That(json, Does.Contain("\"runId\":\"run-456\""));
-        Assert.That(json, Does.Contain("\"playerIdsByPlacement\":[3,1,2]"));
+        Assert.That(json, Does.Contain("\"playerIndicesByPlacement\":[3,1,2]"));
         Assert.That(json, Does.Contain("\"timestamp\":555"));
     }
 

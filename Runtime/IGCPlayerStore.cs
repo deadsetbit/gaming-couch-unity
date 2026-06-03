@@ -9,6 +9,7 @@ public interface GCPlayerStoreOutput<out T> where T : GCPlayer
     int UneliminatedPlayerCount { get; }
     IEnumerable<T> EliminatedPlayersEnumerable { get; }
     int EliminatedPlayerCount { get; }
+    [System.Obsolete("GetPlayerById has been removed from the game-facing runtime contract. Use GetPlayerByIndex.", true)]
     T GetPlayerById(int playerId);
     T GetPlayerByIndex(int index);
     void Clear();

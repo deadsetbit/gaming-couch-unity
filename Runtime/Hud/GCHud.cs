@@ -62,9 +62,9 @@ namespace DSB.GC.Hud
     public struct GCPlayersHudDataPlayer
     {
         /// <summary>
-        /// Gaming Couch player ID.
+        /// Active player index.
         /// </summary>
-        public int playerId;
+        public int playerIndex;
         /// <summary>
         /// If the player is out of the game, the HUD can be set to display this player as eliminated.
         /// </summary>
@@ -98,9 +98,9 @@ namespace DSB.GC.Hud
     {
         public string type;
         /// <summary>
-        /// The player ID.
+        /// Active player index.
         /// </summary>
-        public int playerId;
+        public int playerIndex;
         /// <summary>
         /// The x position of the point in percentages eg. 0-1. Values outside this range are considered off screen but not disregarded.
         /// </summary>

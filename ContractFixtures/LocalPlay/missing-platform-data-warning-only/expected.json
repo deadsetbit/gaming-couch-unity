@@ -14,8 +14,7 @@
     "seed": 12345,
     "activePlayers": [
       {
-        "playerId": 1,
-        "name": "P1",
+        "playerIndex": 0,
         "type": "player",
         "color": "blue"
       }
@@ -24,6 +23,7 @@
       {
         "playerId": 1,
         "sourceSeatIndex": 1,
+        "stableKey": "1",
         "label": "Seat 1",
         "playerType": "player",
         "playerColor": "blue"

@@ -29,18 +29,17 @@ namespace DSB.GC
         public bool IsBot => PlayerType == GCPlayerType.bot;
         private int index = -1;
         public int Index => index;
-        // TODO:
-        // deprecate/remove this as games should be using Index instead.
-        // Can't remove the ID completely yet as it's still used to communicate placements to the platform.
         private int id = -1;
         /// <summary>
-        /// GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.
+        /// Removed. Use Index for game-facing player identity.
         /// </summary>
+        [Obsolete("GCPlayer.Id has been removed from the game-facing runtime contract. Use GCPlayer.Index.", true)]
         public int Id => id;
         private string playerName;
         /// <summary>
-        /// GamingCouch player name.
+        /// Removed. Player names are platform-owned and are not exposed to Unity game code.
         /// </summary>
+        [Obsolete("GCPlayer.PlayerName has been removed from the game-facing runtime contract. Player names are platform-owned.", true)]
         public string PlayerName => playerName;
         /// <summary>
         /// GamingCouch player color "base" variant.
@@ -130,15 +129,13 @@ namespace DSB.GC
 
         /// <summary>
         /// This is called by the GamingCouch script.
-        /// You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().
+        /// You can access all the properties set by this method, such as Index, Color, etc. in your subclasses Start().
         /// </summary>
         /// <param name="options">Options provided by the platform</param>
         public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)
         {
             index = options.index;
             PlayerType = options.type;
-            id = options.playerId;
-            playerName = options.name;
             colorEnum = options.colorEnum;
             colorName = options.colorName;
         }
@@ -148,7 +145,7 @@ namespace DSB.GC
         /// </summary>
         public void SetEliminated(string reason)
         {
-            GCLog.LogInfo($"Player {id} eliminated - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} eliminated - reason: " + reason);
 
             isEliminated = true;
             lastSetEliminatedTime = Time.time;
@@ -160,7 +157,7 @@ namespace DSB.GC
         /// </summary>
         public void SetUneliminated(string reason)
         {
-            GCLog.LogInfo($"Player {id} uneliminated - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} uneliminated - reason: " + reason);
 
             isEliminated = false;
             lastSetUneliminatedTime = Time.time;
@@ -173,7 +170,7 @@ namespace DSB.GC
         /// </summary>
         public void SetScore(int newScore, string reason)
         {
-            GCLog.LogInfo($"Player {id} score set to {newScore} - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} score set to {newScore} - reason: " + reason);
 
             if (this.score == newScore) return;
 
@@ -206,7 +203,7 @@ namespace DSB.GC
         /// </summary>
         public void SetFinished(string reason)
         {
-            GCLog.LogInfo($"Player {id} finished - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} finished - reason: " + reason);
 
             finishedTime = Time.time;
 
@@ -218,7 +215,7 @@ namespace DSB.GC
         /// </summary>
         public void SetLives(int newLives, string reason)
         {
-            GCLog.LogInfo($"Player {id} lives set to {newLives} - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} lives set to {newLives} - reason: " + reason);
 
             if (newLives < 0)
             {
@@ -269,7 +266,7 @@ namespace DSB.GC
         {
             if (this.status == status && this.statusText == statusText) return;
 
-            GCLog.LogInfo($"Player {id} status set to {status} with text {statusText} - reason: " + reason);
+            GCLog.LogInfo($"Player index {index} status set to {status} with text {statusText} - reason: " + reason);
 
             this.status = status;
             this.statusText = statusText;

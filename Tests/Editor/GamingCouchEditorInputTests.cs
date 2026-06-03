@@ -48,27 +48,27 @@ public sealed class GamingCouchEditorInputTests
     [Test]
     public void ReleasedKeyboardInputDoesNotBecomeExternalFallbackInput()
     {
-        const int playerId = 1;
-        var gameFacingInputsByPlayerId = new Dictionary<int, GCControllerInputs>
+        const int playerIndex = 1;
+        var gameFacingInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>
         {
-            [playerId] = new GCControllerInputs(new GCControllerInputsData
+            [playerIndex] = new GCControllerInputs(new GCControllerInputsData
             {
                 a0 = 1.0f,
                 b0 = 1,
             }),
         };
-        var externalInputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        var externalInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>();
         var releasedKeyboardInputs = new GCControllerInputsData();
 
         GamingCouch.ApplyEditorInputsForPlayer(
-            playerId,
+            playerIndex,
             releasedKeyboardInputs,
-            gameFacingInputsByPlayerId,
-            externalInputsByPlayerId,
+            gameFacingInputsByPlayerIndex,
+            externalInputsByPlayerIndex,
             0.15f
         );
 
-        var resolved = gameFacingInputsByPlayerId[playerId].RawData;
+        var resolved = gameFacingInputsByPlayerIndex[playerIndex].RawData;
         Assert.That(resolved.a0, Is.EqualTo(0.0f));
         Assert.That(resolved.a1, Is.EqualTo(0.0f));
         Assert.That(resolved.b0, Is.EqualTo(0));
@@ -78,18 +78,18 @@ public sealed class GamingCouchEditorInputTests
     [Test]
     public void ExternalInputFallbackUsesExternalInputCache()
     {
-        const int playerId = 1;
-        var gameFacingInputsByPlayerId = new Dictionary<int, GCControllerInputs>
+        const int playerIndex = 1;
+        var gameFacingInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>
         {
-            [playerId] = new GCControllerInputs(new GCControllerInputsData
+            [playerIndex] = new GCControllerInputs(new GCControllerInputsData
             {
                 a0 = 1.0f,
                 b0 = 1,
             }),
         };
-        var externalInputsByPlayerId = new Dictionary<int, GCControllerInputs>
+        var externalInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>
         {
-            [playerId] = new GCControllerInputs(new GCControllerInputsData
+            [playerIndex] = new GCControllerInputs(new GCControllerInputsData
             {
                 a0 = -0.75f,
                 a1 = 0.25f,
@@ -99,14 +99,14 @@ public sealed class GamingCouchEditorInputTests
         var idleKeyboardInputs = new GCControllerInputsData();
 
         GamingCouch.ApplyEditorInputsForPlayer(
-            playerId,
+            playerIndex,
             idleKeyboardInputs,
-            gameFacingInputsByPlayerId,
-            externalInputsByPlayerId,
+            gameFacingInputsByPlayerIndex,
+            externalInputsByPlayerIndex,
             0.15f
         );
 
-        var resolved = gameFacingInputsByPlayerId[playerId].RawData;
+        var resolved = gameFacingInputsByPlayerIndex[playerIndex].RawData;
         Assert.That(resolved.a0, Is.EqualTo(-0.75f));
         Assert.That(resolved.a1, Is.EqualTo(0.25f));
         Assert.That(resolved.b0, Is.EqualTo(0));

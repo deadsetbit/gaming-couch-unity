@@ -37,7 +37,7 @@ namespace DSB.GC.Hud
 
             if (!player)
             {
-                Debug.LogError("GCNameTag: Player id not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player id manually via GCNameTag.SetPlayer before Start.");
+                Debug.LogError("GCNameTag: Player index not set. Attach GCNameTag to a player (GCPlayer), have it as a child or set player manually via GCNameTag.SetPlayer before Start.");
                 return;
             }
         }
@@ -60,7 +60,7 @@ namespace DSB.GC.Hud
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
                 type = "name",
-                playerId = player.Id,
+                playerIndex = player.Index,
                 x = screenPosition.x / Screen.width,
                 y = screenPosition.y / Screen.height
             });
@@ -77,7 +77,7 @@ namespace DSB.GC.Hud
         private void OnDrawGizmos()
         {
             if (!drawDebugGizmo) return;
-            if (player == null || player.Id == -1) return;
+            if (player == null || player.Index == -1) return;
 
             Camera camera = Camera.main;
             if (camera == null) return;

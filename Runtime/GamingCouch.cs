@@ -57,6 +57,7 @@ namespace DSB.GC
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
+        private GCActivePlayerMapping activePlayerMapping;
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
@@ -316,8 +317,8 @@ namespace DSB.GC
 
             if (pause)
             {
-                inputsByPlayerId.Clear();
-                externalInputsByPlayerId.Clear();
+                inputsByPlayerIndex.Clear();
+                externalInputsByPlayerIndex.Clear();
 
                 volumeOnPause = AudioListener.volume;
                 AudioListener.volume = 0.0f;
@@ -377,10 +378,11 @@ namespace DSB.GC
                 throw new ArgumentException("[GamingCouch] Seat identity count must match play player count.");
             }
 
-            playOptions = CopyPlayOptions(options);
-            playSeatIdentities = CopySeatIdentities(resolvedSeatIdentities);
+            activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
+            playOptions = activePlayerMapping.CreateGameFacingPlayOptions();
+            playSeatIdentities = CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping);
             GCRuntimeMessageOutput.BeginActiveRun();
-            listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
+            listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
         }
 
@@ -402,7 +404,20 @@ namespace DSB.GC
             {
                 players = players,
                 seed = options.seed,
+                participantIdentities = CopyParticipantIdentities(options.participantIdentities),
             };
+        }
+
+        private static GCPlayParticipantIdentity[] CopyParticipantIdentities(GCPlayParticipantIdentity[] participantIdentities)
+        {
+            if (participantIdentities == null || participantIdentities.Length == 0)
+            {
+                return Array.Empty<GCPlayParticipantIdentity>();
+            }
+
+            var copiedParticipantIdentities = new GCPlayParticipantIdentity[participantIdentities.Length];
+            Array.Copy(participantIdentities, copiedParticipantIdentities, participantIdentities.Length);
+            return copiedParticipantIdentities;
         }
 
         private static GCSeatIdentity[] CopySeatIdentities(GCSeatIdentity[] seatIdentities)
@@ -429,10 +444,14 @@ namespace DSB.GC
             {
                 var playerOption = options.players[index];
                 var sourceSeatIndex = index + 1;
+                var participantIdentity = options.participantIdentities != null && index < options.participantIdentities.Length
+                    ? options.participantIdentities[index]
+                    : default;
                 seatIdentities[index] = new GCSeatIdentity
                 {
-                    playerId = playerOption.playerId,
+                    playerId = participantIdentity.platformPlayerId,
                     sourceSeatIndex = sourceSeatIndex,
+                    stableKey = !string.IsNullOrWhiteSpace(participantIdentity.stableKey) ? participantIdentity.stableKey : sourceSeatIndex.ToString(),
                     label = "Seat " + sourceSeatIndex,
                     playerType = ResolvePlayerType(playerOption.type),
                     playerColor = ResolvePlayerColor(playerOption.color),
@@ -440,6 +459,26 @@ namespace DSB.GC
             }
 
             return seatIdentities;
+        }
+
+        private static GCSeatIdentity[] CreateMappedSeatIdentities(
+            GCSeatIdentity[] capturedSeatIdentities,
+            GCActivePlayerMapping mapping
+        )
+        {
+            if (mapping == null || capturedSeatIdentities == null || capturedSeatIdentities.Length == 0)
+            {
+                return Array.Empty<GCSeatIdentity>();
+            }
+
+            var mappedSeatIdentities = new GCSeatIdentity[capturedSeatIdentities.Length];
+            for (var playerIndex = 0; playerIndex < capturedSeatIdentities.Length; playerIndex++)
+            {
+                var entry = mapping.GetByPlayerIndex(playerIndex);
+                mappedSeatIdentities[playerIndex] = capturedSeatIdentities[entry.CapturedOrder];
+            }
+
+            return mappedSeatIdentities;
         }
 
         private static GCPlayerType ResolvePlayerType(string value)
@@ -455,20 +494,25 @@ namespace DSB.GC
         /// <summary>
         /// Called by the platform to update player inputs.
         /// </summary>
-        private void GamingCouchInputs(string playerIdAndInputs)
+        private void GamingCouchInputs(string playerIndexAndInputs)
         {
             if (paused)
             {
                 return;
             }
 
-            string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
-            var inputsData = GCControllerInputsData.CreateFromJSON(playerIdAndInputsArray[1]);
+            string[] playerIndexAndInputsArray = playerIndexAndInputs.Split('|');
+            var inputsData = GCControllerInputsData.CreateFromJSON(playerIndexAndInputsArray[1]);
             GCControllerInputs inputs = new GCControllerInputs(inputsData);
 
-            var playerId = int.Parse(playerIdAndInputsArray[0]);
-            externalInputsByPlayerId[playerId] = inputs;
-            inputsByPlayerId[playerId] = inputs;
+            var playerIndex = int.Parse(playerIndexAndInputsArray[0]);
+            if (!TryValidateActivePlayerIndex(playerIndex, "input", out _))
+            {
+                return;
+            }
+
+            externalInputsByPlayerIndex[playerIndex] = inputs;
+            inputsByPlayerIndex[playerIndex] = inputs;
         }
         #endregion
 
@@ -587,31 +631,36 @@ namespace DSB.GC
             var players = internalPlayerStore.PlayersEnumerable.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
-            var placementsByPlayerId = new int[playersSorted.Count];
+            var playerIndicesByPlacement = new int[playersSorted.Count];
             for (int i = 0; i < playersSorted.Count; i++)
             {
-                placementsByPlayerId[i] = playersSorted[i].Id;
+                playerIndicesByPlacement[i] = playersSorted[i].Index;
             }
 
-            GCLog.LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
-
-            for (var i = 0; i < placementsByPlayerId.Length; i++)
+            if (!TryValidateTerminalPlacement(playerIndicesByPlacement, "game_over"))
             {
-                var playerId = placementsByPlayerId[i];
-                var player = internalPlayerStore.GetPlayerById(playerId);
-                GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
+                return;
             }
 
-            byte[] result = new byte[placementsByPlayerId.Length];
-            for (int i = 0; i < placementsByPlayerId.Length; i++)
+            GCLog.LogInfo($"GameOver: {string.Join(",", playerIndicesByPlacement)}");
+
+            for (var i = 0; i < playerIndicesByPlacement.Length; i++)
             {
-                result[i] = (byte)placementsByPlayerId[i];
+                var playerIndex = playerIndicesByPlacement[i];
+                var player = internalPlayerStore.GetPlayerByIndex(playerIndex);
+                GCLog.LogInfo($"Player index {playerIndex} placed {i + 1}");
+            }
+
+            byte[] result = new byte[playerIndicesByPlacement.Length];
+            for (int i = 0; i < playerIndicesByPlacement.Length; i++)
+            {
+                result[i] = (byte)playerIndicesByPlacement[i];
             }
 
             StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
 
 #if UNITY_EDITOR
-            GetComponent<GCDevAppIntegration>()?.PublishRuntimeGameOver(placementsByPlayerId);
+            GetComponent<GCDevAppIntegration>()?.PublishRuntimeGameOver(playerIndicesByPlacement);
 #endif
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -639,7 +688,7 @@ namespace DSB.GC
         #region Player
         private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
         {
-            GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
+            GCLog.LogDebug($"InstantiatePlayer: {options.playerIndex}, {options.color}");
 
             var activeOriginal = playerPrefab.activeSelf;
             playerPrefab.SetActive(false);
@@ -676,14 +725,12 @@ namespace DSB.GC
 
         internal void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
         {
-            player.gameObject.name = "Player - " + options.name;
+            player.gameObject.name = "Player - " + options.playerIndex;
 
             var playerSetupOptions = new GCPlayerSetupOptions
             {
-                index = internalPlayerStore.PlayerCount,
+                index = options.playerIndex,
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
-                playerId = options.playerId,
-                name = options.name,
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
                 colorName = options.color,
             };
@@ -769,26 +816,37 @@ namespace DSB.GC
             }
         }
 
-        public GCPlayerOptions GetPlayerOptions(int playerId)
+        public GCPlayerOptions GetPlayerOptions(int playerIndex)
         {
-            return playOptions.players.Single(p => p.playerId == playerId);
+            return playOptions.players.Single(p => p.playerIndex == playerIndex);
         }
         #endregion
 
         #region Player inputs
-        private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
-        private Dictionary<int, GCControllerInputs> externalInputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputs> inputsByPlayerIndex = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputs> externalInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>();
 
         /// <summary>
-        /// Get player inputs by player ID.
+        /// Removed. Use GetInputsByPlayerIndex.
         /// </summary>
-        /// <param name="playerId">Player ID</param>
+        /// <param name="playerIndex">Active player index</param>
         /// <returns>null if not available</returns>
-        public GCControllerInputs GetInputsByPlayerId(int playerId)
+        [Obsolete("GetInputsByPlayerId has been removed from the game-facing runtime contract. Use GetInputsByPlayerIndex.", true)]
+        public GCControllerInputs GetInputsByPlayerId(int playerIndex)
         {
-            if (inputsByPlayerId.ContainsKey(playerId))
+            throw new InvalidOperationException("GetInputsByPlayerId has been removed. Use GetInputsByPlayerIndex.");
+        }
+
+        /// <summary>
+        /// Get player inputs by active player index.
+        /// </summary>
+        /// <param name="playerIndex">Active player index</param>
+        /// <returns>null if not available</returns>
+        public GCControllerInputs GetInputsByPlayerIndex(int playerIndex)
+        {
+            if (inputsByPlayerIndex.ContainsKey(playerIndex))
             {
-                return inputsByPlayerId[playerId];
+                return inputsByPlayerIndex[playerIndex];
             }
 
             return null;
@@ -800,8 +858,36 @@ namespace DSB.GC
         public void ClearInputs()
         {
             GCLog.LogDebug("ClearInputs");
-            inputsByPlayerId.Clear();
-            externalInputsByPlayerId.Clear();
+            inputsByPlayerIndex.Clear();
+            externalInputsByPlayerIndex.Clear();
+        }
+
+        internal bool TryGetPlayerIndexForSourceSeat(int sourceSeatIndex, out int playerIndex)
+        {
+            playerIndex = -1;
+            return activePlayerMapping != null && activePlayerMapping.TryGetPlayerIndexForSourceSeat(sourceSeatIndex, out playerIndex);
+        }
+
+        internal bool TryGetPlayerIndexForLegacyPlayerId(int playerId, out int playerIndex)
+        {
+            playerIndex = -1;
+            return activePlayerMapping != null && activePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(playerId, out playerIndex);
+        }
+
+        internal bool TryValidateActivePlayerIndex(int playerIndex, string source, out GCActivePlayerMappingEntry entry)
+        {
+            if (activePlayerMapping == null)
+            {
+                entry = default;
+                return false;
+            }
+
+            return activePlayerMapping.TryValidatePlayerIndex(playerIndex, source, out entry);
+        }
+
+        internal bool TryValidateTerminalPlacement(int[] playerIndicesByPlacement, string source)
+        {
+            return activePlayerMapping != null && activePlayerMapping.TryValidatePlacement(playerIndicesByPlacement, source);
         }
         #endregion
 
@@ -943,16 +1029,16 @@ namespace DSB.GC
         }
 
         internal static void ApplyEditorInputsForPlayer(
-            int playerId,
+            int playerIndex,
             GCControllerInputsData keyboardInputsData,
-            Dictionary<int, GCControllerInputs> gameFacingInputsByPlayerId,
-            Dictionary<int, GCControllerInputs> externalInputsByPlayerId,
+            Dictionary<int, GCControllerInputs> gameFacingInputsByPlayerIndex,
+            Dictionary<int, GCControllerInputs> externalInputsByPlayerIndex,
             float axisDeadzone
         )
         {
             GCControllerInputsData externalInputsData = null;
-            if (externalInputsByPlayerId != null &&
-                externalInputsByPlayerId.TryGetValue(playerId, out var externalInputs))
+            if (externalInputsByPlayerIndex != null &&
+                externalInputsByPlayerIndex.TryGetValue(playerIndex, out var externalInputs))
             {
                 externalInputsData = externalInputs.RawData;
             }
@@ -962,7 +1048,7 @@ namespace DSB.GC
                 externalInputsData: externalInputsData,
                 axisDeadzone: axisDeadzone
             );
-            gameFacingInputsByPlayerId[playerId] = new GCControllerInputs(finalInputsData);
+            gameFacingInputsByPlayerIndex[playerIndex] = new GCControllerInputs(finalInputsData);
         }
 
         private void HandleEditorInputs()
@@ -1000,16 +1086,16 @@ namespace DSB.GC
                 };
             }
 
-            if (keyboardInputsData == null && !externalInputsByPlayerId.ContainsKey(player.Id))
+            if (keyboardInputsData == null && !externalInputsByPlayerIndex.ContainsKey(player.Index))
             {
                 return;
             }
 
             ApplyEditorInputsForPlayer(
-                playerId: player.Id,
+                playerIndex: player.Index,
                 keyboardInputsData: keyboardInputsData,
-                gameFacingInputsByPlayerId: inputsByPlayerId,
-                externalInputsByPlayerId: externalInputsByPlayerId,
+                gameFacingInputsByPlayerIndex: inputsByPlayerIndex,
+                externalInputsByPlayerIndex: externalInputsByPlayerIndex,
                 axisDeadzone: INPUT_AXIS_INNER_DEADZONE
             );
         }
@@ -1025,6 +1111,7 @@ namespace DSB.GC
         {
             internalPlayerStore.Clear();
             ClearInputs();
+            activePlayerMapping = null;
         }
 
         public GCPlayerOptions[] GetCurrentPlayPlayerOptions()

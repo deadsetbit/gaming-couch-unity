@@ -247,15 +247,15 @@ public sealed class GCLocalPlaySessionTests
             var playerId = index + 1;
             playOptions.players[index] = new GCPlayerOptions
             {
+                playerIndex = index,
                 type = GCPlayerType.player.ToString(),
-                playerId = playerId,
-                name = "P" + seatIndex,
                 color = GCPlayerColor.blue.ToString(),
             };
             seatIdentities[index] = new GCSeatIdentity
             {
                 playerId = playerId,
                 sourceSeatIndex = seatIndex,
+                stableKey = seatIndex.ToString(),
                 label = "Seat " + seatIndex,
                 playerType = GCPlayerType.player,
                 playerColor = GCPlayerColor.blue,

@@ -169,7 +169,7 @@ namespace DSB.GC.Dev
             yield return SendJsonMessage(JsonUtility.ToJson(message));
         }
 
-        internal void PublishRuntimeGameOver(int[] playerIdsByPlacement)
+        internal void PublishRuntimeGameOver(int[] playerIndicesByPlacement)
         {
             if (websocket == null || websocket.State != WebSocketState.Open || string.IsNullOrEmpty(currentRunId))
             {
@@ -179,7 +179,7 @@ namespace DSB.GC.Dev
             var message = GCDevAppRuntimeMessages.BuildRuntimeGameOverMessage(
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 currentRunId,
-                playerIdsByPlacement
+                playerIndicesByPlacement
             );
             StartCoroutine(SendRuntimeGameOverMessage(message));
         }
@@ -381,7 +381,7 @@ namespace DSB.GC.Dev
                 case "input":
                     if (message.payload != null && message.payload.inputs != null)
                     {
-                        ForwardToGamingCouch(message.payload.playerId, message.payload.inputs);
+                        ForwardToGamingCouch(message.payload, message.payload.inputs);
                     }
                     break;
                 case "timescale_state":
@@ -432,9 +432,23 @@ namespace DSB.GC.Dev
         }
 
 
-        void ForwardToGamingCouch(int playerId, WebSocketInputData inputs)
+        void ForwardToGamingCouch(WebSocketDevToolPayload payload, WebSocketInputData inputs)
         {
             if (GamingCouch.Instance == null)
+            {
+                return;
+            }
+
+            var playerIndex = payload.playerIndex;
+            if (playerIndex < 0 && payload.playerId > 0)
+            {
+                if (!GamingCouch.Instance.TryGetPlayerIndexForLegacyPlayerId(payload.playerId, out playerIndex))
+                {
+                    return;
+                }
+            }
+
+            if (!GamingCouch.Instance.TryValidateActivePlayerIndex(playerIndex, "devapp_input", out _))
             {
                 return;
             }
@@ -455,7 +469,7 @@ namespace DSB.GC.Dev
                 b15 = 0
             };
 
-            string inputString = $"{playerId}|{JsonUtility.ToJson(inputData)}";
+            string inputString = $"{playerIndex}|{JsonUtility.ToJson(inputData)}";
             LogWebSocket($"Outgoing (to GamingCouch): {inputString}");
             GamingCouch.Instance.SendMessage("GamingCouchInputs", inputString);
         }
@@ -538,6 +552,7 @@ namespace DSB.GC.Dev
     {
         public float timescale;
         public bool paused;
+        public int playerIndex = -1;
         public int playerId;
         public WebSocketInputData inputs;
     }

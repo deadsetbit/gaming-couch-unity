@@ -35,7 +35,7 @@ namespace DSB.GC.Hud
 
             if (!player)
             {
-                Debug.LogError("GCPlayerOverhead: Player id not set. Attach GCPlayerOverhead to a player (GCPlayer), have it as a child or set player id manually via GCPlayerOverhead.SetPlayer before Start.");
+                Debug.LogError("GCPlayerOverhead: Player index not set. Attach GCPlayerOverhead to a player (GCPlayer), have it as a child or set player manually via GCPlayerOverhead.SetPlayer before Start.");
                 return;
             }
         }
@@ -58,7 +58,7 @@ namespace DSB.GC.Hud
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
                 type = "playerOverhead",
-                playerId = player.Id,
+                playerIndex = player.Index,
                 x = Mathf.Clamp01(screenPosition.x / Screen.width),
                 y = Mathf.Clamp01(screenPosition.y / Screen.height),
                 isOffScreen = false
@@ -76,7 +76,7 @@ namespace DSB.GC.Hud
         private void OnDrawGizmos()
         {
             if (!drawDebugGizmo) return;
-            if (player == null || player.Id == -1) return;
+            if (player == null || player.Index == -1) return;
 
             Camera camera = Camera.main;
             if (camera == null) return;

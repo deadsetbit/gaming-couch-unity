@@ -31,7 +31,7 @@ namespace DSB.GC
         private List<T> eliminatedBotPlayers = new List<T>();
         public List<T> EliminatedBotPlayers => eliminatedBotPlayers;
         public IEnumerable<T> EliminatedBotPlayersEnumerable => eliminatedBotPlayers;
-        private Dictionary<int, T> playerById = new Dictionary<int, T>();
+        private Dictionary<int, T> playerByIndex = new Dictionary<int, T>();
 
         public GCPlayerStore() { }
 
@@ -39,7 +39,7 @@ namespace DSB.GC
         {
             if (!uneliminatedPlayers.Contains(player))
             {
-                Debug.LogWarning($"Player {player.Id} is not in the uneliminated players list when trying to eliminate them. Possibly calling SetEliminated on a player that is already eliminated?");
+                Debug.LogWarning($"Player index {player.Index} is not in the uneliminated players list when trying to eliminate them. Possibly calling SetEliminated on a player that is already eliminated?");
                 return;
             }
 
@@ -70,7 +70,7 @@ namespace DSB.GC
         {
             if (!eliminatedPlayers.Contains(player))
             {
-                Debug.LogWarning($"Player {player.Id} is not in the eliminated players list when trying to uneliminate them. Possibly calling SetUneliminated on a player that is already uneliminated?");
+                Debug.LogWarning($"Player index {player.Index} is not in the eliminated players list when trying to uneliminate them. Possibly calling SetUneliminated on a player that is already uneliminated?");
                 return;
             }
 
@@ -97,20 +97,26 @@ namespace DSB.GC
             Debug.Assert(uneliminatedPlayers.Count + eliminatedPlayers.Count == players.Count, "Player store out of sync");
         }
 
+        [Obsolete("GetPlayerById has been removed from the game-facing runtime contract. Use GetPlayerByIndex.", true)]
         public T GetPlayerById(int playerId)
         {
-            return playerById[playerId];
+            throw new InvalidOperationException("GetPlayerById has been removed. Use GetPlayerByIndex.");
         }
 
         public T GetPlayerByIndex(int index)
         {
+            if (playerByIndex.TryGetValue(index, out var player))
+            {
+                return player;
+            }
+
             return players[index];
         }
 
         public void AddPlayer(T player)
         {
             Assert.IsNotNull(player, "Trying to add null player to store. This could be due to invalid player type casting?");
-            Assert.IsTrue(player.Id != -1, "Player not properly initialized before adding to store");
+            Assert.IsTrue(player.Index != -1, "Player not properly initialized before adding to store");
 
             players.Add(player);
 
@@ -139,7 +145,7 @@ namespace DSB.GC
                 }
             }
 
-            playerById[player.Id] = player;
+            playerByIndex[player.Index] = player;
 
             player.OnEliminated += (string reason) => HandlePlayerEliminated(player);
             player.OnUneliminated += (string reason) => HandlePlayerUneliminated(player);
@@ -159,7 +165,7 @@ namespace DSB.GC
             eliminatedPlayers.Clear();
             eliminatedNonBotPlayers.Clear();
             eliminatedBotPlayers.Clear();
-            playerById.Clear();
+            playerByIndex.Clear();
         }
     }
 }

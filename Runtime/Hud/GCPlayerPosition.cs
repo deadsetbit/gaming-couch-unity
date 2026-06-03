@@ -38,7 +38,7 @@ namespace DSB.GC.Hud
 
             if (!player)
             {
-                Debug.LogError("GCPlayerPosition: Player id not set. Attach GCPlayerPosition to a player (GCPlayer), have it as a child or set player id manually via GCPlayerPosition.SetPlayer before Start.");
+                Debug.LogError("GCPlayerPosition: Player index not set. Attach GCPlayerPosition to a player (GCPlayer), have it as a child or set player manually via GCPlayerPosition.SetPlayer before Start.");
                 return;
             }
         }
@@ -61,7 +61,7 @@ namespace DSB.GC.Hud
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
                 type = "playerPosition",
-                playerId = player.Id,
+                playerIndex = player.Index,
                 x = Mathf.Clamp01(screenPosition.x / Screen.width),
                 y = Mathf.Clamp01(screenPosition.y / Screen.height),
                 isOffScreen = !inScreen
@@ -80,7 +80,7 @@ namespace DSB.GC.Hud
         private void OnDrawGizmos()
         {
             if (!drawDebugGizmo) return;
-            if (player == null || player.Id == -1) return;
+            if (player == null || player.Index == -1) return;
 
             Camera camera = Camera.main;
             if (camera == null) return;

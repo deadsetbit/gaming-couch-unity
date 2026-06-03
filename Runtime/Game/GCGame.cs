@@ -67,7 +67,7 @@ namespace DSB.GC.Game
 
         public void SetupPlayer(GCPlayer player)
         {
-            Debug.Log("SetupPlayer - playerId:" + player.name + " playerStore count:" + playerStore.PlayersEnumerable.Count());
+            Debug.Log("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.PlayersEnumerable.Count());
 
             var self = this;
 
@@ -91,12 +91,12 @@ namespace DSB.GC.Game
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
-            player.OnScoreChanged += (playerId, score, reason) =>
+            player.OnScoreChanged += (oldScore, newScore, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
-            player.OnLivesChanged += (playerId, lives, reason) =>
+            player.OnLivesChanged += (oldLives, newLives, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
@@ -106,7 +106,7 @@ namespace DSB.GC.Game
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
-            player.OnMeterChanged += (playerId, meter, reason) =>
+            player.OnMeterChanged += (oldMeter, newMeter, reason) =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
@@ -230,7 +230,7 @@ namespace DSB.GC.Game
             {
                 players = playersByPlacement.Select((player, index) => new GCPlayersHudDataPlayer
                 {
-                    playerId = player.Id,
+                    playerIndex = player.Index,
                     eliminated = player.IsEliminated,
                     placement = index,
                     value = GetPlayerHudValue(player),

@@ -173,7 +173,8 @@ public sealed class GCDevJsonContractFixtureTests
 
         Assert.That(capture.playOptions, Is.Not.Null);
         Assert.That(capture.playOptions.seed, Is.EqualTo(expected.seed));
-        AssertPlayers(capture.playOptions.players, expected.activePlayers);
+        var mapping = GCActivePlayerMapping.Create(capture.playOptions, capture.seatIdentities);
+        AssertPlayers(mapping.CreateGameFacingPlayOptions().players, expected.activePlayers);
         AssertSeatIdentities(capture.seatIdentities, expected.seatIdentities);
     }
 
@@ -186,10 +187,9 @@ public sealed class GCDevJsonContractFixtureTests
         {
             var expectedPlayer = expectedPlayers[index];
             var player = players[index];
-            Assert.That(player.playerId, Is.EqualTo(expectedPlayer.playerId));
-            Assert.That(player.name, Is.EqualTo(expectedPlayer.name));
-            Assert.That(player.type, Is.EqualTo(expectedPlayer.type));
-            Assert.That(player.color, Is.EqualTo(expectedPlayer.color));
+            Assert.That(player.playerIndex, Is.EqualTo(expectedPlayer.playerIndex), "activePlayers[" + index + "].playerIndex");
+            Assert.That(player.type, Is.EqualTo(expectedPlayer.type), "activePlayers[" + index + "].type");
+            Assert.That(player.color, Is.EqualTo(expectedPlayer.color), "activePlayers[" + index + "].color");
         }
     }
 
@@ -204,6 +204,7 @@ public sealed class GCDevJsonContractFixtureTests
             var identity = identities[index];
             Assert.That(identity.playerId, Is.EqualTo(expectedIdentity.playerId));
             Assert.That(identity.sourceSeatIndex, Is.EqualTo(expectedIdentity.sourceSeatIndex));
+            Assert.That(identity.stableKey, Is.EqualTo(expectedIdentity.stableKey));
             Assert.That(identity.label, Is.EqualTo(expectedIdentity.label));
             Assert.That(identity.playerType.ToString(), Is.EqualTo(expectedIdentity.playerType));
             Assert.That(identity.playerColor.ToString(), Is.EqualTo(expectedIdentity.playerColor));
@@ -414,8 +415,7 @@ public sealed class GCDevJsonContractFixtureTests
     [Serializable]
     private sealed class ExpectedPlayer
     {
-        public int playerId;
-        public string name;
+        public int playerIndex;
         public string type;
         public string color;
     }
@@ -425,6 +425,7 @@ public sealed class GCDevJsonContractFixtureTests
     {
         public int playerId;
         public int sourceSeatIndex;
+        public string stableKey;
         public string label;
         public string playerType;
         public string playerColor;

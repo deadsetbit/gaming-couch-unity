@@ -9,20 +9,17 @@
     "seed": 12345,
     "activePlayers": [
       {
-        "playerId": 1,
-        "name": "P1",
-        "type": "player",
-        "color": "blue"
-      },
-      {
-        "playerId": 2,
-        "name": "P3",
+        "playerIndex": 0,
         "type": "player",
         "color": "green"
       },
       {
-        "playerId": 3,
-        "name": "P8",
+        "playerIndex": 1,
+        "type": "player",
+        "color": "blue"
+      },
+      {
+        "playerIndex": 2,
         "type": "player",
         "color": "brown"
       }
@@ -31,6 +28,7 @@
       {
         "playerId": 1,
         "sourceSeatIndex": 1,
+        "stableKey": "1",
         "label": "Seat 1",
         "playerType": "player",
         "playerColor": "blue"
@@ -38,6 +36,7 @@
       {
         "playerId": 2,
         "sourceSeatIndex": 3,
+        "stableKey": "3",
         "label": "Seat 3",
         "playerType": "player",
         "playerColor": "green"
@@ -45,6 +44,7 @@
       {
         "playerId": 3,
         "sourceSeatIndex": 8,
+        "stableKey": "8",
         "label": "Seat 8",
         "playerType": "player",
         "playerColor": "brown"

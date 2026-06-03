@@ -80,7 +80,7 @@ namespace DSB.GC.Dev
         internal static RuntimeGameOverMessage BuildRuntimeGameOverMessage(
             long timestamp,
             string runId,
-            int[] playerIdsByPlacement
+            int[] playerIndicesByPlacement
         )
         {
             return new RuntimeGameOverMessage
@@ -88,7 +88,7 @@ namespace DSB.GC.Dev
                 type = RuntimeGameOverType,
                 timestamp = timestamp,
                 runId = runId,
-                playerIdsByPlacement = CopyPlayerIdsByPlacement(playerIdsByPlacement),
+                playerIndicesByPlacement = CopyPlayerIndicesByPlacement(playerIndicesByPlacement),
             };
         }
 
@@ -116,7 +116,7 @@ namespace DSB.GC.Dev
                 var sourceSeatIndex = seatIdentity.sourceSeatIndex > 0 ? seatIdentity.sourceSeatIndex : index + 1;
                 seats[index] = new RuntimeSeatMessage
                 {
-                    playerId = seatIdentity.playerId,
+                    playerIndex = index,
                     seatIndex = sourceSeatIndex,
                     label = string.IsNullOrWhiteSpace(seatIdentity.label) ? "Seat " + sourceSeatIndex : seatIdentity.label,
                     type = ResolveSeatType(seatIdentity.playerType),
@@ -131,16 +131,16 @@ namespace DSB.GC.Dev
             return playerType == GCPlayerType.bot ? "bot" : "player";
         }
 
-        private static int[] CopyPlayerIdsByPlacement(int[] playerIdsByPlacement)
+        private static int[] CopyPlayerIndicesByPlacement(int[] playerIndicesByPlacement)
         {
-            if (playerIdsByPlacement == null || playerIdsByPlacement.Length == 0)
+            if (playerIndicesByPlacement == null || playerIndicesByPlacement.Length == 0)
             {
                 return Array.Empty<int>();
             }
 
-            var copiedPlayerIdsByPlacement = new int[playerIdsByPlacement.Length];
-            Array.Copy(playerIdsByPlacement, copiedPlayerIdsByPlacement, playerIdsByPlacement.Length);
-            return copiedPlayerIdsByPlacement;
+            var copiedPlayerIndicesByPlacement = new int[playerIndicesByPlacement.Length];
+            Array.Copy(playerIndicesByPlacement, copiedPlayerIndicesByPlacement, playerIndicesByPlacement.Length);
+            return copiedPlayerIndicesByPlacement;
         }
     }
 
@@ -155,7 +155,7 @@ namespace DSB.GC.Dev
     [Serializable]
     public class RuntimeSeatMessage
     {
-        public int playerId;
+        public int playerIndex;
         public int seatIndex;
         public string label;
         public string type;
@@ -206,7 +206,7 @@ namespace DSB.GC.Dev
     {
         public string type;
         public string runId;
-        public int[] playerIdsByPlacement;
+        public int[] playerIndicesByPlacement;
         public long timestamp;
     }
 }
