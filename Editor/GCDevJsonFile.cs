@@ -153,12 +153,19 @@ namespace DSB.GC.Dev
         internal readonly GCDevJsonParsedFile parsedFile;
         internal readonly GCDevJsonValidationResult validation;
         internal readonly GCDevJsonFile data;
+        internal readonly GCPlatformDataReadResult platformDataReadResult;
 
-        internal GCDevJsonReadResult(GCDevJsonParsedFile parsedFile, GCDevJsonValidationResult validation, GCDevJsonFile data)
+        internal GCDevJsonReadResult(
+            GCDevJsonParsedFile parsedFile,
+            GCDevJsonValidationResult validation,
+            GCDevJsonFile data,
+            GCPlatformDataReadResult platformDataReadResult = null
+        )
         {
             this.parsedFile = parsedFile;
             this.validation = validation;
             this.data = data;
+            this.platformDataReadResult = platformDataReadResult;
         }
 
         internal bool IsValid

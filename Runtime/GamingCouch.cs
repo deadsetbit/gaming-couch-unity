@@ -384,6 +384,7 @@ namespace DSB.GC
             activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
             playOptions = activePlayerMapping.CreateGameFacingPlayOptions();
             playOptions.runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions();
+            playOptions.platformData = GCPlatformRuntimeView.CopyForRuntime(options.platformData);
 #if UNITY_EDITOR
             playOptions.runtimeOutput = GCDevAppRuntimeOutputSettings.Apply(playOptions.runtimeOutput);
 #endif
@@ -391,6 +392,7 @@ namespace DSB.GC
             terminalPlacementAccepted = false;
             isRuntimeStateSnapshotPending = false;
             GCRuntimeMessageOutput.BeginActiveRun(playOptions.runtimeOutput);
+            EmitPlatformMetadataDiagnostics(playOptions.platformData);
             listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
             QueueRuntimeStateSnapshot();
@@ -415,9 +417,74 @@ namespace DSB.GC
                 players = players,
                 seed = options.seed,
                 runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions(),
+                platformData = GCPlatformRuntimeView.CopyForRuntime(options.platformData),
                 participantIdentities = CopyParticipantIdentities(options.participantIdentities),
                 usesMappedActivePlayers = options.usesMappedActivePlayers,
             };
+        }
+
+        internal static void EmitPlatformMetadataDiagnostics(GCPlatformRuntimeView platformData)
+        {
+            if (platformData == null || !platformData.fallbackActive)
+            {
+                return;
+            }
+
+            var validationState = platformData.validationState;
+            var isMissing = string.Equals(validationState, GCPlatformRuntimeValidationState.Missing, StringComparison.Ordinal);
+            var context = CreatePlatformMetadataDiagnosticContext(platformData);
+            var sourceMessage = platformData.source != null ? platformData.source.message : null;
+            var metadataMessage = !string.IsNullOrWhiteSpace(sourceMessage)
+                ? sourceMessage
+                : isMissing
+                    ? "gc.platform.json was not found."
+                    : "gc.platform.json is invalid.";
+
+            GCDiagnostics.Emit(
+                isMissing ? GCDiagnosticCodes.MissingPlatformData : GCDiagnosticCodes.InvalidPlatformData,
+                GCDiagnosticSeverity.Warning,
+                GCDiagnosticSourceAreas.Metadata,
+                GCRuntimePayloadBounds.Truncate(metadataMessage, GCDiagnostics.MaxMessageLength),
+                context
+            );
+
+            GCDiagnostics.Emit(
+                GCDiagnosticCodes.FallbackActive,
+                GCDiagnosticSeverity.Warning,
+                GCDiagnosticSourceAreas.Metadata,
+                "Fallback platform metadata is active.",
+                context
+            );
+        }
+
+        private static GCDiagnosticContext CreatePlatformMetadataDiagnosticContext(GCPlatformRuntimeView platformData)
+        {
+            var context = new GCDiagnosticContext()
+                .AddDetail("validationState", platformData.validationState)
+                .AddDetail("selectedEntryKey", platformData.selectedEntryKey);
+
+            var source = platformData.source;
+            if (source == null)
+            {
+                return context;
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.fieldName))
+            {
+                context.AddDetail("fieldName", source.fieldName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.path))
+            {
+                context.AddDebug("path", GCRuntimePayloadBounds.Truncate(source.path, GCDiagnosticFields.MaxStringLength));
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.message))
+            {
+                context.AddDebug("sourceMessage", GCRuntimePayloadBounds.Truncate(source.message, GCDiagnosticFields.MaxStringLength));
+            }
+
+            return context;
         }
 
         private static GCPlatformParticipantIdentity[] CopyParticipantIdentities(GCPlatformParticipantIdentity[] participantIdentities)

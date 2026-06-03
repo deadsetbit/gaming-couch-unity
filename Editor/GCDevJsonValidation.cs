@@ -307,7 +307,8 @@ namespace DSB.GC.Dev
                     return new GCDevJsonReadResult(
                         parsedFile,
                         GCDevJsonValidationResult.FromIssue(issue),
-                        null
+                        null,
+                        platformDataReadResult
                     );
                 }
 
@@ -318,11 +319,11 @@ namespace DSB.GC.Dev
             var structuralValidation = ValidateData(data, path);
             if (!structuralValidation.IsValid)
             {
-                return new GCDevJsonReadResult(parsedFile, structuralValidation, null);
+                return new GCDevJsonReadResult(parsedFile, structuralValidation, null, platformDataReadResult);
             }
 
             var validation = ValidateData(data, path, platformDataReadResult);
-            return new GCDevJsonReadResult(parsedFile, validation, data);
+            return new GCDevJsonReadResult(parsedFile, validation, data, platformDataReadResult);
         }
 
         private static GCDevJsonReadResult InvalidReadResult(GCDevJsonParsedFile parsedFile, GCDevJsonIssueCode code, string message)
@@ -469,13 +470,14 @@ namespace DSB.GC.Dev
             var platformDataPath = platformDataReadResult.parsedFile != null ? platformDataReadResult.parsedFile.path : null;
             if (platformData.platformId != GCPlatformDataFile.UnityPlatformId)
             {
-                issues.Add(GCDevJsonIssue.Error(
+                issues.Add(GCDevJsonIssue.Warning(
                     GCDevJsonIssueCode.PlatformDataPlatformMismatch,
-                    "gc.platform.json platform.id must be \"unity\" for Unity editor play settings.",
+                    "gc.platform.json platform.id must be \"unity\" for Unity editor play settings. Local play will use fallback platform metadata.",
                     platformDataPath,
                     0,
                     "platform.id"
                 ));
+                return;
             }
 
             GCPlatformDataEntry entry;
@@ -681,26 +683,26 @@ namespace DSB.GC.Dev
             var gameObject = jsonObject["game"] as JObject;
             if (gameObject == null)
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.platform.json must include game.", "game");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json must include game.", "game", platformDataVersion);
             }
 
             string gameKey;
             if (!TryReadNonEmptyString(gameObject["key"], out gameKey))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.key must be a non-empty string.", "game.key");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.key must be a non-empty string.", "game.key", platformDataVersion);
             }
 
             string gameName;
             if (!TryReadNonEmptyString(gameObject["name"], out gameName))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.name must be a non-empty string.", "game.name");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json game.name must be a non-empty string.", "game.name", platformDataVersion);
             }
 
             var platformObject = jsonObject["platform"] as JObject;
             string platformId;
             if (platformObject == null || !TryReadNonEmptyString(platformObject["id"], out platformId))
             {
-                return InvalidFieldsReadResult(parsedFile, "gc.platform.json platform.id must be a non-empty string.", "platform.id");
+                return InvalidFieldsReadResult(parsedFile, "gc.platform.json platform.id must be a non-empty string.", "platform.id", platformDataVersion);
             }
 
             Dictionary<string, GCPlatformDataEntry> entries;
@@ -709,7 +711,8 @@ namespace DSB.GC.Dev
                 return new GCPlatformDataReadResult(
                     parsedFile,
                     GCDevJsonValidationResult.FromIssue(entryIssue),
-                    null
+                    null,
+                    platformDataVersion
                 );
             }
 
@@ -719,14 +722,15 @@ namespace DSB.GC.Dev
                 return new GCPlatformDataReadResult(
                     parsedFile,
                     GCDevJsonValidationResult.FromIssue(colorIssue),
-                    null
+                    null,
+                    platformDataVersion
                 );
             }
 
             return new GCPlatformDataReadResult(
                 parsedFile,
                 GCDevJsonValidationResult.Valid(),
-                new GCPlatformDataFile(gameKey, gameName, platformId, entries, playerColors)
+                new GCPlatformDataFile(platformDataVersion, gameKey, gameName, platformId, entries, playerColors)
             );
         }
 
@@ -739,12 +743,18 @@ namespace DSB.GC.Dev
             );
         }
 
-        private static GCPlatformDataReadResult InvalidFieldsReadResult(GCPlatformDataParsedFile parsedFile, string message, string fieldName)
+        private static GCPlatformDataReadResult InvalidFieldsReadResult(
+            GCPlatformDataParsedFile parsedFile,
+            string message,
+            string fieldName,
+            int? platformDataVersion = null
+        )
         {
             return new GCPlatformDataReadResult(
                 parsedFile,
                 GCDevJsonValidationResult.FromIssue(GCDevJsonIssue.Warning(GCDevJsonIssueCode.InvalidPlatformDataFields, message, parsedFile.path, 0, fieldName)),
-                null
+                null,
+                platformDataVersion
             );
         }
 

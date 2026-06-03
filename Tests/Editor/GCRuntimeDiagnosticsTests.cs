@@ -164,6 +164,41 @@ public sealed class GCRuntimeDiagnosticsTests
     }
 
     [Test]
+    public void PlatformMetadataFallbackEmitsPersistentRuntimeDiagnostics()
+    {
+        var emitted = new System.Collections.Generic.List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        var view = GCPlatformRuntimeView.CreateFallback(
+            GCPlatformRuntimeValidationState.Missing,
+            GCPlatformRuntimeSource.Fallback(
+                "gc.platform.json was not found.",
+                "/tmp/gc.platform.json",
+                null
+            )
+        );
+
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.metadata\.missing_platform_data: gc\.platform\.json was not found\.")
+        );
+        LogAssert.Expect(
+            LogType.Warning,
+            new Regex(@"\[GC\] Diagnostic gc\.metadata\.fallback_active: Fallback platform metadata is active\.")
+        );
+
+        GamingCouch.EmitPlatformMetadataDiagnostics(view);
+
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.metadata.missing_platform_data\""));
+        Assert.That(emitted[0], Does.Contain("\"severity\":\"warning\""));
+        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"metadata\""));
+        Assert.That(emitted[0], Does.Contain("\"details\":{\"validationState\":\"missing\",\"selectedEntryKey\":\"notdefined\"}"));
+        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.metadata.fallback_active\""));
+        Assert.That(emitted[1], Does.Contain("\"runtimeTimeMs\":0"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
     public void UnityLogCaptureIsOffByDefault()
     {
         var emitted = new System.Collections.Generic.List<string>();

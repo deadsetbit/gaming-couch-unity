@@ -363,7 +363,12 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         }
 
         var setupOptions = CreateSetupOptions(data);
-        var playOptions = CreatePlayOptions(data, seed, out var seatIdentities);
+        var playOptions = CreatePlayOptions(
+            data,
+            seed,
+            GCPlatformRuntimeViewBuilder.Build(readResult.platformDataReadResult, data.entryKey),
+            out var seatIdentities
+        );
         return GCLocalPlaySessionCaptureResult.Succeeded(
             setupOptions,
             playOptions,
@@ -442,13 +447,19 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         };
     }
 
-    private static GCPlayOptions CreatePlayOptions(GCDevJsonFile data, int seed, out GCSeatIdentity[] seatIdentities)
+    private static GCPlayOptions CreatePlayOptions(
+        GCDevJsonFile data,
+        int seed,
+        GCPlatformRuntimeView platformData,
+        out GCSeatIdentity[] seatIdentities
+    )
     {
         var activePlayerCount = data.EnabledSeatCount;
         var options = new GCPlayOptions
         {
             players = new GCActivePlayerOptions[activePlayerCount],
             seed = seed,
+            platformData = platformData ?? GCPlatformRuntimeView.CreateFallbackMissing(),
         };
         seatIdentities = new GCSeatIdentity[activePlayerCount];
 

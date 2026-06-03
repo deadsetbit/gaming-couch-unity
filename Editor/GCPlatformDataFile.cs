@@ -1,5 +1,8 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using DSB.GC;
 using Newtonsoft.Json.Linq;
 
 namespace DSB.GC.Dev
@@ -12,10 +15,12 @@ namespace DSB.GC.Dev
         internal readonly string gameKey;
         internal readonly string gameName;
         internal readonly string platformId;
+        internal readonly int platformDataVersion;
         internal readonly Dictionary<string, GCPlatformDataEntry> entries;
         internal readonly Dictionary<string, GCPlatformDataColorVariants> playerColors;
 
         internal GCPlatformDataFile(
+            int platformDataVersion,
             string gameKey,
             string gameName,
             string platformId,
@@ -23,6 +28,7 @@ namespace DSB.GC.Dev
             Dictionary<string, GCPlatformDataColorVariants> playerColors
         )
         {
+            this.platformDataVersion = platformDataVersion;
             this.gameKey = gameKey;
             this.gameName = gameName;
             this.platformId = platformId;
@@ -72,6 +78,144 @@ namespace DSB.GC.Dev
             }
 
             return clonedColors;
+        }
+    }
+
+    internal static class GCPlatformRuntimeViewBuilder
+    {
+        internal static GCPlatformRuntimeView Build(
+            GCPlatformDataReadResult readResult,
+            string selectedEntryKey
+        )
+        {
+            if (readResult == null)
+            {
+                return GCPlatformRuntimeView.CreateFallback(
+                    GCPlatformRuntimeValidationState.Missing,
+                    GCPlatformRuntimeSource.Fallback("gc.platform.json could not be read because the read result was missing.")
+                );
+            }
+
+            if (readResult.parsedFile != null && readResult.parsedFile.state == GCPlatformDataParseState.MissingFile)
+            {
+                return BuildFallback(readResult, GCPlatformRuntimeValidationState.Missing);
+            }
+
+            if (readResult.data == null || readResult.validation == null || !readResult.validation.IsValid)
+            {
+                return BuildFallback(readResult, GCPlatformRuntimeValidationState.Invalid);
+            }
+
+            if (!string.Equals(readResult.data.platformId, GCPlatformDataFile.UnityPlatformId, StringComparison.Ordinal))
+            {
+                return GCPlatformRuntimeView.CreateFallback(
+                    GCPlatformRuntimeValidationState.Invalid,
+                    GCPlatformRuntimeSource.Fallback(
+                        "gc.platform.json platform.id must be \"unity\" for Unity runtime metadata.",
+                        readResult.parsedFile != null ? readResult.parsedFile.path : null,
+                        "platform.id",
+                        readResult.data.platformDataVersion
+                    )
+                );
+            }
+
+            var data = readResult.data;
+            return GCPlatformRuntimeView.CreateValid(
+                GCPlatformRuntimeSource.Valid(
+                    data.platformDataVersion,
+                    readResult.parsedFile != null ? readResult.parsedFile.path : null
+                ),
+                new GCPlatformRuntimeGame(data.gameKey, data.gameName),
+                new GCPlatformRuntimePlatform(data.platformId),
+                selectedEntryKey,
+                BuildEntries(data),
+                BuildPlayerColors(data)
+            );
+        }
+
+        private static GCPlatformRuntimeView BuildFallback(
+            GCPlatformDataReadResult readResult,
+            string validationState
+        )
+        {
+            var issue = FirstIssue(readResult.validation);
+            var parsedFile = readResult.parsedFile;
+            var message = issue != null && !string.IsNullOrEmpty(issue.message)
+                ? issue.message
+                : parsedFile != null && !string.IsNullOrEmpty(parsedFile.message)
+                    ? parsedFile.message
+                    : "gc.platform.json metadata is unavailable.";
+
+            return GCPlatformRuntimeView.CreateFallback(
+                validationState,
+                GCPlatformRuntimeSource.Fallback(
+                    message,
+                    parsedFile != null ? parsedFile.path : null,
+                    issue != null ? issue.fieldName : null,
+                    readResult.platformDataVersion
+                )
+            );
+        }
+
+        private static GCPlatformRuntimeEntry[] BuildEntries(GCPlatformDataFile data)
+        {
+            return data.entries
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .Select(pair => new GCPlatformRuntimeEntry(
+                    pair.Value.entryKey,
+                    pair.Value.name,
+                    pair.Value.minPlayers,
+                    pair.Value.maxPlayers,
+                    pair.Value.botSupport
+                ))
+                .ToArray();
+        }
+
+        private static GCPlatformRuntimePlayerColors BuildPlayerColors(GCPlatformDataFile data)
+        {
+            var colors = GCPlatformRuntimePlayerColors.CreateDefault();
+            foreach (var pair in data.playerColors)
+            {
+                var variants = pair.Value;
+                if (variants == null)
+                {
+                    continue;
+                }
+
+                colors.Set(
+                    pair.Key,
+                    new GCPlatformRuntimePlayerColor(
+                        ToRgbArray(variants.baseColor),
+                        ToRgbArray(variants.mutedColor),
+                        ToRgbArray(variants.mutedDarkerColor)
+                    )
+                );
+            }
+
+            return colors;
+        }
+
+        private static int[] ToRgbArray(GCPlatformDataRgbColor color)
+        {
+            return new[] { color.r, color.g, color.b };
+        }
+
+        private static GCDevJsonIssue FirstIssue(GCDevJsonValidationResult validation)
+        {
+            if (validation == null || validation.issues == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < validation.issues.Length; index++)
+            {
+                if (validation.issues[index] != null)
+                {
+                    return validation.issues[index];
+                }
+            }
+
+            return null;
         }
     }
 
@@ -190,16 +334,19 @@ namespace DSB.GC.Dev
         internal readonly GCPlatformDataParsedFile parsedFile;
         internal readonly GCDevJsonValidationResult validation;
         internal readonly GCPlatformDataFile data;
+        internal readonly int? platformDataVersion;
 
         internal GCPlatformDataReadResult(
             GCPlatformDataParsedFile parsedFile,
             GCDevJsonValidationResult validation,
-            GCPlatformDataFile data
+            GCPlatformDataFile data,
+            int? platformDataVersion = null
         )
         {
             this.parsedFile = parsedFile;
             this.validation = validation ?? GCDevJsonValidationResult.Valid();
             this.data = data;
+            this.platformDataVersion = data != null ? data.platformDataVersion : platformDataVersion;
         }
 
         internal bool IsValid

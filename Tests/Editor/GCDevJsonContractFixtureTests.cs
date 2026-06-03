@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using DSB.GC;
 using DSB.GC.Dev;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -47,6 +48,303 @@ public sealed class GCDevJsonContractFixtureTests
         RunContractFixtureCase("preserving-write-unrelated-top-level-fields");
     }
 
+    [Test]
+    public void ValidPlatformRuntimeViewExposesSortedEntriesAndColors()
+    {
+        var view = BuildPlatformRuntimeView(
+            @"{
+  ""platformDataVersion"": 1,
+  ""game"": {
+    ""key"": ""contract-game"",
+    ""name"": ""Contract Game"",
+    ""entries"": {
+      ""trio"": { ""name"": ""Trio"", ""minPlayers"": 2, ""maxPlayers"": 3, ""botSupport"": false },
+      ""duel"": { ""name"": ""Duel"", ""minPlayers"": 1, ""maxPlayers"": 2, ""botSupport"": true }
+    }
+  },
+  ""platform"": { ""id"": ""unity"" },
+  ""properties"": {
+    ""colors"": {
+      ""players"": {
+        ""blue"": { ""base"": [1, 2, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
+      }
+    }
+  }
+}",
+            "trio"
+        );
+
+        Assert.That(view.schemaVersion, Is.EqualTo(1));
+        Assert.That(view.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
+        Assert.That(view.fallbackActive, Is.False);
+        Assert.That(view.source.fileName, Is.EqualTo(GCPlatformDataFile.FileName));
+        Assert.That(view.source.platformDataVersion, Is.EqualTo(1));
+        Assert.That(view.game.key, Is.EqualTo("contract-game"));
+        Assert.That(view.game.name, Is.EqualTo("Contract Game"));
+        Assert.That(view.platform.id, Is.EqualTo(GCPlatformDataFile.UnityPlatformId));
+        Assert.That(view.selectedEntryKey, Is.EqualTo("trio"));
+        Assert.That(view.entries, Has.Length.EqualTo(2));
+        Assert.That(view.entries[0].entryKey, Is.EqualTo("duel"));
+        Assert.That(view.entries[0].minPlayers, Is.EqualTo(1));
+        Assert.That(view.entries[0].maxPlayers, Is.EqualTo(2));
+        Assert.That(view.entries[0].botSupport, Is.True);
+        Assert.That(view.entries[1].entryKey, Is.EqualTo("trio"));
+        Assert.That(view.entries[1].botSupport, Is.False);
+        Assert.That(view.playerColors.blue.@base, Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(view.playerColors.blue.muted, Is.EqualTo(new[] { 4, 5, 6 }));
+        Assert.That(view.playerColors.blue.mutedDarker, Is.EqualTo(new[] { 7, 8, 9 }));
+    }
+
+    [Test]
+    public void MissingPlatformRuntimeViewUsesNotdefinedFallback()
+    {
+        var view = GCPlatformRuntimeViewBuilder.Build(
+            GCPlatformDataValidation.BuildReadResult(GCPlatformDataParsedFile.Missing("/tmp/gc.platform.json")),
+            "duel"
+        );
+
+        AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Missing);
+        Assert.That(view.source.message, Does.Contain("gc.platform.json was not found"));
+    }
+
+    [Test]
+    public void InvalidPlatformRuntimeViewUsesNotdefinedFallback()
+    {
+        var view = GCPlatformRuntimeViewBuilder.Build(
+            GCPlatformDataValidation.BuildReadResult(GCPlatformDataParsedFile.InvalidJson("/tmp/gc.platform.json", "bad json")),
+            "duel"
+        );
+
+        AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(view.source.message, Is.EqualTo("bad json"));
+    }
+
+    [Test]
+    public void PlatformMismatchRuntimeViewUsesInvalidFallback()
+    {
+        var view = BuildPlatformRuntimeView(
+            @"{
+  ""platformDataVersion"": 1,
+  ""game"": {
+    ""key"": ""contract-game"",
+    ""name"": ""Contract Game"",
+    ""entries"": {
+      ""duel"": { ""name"": ""Duel"", ""minPlayers"": 1, ""maxPlayers"": 2, ""botSupport"": true }
+    }
+  },
+  ""platform"": { ""id"": ""web"" },
+  ""properties"": { ""colors"": { ""players"": {} } }
+}",
+            "duel"
+        );
+
+        AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(view.source.fieldName, Is.EqualTo("platform.id"));
+        Assert.That(view.source.platformDataVersion, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MissingPlatformColorKeysUsePackageDefaults()
+    {
+        var view = BuildPlatformRuntimeView(
+            @"{
+  ""platformDataVersion"": 1,
+  ""game"": {
+    ""key"": ""contract-game"",
+    ""name"": ""Contract Game"",
+    ""entries"": {
+      ""duel"": { ""name"": ""Duel"", ""minPlayers"": 1, ""maxPlayers"": 2, ""botSupport"": true }
+    }
+  },
+  ""platform"": { ""id"": ""unity"" },
+  ""properties"": {
+    ""colors"": {
+      ""players"": {
+        ""blue"": { ""base"": [1, 2, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
+      }
+    }
+  }
+}",
+            "duel"
+        );
+
+        Assert.That(view.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
+        Assert.That(view.playerColors.blue.@base, Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(view.playerColors.red.@base, Is.EqualTo(new[] { 243, 63, 94 }));
+        Assert.That(view.playerColors.red.muted, Is.EqualTo(new[] { 253, 204, 210 }));
+        Assert.That(view.playerColors.red.mutedDarker, Is.EqualTo(new[] { 76, 5, 25 }));
+    }
+
+    [Test]
+    public void MalformedPlatformColorUsesInvalidFallback()
+    {
+        var view = BuildPlatformRuntimeView(
+            @"{
+  ""platformDataVersion"": 1,
+  ""game"": {
+    ""key"": ""contract-game"",
+    ""name"": ""Contract Game"",
+    ""entries"": {
+      ""duel"": { ""name"": ""Duel"", ""minPlayers"": 1, ""maxPlayers"": 2, ""botSupport"": true }
+    }
+  },
+  ""platform"": { ""id"": ""unity"" },
+  ""properties"": {
+    ""colors"": {
+      ""players"": {
+        ""blue"": { ""base"": [1, 2], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
+      }
+    }
+  }
+}",
+            "duel"
+        );
+
+        AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(view.source.fieldName, Is.EqualTo("properties.colors.players.blue"));
+        Assert.That(view.source.platformDataVersion, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void LocalPlayCaptureAttachesPlatformRuntimeView()
+    {
+        var casePath = ResolveCasePath("valid-sparse-roster-capture");
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(casePath);
+            var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
+            var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
+
+            Assert.That(capture.success, Is.True);
+            Assert.That(capture.playOptions.platformData, Is.Not.Null);
+            Assert.That(capture.playOptions.platformData.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
+            Assert.That(capture.playOptions.platformData.entries[0].entryKey, Is.EqualTo("duel"));
+        }
+    }
+
+    [Test]
+    public void HostedPlayJsonPreservesPlatformRuntimeView()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            @"{
+  ""seed"": 424242,
+  ""activePlayers"": [
+    { ""playerIndex"": 0, ""type"": ""player"", ""color"": ""blue"" }
+  ],
+  ""platformData"": {
+    ""schemaVersion"": 1,
+    ""validationState"": ""valid"",
+    ""fallbackActive"": false,
+    ""source"": {
+      ""fileName"": ""gc.platform.json"",
+      ""platformDataVersion"": 1
+    },
+    ""game"": {
+      ""key"": ""contract-game"",
+      ""name"": ""Contract Game""
+    },
+    ""platform"": { ""id"": ""unity"" },
+    ""selectedEntryKey"": ""duel"",
+    ""entries"": [
+      { ""entryKey"": ""duel"", ""name"": ""Duel"", ""minPlayers"": 1, ""maxPlayers"": 2, ""botSupport"": true }
+    ],
+    ""playerColors"": {
+      ""blue"": { ""base"": [1, 2, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
+    }
+  }
+}"
+        );
+
+        Assert.That(options, Is.Not.Null);
+        Assert.That(options.platformData, Is.Not.Null);
+        Assert.That(options.platformData.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
+        Assert.That(options.platformData.fallbackActive, Is.False);
+        Assert.That(options.platformData.source.platformDataVersion, Is.EqualTo(1));
+        Assert.That(options.platformData.game.key, Is.EqualTo("contract-game"));
+        Assert.That(options.platformData.selectedEntryKey, Is.EqualTo("duel"));
+        Assert.That(options.platformData.entries, Has.Length.EqualTo(1));
+        Assert.That(options.platformData.entries[0].maxPlayers, Is.EqualTo(2));
+        Assert.That(options.platformData.playerColors.blue.@base, Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(options.platformData.playerColors.red.@base, Is.EqualTo(new[] { 243, 63, 94 }));
+        Assert.That(JsonUtility.ToJson(options.platformData), Does.Contain("\"platformDataVersion\":1"));
+    }
+
+    [Test]
+    public void HostedFallbackPlatformRuntimeViewNormalizesToExactNotdefinedDefaults()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            @"{
+  ""seed"": 424242,
+  ""activePlayers"": [
+    { ""playerIndex"": 0, ""type"": ""player"", ""color"": ""blue"" }
+  ],
+  ""platformData"": {
+    ""schemaVersion"": 99,
+    ""validationState"": ""invalid"",
+    ""fallbackActive"": false,
+    ""source"": {
+      ""fileName"": ""gc.platform.json"",
+      ""platformDataVersion"": 1,
+      ""message"": ""bad metadata"",
+      ""fieldName"": ""game.entries""
+    },
+    ""game"": {
+      ""key"": ""wrong"",
+      ""name"": ""Wrong""
+    },
+    ""platform"": { ""id"": ""web"" },
+    ""selectedEntryKey"": ""duel"",
+    ""entries"": [],
+    ""playerColors"": {
+      ""blue"": { ""base"": [999, -1, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
+    }
+  }
+}"
+        );
+
+        Assert.That(options, Is.Not.Null);
+        AssertFallbackPlatformView(options.platformData, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(options.platformData.source.message, Is.EqualTo("bad metadata"));
+        Assert.That(options.platformData.source.fieldName, Is.EqualTo("game.entries"));
+        Assert.That(options.platformData.source.platformDataVersion, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RuntimePlatformViewCopyIsIndependentAndNormalizesColors()
+    {
+        var source = GCPlatformRuntimeView.CreateValid(
+            GCPlatformRuntimeSource.Valid(1, "/tmp/gc.platform.json"),
+            new GCPlatformRuntimeGame("contract-game", "Contract Game"),
+            new GCPlatformRuntimePlatform(GCPlatformDataFile.UnityPlatformId),
+            "duel",
+            new[]
+            {
+                new GCPlatformRuntimeEntry("duel", "Duel", 1, 2, true),
+            },
+            new GCPlatformRuntimePlayerColors
+            {
+                blue = new GCPlatformRuntimePlayerColor(
+                    new[] { 999, -1, 3 },
+                    new[] { 4, 5, 6 },
+                    new[] { 7, 8, 9 }
+                ),
+            }
+        );
+
+        var copy = GCPlatformRuntimeView.CopyForRuntime(source);
+        source.game.key = "mutated";
+        source.entries[0].entryKey = "mutated";
+        source.playerColors.blue.muted[0] = 99;
+
+        Assert.That(copy.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
+        Assert.That(copy.fallbackActive, Is.False);
+        Assert.That(copy.game.key, Is.EqualTo("contract-game"));
+        Assert.That(copy.entries[0].entryKey, Is.EqualTo("duel"));
+        Assert.That(copy.playerColors.blue.@base, Is.EqualTo(new[] { 7, 78, 234 }));
+        Assert.That(copy.playerColors.blue.muted, Is.EqualTo(new[] { 4, 5, 6 }));
+        Assert.That(copy.playerColors.red.@base, Is.EqualTo(new[] { 243, 63, 94 }));
+    }
+
     private static void RunContractFixtureCase(string caseName)
     {
         var casePath = ResolveCasePath(caseName);
@@ -63,6 +361,36 @@ public sealed class GCDevJsonContractFixtureTests
             AssertCapture(fixture, readResult, expected.capture);
             AssertWrite(fixture, expected.write);
         }
+    }
+
+    private static GCPlatformRuntimeView BuildPlatformRuntimeView(string json, string selectedEntryKey)
+    {
+        return GCPlatformRuntimeViewBuilder.Build(
+            GCPlatformDataValidation.BuildReadResult(GCPlatformDataParsedFile.Parsed(
+                "/tmp/gc.platform.json",
+                JObject.Parse(json)
+            )),
+            selectedEntryKey
+        );
+    }
+
+    private static void AssertFallbackPlatformView(GCPlatformRuntimeView view, string validationState)
+    {
+        Assert.That(view.schemaVersion, Is.EqualTo(1));
+        Assert.That(view.validationState, Is.EqualTo(validationState));
+        Assert.That(view.fallbackActive, Is.True);
+        Assert.That(view.game.key, Is.EqualTo("notdefined"));
+        Assert.That(view.game.name, Is.EqualTo("notdefined"));
+        Assert.That(view.platform.id, Is.EqualTo(GCPlatformDataFile.UnityPlatformId));
+        Assert.That(view.selectedEntryKey, Is.EqualTo("notdefined"));
+        Assert.That(view.entries, Has.Length.EqualTo(1));
+        Assert.That(view.entries[0].entryKey, Is.EqualTo("notdefined"));
+        Assert.That(view.entries[0].name, Is.EqualTo("notdefined"));
+        Assert.That(view.entries[0].minPlayers, Is.EqualTo(1));
+        Assert.That(view.entries[0].maxPlayers, Is.EqualTo(8));
+        Assert.That(view.entries[0].botSupport, Is.True);
+        Assert.That(view.playerColors.blue.@base, Is.EqualTo(new[] { 7, 78, 234 }));
+        Assert.That(view.playerColors.brown.mutedDarker, Is.EqualTo(new[] { 67, 20, 7 }));
     }
 
     private static string ResolveCasePath(string caseName)
