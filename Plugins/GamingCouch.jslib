@@ -48,19 +48,19 @@ mergeInto(LibraryManager.library, {
   },
 
   GamingCouchGameEnd: function (
-    placementsByPlayerId,
-    placementsByPlayerIdLength
+    placementsByPlayerIndex,
+    placementsByPlayerIndexLength
   ) {
     if (!window.gamingCouchGameEnd) {
       console.error("gamingCouchGameEnd is not defined");
       return;
     }
 
-    var result = [];
-    for (var i = 0; i < placementsByPlayerIdLength; i++) {
-      result.push(HEAPU8[(placementsByPlayerId >> 0) + i]);
+    var playerIndicesByPlacement = [];
+    for (var i = 0; i < placementsByPlayerIndexLength; i++) {
+      playerIndicesByPlacement.push(HEAPU8[(placementsByPlayerIndex >> 0) + i]);
     }
-    window.gamingCouchGameEnd(result);
+    window.gamingCouchGameEnd({ playerIndicesByPlacement: playerIndicesByPlacement });
   },
 
   GamingCouchSendProjectInfo: function (projectNameString) {

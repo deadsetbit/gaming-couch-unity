@@ -52,6 +52,11 @@ namespace DSB.GC
                 throw new ArgumentException("[GamingCouch] Seat identity count must match active player count.", nameof(seatIdentities));
             }
 
+            if (options.usesMappedActivePlayers)
+            {
+                return CreateFromMappedActivePlayers(options, identities);
+            }
+
             var participants = new List<Participant>(players.Length);
             for (var capturedOrder = 0; capturedOrder < players.Length; capturedOrder++)
             {
@@ -88,6 +93,48 @@ namespace DSB.GC
                     ResolvePlayerColor(participant.ColorName)
                 ))
                 .ToArray();
+
+            return new GCActivePlayerMapping(BuildMappingId(options.seed, entries), options.seed, entries);
+        }
+
+        private static GCActivePlayerMapping CreateFromMappedActivePlayers(GCPlayOptions options, GCSeatIdentity[] identities)
+        {
+            var players = options.players ?? Array.Empty<GCPlayerOptions>();
+            var entries = new GCActivePlayerMappingEntry[players.Length];
+            var seenPlayerIndices = new bool[players.Length];
+
+            for (var capturedOrder = 0; capturedOrder < players.Length; capturedOrder++)
+            {
+                var player = players[capturedOrder];
+                var playerIndex = player.playerIndex;
+                if (playerIndex < 0 || playerIndex >= players.Length)
+                {
+                    throw new ArgumentException("[GamingCouch] activePlayers must use dense zero-based playerIndex values.", nameof(options));
+                }
+
+                if (seenPlayerIndices[playerIndex])
+                {
+                    throw new ArgumentException("[GamingCouch] activePlayers must not contain duplicate playerIndex values.", nameof(options));
+                }
+
+                seenPlayerIndices[playerIndex] = true;
+
+                var identity = identities[capturedOrder];
+                var stableKey = !string.IsNullOrWhiteSpace(identity.stableKey)
+                    ? identity.stableKey
+                    : playerIndex.ToString();
+
+                entries[playerIndex] = new GCActivePlayerMappingEntry(
+                    playerIndex,
+                    capturedOrder,
+                    identity.sourceSeatIndex,
+                    identity.playerId,
+                    stableKey,
+                    ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
+                    ResolvePlayerType(player.type),
+                    ResolvePlayerColor(player.color)
+                );
+            }
 
             return new GCActivePlayerMapping(BuildMappingId(options.seed, entries), options.seed, entries);
         }

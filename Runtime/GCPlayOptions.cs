@@ -34,6 +34,9 @@ namespace DSB.GC
         [NonSerialized]
         internal GCPlayParticipantIdentity[] participantIdentities;
 
+        [NonSerialized]
+        internal bool usesMappedActivePlayers;
+
         public static GCPlayOptions CreateFromJSON(string optionsJson)
         {
             var transport = JsonUtility.FromJson<GCPlayOptionsTransport>(optionsJson);
@@ -43,6 +46,7 @@ namespace DSB.GC
             }
 
             var players = transport.activePlayers;
+            var usesMappedActivePlayers = players != null && players.Length > 0;
             if ((players == null || players.Length == 0) && transport.players != null)
             {
                 players = new GCPlayerOptions[transport.players.Length];
@@ -62,6 +66,7 @@ namespace DSB.GC
                 players = players,
                 seed = transport.seed,
                 participantIdentities = BuildParticipantIdentities(transport.players),
+                usesMappedActivePlayers = usesMappedActivePlayers,
             };
         }
 

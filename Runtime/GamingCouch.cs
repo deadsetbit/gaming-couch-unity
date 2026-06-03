@@ -39,7 +39,7 @@ namespace DSB.GC
         private static extern void GamingCouchSetupDone();
 
         [DllImport("__Internal")]
-        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
+        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerIndex, int placementsByPlayerIndexLength);
 
         [DllImport("__Internal")]
         private static extern void GamingCouchSendProjectInfo(string projectName);
@@ -405,6 +405,7 @@ namespace DSB.GC
                 players = players,
                 seed = options.seed,
                 participantIdentities = CopyParticipantIdentities(options.participantIdentities),
+                usesMappedActivePlayers = options.usesMappedActivePlayers,
             };
         }
 

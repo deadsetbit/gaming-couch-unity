@@ -143,6 +143,41 @@ public sealed class GCActivePlayerMappingTests
     }
 
     [Test]
+    public void ActivePlayersJsonPreservesHostedBoundaryMappingWithoutPrivatePlatformIdentity()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            "{\"seed\":424242,\"activePlayers\":[" +
+            "{\"playerIndex\":1,\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerIndex\":0,\"type\":\"bot\",\"color\":\"green\"}" +
+            "]}"
+        );
+        var json = JsonUtility.ToJson(options);
+
+        Assert.That(options.players, Has.Length.EqualTo(2));
+        Assert.That(options.usesMappedActivePlayers, Is.True);
+        Assert.That(options.participantIdentities, Is.Empty);
+        Assert.That(json, Does.Contain("\"playerIndex\":1"));
+        Assert.That(json, Does.Contain("\"playerIndex\":0"));
+        Assert.That(json, Does.Not.Contain("playerId"));
+
+        var mapping = GCActivePlayerMapping.Create(
+            options,
+            CreateSeatIdentities(
+                (1, 0, "", GCPlayerType.player, GCPlayerColor.blue),
+                (2, 0, "", GCPlayerType.bot, GCPlayerColor.green)
+            )
+        );
+        var gameFacingOptions = mapping.CreateGameFacingPlayOptions();
+
+        Assert.That(mapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(mapping.GetByPlayerIndex(1).CapturedOrder, Is.EqualTo(0));
+        Assert.That(gameFacingOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
+        Assert.That(gameFacingOptions.players[0].color, Is.EqualTo(GCPlayerColor.green.ToString()));
+        Assert.That(gameFacingOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
+        Assert.That(gameFacingOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
+    }
+
+    [Test]
     public void InvalidPlayerIndexEmitsMappingDiagnosticWithContext()
     {
         string emittedJson = null;
