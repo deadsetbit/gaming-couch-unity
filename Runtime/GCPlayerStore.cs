@@ -39,7 +39,7 @@ namespace DSB.GC
         {
             if (!uneliminatedPlayers.Contains(player))
             {
-                Debug.LogWarning($"Player index {player.Index} is not in the uneliminated players list when trying to eliminate them. Possibly calling SetEliminated on a player that is already eliminated?");
+                Debug.LogWarning($"Player index {player.Index} is not in the uneliminated players list when trying to eliminate them.");
                 return;
             }
 
@@ -70,7 +70,7 @@ namespace DSB.GC
         {
             if (!eliminatedPlayers.Contains(player))
             {
-                Debug.LogWarning($"Player index {player.Index} is not in the eliminated players list when trying to uneliminate them. Possibly calling SetUneliminated on a player that is already uneliminated?");
+                Debug.LogWarning($"Player index {player.Index} is not in the eliminated players list when trying to revoke elimination.");
                 return;
             }
 
@@ -147,8 +147,17 @@ namespace DSB.GC
 
             playerByIndex[player.Index] = player;
 
-            player.OnEliminated += (string reason) => HandlePlayerEliminated(player);
-            player.OnUneliminated += (string reason) => HandlePlayerUneliminated(player);
+            player.OnEliminationStateChanged += args =>
+            {
+                if (args.oldState == GCPlayerEliminationState.None && args.newState != GCPlayerEliminationState.None)
+                {
+                    HandlePlayerEliminated(player);
+                }
+                else if (args.oldState != GCPlayerEliminationState.None && args.newState == GCPlayerEliminationState.None)
+                {
+                    HandlePlayerUneliminated(player);
+                }
+            };
         }
 
         public void Clear()

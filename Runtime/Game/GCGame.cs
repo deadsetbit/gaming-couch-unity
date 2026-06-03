@@ -76,17 +76,12 @@ namespace DSB.GC.Game
                 isPlayersHudAutoUpdatePending = true;
             }
 
-            player.OnEliminated += reason =>
+            player.OnEliminationStateChanged += args =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
 
-            player.OnUneliminated += reason =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnFinished += reason =>
+            player.OnFinishStateChanged += args =>
             {
                 self.isPlayersHudAutoUpdatePending = true;
             };
@@ -152,13 +147,13 @@ namespace DSB.GC.Game
             {
                 case GCPlacementSortCriteria.Eliminated:
                 case GCPlacementSortCriteria.EliminatedDescending:
-                    return p => p.IsEliminated ? p.LastSetEliminatedTime : float.MaxValue;
+                    return p => p.IsEliminated ? p.LastSetEliminatedGameTime : float.MaxValue;
                 case GCPlacementSortCriteria.Score:
                 case GCPlacementSortCriteria.ScoreDescending:
                     return p => p.Score;
                 case GCPlacementSortCriteria.Finished:
                 case GCPlacementSortCriteria.FinishedDescending:
-                    return p => p.IsFinished ? p.FinishedTime : float.MaxValue;
+                    return p => p.IsFinished ? p.LastSetFinishedGameTime : float.MaxValue;
                 default:
                     throw new Exception($"Unhandled placement sort criteria '{criteria}'");
             }

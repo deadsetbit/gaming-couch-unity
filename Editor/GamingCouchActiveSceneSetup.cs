@@ -2234,7 +2234,7 @@ public class " + gameTypeName + @" : MonoBehaviour
         foreach (var player in players.Players)
         {
             player.SetScore(Random.Range(0, clampedMaxScore + 1), ""Example round complete"");
-            player.SetFinished(""Example round complete"");
+            player.SetFinishedPermanent(""Example round complete"");
         }
     }
 }

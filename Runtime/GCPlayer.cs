@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DSB.GC.Log;
+using DSB.GC.RuntimeMessages;
 using UnityEngine;
 
 namespace DSB.GC
@@ -16,11 +17,72 @@ namespace DSB.GC
         Alert = 5
     }
 
+    public enum GCPlayerEliminationState
+    {
+        None = 0,
+        Revokable = 1,
+        Permanent = 2
+    }
+
+    public enum GCPlayerFinishState
+    {
+        None = 0,
+        Revokable = 1,
+        Permanent = 2
+    }
+
+    public struct GCPlayerEliminationStateChangedEventArgs
+    {
+        public int playerIndex;
+        public GCPlayerEliminationState oldState;
+        public GCPlayerEliminationState newState;
+        public string reason;
+        public float changedAtGameTime;
+
+        public GCPlayerEliminationStateChangedEventArgs(
+            int playerIndex,
+            GCPlayerEliminationState oldState,
+            GCPlayerEliminationState newState,
+            string reason,
+            float changedAtGameTime
+        )
+        {
+            this.playerIndex = playerIndex;
+            this.oldState = oldState;
+            this.newState = newState;
+            this.reason = reason;
+            this.changedAtGameTime = changedAtGameTime;
+        }
+    }
+
+    public struct GCPlayerFinishStateChangedEventArgs
+    {
+        public int playerIndex;
+        public GCPlayerFinishState oldState;
+        public GCPlayerFinishState newState;
+        public string reason;
+        public float changedAtGameTime;
+
+        public GCPlayerFinishStateChangedEventArgs(
+            int playerIndex,
+            GCPlayerFinishState oldState,
+            GCPlayerFinishState newState,
+            string reason,
+            float changedAtGameTime
+        )
+        {
+            this.playerIndex = playerIndex;
+            this.oldState = oldState;
+            this.newState = newState;
+            this.reason = reason;
+            this.changedAtGameTime = changedAtGameTime;
+        }
+    }
+
     public class GCPlayer : MonoBehaviour
     {
-        public Action<string> OnEliminated;
-        public Action<string> OnUneliminated;
-        public Action<string> OnFinished;
+        public Action<GCPlayerEliminationStateChangedEventArgs> OnEliminationStateChanged;
+        public Action<GCPlayerFinishStateChangedEventArgs> OnFinishStateChanged;
         public Action<int, int, string> OnScoreChanged;
         public Action<int, int, string> OnLivesChanged;
         public Action<int, int, string> OnMeterChanged;
@@ -86,21 +148,47 @@ namespace DSB.GC
         /// If Players HUD is set to display status text, this will be reflected there as well.
         /// </summary>
         public string StatusText => statusText;
-        private bool isEliminated = false;
+        private GCPlayerEliminationState eliminationState = GCPlayerEliminationState.None;
+        public GCPlayerEliminationState EliminationState => eliminationState;
+        private GCPlayerFinishState finishState = GCPlayerFinishState.None;
+        public GCPlayerFinishState FinishState => finishState;
         /// <summary>
-        /// Get the player's eliminated status. Use LastSetEliminatedTime/LastSetUneliminatedTime to get the time the player was last eliminated/uneliminated.
+        /// Get the player's broad eliminated status.
         /// </summary>
-        public bool IsEliminated => isEliminated;
-        private float lastSetEliminatedTime = -1;
+        public bool IsEliminated => eliminationState != GCPlayerEliminationState.None;
+        public bool IsEliminatedPermanent => eliminationState == GCPlayerEliminationState.Permanent;
+        public bool IsEliminatedRevokable => eliminationState == GCPlayerEliminationState.Revokable;
+        public bool IsFinished => finishState != GCPlayerFinishState.None;
+        public bool IsFinishedPermanent => finishState == GCPlayerFinishState.Permanent;
+        public bool IsFinishedRevokable => finishState == GCPlayerFinishState.Revokable;
+        private float lastSetEliminatedPermanentGameTime = -1;
+        public float LastSetEliminatedPermanentGameTime => lastSetEliminatedPermanentGameTime;
+        private float lastSetEliminatedRevokableGameTime = -1;
+        public float LastSetEliminatedRevokableGameTime => lastSetEliminatedRevokableGameTime;
+        private float lastSetRevokeEliminatedGameTime = -1;
+        public float LastSetRevokeEliminatedGameTime => lastSetRevokeEliminatedGameTime;
+        private float lastSetFinishedPermanentGameTime = -1;
+        public float LastSetFinishedPermanentGameTime => lastSetFinishedPermanentGameTime;
+        private float lastSetFinishedRevokableGameTime = -1;
+        public float LastSetFinishedRevokableGameTime => lastSetFinishedRevokableGameTime;
+        private float lastSetRevokeFinishedGameTime = -1;
+        public float LastSetRevokeFinishedGameTime => lastSetRevokeFinishedGameTime;
+        private float lastSetEliminatedGameTime = -1;
+        public float LastSetEliminatedGameTime => lastSetEliminatedGameTime;
+        private float lastSetFinishedGameTime = -1;
+        public float LastSetFinishedGameTime => lastSetFinishedGameTime;
+        private float lastSetRevokeGameTime = -1;
+        public float LastSetRevokeGameTime => lastSetRevokeGameTime;
         /// <summary>
-        /// Get the time the player was last eliminated.
+        /// Removed. Use LastSetEliminatedGameTime or the explicit permanent/revokable timestamp properties.
         /// </summary>
-        public float LastSetEliminatedTime => lastSetEliminatedTime;
-        private float lastSetUneliminatedTime = -1;
+        [Obsolete("Use LastSetEliminatedGameTime, LastSetEliminatedPermanentGameTime, or LastSetEliminatedRevokableGameTime.", false)]
+        public float LastSetEliminatedTime => lastSetEliminatedGameTime;
         /// <summary>
-        /// Get the time the player was last set uneliminated.
+        /// Removed. Use LastSetRevokeEliminatedGameTime.
         /// </summary>
-        public float LastSetUneliminatedTime => lastSetUneliminatedTime;
+        [Obsolete("Use LastSetRevokeEliminatedGameTime.", false)]
+        public float LastSetUneliminatedTime => lastSetRevokeEliminatedGameTime;
         private int score = 0;
         /// <summary>
         /// Get the player's score.
@@ -112,15 +200,11 @@ namespace DSB.GC
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
         public int Lives => lives;
-        private float finishedTime = -1;
         /// <summary>
-        /// The time player was set as finished. eg. when they reach the finish line.
+        /// Removed. Use LastSetFinishedGameTime or the explicit permanent/revokable timestamp properties.
         /// </summary>
-        public float FinishedTime => finishedTime;
-        /// <summary>
-        /// Get the player's finished status. Use FinishedTime to get the time the player was set as finished.
-        /// </summary>
-        public bool IsFinished => finishedTime != -1;
+        [Obsolete("Use LastSetFinishedGameTime, LastSetFinishedPermanentGameTime, or LastSetFinishedRevokableGameTime.", false)]
+        public float FinishedTime => lastSetFinishedGameTime;
         private int meter = -1;
         /// <summary>
         /// Get the player's meter value (-1-100).
@@ -140,28 +224,121 @@ namespace DSB.GC
             colorName = options.colorName;
         }
 
-        /// <summary>
-        /// Mark the player as eliminated. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
-        /// </summary>
+        [Obsolete("SetEliminated has been removed from the game-facing runtime contract. Choose SetEliminatedPermanent(reason) or SetEliminatedRevokable(reason).", true)]
         public void SetEliminated(string reason)
         {
-            GCLog.LogInfo($"Player index {index} eliminated - reason: " + reason);
-
-            isEliminated = true;
-            lastSetEliminatedTime = Time.time;
-            OnEliminated?.Invoke(reason);
+            throw new InvalidOperationException("SetEliminated has been removed. Choose SetEliminatedPermanent or SetEliminatedRevokable.");
         }
 
-        /// <summary>
-        /// Clear the player's eliminated status.
-        /// </summary>
+        [Obsolete("SetUneliminated has been removed from the game-facing runtime contract. Use SetRevokeEliminated(reason) for revokable elimination.", true)]
         public void SetUneliminated(string reason)
         {
-            GCLog.LogInfo($"Player index {index} uneliminated - reason: " + reason);
+            throw new InvalidOperationException("SetUneliminated has been removed. Use SetRevokeEliminated.");
+        }
 
-            isEliminated = false;
-            lastSetUneliminatedTime = Time.time;
-            OnUneliminated?.Invoke(reason);
+        public void SetEliminatedPermanent(string reason)
+        {
+            if (!TryAllowMutation("SetEliminatedPermanent")) return;
+
+            if (eliminationState == GCPlayerEliminationState.Permanent)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateElimination,
+                    "Player is already permanently eliminated.",
+                    "SetEliminatedPermanent",
+                    eliminationState.ToString(),
+                    GCPlayerEliminationState.Permanent.ToString()
+                );
+                return;
+            }
+
+            var oldState = eliminationState;
+            var changedAtGameTime = Time.time;
+            eliminationState = GCPlayerEliminationState.Permanent;
+            lastSetEliminatedPermanentGameTime = changedAtGameTime;
+            lastSetEliminatedGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} permanently eliminated - reason: " + reason);
+            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
+                index,
+                oldState,
+                eliminationState,
+                reason,
+                changedAtGameTime
+            ));
+        }
+
+        public void SetEliminatedRevokable(string reason)
+        {
+            if (!TryAllowMutation("SetEliminatedRevokable")) return;
+
+            if (eliminationState == GCPlayerEliminationState.Revokable)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateElimination,
+                    "Player is already revokably eliminated.",
+                    "SetEliminatedRevokable",
+                    eliminationState.ToString(),
+                    GCPlayerEliminationState.Revokable.ToString()
+                );
+                return;
+            }
+
+            if (eliminationState == GCPlayerEliminationState.Permanent)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidTransition,
+                    "Permanent elimination cannot transition back to revokable elimination.",
+                    "SetEliminatedRevokable",
+                    eliminationState.ToString(),
+                    GCPlayerEliminationState.Revokable.ToString()
+                );
+                return;
+            }
+
+            var oldState = eliminationState;
+            var changedAtGameTime = Time.time;
+            eliminationState = GCPlayerEliminationState.Revokable;
+            lastSetEliminatedRevokableGameTime = changedAtGameTime;
+            lastSetEliminatedGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} revokably eliminated - reason: " + reason);
+            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
+                index,
+                oldState,
+                eliminationState,
+                reason,
+                changedAtGameTime
+            ));
+        }
+
+        public void SetRevokeEliminated(string reason)
+        {
+            if (!TryAllowMutation("SetRevokeEliminated")) return;
+
+            if (eliminationState != GCPlayerEliminationState.Revokable)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidRevoke,
+                    "Only revokable elimination can be revoked.",
+                    "SetRevokeEliminated",
+                    eliminationState.ToString(),
+                    GCPlayerEliminationState.None.ToString()
+                );
+                return;
+            }
+
+            var oldState = eliminationState;
+            var changedAtGameTime = Time.time;
+            eliminationState = GCPlayerEliminationState.None;
+            lastSetRevokeEliminatedGameTime = changedAtGameTime;
+            lastSetRevokeGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} elimination revoked - reason: " + reason);
+            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
+                index,
+                oldState,
+                eliminationState,
+                reason,
+                changedAtGameTime
+            ));
         }
 
         /// <summary>
@@ -170,9 +347,11 @@ namespace DSB.GC
         /// </summary>
         public void SetScore(int newScore, string reason)
         {
-            GCLog.LogInfo($"Player index {index} score set to {newScore} - reason: " + reason);
+            if (!TryAllowMutation("SetScore")) return;
 
             if (this.score == newScore) return;
+
+            GCLog.LogInfo($"Player index {index} score set to {newScore} - reason: " + reason);
 
             var oldScore = this.score;
             score = newScore;
@@ -198,16 +377,115 @@ namespace DSB.GC
             SetScore(this.score - score, reason);
         }
 
-        /// <summary>
-        /// Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
-        /// </summary>
+        [Obsolete("SetFinished has been removed from the game-facing runtime contract. Choose SetFinishedPermanent(reason) or SetFinishedRevokable(reason).", true)]
         public void SetFinished(string reason)
         {
-            GCLog.LogInfo($"Player index {index} finished - reason: " + reason);
+            throw new InvalidOperationException("SetFinished has been removed. Choose SetFinishedPermanent or SetFinishedRevokable.");
+        }
 
-            finishedTime = Time.time;
+        public void SetFinishedPermanent(string reason)
+        {
+            if (!TryAllowMutation("SetFinishedPermanent")) return;
 
-            OnFinished?.Invoke(reason);
+            if (finishState == GCPlayerFinishState.Permanent)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateFinish,
+                    "Player is already permanently finished.",
+                    "SetFinishedPermanent",
+                    finishState.ToString(),
+                    GCPlayerFinishState.Permanent.ToString()
+                );
+                return;
+            }
+
+            var oldState = finishState;
+            var changedAtGameTime = Time.time;
+            finishState = GCPlayerFinishState.Permanent;
+            lastSetFinishedPermanentGameTime = changedAtGameTime;
+            lastSetFinishedGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} permanently finished - reason: " + reason);
+            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
+                index,
+                oldState,
+                finishState,
+                reason,
+                changedAtGameTime
+            ));
+        }
+
+        public void SetFinishedRevokable(string reason)
+        {
+            if (!TryAllowMutation("SetFinishedRevokable")) return;
+
+            if (finishState == GCPlayerFinishState.Revokable)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateFinish,
+                    "Player is already revokably finished.",
+                    "SetFinishedRevokable",
+                    finishState.ToString(),
+                    GCPlayerFinishState.Revokable.ToString()
+                );
+                return;
+            }
+
+            if (finishState == GCPlayerFinishState.Permanent)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidTransition,
+                    "Permanent finish cannot transition back to revokable finish.",
+                    "SetFinishedRevokable",
+                    finishState.ToString(),
+                    GCPlayerFinishState.Revokable.ToString()
+                );
+                return;
+            }
+
+            var oldState = finishState;
+            var changedAtGameTime = Time.time;
+            finishState = GCPlayerFinishState.Revokable;
+            lastSetFinishedRevokableGameTime = changedAtGameTime;
+            lastSetFinishedGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} revokably finished - reason: " + reason);
+            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
+                index,
+                oldState,
+                finishState,
+                reason,
+                changedAtGameTime
+            ));
+        }
+
+        public void SetRevokeFinished(string reason)
+        {
+            if (!TryAllowMutation("SetRevokeFinished")) return;
+
+            if (finishState != GCPlayerFinishState.Revokable)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidRevoke,
+                    "Only revokable finish can be revoked.",
+                    "SetRevokeFinished",
+                    finishState.ToString(),
+                    GCPlayerFinishState.None.ToString()
+                );
+                return;
+            }
+
+            var oldState = finishState;
+            var changedAtGameTime = Time.time;
+            finishState = GCPlayerFinishState.None;
+            lastSetRevokeFinishedGameTime = changedAtGameTime;
+            lastSetRevokeGameTime = changedAtGameTime;
+            GCLog.LogInfo($"Player index {index} finish revoked - reason: " + reason);
+            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
+                index,
+                oldState,
+                finishState,
+                reason,
+                changedAtGameTime
+            ));
         }
 
         /// <summary>
@@ -215,15 +493,23 @@ namespace DSB.GC
         /// </summary>
         public void SetLives(int newLives, string reason)
         {
-            GCLog.LogInfo($"Player index {index} lives set to {newLives} - reason: " + reason);
+            if (!TryAllowMutation("SetLives")) return;
 
             if (newLives < 0)
             {
                 newLives = 0;
-                Debug.LogWarning("Player lives cannot be less than 0. Setting to 0.");
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.ClampedValue,
+                    "Lives were clamped.",
+                    "SetLives",
+                    null,
+                    null
+                );
             }
 
             if (this.lives == newLives) return;
+
+            GCLog.LogInfo($"Player index {index} lives set to {newLives} - reason: " + reason);
 
             var oldLives = this.lives;
             lives = newLives;
@@ -264,6 +550,8 @@ namespace DSB.GC
         /// </summary>
         public void SetStatus(GCPlayerStatus status, string statusText, string reason)
         {
+            if (!TryAllowMutation("SetStatus")) return;
+
             if (this.status == status && this.statusText == statusText) return;
 
             GCLog.LogInfo($"Player index {index} status set to {status} with text {statusText} - reason: " + reason);
@@ -280,15 +568,29 @@ namespace DSB.GC
         /// </summary>
         public void SetMeter(int newMeter, string reason)
         {
+            if (!TryAllowMutation("SetMeter")) return;
+
             if (newMeter < -1)
             {
-                Debug.LogWarning("Player meter value cannot be less than -1. Clamping to -1.");
                 newMeter = -1;
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.ClampedValue,
+                    "Meter was clamped.",
+                    "SetMeter",
+                    null,
+                    null
+                );
             }
             else if (newMeter > 100)
             {
-                Debug.LogWarning("Player meter value cannot be greater than 100. Clamping to 100.");
                 newMeter = 100;
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.ClampedValue,
+                    "Meter was clamped.",
+                    "SetMeter",
+                    null,
+                    null
+                );
             }
 
             if (this.meter == newMeter) return;
@@ -315,6 +617,58 @@ namespace DSB.GC
         virtual public string GetHudValueText()
         {
             throw new Exception("GetHudValueText not implemented. Implement this in your GCPlayer subclass to display a custom value in the HUD.");
+        }
+
+        private bool TryAllowMutation(string mutatorName)
+        {
+            if (GamingCouch.Instance == null || GamingCouch.Instance.Status != GCStatus.GameOver)
+            {
+                return true;
+            }
+
+            EmitStateDiagnostic(
+                GCDiagnosticCodes.PostGameOverMutation,
+                "Player mutation after game over was ignored.",
+                mutatorName,
+                null,
+                null
+            );
+            return false;
+        }
+
+        private void EmitStateDiagnostic(
+            string code,
+            string message,
+            string mutatorName,
+            string oldState,
+            string requestedState
+        )
+        {
+            var context = new GCDiagnosticContext()
+                .AddDetail("mutator", mutatorName);
+
+            if (index >= 0)
+            {
+                context.WithPlayerIndex(index);
+            }
+
+            if (oldState != null)
+            {
+                context.AddDetail("oldState", oldState);
+            }
+
+            if (requestedState != null)
+            {
+                context.AddDetail("requestedState", requestedState);
+            }
+
+            GCDiagnostics.Emit(
+                code,
+                GCDiagnosticSeverity.Warning,
+                GCDiagnosticSourceAreas.State,
+                message,
+                context
+            );
         }
     }
 }

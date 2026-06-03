@@ -1009,7 +1009,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         Assert.That(source, Does.Contain("private void ApplyRandomFinalScores()"));
         Assert.That(source, Does.Contain("Random.Range(0, clampedMaxScore + 1)"));
         Assert.That(source, Does.Contain("player.SetScore("));
-        Assert.That(source, Does.Contain("player.SetFinished("));
+        Assert.That(source, Does.Contain("player.SetFinishedPermanent("));
         Assert.That(source, Does.Contain("GamingCouch.Instance.GameOver();"));
     }
 

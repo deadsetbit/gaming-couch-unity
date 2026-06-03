@@ -52,17 +52,24 @@ namespace DSB.GC.Unity.NGO
 
                 if (newValue)
                 {
-                    player.SetEliminated(TEMP_REASON_NOT_SYNCED);
+                    player.SetEliminatedRevokable(TEMP_REASON_NOT_SYNCED);
                 }
                 else
                 {
-                    player.SetUneliminated(TEMP_REASON_NOT_SYNCED);
+                    player.SetRevokeEliminated(TEMP_REASON_NOT_SYNCED);
                 }
             };
 
             isFinished.OnValueChanged += (oldValue, newValue) =>
             {
-                player.SetFinished(TEMP_REASON_NOT_SYNCED);
+                if (newValue)
+                {
+                    player.SetFinishedRevokable(TEMP_REASON_NOT_SYNCED);
+                }
+                else
+                {
+                    player.SetRevokeFinished(TEMP_REASON_NOT_SYNCED);
+                }
             };
 
             score.OnValueChanged += (oldValue, newValue) =>
@@ -97,9 +104,8 @@ namespace DSB.GC.Unity.NGO
             playerType.Value = player.PlayerType;
 
             // sync basic GCPlayer state changes by default
-            player.OnEliminated += reason => isEliminated.Value = true;
-            player.OnUneliminated += reason => isEliminated.Value = false;
-            player.OnFinished += reason => isFinished.Value = true;
+            player.OnEliminationStateChanged += args => isEliminated.Value = player.IsEliminated;
+            player.OnFinishStateChanged += args => isFinished.Value = player.IsFinished;
             player.OnScoreChanged += (oldScore, newScore, reason) =>
             {
                 this.score.Value = newScore;
