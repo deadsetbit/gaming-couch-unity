@@ -56,3 +56,15 @@ Enabled bot seats on an entry with `botSupport: false` are warning-only.
 Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a valid, non-conflicted inspector draft before capturing setup/play options. Invalid or conflicted drafts block Play Mode or restart until resolved. JSON changes during active Play Mode are deferred until a Gaming Couch restart or the next Play Mode entry.
 
 The package depends on `com.unity.nuget.newtonsoft-json` for editor-only JSON parsing and `JObject` writes that preserve unrelated root `gc.dev.json` fields. Runtime and WebGL builds do not use this editor sync path.
+
+## Runtime Contract Notes
+
+Unity game code uses active player indices only. `GCPlayer.Index`, `GCActivePlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and terminal placement payloads all refer to the same zero-based run-scoped participant index.
+
+DevApp seats are one-based local development slots for controller assignment and display. Hosted platform player IDs are private adapter/platform bookkeeping. Neither seats nor platform player IDs are public Unity runtime identity, and structured diagnostics must not expose platform player IDs.
+
+Player state APIs distinguish permanent and revokable state. Use `SetEliminatedPermanent`, `SetEliminatedRevokable`, and `SetRevokeEliminated` for elimination, and `SetFinishedPermanent`, `SetFinishedRevokable`, and `SetRevokeFinished` for finish. Revokable state counts while active and can be revoked; permanent state cannot be revoked.
+
+Runtime state and diagnostics flow through `runtime_messages`. Screen-coordinate presentation anchors flow through `screen_space` as `playerOverhead` and `playerPosition` anchors keyed by `playerIndex`. HUD rendering consumes runtime state and screen-space anchors; HUD payloads are not the semantic source of truth.
+
+When `gc.platform.json` is missing or invalid in local development, runtime code receives a read-only fallback platform metadata view with `fallbackActive: true` and exact `notdefined` game/entry values. Unity reports warning diagnostics for the fallback and never writes or repairs `gc.platform.json`.

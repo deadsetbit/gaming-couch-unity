@@ -66,6 +66,18 @@ Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a vali
 
 The package declares `com.unity.nuget.newtonsoft-json` for editor-only JSON sync and unknown-field-preserving `gc.dev.json` writes. Runtime and WebGL play behavior do not depend on this editor sync path.
 
+# Runtime contract
+
+Unity game code uses active player indices only. `GCPlayer.Index`, `GCActivePlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and terminal placement payloads all refer to the same zero-based run-scoped participant index.
+
+DevApp seats are one-based local development slots for controller assignment and display. Hosted platform player IDs are private adapter/platform bookkeeping. Neither seats nor platform player IDs are public Unity runtime identity, and structured diagnostics must not expose platform player IDs.
+
+Player state APIs distinguish permanent and revokable state. Use `SetEliminatedPermanent`, `SetEliminatedRevokable`, and `SetRevokeEliminated` for elimination, and `SetFinishedPermanent`, `SetFinishedRevokable`, and `SetRevokeFinished` for finish. Revokable state counts while active and can be revoked; permanent state cannot be revoked.
+
+Runtime state and diagnostics flow through `runtime_messages`. Screen-coordinate presentation anchors flow through `screen_space` as `playerOverhead` and `playerPosition` anchors keyed by `playerIndex`. HUD rendering consumes runtime state and screen-space anchors; HUD payloads are not the semantic source of truth.
+
+When `gc.platform.json` is missing or invalid in local development, runtime code receives a read-only fallback platform metadata view with `fallbackActive: true` and exact `notdefined` game/entry values. Unity reports warning diagnostics for the fallback and never writes or repairs `gc.platform.json`.
+
 # Basic integration
 
 ## 1) Add GamingCouch game object
@@ -113,7 +125,9 @@ private void GamingCouchSetup(GCSetupOptions options)
             // Adjust the placement sorting criteria to fit your game.
             // You can add/remove or change the order of the components.
             // NOTE: In order for the placement criteria to work, you need
-            // to use the GCPlayer methods, such as SetEliminated, SetScore/AddScore, SetFinished.
+            // to use the GCPlayer methods, such as SetEliminatedPermanent,
+            // SetEliminatedRevokable, SetScore/AddScore, SetFinishedPermanent,
+            // or SetFinishedRevokable.
             placementCriteria = new GCPlacementSortCriteria[] {
                 GCPlacementSortCriteria.EliminatedDescending,
                 GCPlacementSortCriteria.ScoreDescending,
@@ -171,18 +185,18 @@ Tracks players position and enables features such as:
 
 You should add this to a transform that indicates the player's position in the world.
 
-## Overhead HUD (Name tags, points, meter bar)
+## Overhead HUD (screen-space anchors, points, meter bar)
 
-To add name tags for players, add the GCPlayerOverhead component to your player game object.
-Usually you want to position the name tag above the player, so you can also add the GCPlayerOverhead component
+To emit an overhead screen-space anchor for a player, add the GCPlayerOverhead component to your player game object.
+Usually you want to position the overhead anchor above the player, so you can also add the GCPlayerOverhead component
 to a child object of the player game object and offset it above the player's head, for example.
 
-In case you need to place the name tag outside the player game object, manually define the tag's player with `GCPlayerOverhead.SetPlayer`.
+In case you need to place the overhead anchor outside the player game object, manually define the anchor's player with `GCPlayerOverhead.SetPlayer`.
 
-Adding GCPlayerOverhead will also automatically display any related HUD elements for the player, such as points or meter bar.
+Adding GCPlayerOverhead emits `playerOverhead` screen-space data keyed by `playerIndex`. Hosted HUD rendering can use that anchor with canonical runtime state for related player elements such as points or meter bar.
 
-NOTE: Currently, there is no way to show the name tags in the editor or unity build alone.
-The only way to see if the name tags are working correctly is to test it in the Gaming Couch platform.
+NOTE: Currently, there is no way to show hosted overhead HUD rendering in the editor or Unity build alone.
+The only way to see if the hosted overhead HUD rendering is working correctly is to test it in the Gaming Couch platform.
 
 ## Configure Players HUD to display score, lives etc.
 
@@ -221,12 +235,19 @@ using DSB.GC.Hud;
 
 GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 {
-    players = playerStore.Players.Select(player => new GCPlayersHudDataPlayer
+    players = playerStore.Players.Select((player, index) => new GCPlayersHudDataPlayer
     {
-        playerId = player.Id, // The GamingCouch player id
-        eliminated = player.IsEliminated,
-        placement = 0, // The placement of the player to sort the players HUD by
-        value = ""; // The value to display in the HUD. Set depending on the value type set in the GCGameHudOptions
+        playerIndex = player.Index,
+        score = player.Score,
+        lives = player.Lives,
+        status = player.Status.ToString(),
+        statusText = player.StatusText,
+        eliminationState = player.EliminationState.ToString(),
+        finishState = player.FinishState.ToString(),
+        eliminated = player.IsEliminated, // Compatibility projection for older HUD receivers.
+        placement = index + 1, // One-based placement used to sort the Players HUD.
+        value = "", // The value to display in the HUD. Set depending on the value type set in the GCGameHudOptions.
+        meter = player.Meter,
     }).ToArray()
 });
 ```
@@ -235,7 +256,8 @@ GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
 
 ## Configure player
 
-When the player is instantiated by GamingCouch some properties are available, such as Gaming Couch player id, color and name.
+When the player is instantiated by GamingCouch, game-facing runtime properties are available, such as active player index, color, and player type.
+Platform player IDs and player names are not available to Unity game code.
 
 For all available properties, see the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_value).
 
@@ -264,7 +286,7 @@ private void Update()
 {
     foreach (var player in playerStore.Players)
     {
-        var inputs = GamingCouch.Instance.GetInputsByPlayerId(player.Id);
+        var inputs = GamingCouch.Instance.GetInputsByPlayerIndex(player.Index);
         if (inputs == null) continue;
 
         player.PlayerController.Move(inputs.leftX);
@@ -276,11 +298,15 @@ private void Update()
 # Player placement
 
 You do not need to sort the players, just define correct placement criteria in the SetupGame call (see above)
-and use the GCPlayer methods to set the player state (eliminated, score, finished):
+and use the GCPlayer methods to set score, elimination state, and finish state:
 
 ```C#
-// Set player eliminated
-player.SetEliminated("Out of bounds");
+// Set player permanently eliminated
+player.SetEliminatedPermanent("Out of bounds");
+
+// Set player temporarily eliminated, then revoke that state if they recover.
+player.SetEliminatedRevokable("Tagged");
+player.SetRevokeEliminated("Respawned");
 
 // Set player score
 player.SetScore(0, "Dropped all coins");
@@ -290,7 +316,10 @@ player.AddScore(1, "Collected a coin");
 player.SubtractScore(2, "Pushed off the edge");
 
 // Set player finished
-player.SetFinished("Finish line");
+// Set player permanently finished, or use revokable finish when finish can be rolled back.
+player.SetFinishedPermanent("Finish line");
+player.SetFinishedRevokable("Checkpoint finish");
+player.SetRevokeFinished("Checkpoint invalidated");
 ```
 
 # Player colors
