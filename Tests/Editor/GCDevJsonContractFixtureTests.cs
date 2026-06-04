@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using DSB.GC;
 using DSB.GC.Dev;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -365,13 +364,11 @@ public sealed class GCDevJsonContractFixtureTests
 
     private static GCPlatformRuntimeView BuildPlatformRuntimeView(string json, string selectedEntryKey)
     {
-        return GCPlatformRuntimeViewBuilder.Build(
-            GCPlatformDataValidation.BuildReadResult(GCPlatformDataParsedFile.Parsed(
-                "/tmp/gc.platform.json",
-                JObject.Parse(json)
-            )),
-            selectedEntryKey
-        );
+        using (var fixture = new ContractFixture())
+        {
+            File.WriteAllText(fixture.PlatformDataJsonPath, json, Encoding.UTF8);
+            return GCPlatformRuntimeViewBuilder.Build(fixture.PlatformDataStore.Read(), selectedEntryKey);
+        }
     }
 
     private static void AssertFallbackPlatformView(GCPlatformRuntimeView view, string validationState)
@@ -661,7 +658,7 @@ public sealed class GCDevJsonContractFixtureTests
             get { return Path.Combine(rootPath, GCDevJsonFile.FileName); }
         }
 
-        private string PlatformDataJsonPath
+        internal string PlatformDataJsonPath
         {
             get { return Path.Combine(rootPath, GCPlatformDataFile.FileName); }
         }
