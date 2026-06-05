@@ -30,9 +30,9 @@ namespace DSB.GC.Dev
                 projectRootPath = projectRootResolver.ResolveProjectRootPath(),
                 projectName = projectRootResolver.ResolveProjectName(),
                 platform = packageIdentity.platform,
-                packageName = packageIdentity.packageName,
-                packageVersion = packageIdentity.packageVersion,
                 gameProtocolVersion = packageIdentity.gameProtocolVersion,
+                integrationName = packageIdentity.packageName,
+                integrationVersion = packageIdentity.packageVersion,
                 rendererMode = RendererMode,
                 displayName = DisplayName,
             };
@@ -206,9 +206,9 @@ namespace DSB.GC.Dev
         public string projectRootPath;
         public string projectName;
         public string platform;
-        public string packageName;
-        public string packageVersion;
         public int gameProtocolVersion;
+        public string integrationName;
+        public string integrationVersion;
         public string rendererMode;
         public string displayName;
     }

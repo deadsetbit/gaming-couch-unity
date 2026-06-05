@@ -12,7 +12,7 @@ public sealed class GCDevAppRuntimeMessagesTests
     }
 
     [Test]
-    public void RuntimeRegisterMessageUsesPackageIdentityAndKeepsWireFields()
+    public void RuntimeRegisterMessageNormalizesPackageIdentityForWireFields()
     {
         var packageIdentity = GCEditorPackageIdentity.Resolve();
         var message = GCDevAppRuntimeMessages.BuildRuntimeRegisterMessage(
@@ -27,9 +27,9 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(message.projectRootPath, Is.EqualTo("/tmp/gaming-couch-test"));
         Assert.That(message.projectName, Is.EqualTo("Test Game"));
         Assert.That(message.platform, Is.EqualTo(packageIdentity.platform));
-        Assert.That(message.packageName, Is.EqualTo(packageIdentity.packageName));
-        Assert.That(message.packageVersion, Is.EqualTo(packageIdentity.packageVersion));
         Assert.That(message.gameProtocolVersion, Is.EqualTo(packageIdentity.gameProtocolVersion));
+        Assert.That(message.integrationName, Is.EqualTo(packageIdentity.packageName));
+        Assert.That(message.integrationVersion, Is.EqualTo(packageIdentity.packageVersion));
         Assert.That(message.rendererMode, Is.EqualTo("external"));
         Assert.That(message.displayName, Is.EqualTo("Unity Editor"));
         Assert.That(json, Does.Contain("\"type\":\"runtime_register\""));
@@ -37,9 +37,11 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(json, Does.Contain("\"projectRootPath\":\"/tmp/gaming-couch-test\""));
         Assert.That(json, Does.Contain("\"projectName\":\"Test Game\""));
         Assert.That(json, Does.Contain("\"platform\":\"" + packageIdentity.platform + "\""));
-        Assert.That(json, Does.Contain("\"packageName\":\"" + packageIdentity.packageName + "\""));
-        Assert.That(json, Does.Contain("\"packageVersion\":\"" + packageIdentity.packageVersion + "\""));
         Assert.That(json, Does.Contain("\"gameProtocolVersion\":" + packageIdentity.gameProtocolVersion));
+        Assert.That(json, Does.Contain("\"integrationName\":\"" + packageIdentity.packageName + "\""));
+        Assert.That(json, Does.Contain("\"integrationVersion\":\"" + packageIdentity.packageVersion + "\""));
+        Assert.That(json, Does.Not.Contain("\"packageName\""));
+        Assert.That(json, Does.Not.Contain("\"packageVersion\""));
         Assert.That(json, Does.Contain("\"rendererMode\":\"external\""));
         Assert.That(json, Does.Contain("\"displayName\":\"Unity Editor\""));
     }
