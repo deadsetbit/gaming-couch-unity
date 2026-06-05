@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Reflection;
 using DSB.GC.Dev;
+using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -75,6 +77,36 @@ public sealed class GCDevAppIntegrationReconnectTests
         }
     }
 
+    [Test]
+    public void EnabledIntegrationSubscribesScreenSpaceOutputForDevAppPublishing()
+    {
+        GCRuntimeMessageOutput.ResetForTests(() => 0);
+        var gameObject = new GameObject("GCDevAppIntegration screen-space hook test");
+        var integration = gameObject.AddComponent<GCDevAppIntegration>();
+
+        try
+        {
+            Assert.That(
+                Array.Exists(
+                    GetScreenSpaceHandlers(),
+                    handler =>
+                        ReferenceEquals(handler.Target, integration) &&
+                        handler.Method.Name == "PublishScreenSpace"
+                ),
+                Is.True
+            );
+
+            integration.enabled = false;
+
+            Assert.That(GetScreenSpaceHandlers(), Is.Empty);
+        }
+        finally
+        {
+            Object.DestroyImmediate(gameObject);
+            GCRuntimeMessageOutput.ResetForTests(null);
+        }
+    }
+
     private static bool GetShouldReconnect(GCDevAppIntegration integration)
     {
         return (bool)GetPrivateField("shouldReconnect").GetValue(integration);
@@ -88,6 +120,18 @@ public sealed class GCDevAppIntegrationReconnectTests
     private static IEnumerator InvokeScheduleReconnect(GCDevAppIntegration integration)
     {
         return (IEnumerator)GetPrivateMethod("ScheduleReconnect").Invoke(integration, null);
+    }
+
+    private static Delegate[] GetScreenSpaceHandlers()
+    {
+        var field = typeof(GCRuntimeScreenSpaceOutput).GetField(
+            "ScreenSpaceEmitted",
+            BindingFlags.Static | BindingFlags.NonPublic
+        );
+        Assert.That(field, Is.Not.Null, "Expected ScreenSpaceEmitted backing field to exist.");
+
+        var handler = field.GetValue(null) as MulticastDelegate;
+        return handler?.GetInvocationList() ?? Array.Empty<Delegate>();
     }
 
     private static FieldInfo GetPrivateField(string fieldName)

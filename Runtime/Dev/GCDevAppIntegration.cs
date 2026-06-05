@@ -48,11 +48,13 @@ namespace DSB.GC.Dev
         private void OnEnable()
         {
             GCRuntimeMessageOutput.RuntimeMessagesEmitted += PublishRuntimeMessages;
+            GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted += PublishScreenSpace;
         }
 
         private void OnDisable()
         {
             GCRuntimeMessageOutput.RuntimeMessagesEmitted -= PublishRuntimeMessages;
+            GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted -= PublishScreenSpace;
         }
 
         private void Update()
@@ -182,7 +184,17 @@ namespace DSB.GC.Dev
 
         void PublishRuntimeMessages(string runtimeMessagesJson)
         {
-            if (string.IsNullOrEmpty(runtimeMessagesJson) ||
+            PublishRuntimeOutput(runtimeMessagesJson);
+        }
+
+        void PublishScreenSpace(string screenSpaceJson)
+        {
+            PublishRuntimeOutput(screenSpaceJson);
+        }
+
+        void PublishRuntimeOutput(string runtimeOutputJson)
+        {
+            if (string.IsNullOrEmpty(runtimeOutputJson) ||
                 string.IsNullOrEmpty(currentRunId) ||
                 websocket == null ||
                 websocket.State != WebSocketState.Open)
@@ -190,7 +202,7 @@ namespace DSB.GC.Dev
                 return;
             }
 
-            StartCoroutine(SendJsonMessage(runtimeMessagesJson));
+            StartCoroutine(SendJsonMessage(runtimeOutputJson));
         }
 
         internal void PublishRuntimeGameOver(int[] playerIndicesByPlacement)

@@ -80,5 +80,14 @@ mergeInto(LibraryManager.library, {
 
     var runtimeMessages = JSON.parse(UTF8ToString(runtimeMessagesJsonString));
     window.gamingCouchRuntimeMessages(runtimeMessages);
+  },
+
+  GamingCouchScreenSpace: function (screenSpaceJsonString) {
+    if (!window.gamingCouchScreenSpace) {
+      return;
+    }
+
+    var screenSpace = JSON.parse(UTF8ToString(screenSpaceJsonString));
+    window.gamingCouchScreenSpace(screenSpace);
   }
 });

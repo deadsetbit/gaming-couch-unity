@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using DSB.GC;
@@ -8,6 +10,7 @@ using DSB.GC.Hud;
 using DSB.GC.Log;
 using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -230,6 +233,18 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void WebGLJslibExportsCanonicalScreenSpaceBridge()
+    {
+        var bridgePath = Path.Combine(FindPackageRootPath(), "Plugins", "GamingCouch.jslib");
+        var bridge = File.ReadAllText(bridgePath);
+
+        Assert.That(bridge, Does.Contain("GamingCouchScreenSpace: function (screenSpaceJsonString)"));
+        Assert.That(bridge, Does.Contain("window.gamingCouchScreenSpace"));
+        Assert.That(bridge, Does.Contain("JSON.parse(UTF8ToString(screenSpaceJsonString))"));
+        Assert.That(bridge, Does.Contain("window.gamingCouchScreenSpace(screenSpace);"));
+    }
+
+    [Test]
     public void ScreenSpaceRejectsDuplicateAnchorPairs()
     {
         CreateRuntimeGame(1);
@@ -378,6 +393,17 @@ public sealed class GCRuntimeOutputContractTests
 
         gamingCouch.QueueRuntimeStateSnapshot();
         return new RuntimeGameContext(gamingCouch, game, players);
+    }
+
+    private static string FindPackageRootPath()
+    {
+        var packageInfo = PackageInfo.FindForAssembly(typeof(GamingCouch).Assembly);
+        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+        {
+            return packageInfo.resolvedPath;
+        }
+
+        throw new InvalidOperationException("Could not resolve Gaming Couch package root.");
     }
 
     private GCPlayer CreatePlayer(int playerIndex)
