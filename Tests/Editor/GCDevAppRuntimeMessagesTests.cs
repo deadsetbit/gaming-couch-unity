@@ -185,24 +185,6 @@ public sealed class GCDevAppRuntimeMessagesTests
     }
 
     [Test]
-    public void RuntimeGameOverJsonKeepsRunIdPlacementsAndWireFieldNames()
-    {
-        var placements = new[] { 3, 1, 2 };
-        var message = GCDevAppRuntimeMessages.BuildRuntimeGameOverMessage(555L, "run-456", placements);
-        placements[0] = 99;
-        var json = JsonUtility.ToJson(message);
-
-        Assert.That(message.type, Is.EqualTo("runtime_game_over"));
-        Assert.That(message.timestamp, Is.EqualTo(555L));
-        Assert.That(message.runId, Is.EqualTo("run-456"));
-        Assert.That(message.playerIndicesByPlacement, Is.EqualTo(new[] { 3, 1, 2 }));
-        Assert.That(json, Does.Contain("\"type\":\"runtime_game_over\""));
-        Assert.That(json, Does.Contain("\"runId\":\"run-456\""));
-        Assert.That(json, Does.Contain("\"playerIndicesByPlacement\":[3,1,2]"));
-        Assert.That(json, Does.Contain("\"timestamp\":555"));
-    }
-
-    [Test]
     public void RuntimeOutputSettingsPreserveExplicitUnityLogCaptureWithoutDevAppOverride()
     {
         var options = new GCRuntimeOutputOptions

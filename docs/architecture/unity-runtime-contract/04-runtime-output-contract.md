@@ -4,7 +4,7 @@ Status: Core contract decisions captured; implementation-ready for the staged ro
 
 ## Purpose
 
-Define the Unity runtime output contract for semantic runtime messages, screen-space data, diagnostics, and effectful platform submissions. Replace HUD-owned data and passive event framing with a typed runtime output model that support tooling, DevApp, hosted adapters, HUD rendering, and future AI/debugging flows can consume.
+Define the Unity runtime output contract for semantic runtime messages, screen-space data, diagnostics, and effectful platform result messages. Replace HUD-owned data and passive event framing with a typed runtime output model that support tooling, DevApp, hosted adapters, HUD rendering, and future AI/debugging flows can consume.
 
 Reserve platform-to-runtime ingress shape without implementing inbound behavior in this slice.
 
@@ -13,15 +13,15 @@ Reserve platform-to-runtime ingress shape without implementing inbound behavior 
 - Runtime player/game state is the canonical source for player facts such as score, lives, status, meter, placement, elimination state, and finish state.
 - HUD is a consumer of runtime state, screen-space anchors, and HUD configuration. HUD is not the semantic data model.
 - Unity has two physical runtime output paths in v1:
-  - `runtime_messages` for semantic state, transitions, diagnostics, and effectful platform-state submissions.
+  - `runtime_messages` for semantic state, transitions, diagnostics, and effectful platform-state result messages.
   - `screen_space` for hot latest-state screen-coordinate anchors.
 - Host-owned WebGL loader output and browser console mirroring are not runtime output paths. They may be useful for local debugging, but `runtime_messages` and `screen_space` are the only v1 Unity runtime contract outputs.
 - Static active-player facts live in the active-run roster/setup context: `playerIndex`, player type, and player color. Dynamic state snapshots reference `playerIndex` and do not repeat type or color.
 - Runtime message vocabulary reuses the `GCPlayer` state model from `03-player-state-model.md`: elimination state and finish state are each `None`, `Revokable`, or `Permanent`.
 - Runtime messages are not a public custom message API in v1. The Unity package emits cataloged messages from supported GC runtime APIs only.
 - The Unity package must not mirror runtime messages through `Debug.Log` or browser console output. Logging runtime messages would double the runtime output work and make console text look like a contract source.
-- Terminal placement submission is the first v1 effectful runtime message. Future effectful messages may submit other platform-owned game facts, but v1 only accepts total placement order.
-- The immediate terminal placement migration uses an object-wrapped result payload instead of a bare array. Initial shape is `GameOverResult { playerIndicesByPlacement: int[] }`.
+- Game over is the first v1 effectful runtime message. Future `gc.game.game_over` payloads may carry additional platform-owned game-over facts, but v1 only accepts total placement order.
+- The immediate game-over migration uses an object-wrapped result payload instead of a bare array. Initial shape is `GameOverResult { playerIndicesByPlacement: int[] }`.
 - The legacy bare array bridge is migration-only and must not receive new result semantics.
 
 ## Active Run Context
@@ -119,7 +119,7 @@ All integer fields are JSON numbers that must be finite integers. Unless a field
 ```
 
 - Snapshots are full current run state, not deltas or patch operations.
-- Snapshots emit on play start, meaningful semantic state changes, and before terminal placement submission. Unity flushes pending state snapshot output before, or in the same ordered batch immediately before, the terminal placement submission message; receiver acceptance happens after validation.
+- Snapshots emit on play start, meaningful semantic state changes, and before game over. Unity flushes pending state snapshot output before, or in the same ordered batch immediately before, the game-over message; receiver acceptance happens after validation.
 - Snapshot emission is change-driven and coalesced. Do not emit every frame unless a semantic state value changes every frame.
 - Snapshot payloads include all active players exactly once.
 - Player type and color are read from the active-run roster/setup context, not repeated in each dynamic snapshot.
@@ -204,9 +204,9 @@ Structured GC diagnostics and captured Unity log records are carried as `gc.diag
 | `details` | No | flat object | Primitive values, bounded strings, and small primitive arrays only. |
 | `debug` | No | bounded object | Non-fingerprinted troubleshooting evidence. |
 
-## Effectful Terminal Placement Message
+## Effectful Game-Over Message
 
-`gc.game.terminal_placement_submitted` is the first v1 effectful runtime message.
+`gc.game.game_over` is the first v1 effectful runtime message.
 
 Payload is the accepted v1 `GameOverResult` object:
 
@@ -226,19 +226,19 @@ Rules:
 - V1 represents a total placement order only. It does not represent ties, DNF, teams, abandoned rounds, no-contest outcomes, score snapshots, or structured result reasons.
 - Receiver-side accept/reject semantics are required. Accepted messages update platform-owned result state once. Rejected messages do not update result state and emit diagnostics.
 - No Unity-facing acknowledgement response is required in v1. A future bidirectional acknowledgement contract is reserved.
-- Pending state snapshot output must be flushed before, or in the same ordered batch immediately before, terminal placement submission.
+- Pending state snapshot output must be flushed before, or in the same ordered batch immediately before, the game-over message.
 - The legacy bare array bridge remains array-shaped and is interpreted only as `playerIdsByPlacement` for already-built older Unity games.
 
-Terminal placement acceptance is first-accepted-wins per active run:
+Game-over acceptance is first-accepted-wins per active run:
 
-- The receiver tracks whether terminal placement has already been accepted for the active run.
-- The first valid terminal placement message updates platform-owned result state and freezes that result for the active run.
-- Rejected messages before any accepted terminal placement do not freeze the result; a later valid terminal placement may still be accepted.
-- Any later terminal placement message after the first accepted one is rejected and diagnosed with `gc.runtime.invalid_terminal_placement`, even if the later payload is byte-for-byte identical. V1 does not have a Unity acknowledgement or retry contract that would make identical duplicates idempotently accepted.
-- If one ordered batch contains multiple terminal placement messages, process them by `sequence`: the first valid one may be accepted, and every later one is rejected after the result is frozen.
-- Rejections for duplicate, replayed, or second terminal placement messages must not mutate playlist, stats, or platform result state again.
+- The receiver tracks whether game over has already been accepted for the active run.
+- The first valid game-over message updates platform-owned result state and freezes that result for the active run.
+- Rejected messages before any accepted game over do not freeze the result; a later valid game-over message may still be accepted.
+- Any later game-over message after the first accepted one is rejected and diagnosed with `gc.runtime.invalid_terminal_placement`, even if the later payload is byte-for-byte identical. V1 does not have a Unity acknowledgement or retry contract that would make identical duplicates idempotently accepted.
+- If one ordered batch contains multiple game-over messages, process them by `sequence`: the first valid one may be accepted, and every later one is rejected after the result is frozen.
+- Rejections for duplicate, replayed, or second game-over messages must not mutate playlist, stats, or platform result state again.
 
-`gc.game.terminal_placement_submitted` payload schema:
+`gc.game.game_over` payload schema:
 
 | Field | Required | Type/bounds | Notes |
 | --- | --- | --- | --- |
@@ -326,7 +326,7 @@ Boot-time profiling configuration may disable runtime/package-owned optional out
 - Unity log capture
 - `screen_space`
 
-Core GC validation diagnostics remain enabled even under profiling configuration. This includes diagnostics for rejected runtime messages, invalid terminal placement, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings.
+Core GC validation diagnostics remain enabled even under profiling configuration. This includes diagnostics for rejected runtime messages, invalid game-over placement payloads, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings.
 
 Host-owned debug output has separate launch controls and is not part of the Unity runtime contract:
 
@@ -335,11 +335,11 @@ Host-owned debug output has separate launch controls and is not part of the Unit
 
 Those host controls do not need to reach Unity runtime unless the host wants to expose them as status metadata. They are not gated by Unity log capture.
 
-Transition messages remain enabled by default when snapshots are disabled. Effectful messages cannot be disabled by profiling config because they carry platform-state submissions.
+Transition messages remain enabled by default when snapshots are disabled. Effectful messages cannot be disabled by profiling config because they carry platform-state results.
 
 ## Reserved Result Growth
 
-Richer terminal result semantics are reserved for future effectful runtime messages after a general result/versioning policy is chosen.
+Richer terminal result semantics are reserved for future `gc.game.game_over` payload evolution after a general result/versioning policy is chosen.
 
 Reserved future concepts:
 
@@ -350,7 +350,7 @@ Reserved future concepts:
 - `reason`: stable result-level reason code plus bounded developer text.
 - `metadata`: bounded platform-owned extension object, not a game-defined arbitrary data bag.
 
-V1 sinks must reject these future fields if they appear in the v1 terminal placement payload. Do not silently ignore richer result data because that would make developer validation misleading.
+V1 sinks must reject these future fields if they appear in the v1 game-over payload. Do not silently ignore richer result data because that would make developer validation misleading.
 
 ## Platform-To-Runtime Ingress Reservation
 
@@ -384,31 +384,31 @@ Reserved ingress rules:
 
 - Runtime output has two physical paths: `runtime_messages` and `screen_space`.
 - Runtime messages have strict validation, sequence ordering, runtime-relative timing, and active-run context resolution.
-- Full state snapshots are emitted on play start, meaningful semantic changes, and before terminal placement submission unless disabled at boot.
+- Full state snapshots are emitted on play start, meaningful semantic changes, and before game over unless disabled at boot.
 - Transition catalog covers score, lives, status, meter, elimination state, and finish state changes.
 - Diagnostics and captured Unity logs use the runtime message path while preserving the diagnostics spine contract.
 - `screen_space` carries player-indexed overhead and player-position anchors as latest-state view data.
-- Terminal placement submission accepts only the object-wrapped total placement payload and keeps the legacy bare array bridge separate.
+- `gc.game.game_over` accepts only the object-wrapped total placement payload and keeps the legacy bare array bridge separate.
 - Runtime messages are not duplicated through Unity/browser console logging, and host-owned console mirroring is documented as non-contract debug output.
 - Future death screens, personal sounds, victory sounds, stats, moderation, replay, telemetry, and AI support can consume v1 runtime messages or clearly require future message types.
 
 ## Test Scenarios
 
-- `playerIndex: 0` appears in state snapshots, transition messages, screen-space anchors, diagnostics, and terminal placement submissions.
+- `playerIndex: 0` appears in state snapshots, transition messages, screen-space anchors, diagnostics, and game-over placement payloads.
 - Active-run roster carries player type and color; dynamic snapshots do not repeat type or color.
 - A score, lives, status, or meter change emits a transition message and one coalesced state snapshot.
 - A permanent elimination state call emits one `gc.player.elimination_state_changed` message with `value: "Permanent"`.
 - A duplicate permanent elimination call emits a state diagnostic and no second transition message.
-- With snapshots disabled, transition messages and terminal placement submission still emit.
+- With snapshots disabled, transition messages and the game-over message still emit.
 - `screen_space` emits separate `playerOverhead` and `playerPosition` anchors for the same player.
-- `screen_space` can be disabled at boot without disabling terminal placement submission.
-- Terminal placement with every active player index exactly once is accepted and updates platform result state.
-- Terminal placement with a missing, duplicate, or out-of-range index is rejected and does not publish platform result state.
-- After one valid terminal placement is accepted, any duplicate, replayed, or second terminal placement message is rejected and does not mutate platform result state again.
+- `screen_space` can be disabled at boot without disabling the game-over message.
+- Game over with every active player index exactly once is accepted and updates platform result state.
+- Game over with a missing, duplicate, or out-of-range placement index is rejected and does not publish platform result state.
+- After one valid game-over message is accepted, any duplicate, replayed, or second game-over message is rejected and does not mutate platform result state again.
 - A malformed runtime message is rejected and diagnosed.
 - A captured Unity warning record is emitted as `gc.diagnostic` with active-run `sequence` and `runtimeTimeMs` when Unity log capture is enabled.
 - With Unity log capture disabled, third-party `Debug.LogWarning` output does not enter `runtime_messages`.
 - Normal third-party `Debug.Log` output enters `runtime_messages` only when full-log capture is explicitly enabled by launch policy.
 - Toggling WebGL loader `print`/`printErr` mirroring does not enable or disable Unity runtime log capture.
-- A v1 terminal placement payload containing reserved future result fields is rejected rather than partially accepted.
-- A legacy bare terminal placement array is accepted only through the temporary bridge and diagnosed as `gc.api.legacy_runtime_payload`.
+- A v1 game-over payload containing reserved future result fields is rejected rather than partially accepted.
+- A legacy bare game-over array is accepted only through the temporary bridge and diagnosed as `gc.api.legacy_runtime_payload`.

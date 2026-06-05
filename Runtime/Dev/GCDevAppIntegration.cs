@@ -1,6 +1,5 @@
 using UnityEngine;
 #if UNITY_EDITOR
-using System;
 using System.Collections;
 using System.Net.WebSockets;
 using System.Text;
@@ -177,11 +176,6 @@ namespace DSB.GC.Dev
             isSnapshotSendInFlight = false;
         }
 
-        IEnumerator SendRuntimeGameOverMessage(RuntimeGameOverMessage message)
-        {
-            yield return SendJsonMessage(JsonUtility.ToJson(message));
-        }
-
         void PublishRuntimeMessages(string runtimeMessagesJson)
         {
             PublishRuntimeOutput(runtimeMessagesJson);
@@ -203,21 +197,6 @@ namespace DSB.GC.Dev
             }
 
             StartCoroutine(SendJsonMessage(runtimeOutputJson));
-        }
-
-        internal void PublishRuntimeGameOver(int[] playerIndicesByPlacement)
-        {
-            if (websocket == null || websocket.State != WebSocketState.Open || string.IsNullOrEmpty(currentRunId))
-            {
-                return;
-            }
-
-            var message = GCDevAppRuntimeMessages.BuildRuntimeGameOverMessage(
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                currentRunId,
-                playerIndicesByPlacement
-            );
-            StartCoroutine(SendRuntimeGameOverMessage(message));
         }
 
         void TryPublishRuntimeSnapshot()

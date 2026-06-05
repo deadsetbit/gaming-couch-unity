@@ -54,7 +54,7 @@ Define the structured diagnostics path before API migration and state-model work
   - `gc.log.unity_log`
   - `gc.log.unity_warning`
   - `gc.log.unity_error`
-- Runtime message envelope, message catalog, and terminal placement validation diagnostics use `sourceArea: runtime_messages`.
+- Runtime message envelope, message catalog, and game-over placement validation diagnostics use `sourceArea: runtime_messages`.
 - Screen-space envelope and anchor validation diagnostics, including `gc.runtime.malformed_screen_space`, use `sourceArea: screen_space`.
 
 ## Emitters And Sinks
@@ -78,7 +78,7 @@ Define the structured diagnostics path before API migration and state-model work
 - Unity log capture is package/runtime-owned after startup configuration is read. Launch policy may choose `off`, exception/error-only, warning-and-error, or explicit full-log capture.
 - WebGL loader `print`/`printErr` mirroring is HTML/JavaScript host-owned and does not need to reach Unity runtime unless the host reports it as status metadata.
 - Browser console capture is HTML/JavaScript host-owned and is not gated by Unity log capture.
-- Slow-device launch profiles may disable Unity log capture, WebGL loader mirroring, browser console capture, state snapshots, `screen_space`, and optional Unity-originated informational diagnostics. Core GC validation diagnostics for rejected runtime messages, invalid terminal placement, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings must remain enabled. Effectful platform submissions must remain enabled.
+- Slow-device launch profiles may disable Unity log capture, WebGL loader mirroring, browser console capture, state snapshots, `screen_space`, and optional Unity-originated informational diagnostics. Core GC validation diagnostics for rejected runtime messages, invalid game-over placement payloads, invalid mapping references, metadata fallback, unsupported retained APIs, and state no-op warnings must remain enabled. Effectful platform result messages must remain enabled.
 - Raw browser console history is not treated as a durable or coherently timestamped diagnostics source.
 
 ## Retention And Aggregation
@@ -127,7 +127,7 @@ Define the structured diagnostics path before API migration and state-model work
 ## Ready When
 
 - Unity package has an internal diagnostics emitter and all GC diagnostic warnings/errors bypass package log level.
-- Removed/hard-obsolete identity, name, state, and store APIs have source guidance; any retained stubs or temporary bridges emit planned diagnostics. Invalid mapping references, invalid state transitions, metadata fallback, unsupported multiplayer APIs, malformed runtime messages, invalid terminal placement, malformed screen-space anchors, and captured Unity logs emit planned codes.
+- Removed/hard-obsolete identity, name, state, and store APIs have source guidance; any retained stubs or temporary bridges emit planned diagnostics. Invalid mapping references, invalid state transitions, metadata fallback, unsupported multiplayer APIs, malformed runtime messages, invalid game-over placement payloads, malformed screen-space anchors, and captured Unity logs emit planned codes.
 - DevApp accepts diagnostic records through `runtime_messages`, rejects malformed diagnostics without disconnecting the runtime, aggregates by fingerprint, keeps a 200-row active-run ring buffer, and renders the hidden-by-default virtualized console.
 - Hosted WebGL has a validated structured diagnostics callback path with no hosted UI requirement.
 - Tests cover log-level bypass, Unity console mirroring, captured-log runtime timestamp stamping, end-of-frame batching, sink aggregation, ring-buffer eviction, active-run filtering, DevApp ingress validation, hidden diagnostics rail behavior, UI batching, hosted callback validation, launch-only Unity log capture filtering, and separation between Unity log capture and host-owned console mirroring.

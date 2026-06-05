@@ -130,9 +130,9 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
         Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.game.terminal_placement_submitted\""));
+        Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.game.game_over\""));
         Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(firstEnvelope.IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(firstEnvelope.IndexOf("\"messageType\":\"gc.game.terminal_placement_submitted\"")));
+        Assert.That(firstEnvelope.IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(firstEnvelope.IndexOf("\"messageType\":\"gc.game.game_over\"")));
 
         LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_terminal_placement: Terminal placement was already accepted for this active run.");
         Assert.That(context.gamingCouch.TrySubmitTerminalPlacement(new[] { 0, 1 }, out var secondEnvelope), Is.False);
@@ -140,7 +140,7 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(emitted[1], Does.Contain("\"messageType\":\"gc.diagnostic\""));
         Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_terminal_placement\""));
-        Assert.That(emitted[1], Does.Not.Contain("\"messageType\":\"gc.game.terminal_placement_submitted\""));
+        Assert.That(emitted[1], Does.Not.Contain("\"messageType\":\"gc.game.game_over\""));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -153,7 +153,7 @@ public sealed class GCRuntimeOutputContractTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += json =>
         {
             emitted.Add(json);
-            if (reentered || !json.Contains("\"messageType\":\"gc.game.terminal_placement_submitted\""))
+            if (reentered || !json.Contains("\"messageType\":\"gc.game.game_over\""))
             {
                 return;
             }

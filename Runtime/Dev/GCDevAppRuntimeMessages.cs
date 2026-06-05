@@ -10,7 +10,6 @@ namespace DSB.GC.Dev
     {
         internal const string RuntimeRegisterType = "runtime_register";
         internal const string RuntimeSnapshotType = "runtime_snapshot";
-        internal const string RuntimeGameOverType = "runtime_game_over";
         internal const string RuntimeKind = "unity_editor";
         internal const string RendererMode = "external";
         internal const string DisplayName = "Unity Editor";
@@ -78,21 +77,6 @@ namespace DSB.GC.Dev
             return JsonUtility.ToJson(state ?? BuildRuntimeSnapshotState(null, false, null, false, Time.timeScale));
         }
 
-        internal static RuntimeGameOverMessage BuildRuntimeGameOverMessage(
-            long timestamp,
-            string runId,
-            int[] playerIndicesByPlacement
-        )
-        {
-            return new RuntimeGameOverMessage
-            {
-                type = RuntimeGameOverType,
-                timestamp = timestamp,
-                runId = runId,
-                playerIndicesByPlacement = CopyPlayerIndicesByPlacement(playerIndicesByPlacement),
-            };
-        }
-
         private static RuntimeCapabilitiesMessage BuildRuntimeCapabilities()
         {
             return new RuntimeCapabilitiesMessage
@@ -132,17 +116,6 @@ namespace DSB.GC.Dev
             return playerType == GCPlayerType.bot ? "bot" : "player";
         }
 
-        private static int[] CopyPlayerIndicesByPlacement(int[] playerIndicesByPlacement)
-        {
-            if (playerIndicesByPlacement == null || playerIndicesByPlacement.Length == 0)
-            {
-                return Array.Empty<int>();
-            }
-
-            var copiedPlayerIndicesByPlacement = new int[playerIndicesByPlacement.Length];
-            Array.Copy(playerIndicesByPlacement, copiedPlayerIndicesByPlacement, playerIndicesByPlacement.Length);
-            return copiedPlayerIndicesByPlacement;
-        }
     }
 
     internal static class GCDevAppRuntimeOutputSettings
@@ -237,13 +210,5 @@ namespace DSB.GC.Dev
         public float timescale;
     }
 
-    [Serializable]
-    public class RuntimeGameOverMessage
-    {
-        public string type;
-        public string runId;
-        public int[] playerIndicesByPlacement;
-        public long timestamp;
-    }
 }
 #endif

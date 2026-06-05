@@ -771,10 +771,6 @@ namespace DSB.GC
 
             StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
 
-#if UNITY_EDITOR
-            GetComponent<GCDevAppIntegration>()?.PublishRuntimeGameOver(playerIndicesByPlacement);
-#endif
-
 #if UNITY_WEBGL && !UNITY_EDITOR
         GamingCouchGameEnd(result, result.Length);
 #endif
@@ -815,7 +811,7 @@ namespace DSB.GC
             QueueRuntimeStateSnapshot();
             FlushRuntimeStateSnapshotToPending();
             var terminalRecord = GCRuntimeMessageOutput.CreateRecord(
-                GCRuntimeMessageTypes.TerminalPlacementSubmitted,
+                GCRuntimeMessageTypes.GameOver,
                 GCRuntimeTerminalPlacementPayload.BuildJson(playerIndicesByPlacement, internalPlayerStore.Players.Count)
             );
             terminalPlacementAccepted = true;

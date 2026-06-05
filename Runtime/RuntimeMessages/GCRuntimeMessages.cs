@@ -23,7 +23,7 @@ namespace DSB.GC.RuntimeMessages
         internal const string PlayerMeterChanged = "gc.player.meter_changed";
         internal const string PlayerEliminationStateChanged = "gc.player.elimination_state_changed";
         internal const string PlayerFinishStateChanged = "gc.player.finish_state_changed";
-        internal const string TerminalPlacementSubmitted = "gc.game.terminal_placement_submitted";
+        internal const string GameOver = "gc.game.game_over";
     }
 
     internal static class GCRuntimeScreenSpaceAnchorTypes
