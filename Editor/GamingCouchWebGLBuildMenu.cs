@@ -2,20 +2,20 @@ using UnityEditor;
 
 public static class GamingCouchWebGLBuildMenu
 {
-        [MenuItem("GamingCouch/WebGL Build/Preview release build settings (slow build)")]
+        [MenuItem("GamingCouch/WebGL Build/Preview release build settings (slow build)", false, GamingCouchMenuPriorities.WebGLBuild + 2)]
         public static void PreviewReleaseBuildSettings()
         {
                 GamingCouchWebGLBuildSettingsPreviewWindow.OpenReleaseProfile();
         }
 
 
-        [MenuItem("GamingCouch/WebGL Build/Preview dev build settings (fast build)")]
+        [MenuItem("GamingCouch/WebGL Build/Preview dev build settings (fast build)", false, GamingCouchMenuPriorities.WebGLBuild + 1)]
         public static void PreviewDevBuildSettings()
         {
                 GamingCouchWebGLBuildSettingsPreviewWindow.OpenDevProfile();
         }
 
-        [MenuItem("GamingCouch/WebGL Build/Preview clean WebGL export setup")]
+        [MenuItem("GamingCouch/WebGL Build/Preview clean WebGL export setup", false, GamingCouchMenuPriorities.WebGLBuild)]
         public static void PreviewCleanWebGLExportSetup()
         {
                 GamingCouchWebGLBuildSettingsPreviewWindow.OpenCleanExport(null);
