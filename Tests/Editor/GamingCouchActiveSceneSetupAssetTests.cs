@@ -1082,7 +1082,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         GCWebGLExportReadiness webGLExport
     )
     {
-        return new GCStartScreenReadiness(
+        return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(
             testScene,
             new[] { gamingCouch },
             gamingCouch,
@@ -1101,7 +1101,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
                 null
             ),
             webGLExport
-        );
+        ));
     }
 
     private GCStartScreenReadiness CreateReadyStartScreenReadiness(
@@ -1110,7 +1110,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         UnityEngine.Object playerPrefab
     )
     {
-        return new GCStartScreenReadiness(
+        return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(
             testScene,
             new[] { gamingCouch },
             gamingCouch,
@@ -1120,7 +1120,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             CreateReadyBuildSettingsReadiness(),
             CreateReadyGameViewAspectReadiness(),
             CreateReadyWebGLExportReadiness()
-        );
+        ));
     }
 
     private static GCActiveSceneBuildSettingsReadiness CreateReadyBuildSettingsReadiness()

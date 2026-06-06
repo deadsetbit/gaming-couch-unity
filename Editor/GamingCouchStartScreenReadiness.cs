@@ -369,6 +369,73 @@ internal sealed class GCStartScreenReadinessSummary
     }
 }
 
+internal sealed class GCStartScreenReadinessFacts
+{
+    internal readonly Scene scene;
+    internal readonly GamingCouch[] gamingCouches;
+    internal readonly GamingCouch gamingCouch;
+    internal readonly UnityEngine.Object listener;
+    internal readonly bool hasSerializedListenerReference;
+    internal readonly bool hasMissingSerializedListenerReference;
+    internal readonly UnityEngine.Object playerPrefab;
+    internal readonly GCStartScreenLocalPlayJsonReadiness localPlayJson;
+    internal readonly GCActiveSceneBuildSettingsReadiness buildSettings;
+    internal readonly GCGameViewAspectReadiness gameViewAspect;
+    internal readonly GCWebGLExportReadiness webGLExport;
+
+    internal GCStartScreenReadinessFacts(
+        Scene scene,
+        GamingCouch[] gamingCouches = null,
+        GamingCouch gamingCouch = null,
+        UnityEngine.Object listener = null,
+        UnityEngine.Object playerPrefab = null,
+        GCStartScreenLocalPlayJsonReadiness localPlayJson = null,
+        GCActiveSceneBuildSettingsReadiness buildSettings = null,
+        GCGameViewAspectReadiness gameViewAspect = null,
+        GCWebGLExportReadiness webGLExport = null,
+        bool hasSerializedListenerReference = false,
+        bool hasMissingSerializedListenerReference = false
+    )
+    {
+        this.scene = scene;
+        this.gamingCouches = gamingCouches ?? new GamingCouch[0];
+        this.gamingCouch = gamingCouch;
+        this.listener = listener;
+        this.hasSerializedListenerReference = hasSerializedListenerReference || listener != null;
+        this.hasMissingSerializedListenerReference = hasMissingSerializedListenerReference && listener == null;
+        this.playerPrefab = playerPrefab;
+        this.localPlayJson = localPlayJson;
+        this.buildSettings = buildSettings;
+        this.gameViewAspect = gameViewAspect;
+        this.webGLExport = webGLExport;
+    }
+
+    internal bool HasLoadedScene
+    {
+        get { return scene.IsValid() && scene.isLoaded; }
+    }
+
+    internal string SceneName
+    {
+        get { return HasLoadedScene && !string.IsNullOrEmpty(scene.name) ? scene.name : "Untitled"; }
+    }
+
+    internal string ScenePath
+    {
+        get { return HasLoadedScene ? scene.path : null; }
+    }
+
+    internal GCActiveSceneBuildSettingsReadiness BuildSettings
+    {
+        get { return buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes); }
+    }
+
+    internal GCGameViewAspectReadiness GameViewAspect
+    {
+        get { return gameViewAspect ?? GamingCouchGameViewAspect.InspectSizeEntries(null, -1, false, null); }
+    }
+}
+
 internal sealed class GCStartScreenReadiness
 {
     internal const string GamingCouchInstanceCheckLabel = "GamingCouch game object in scene";
@@ -420,21 +487,47 @@ internal sealed class GCStartScreenReadiness
         bool hasSerializedListenerReference = false,
         bool hasMissingSerializedListenerReference = false
     )
+        : this(new GCStartScreenReadinessFacts(
+            scene,
+            gamingCouches,
+            gamingCouch,
+            listener,
+            playerPrefab,
+            localPlayJson,
+            buildSettings,
+            gameViewAspect,
+            webGLExport,
+            hasSerializedListenerReference,
+            hasMissingSerializedListenerReference
+        ))
     {
-        this.scene = scene;
-        var hasLoadedScene = scene.IsValid() && scene.isLoaded;
-        sceneName = hasLoadedScene && !string.IsNullOrEmpty(scene.name) ? scene.name : "Untitled";
-        scenePath = hasLoadedScene ? scene.path : null;
-        this.gamingCouches = gamingCouches ?? new GamingCouch[0];
-        this.gamingCouch = gamingCouch;
-        this.listener = listener;
-        this.hasSerializedListenerReference = hasSerializedListenerReference || listener != null;
-        this.hasMissingSerializedListenerReference = hasMissingSerializedListenerReference && listener == null;
-        this.playerPrefab = playerPrefab;
-        this.localPlayJson = localPlayJson;
-        this.buildSettings = buildSettings ?? GamingCouchBuildSettingsReadiness.Inspect(scene, EditorBuildSettings.scenes);
-        this.gameViewAspect = gameViewAspect ?? GamingCouchGameViewAspect.InspectSizeEntries(null, -1, false, null);
-        this.webGLExport = webGLExport;
+    }
+
+    internal static GCStartScreenReadiness FromFacts(GCStartScreenReadinessFacts facts)
+    {
+        return new GCStartScreenReadiness(facts);
+    }
+
+    private GCStartScreenReadiness(GCStartScreenReadinessFacts facts)
+    {
+        if (facts == null)
+        {
+            throw new ArgumentNullException(nameof(facts));
+        }
+
+        scene = facts.scene;
+        sceneName = facts.SceneName;
+        scenePath = facts.ScenePath;
+        gamingCouches = facts.gamingCouches;
+        gamingCouch = facts.gamingCouch;
+        listener = facts.listener;
+        hasSerializedListenerReference = facts.hasSerializedListenerReference;
+        hasMissingSerializedListenerReference = facts.hasMissingSerializedListenerReference;
+        playerPrefab = facts.playerPrefab;
+        localPlayJson = facts.localPlayJson;
+        buildSettings = facts.BuildSettings;
+        gameViewAspect = facts.GameViewAspect;
+        webGLExport = facts.webGLExport;
         activeSceneCheck = BuildActiveSceneCheck();
         checklist = BuildChecklist();
     }
@@ -1163,7 +1256,7 @@ internal static class GCStartScreenReadinessService
         var gameViewAspect = GamingCouchGameViewAspect.Inspect();
         var webGLExport = GamingCouchWebGLExportSetup.InspectReadiness();
 
-        return new GCStartScreenReadiness(
+        return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(
             scene,
             gamingCouches,
             gamingCouch,
@@ -1175,7 +1268,7 @@ internal static class GCStartScreenReadinessService
             webGLExport,
             hasSerializedListenerReference,
             hasMissingSerializedListenerReference
-        );
+        ));
     }
 
     private static GCStartScreenLocalPlayJsonReadiness InspectLocalPlayJson()

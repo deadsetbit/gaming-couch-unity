@@ -302,17 +302,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [Test]
     public void SetupActionAvailabilityUsesReadinessRules()
     {
-        var readinessWithoutActiveScene = new GCStartScreenReadiness(
-            default(Scene),
-            null,
-            null,
-            null,
-            null,
-            CreateValidLocalPlayJsonReadiness(),
-            CreateReadyBuildSettingsReadiness(),
-            CreateReadyGameViewAspectReadiness(),
-            CreateReadyWebGLExportReadiness()
-        );
+        var readinessWithoutActiveScene = CreateReadinessForScene(default(Scene));
         var missingGamingCouchCheck = readinessWithoutActiveScene.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance);
         var gameViewReadiness = CreateReadiness(
             CreateGamingCouch("GamingCouch"),
@@ -356,7 +346,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         GCStartScreenLocalPlayJsonReadiness localPlayJson = null
     )
     {
-        return new GCStartScreenReadiness(
+        return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(
             testScene,
             gamingCouch != null ? new[] { gamingCouch } : new GamingCouch[0],
             gamingCouch,
@@ -366,7 +356,12 @@ public sealed class GamingCouchStartScreenSetupActionsTests
             buildSettings ?? CreateReadyBuildSettingsReadiness(),
             gameViewAspect ?? CreateReadyGameViewAspectReadiness(),
             webGLExport ?? CreateReadyWebGLExportReadiness()
-        );
+        ));
+    }
+
+    private static GCStartScreenReadiness CreateReadinessForScene(Scene scene)
+    {
+        return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(scene));
     }
 
     private static GamingCouch CreateGamingCouch(string name)
