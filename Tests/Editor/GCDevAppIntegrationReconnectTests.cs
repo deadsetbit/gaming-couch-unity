@@ -27,7 +27,7 @@ public sealed class GCDevAppIntegrationReconnectTests
         }
         finally
         {
-            Object.DestroyImmediate(gameObject);
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
     }
 
@@ -50,7 +50,7 @@ public sealed class GCDevAppIntegrationReconnectTests
         }
         finally
         {
-            Object.DestroyImmediate(gameObject);
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
     }
 
@@ -73,7 +73,7 @@ public sealed class GCDevAppIntegrationReconnectTests
         }
         finally
         {
-            Object.DestroyImmediate(gameObject);
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
     }
 
@@ -82,27 +82,29 @@ public sealed class GCDevAppIntegrationReconnectTests
     {
         GCRuntimeMessageOutput.ResetForTests(() => 0);
         var gameObject = new GameObject("GCDevAppIntegration screen-space hook test");
+        gameObject.SetActive(false);
         var integration = gameObject.AddComponent<GCDevAppIntegration>();
 
         try
         {
-            Assert.That(
-                Array.Exists(
-                    GetScreenSpaceHandlers(),
-                    handler =>
-                        ReferenceEquals(handler.Target, integration) &&
-                        handler.Method.Name == "PublishScreenSpace"
-                ),
-                Is.True
-            );
+            if (HasScreenSpaceHandler(integration))
+            {
+                InvokePrivateMethod(integration, "OnDisable");
+            }
 
-            integration.enabled = false;
+            Assert.That(HasScreenSpaceHandler(integration), Is.False);
 
-            Assert.That(GetScreenSpaceHandlers(), Is.Empty);
+            InvokePrivateMethod(integration, "OnEnable");
+
+            Assert.That(HasScreenSpaceHandler(integration), Is.True, DescribeScreenSpaceHandlers());
+
+            InvokePrivateMethod(integration, "OnDisable");
+
+            Assert.That(HasScreenSpaceHandler(integration), Is.False);
         }
         finally
         {
-            Object.DestroyImmediate(gameObject);
+            UnityEngine.Object.DestroyImmediate(gameObject);
             GCRuntimeMessageOutput.ResetForTests(null);
         }
     }
@@ -122,6 +124,11 @@ public sealed class GCDevAppIntegrationReconnectTests
         return (IEnumerator)GetPrivateMethod("ScheduleReconnect").Invoke(integration, null);
     }
 
+    private static void InvokePrivateMethod(GCDevAppIntegration integration, string methodName)
+    {
+        GetPrivateMethod(methodName).Invoke(integration, null);
+    }
+
     private static Delegate[] GetScreenSpaceHandlers()
     {
         var field = typeof(GCRuntimeScreenSpaceOutput).GetField(
@@ -132,6 +139,33 @@ public sealed class GCDevAppIntegrationReconnectTests
 
         var handler = field.GetValue(null) as MulticastDelegate;
         return handler?.GetInvocationList() ?? Array.Empty<Delegate>();
+    }
+
+    private static bool HasScreenSpaceHandler(GCDevAppIntegration integration)
+    {
+        return Array.Exists(
+            GetScreenSpaceHandlers(),
+            handler =>
+                ReferenceEquals(handler.Target, integration) &&
+                handler.Method.Name == "PublishScreenSpace"
+        );
+    }
+
+    private static string DescribeScreenSpaceHandlers()
+    {
+        var handlers = GetScreenSpaceHandlers();
+        if (handlers.Length == 0)
+        {
+            return "No screen-space handlers are subscribed.";
+        }
+
+        return string.Join(
+            ", ",
+            Array.ConvertAll(
+                handlers,
+                handler => $"{handler.Target?.GetType().FullName ?? "<static>"}.{handler.Method.Name}"
+            )
+        );
     }
 
     private static FieldInfo GetPrivateField(string fieldName)

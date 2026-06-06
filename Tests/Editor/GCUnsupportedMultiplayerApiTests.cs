@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using DSB.GC;
 using DSB.GC.Log;
@@ -43,6 +44,7 @@ public sealed class GCUnsupportedMultiplayerApiTests
     [Test]
     public void ServerReadyThrowsUnsupportedErrorAndEmitsDiagnosticByDefault()
     {
+        IgnoreWhenUnsupportedMultiplayerOptInIsActive();
         AssertUnsupportedMultiplayerCall(
             "OnlineMultiplayerServerReady",
             () => gamingCouch.OnlineMultiplayerServerReady()
@@ -52,6 +54,7 @@ public sealed class GCUnsupportedMultiplayerApiTests
     [Test]
     public void ClientReadyThrowsUnsupportedErrorAndEmitsDiagnosticByDefault()
     {
+        IgnoreWhenUnsupportedMultiplayerOptInIsActive();
         AssertUnsupportedMultiplayerCall(
             "OnlineMultiplayerClientReady",
             () => gamingCouch.OnlineMultiplayerClientReady()
@@ -109,6 +112,19 @@ public sealed class GCUnsupportedMultiplayerApiTests
         finally
         {
             GCRuntimeMessageOutput.RuntimeMessagesEmitted -= runtimeMessagesHandler;
+        }
+    }
+
+    private void IgnoreWhenUnsupportedMultiplayerOptInIsActive()
+    {
+        var optInField = typeof(GamingCouch).GetField(
+            "onlineMultiplayerSupport",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+
+        if (optInField != null)
+        {
+            Assert.Ignore("Default unsupported multiplayer behavior is not active while GC_ENABLE_UNSUPPORTED_MULTIPLAYER is defined.");
         }
     }
 

@@ -10,9 +10,9 @@ using DSB.GC.Hud;
 using DSB.GC.Log;
 using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.TestTools;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 public sealed class GCRuntimeOutputContractTests
 {

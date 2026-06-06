@@ -1,5 +1,6 @@
 using UnityEngine;
 #if UNITY_EDITOR
+using System;
 using System.Collections;
 using System.Net.WebSockets;
 using System.Text;
