@@ -60,6 +60,191 @@ namespace DSB.GC.RuntimeMessages
         }
     }
 
+    internal static class GCRuntimeOutput
+    {
+        private static bool isStateSnapshotPending;
+        private static bool gameOverPlacementAccepted;
+        private static bool isGameOverPlacementSubmissionInProgress;
+
+        internal static event Action<string> RuntimeMessagesEmitted
+        {
+            add { GCRuntimeMessageOutput.RuntimeMessagesEmitted += value; }
+            remove { GCRuntimeMessageOutput.RuntimeMessagesEmitted -= value; }
+        }
+
+        internal static event Action<string> ScreenSpaceEmitted
+        {
+            add { GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted += value; }
+            remove { GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted -= value; }
+        }
+
+        internal static void BeginActiveRun()
+        {
+            BeginActiveRun(null);
+        }
+
+        internal static void BeginActiveRun(GCRuntimeOutputOptions outputOptions)
+        {
+            GCRuntimeMessageOutput.BeginActiveRun(outputOptions);
+        }
+
+        internal static bool IsStateSnapshotsEnabled => GCRuntimeMessageOutput.IsStateSnapshotsEnabled;
+        internal static bool IsScreenSpaceEnabled => GCRuntimeMessageOutput.IsScreenSpaceEnabled;
+
+        internal static void QueueStateSnapshot()
+        {
+            isStateSnapshotPending = true;
+        }
+
+        internal static void QueuePlayerTransition(string messageType, string payloadJson)
+        {
+            GCRuntimeMessageOutput.QueueTransition(messageType, payloadJson);
+        }
+
+        internal static string FlushFrameOutput(Func<string> buildStateSnapshotPayloadJson)
+        {
+            FlushStateSnapshotToPending(buildStateSnapshotPayloadJson);
+            return GCRuntimeMessageOutput.FlushPending();
+        }
+
+        internal static string EmitDiagnosticPayload(string payloadJson)
+        {
+            return GCRuntimeMessageOutput.FlushPendingWith(
+                GCRuntimeMessageOutput.CreateRecord(GCRuntimeMessageTypes.Diagnostic, payloadJson)
+            );
+        }
+
+        internal static string EmitScreenSpace(long frameIndex, IReadOnlyList<GCRuntimeScreenSpaceAnchor> anchors)
+        {
+            return GCRuntimeScreenSpaceOutput.Emit(frameIndex, anchors);
+        }
+
+        internal static bool TrySubmitGameOverPlacement(
+            int[] playerIndicesByPlacement,
+            int activePlayerCount,
+            Func<int[], bool> validateGameOverPlacement,
+            Action acceptGameOverPlacement,
+            Func<string> buildStateSnapshotPayloadJson,
+            out string runtimeMessagesJson
+        )
+        {
+            runtimeMessagesJson = null;
+
+            if (validateGameOverPlacement == null)
+            {
+                throw new ArgumentNullException(nameof(validateGameOverPlacement));
+            }
+
+            if (acceptGameOverPlacement == null)
+            {
+                throw new ArgumentNullException(nameof(acceptGameOverPlacement));
+            }
+
+            if (buildStateSnapshotPayloadJson == null)
+            {
+                throw new ArgumentNullException(nameof(buildStateSnapshotPayloadJson));
+            }
+
+            if (gameOverPlacementAccepted || isGameOverPlacementSubmissionInProgress)
+            {
+                EmitInvalidGameOverPlacementDiagnostic("Game-over placement was already accepted for this active run.");
+                return false;
+            }
+
+            isGameOverPlacementSubmissionInProgress = true;
+            try
+            {
+                if (!validateGameOverPlacement(playerIndicesByPlacement))
+                {
+                    EmitInvalidGameOverPlacementDiagnostic("Game-over placement was rejected.");
+                    return false;
+                }
+
+                string gameOverPayloadJson;
+                try
+                {
+                    gameOverPayloadJson = GCRuntimeGameOverPlacementPayload.BuildJson(playerIndicesByPlacement, activePlayerCount);
+                }
+                catch (Exception exception)
+                {
+                    EmitInvalidGameOverPlacementDiagnostic(
+                        "Game-over placement was rejected.",
+                        new GCDiagnosticContext().AddDetail("reason", exception.Message)
+                    );
+                    return false;
+                }
+
+                acceptGameOverPlacement();
+                QueueStateSnapshot();
+                FlushStateSnapshotToPending(buildStateSnapshotPayloadJson);
+
+                var gameOverRecord = GCRuntimeMessageOutput.CreateRecord(
+                    GCRuntimeMessageTypes.GameOver,
+                    gameOverPayloadJson
+                );
+                gameOverPlacementAccepted = true;
+                runtimeMessagesJson = GCRuntimeMessageOutput.FlushPendingWith(gameOverRecord);
+                return true;
+            }
+            finally
+            {
+                isGameOverPlacementSubmissionInProgress = false;
+            }
+        }
+
+        internal static void ResetForTests(Func<double> testRealtimeSecondsProvider)
+        {
+            GCRuntimeMessageOutput.ResetForTests(testRealtimeSecondsProvider);
+        }
+
+        internal static void HandleActiveRunBegan()
+        {
+            isStateSnapshotPending = false;
+            gameOverPlacementAccepted = false;
+            isGameOverPlacementSubmissionInProgress = false;
+        }
+
+        internal static void ResetRuntimeStateForTests()
+        {
+            isStateSnapshotPending = false;
+            gameOverPlacementAccepted = false;
+            isGameOverPlacementSubmissionInProgress = false;
+        }
+
+        private static void FlushStateSnapshotToPending(Func<string> buildStateSnapshotPayloadJson)
+        {
+            if (!isStateSnapshotPending)
+            {
+                return;
+            }
+
+            isStateSnapshotPending = false;
+            if (!IsStateSnapshotsEnabled || buildStateSnapshotPayloadJson == null)
+            {
+                return;
+            }
+
+            var payloadJson = buildStateSnapshotPayloadJson();
+            if (string.IsNullOrWhiteSpace(payloadJson))
+            {
+                return;
+            }
+
+            GCRuntimeMessageOutput.QueueStateSnapshot(payloadJson);
+        }
+
+        private static void EmitInvalidGameOverPlacementDiagnostic(string message, GCDiagnosticContext context = null)
+        {
+            GCDiagnostics.Emit(
+                GCDiagnosticCodes.InvalidGameOverPlacement,
+                GCDiagnosticSeverity.Error,
+                GCDiagnosticSourceAreas.RuntimeMessages,
+                message,
+                context
+            );
+        }
+    }
+
     internal sealed class GCRuntimeStateSnapshotPayload
     {
         internal GCRuntimeStateSnapshotGame game;
@@ -345,7 +530,7 @@ namespace DSB.GC.RuntimeMessages
         }
     }
 
-    internal static class GCRuntimeTerminalPlacementPayload
+    internal static class GCRuntimeGameOverPlacementPayload
     {
         internal static string BuildJson(int[] playerIndicesByPlacement, int activePlayerCount)
         {
@@ -381,7 +566,7 @@ namespace DSB.GC.RuntimeMessages
 
             if (playerIndicesByPlacement.Length != activePlayerCount)
             {
-                throw new ArgumentException("Terminal placement must contain every active player exactly once.", nameof(playerIndicesByPlacement));
+                throw new ArgumentException("Game-over placement must contain every active player exactly once.", nameof(playerIndicesByPlacement));
             }
 
             var seen = new bool[activePlayerCount];
@@ -390,12 +575,12 @@ namespace DSB.GC.RuntimeMessages
                 var playerIndex = playerIndicesByPlacement[index];
                 if (playerIndex < 0 || playerIndex >= activePlayerCount)
                 {
-                    throw new ArgumentException("Terminal placement playerIndex is outside the active player range.", nameof(playerIndicesByPlacement));
+                    throw new ArgumentException("Game-over placement playerIndex is outside the active player range.", nameof(playerIndicesByPlacement));
                 }
 
                 if (seen[playerIndex])
                 {
-                    throw new ArgumentException("Terminal placement cannot contain duplicate playerIndex values.", nameof(playerIndicesByPlacement));
+                    throw new ArgumentException("Game-over placement cannot contain duplicate playerIndex values.", nameof(playerIndicesByPlacement));
                 }
 
                 seen[playerIndex] = true;
@@ -485,6 +670,7 @@ namespace DSB.GC.RuntimeMessages
             pendingMessages.Clear();
             outputConfiguration = GCRuntimeOutputConfiguration.FromOptions(outputOptions);
             GCUnityLogCapture.Configure(outputConfiguration.unityLogCaptureMode);
+            GCRuntimeOutput.HandleActiveRunBegan();
         }
 
         internal static bool IsStateSnapshotsEnabled => outputConfiguration.stateSnapshotsEnabled;
@@ -609,6 +795,7 @@ namespace DSB.GC.RuntimeMessages
             RuntimeMessagesEmitted = null;
             GCUnityLogCapture.ResetForTests();
             GCRuntimeScreenSpaceOutput.ResetForTests();
+            GCRuntimeOutput.ResetRuntimeStateForTests();
         }
 
         private static void EnsureActiveRun()

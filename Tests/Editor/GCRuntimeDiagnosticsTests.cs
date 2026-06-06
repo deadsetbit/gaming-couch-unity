@@ -140,13 +140,13 @@ public sealed class GCRuntimeDiagnosticsTests
 
         LogAssert.Expect(
             LogType.Error,
-            new Regex(@"\[GC\] Diagnostic gc\.runtime\.invalid_terminal_placement: Terminal placement was rejected\.")
+            new Regex(@"\[GC\] Diagnostic gc\.runtime\.invalid_game_over_placement: Game-over placement was rejected\.")
         );
         GCDiagnostics.Emit(
-            GCDiagnosticCodes.InvalidTerminalPlacement,
+            GCDiagnosticCodes.InvalidGameOverPlacement,
             GCDiagnosticSeverity.Error,
             GCDiagnosticSourceAreas.RuntimeMessages,
-            "Terminal placement was rejected."
+            "Game-over placement was rejected."
         );
     }
 

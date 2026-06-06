@@ -23,8 +23,8 @@ public sealed class GCRuntimeOutputContractTests
     public void SetUp()
     {
         nowSeconds = 1.0;
-        GCRuntimeMessageOutput.ResetForTests(() => nowSeconds);
-        GCRuntimeMessageOutput.BeginActiveRun();
+        GCRuntimeOutput.ResetForTests(() => nowSeconds);
+        GCRuntimeOutput.BeginActiveRun();
         GCLog.logLevel = LogLevel.None;
         ClearGamingCouchInstance();
     }
@@ -41,7 +41,7 @@ public sealed class GCRuntimeOutputContractTests
         }
 
         objectsToDestroy.Clear();
-        GCRuntimeMessageOutput.ResetForTests(null);
+        GCRuntimeOutput.ResetForTests(null);
         GCLog.logLevel = LogLevel.None;
         ClearGamingCouchInstance();
     }
@@ -51,7 +51,7 @@ public sealed class GCRuntimeOutputContractTests
     {
         var context = CreateRuntimeGame(2);
         var emitted = new List<string>();
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
         nowSeconds = 1.125;
 
         context.players[0].SetScore(10, "score reason");
@@ -80,7 +80,7 @@ public sealed class GCRuntimeOutputContractTests
     {
         var context = CreateRuntimeGame(1);
         var emitted = new List<string>();
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
         nowSeconds = 1.125;
 
         context.players[0].SetScore(10, "score reason");
@@ -102,14 +102,14 @@ public sealed class GCRuntimeOutputContractTests
     [Test]
     public void SnapshotBootToggleLeavesTransitionsEnabled()
     {
-        GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
+        GCRuntimeOutput.BeginActiveRun(new GCRuntimeOutputOptions
         {
             stateSnapshots = false,
             screenSpace = true,
         });
         var context = CreateRuntimeGame(1);
         var emitted = new List<string>();
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
 
         context.players[0].SetMeter(50, "meter reason");
         context.gamingCouch.FlushRuntimeOutput();
@@ -120,13 +120,13 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
-    public void TerminalPlacementSubmitsObjectPayloadAfterPendingSnapshotAndAcceptsOnlyFirst()
+    public void GameOverPlacementSubmitsObjectPayloadAfterPendingSnapshotAndAcceptsOnlyFirst()
     {
         var context = CreateRuntimeGame(2);
         var emitted = new List<string>();
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
 
-        Assert.That(context.gamingCouch.TrySubmitTerminalPlacement(new[] { 0, 1 }, out var firstEnvelope), Is.True);
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var firstEnvelope), Is.True);
 
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
         Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
@@ -134,23 +134,23 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
         Assert.That(firstEnvelope.IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(firstEnvelope.IndexOf("\"messageType\":\"gc.game.game_over\"")));
 
-        LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_terminal_placement: Terminal placement was already accepted for this active run.");
-        Assert.That(context.gamingCouch.TrySubmitTerminalPlacement(new[] { 0, 1 }, out var secondEnvelope), Is.False);
+        LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var secondEnvelope), Is.False);
         Assert.That(secondEnvelope, Is.Null);
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(emitted[1], Does.Contain("\"messageType\":\"gc.diagnostic\""));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_terminal_placement\""));
+        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
         Assert.That(emitted[1], Does.Not.Contain("\"messageType\":\"gc.game.game_over\""));
         LogAssert.NoUnexpectedReceived();
     }
 
     [Test]
-    public void TerminalPlacementRejectsReentrantSubmissionBeforePublishingSecondResult()
+    public void GameOverPlacementRejectsReentrantSubmissionBeforePublishingSecondResult()
     {
         var context = CreateRuntimeGame(2);
         var emitted = new List<string>();
         var reentered = false;
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += json =>
+        GCRuntimeOutput.RuntimeMessagesEmitted += json =>
         {
             emitted.Add(json);
             if (reentered || !json.Contains("\"messageType\":\"gc.game.game_over\""))
@@ -159,29 +159,175 @@ public sealed class GCRuntimeOutputContractTests
             }
 
             reentered = true;
-            LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_terminal_placement: Terminal placement was already accepted for this active run.");
-            Assert.That(context.gamingCouch.TrySubmitTerminalPlacement(new[] { 1, 0 }, out var reentrantEnvelope), Is.False);
+            LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
+            Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 1, 0 }, out var reentrantEnvelope), Is.False);
             Assert.That(reentrantEnvelope, Is.Null);
         };
 
-        Assert.That(context.gamingCouch.TrySubmitTerminalPlacement(new[] { 0, 1 }, out var firstEnvelope), Is.True);
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var firstEnvelope), Is.True);
 
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(emitted[0], Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_terminal_placement\""));
+        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
         Assert.That(emitted[1], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
         LogAssert.NoUnexpectedReceived();
     }
 
     [Test]
-    public void TerminalPlacementPayloadRejectsMissingDuplicateAndOutOfRangeIndices()
+    public void RuntimeOutputFacadeOwnsGameOverPlacementOrderingAndFirstAcceptedWins()
     {
-        Assert.Throws<System.ArgumentException>(() => GCRuntimeTerminalPlacementPayload.BuildJson(new[] { 0 }, 2));
-        Assert.Throws<System.ArgumentException>(() => GCRuntimeTerminalPlacementPayload.BuildJson(new[] { 0, 0 }, 2));
-        Assert.Throws<System.ArgumentException>(() => GCRuntimeTerminalPlacementPayload.BuildJson(new[] { 0, 2 }, 2));
+        var emitted = new List<string>();
+        var acceptedCallbackCount = 0;
+        var reentered = false;
+        GCRuntimeOutput.RuntimeMessagesEmitted += json =>
+        {
+            emitted.Add(json);
+            if (reentered || !json.Contains("\"messageType\":\"gc.game.game_over\""))
+            {
+                return;
+            }
+
+            reentered = true;
+            LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
+            Assert.That(
+                GCRuntimeOutput.TrySubmitGameOverPlacement(
+                    new[] { 1, 0 },
+                    2,
+                    _ => true,
+                    () => acceptedCallbackCount++,
+                    () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                    out var reentrantEnvelope
+                ),
+                Is.False
+            );
+            Assert.That(reentrantEnvelope, Is.Null);
+        };
+
+        GCRuntimeOutput.QueueStateSnapshot();
         Assert.That(
-            GCRuntimeTerminalPlacementPayload.BuildJson(new[] { 0, 1 }, 2),
+            GCRuntimeOutput.TrySubmitGameOverPlacement(
+                new[] { 0, 1 },
+                2,
+                _ => true,
+                () => acceptedCallbackCount++,
+                () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                out var firstEnvelope
+            ),
+            Is.True
+        );
+
+        Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
+        Assert.That(acceptedCallbackCount, Is.EqualTo(1));
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.game.game_over\""));
+        Assert.That(emitted[0].IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(emitted[0].IndexOf("\"messageType\":\"gc.game.game_over\"")));
+        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[1], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void RuntimeOutputFacadeRejectsReentrantGameOverPlacementDuringAcceptCallback()
+    {
+        var emitted = new List<string>();
+        var acceptedCallbackCount = 0;
+        string reentrantEnvelope = null;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
+        Assert.That(
+            GCRuntimeOutput.TrySubmitGameOverPlacement(
+                new[] { 0, 1 },
+                2,
+                _ => true,
+                () =>
+                {
+                    acceptedCallbackCount++;
+                    Assert.That(
+                        GCRuntimeOutput.TrySubmitGameOverPlacement(
+                            new[] { 1, 0 },
+                            2,
+                            _ => true,
+                            () => acceptedCallbackCount++,
+                            () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                            out reentrantEnvelope
+                        ),
+                        Is.False
+                    );
+                },
+                () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                out var firstEnvelope
+            ),
+            Is.True
+        );
+
+        Assert.That(reentrantEnvelope, Is.Null);
+        Assert.That(acceptedCallbackCount, Is.EqualTo(1));
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(firstEnvelope, Is.EqualTo(emitted[1]));
+        Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
+        Assert.That(firstEnvelope, Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void RuntimeOutputFacadeRejectsReentrantGameOverPlacementDuringValidationCallback()
+    {
+        var emitted = new List<string>();
+        var acceptedCallbackCount = 0;
+        string reentrantEnvelope = null;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
+        Assert.That(
+            GCRuntimeOutput.TrySubmitGameOverPlacement(
+                new[] { 0, 1 },
+                2,
+                _ =>
+                {
+                    Assert.That(
+                        GCRuntimeOutput.TrySubmitGameOverPlacement(
+                            new[] { 1, 0 },
+                            2,
+                            __ => true,
+                            () => acceptedCallbackCount++,
+                            () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                            out reentrantEnvelope
+                        ),
+                        Is.False
+                    );
+                    return true;
+                },
+                () => acceptedCallbackCount++,
+                () => "{\"game\":{\"status\":\"game_over\"},\"players\":[]}",
+                out var firstEnvelope
+            ),
+            Is.True
+        );
+
+        Assert.That(reentrantEnvelope, Is.Null);
+        Assert.That(acceptedCallbackCount, Is.EqualTo(1));
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(firstEnvelope, Is.EqualTo(emitted[1]));
+        Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
+        Assert.That(firstEnvelope, Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void GameOverPlacementPayloadRejectsMissingDuplicateAndOutOfRangeIndices()
+    {
+        Assert.Throws<System.ArgumentException>(() => GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0 }, 2));
+        Assert.Throws<System.ArgumentException>(() => GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0, 0 }, 2));
+        Assert.Throws<System.ArgumentException>(() => GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0, 2 }, 2));
+        Assert.That(
+            GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0, 1 }, 2),
             Is.EqualTo("{\"playerIndicesByPlacement\":[0,1]}")
         );
     }
@@ -191,7 +337,7 @@ public sealed class GCRuntimeOutputContractTests
     {
         CreateRuntimeGame(1);
         var emitted = new List<string>();
-        GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted += emitted.Add;
+        GCRuntimeOutput.ScreenSpaceEmitted += emitted.Add;
         var hud = new GCHud();
 
         hud.QueuePointData(new GCScreenPointDataPoint
@@ -279,8 +425,8 @@ public sealed class GCRuntimeOutputContractTests
     {
         CreateRuntimeGame(1);
         var emitted = new List<string>();
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
-        GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.ScreenSpaceEmitted += emitted.Add;
         var hud = new GCHud();
 
         LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.mapping.invalid_player_index: Player index is outside the active mapping.");
@@ -309,7 +455,7 @@ public sealed class GCRuntimeOutputContractTests
         var emitted = new List<string>();
         var publicCallbackCount = 0;
         context.players[0].OnStatusChanged += (status, statusText, reason) => publicCallbackCount++;
-        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
 
         context.players[0].SetStatus(GCPlayerStatus.Neutral, null, "same status");
         context.gamingCouch.FlushRuntimeOutput();

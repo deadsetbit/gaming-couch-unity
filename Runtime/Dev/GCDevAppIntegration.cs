@@ -47,14 +47,14 @@ namespace DSB.GC.Dev
 
         private void OnEnable()
         {
-            GCRuntimeMessageOutput.RuntimeMessagesEmitted += PublishRuntimeMessages;
-            GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted += PublishScreenSpace;
+            GCRuntimeOutput.RuntimeMessagesEmitted += PublishRuntimeMessages;
+            GCRuntimeOutput.ScreenSpaceEmitted += PublishScreenSpace;
         }
 
         private void OnDisable()
         {
-            GCRuntimeMessageOutput.RuntimeMessagesEmitted -= PublishRuntimeMessages;
-            GCRuntimeScreenSpaceOutput.ScreenSpaceEmitted -= PublishScreenSpace;
+            GCRuntimeOutput.RuntimeMessagesEmitted -= PublishRuntimeMessages;
+            GCRuntimeOutput.ScreenSpaceEmitted -= PublishScreenSpace;
         }
 
         private void Update()

@@ -225,7 +225,7 @@ namespace DSB.GC.Hud
 
             try
             {
-                GCRuntimeScreenSpaceOutput.Emit(Time.frameCount, screenSpaceQueue.ToArray());
+                GCRuntimeOutput.EmitScreenSpace(Time.frameCount, screenSpaceQueue.ToArray());
             }
             catch (Exception exception)
             {

@@ -75,7 +75,7 @@ These child plans were stabilized in this dependency order. Cross-repo implement
 8. As a platform engineer, I want hosted Unity WebGL to map platform IDs to player indices at the SDK adapter boundary, so that Unity code stays ID-free while platform bookkeeping remains correct.
 9. As a DevApp developer, I want seats to remain local development concepts, so that local controller routing can stay ergonomic without leaking seats into game runtime APIs.
 10. As a DevApp developer, I want active seat input to route to `playerIndex`, so that Unity Editor play matches hosted runtime behavior.
-11. As a game developer, I want explicit permanent and revokable elimination methods, so that terminal and recoverable removal from play are chosen intentionally.
+11. As a game developer, I want explicit permanent and revokable elimination methods, so that permanent and recoverable removal from play are chosen intentionally.
 12. As a game developer, I want explicit permanent and revokable finish methods, so that finish can be final or revocable depending on game rules.
 13. As a game developer, I want revoke methods for revokable elimination and finish state, so that recovery and finish rollback are visible at the call site.
 14. As a game developer, I want old ambiguous state methods removed, so that old reversible-elimination and generic-finish code must be migrated intentionally.

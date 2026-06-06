@@ -59,7 +59,7 @@ namespace DSB.GC.RuntimeMessages
         internal const string ClampedValue = "gc.state.clamped_value";
         internal const string MalformedMessage = "gc.runtime.malformed_message";
         internal const string UnknownMessage = "gc.runtime.unknown_message";
-        internal const string InvalidTerminalPlacement = "gc.runtime.invalid_terminal_placement";
+        internal const string InvalidGameOverPlacement = "gc.runtime.invalid_game_over_placement";
         internal const string MalformedScreenSpace = "gc.runtime.malformed_screen_space";
         internal const string MissingPlatformData = "gc.metadata.missing_platform_data";
         internal const string InvalidPlatformData = "gc.metadata.invalid_platform_data";
@@ -86,7 +86,7 @@ namespace DSB.GC.RuntimeMessages
             ClampedValue,
             MalformedMessage,
             UnknownMessage,
-            InvalidTerminalPlacement,
+            InvalidGameOverPlacement,
             MalformedScreenSpace,
             MissingPlatformData,
             InvalidPlatformData,
@@ -527,9 +527,7 @@ namespace DSB.GC.RuntimeMessages
         {
             ValidateDiagnostic(code, sourceArea, message, context);
             var payloadJson = BuildPayloadJson(code, severity, sourceArea, message, context);
-            var envelopeJson = GCRuntimeMessageOutput.FlushPendingWith(
-                GCRuntimeMessageOutput.CreateRecord(GCRuntimeMessageTypes.Diagnostic, payloadJson)
-            );
+            var envelopeJson = GCRuntimeOutput.EmitDiagnosticPayload(payloadJson);
             MirrorToUnityConsole(code, severity, message);
             return envelopeJson;
         }

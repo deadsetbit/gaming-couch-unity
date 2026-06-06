@@ -234,7 +234,7 @@ Game-over acceptance is first-accepted-wins per active run:
 - The receiver tracks whether game over has already been accepted for the active run.
 - The first valid game-over message updates platform-owned result state and freezes that result for the active run.
 - Rejected messages before any accepted game over do not freeze the result; a later valid game-over message may still be accepted.
-- Any later game-over message after the first accepted one is rejected and diagnosed with `gc.runtime.invalid_terminal_placement`, even if the later payload is byte-for-byte identical. V1 does not have a Unity acknowledgement or retry contract that would make identical duplicates idempotently accepted.
+- Any later game-over message after the first accepted one is rejected and diagnosed with `gc.runtime.invalid_game_over_placement`, even if the later payload is byte-for-byte identical. V1 does not have a Unity acknowledgement or retry contract that would make identical duplicates idempotently accepted.
 - If one ordered batch contains multiple game-over messages, process them by `sequence`: the first valid one may be accepted, and every later one is rejected after the result is frozen.
 - Rejections for duplicate, replayed, or second game-over messages must not mutate playlist, stats, or platform result state again.
 
@@ -339,7 +339,7 @@ Transition messages remain enabled by default when snapshots are disabled. Effec
 
 ## Reserved Result Growth
 
-Richer terminal result semantics are reserved for future `gc.game.game_over` payload evolution after a general result/versioning policy is chosen.
+Richer game-over result semantics are reserved for future `gc.game.game_over` payload evolution after a general result/versioning policy is chosen.
 
 Reserved future concepts:
 

@@ -46,7 +46,7 @@ Define the structured diagnostics path before API migration and state-model work
   - `gc.state.clamped_value`
   - `gc.runtime.malformed_message`
   - `gc.runtime.unknown_message`
-  - `gc.runtime.invalid_terminal_placement`
+  - `gc.runtime.invalid_game_over_placement`
   - `gc.runtime.malformed_screen_space`
   - `gc.metadata.missing_platform_data`
   - `gc.metadata.invalid_platform_data`

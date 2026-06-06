@@ -59,8 +59,6 @@ namespace DSB.GC
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
         private GCActivePlayerMapping activePlayerMapping;
         private bool isRestarting = false;
-        private bool isRuntimeStateSnapshotPending = false;
-        private bool terminalPlacementAccepted = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
         public float CurrentTimescale => paused ? timeScaleOnPause : Time.timeScale;
@@ -396,9 +394,7 @@ namespace DSB.GC
             playOptions.runtimeOutput = GCDevAppRuntimeOutputSettings.Apply(playOptions.runtimeOutput);
 #endif
             playSeatIdentities = CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping);
-            terminalPlacementAccepted = false;
-            isRuntimeStateSnapshotPending = false;
-            GCRuntimeMessageOutput.BeginActiveRun(playOptions.runtimeOutput);
+            GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
             EmitPlatformMetadataDiagnostics(playOptions.platformData);
             listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
@@ -764,7 +760,7 @@ namespace DSB.GC
                 result[i] = (byte)playerIndicesByPlacement[i];
             }
 
-            if (!TrySubmitTerminalPlacement(playerIndicesByPlacement, out _))
+            if (!TrySubmitGameOverPlacement(playerIndicesByPlacement, out _))
             {
                 return;
             }
@@ -782,41 +778,16 @@ namespace DSB.GC
             return game.BuildRuntimeStateSnapshotPayload(status);
         }
 
-        internal bool TrySubmitTerminalPlacement(int[] playerIndicesByPlacement, out string runtimeMessagesJson)
+        internal bool TrySubmitGameOverPlacement(int[] playerIndicesByPlacement, out string runtimeMessagesJson)
         {
-            runtimeMessagesJson = null;
-            if (terminalPlacementAccepted)
-            {
-                GCDiagnostics.Emit(
-                    GCDiagnosticCodes.InvalidTerminalPlacement,
-                    GCDiagnosticSeverity.Error,
-                    GCDiagnosticSourceAreas.RuntimeMessages,
-                    "Terminal placement was already accepted for this active run."
-                );
-                return false;
-            }
-
-            if (!TryValidateTerminalPlacement(playerIndicesByPlacement, "game_over"))
-            {
-                GCDiagnostics.Emit(
-                    GCDiagnosticCodes.InvalidTerminalPlacement,
-                    GCDiagnosticSeverity.Error,
-                    GCDiagnosticSourceAreas.RuntimeMessages,
-                    "Terminal placement was rejected."
-                );
-                return false;
-            }
-
-            status = GCStatus.GameOver;
-            QueueRuntimeStateSnapshot();
-            FlushRuntimeStateSnapshotToPending();
-            var terminalRecord = GCRuntimeMessageOutput.CreateRecord(
-                GCRuntimeMessageTypes.GameOver,
-                GCRuntimeTerminalPlacementPayload.BuildJson(playerIndicesByPlacement, internalPlayerStore.Players.Count)
+            return GCRuntimeOutput.TrySubmitGameOverPlacement(
+                playerIndicesByPlacement,
+                internalPlayerStore.Players.Count,
+                indices => TryValidateGameOverPlacement(indices, "game_over"),
+                () => status = GCStatus.GameOver,
+                () => BuildRuntimeStateSnapshotPayload().ToJson(),
+                out runtimeMessagesJson
             );
-            terminalPlacementAccepted = true;
-            runtimeMessagesJson = GCRuntimeMessageOutput.FlushPendingWith(terminalRecord);
-            return true;
         }
 
         internal void QueueRuntimeStateSnapshot()
@@ -826,34 +797,17 @@ namespace DSB.GC
                 return;
             }
 
-            isRuntimeStateSnapshotPending = true;
+            GCRuntimeOutput.QueueStateSnapshot();
         }
 
         internal void QueueRuntimePlayerTransition(string messageType, string payloadJson)
         {
-            GCRuntimeMessageOutput.QueueTransition(messageType, payloadJson);
+            GCRuntimeOutput.QueuePlayerTransition(messageType, payloadJson);
         }
 
         internal void FlushRuntimeOutput()
         {
-            FlushRuntimeStateSnapshotToPending();
-            GCRuntimeMessageOutput.FlushPending();
-        }
-
-        private void FlushRuntimeStateSnapshotToPending()
-        {
-            if (!isRuntimeStateSnapshotPending)
-            {
-                return;
-            }
-
-            isRuntimeStateSnapshotPending = false;
-            if (!GCRuntimeMessageOutput.IsStateSnapshotsEnabled || game == null)
-            {
-                return;
-            }
-
-            GCRuntimeMessageOutput.QueueStateSnapshot(BuildRuntimeStateSnapshotPayload().ToJson());
+            GCRuntimeOutput.FlushFrameOutput(() => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson());
         }
         #endregion
 
@@ -1072,7 +1026,7 @@ namespace DSB.GC
             return activePlayerMapping.TryValidatePlayerIndex(playerIndex, source, out entry);
         }
 
-        internal bool TryValidateTerminalPlacement(int[] playerIndicesByPlacement, string source)
+        internal bool TryValidateGameOverPlacement(int[] playerIndicesByPlacement, string source)
         {
             return activePlayerMapping != null && activePlayerMapping.TryValidatePlacement(playerIndicesByPlacement, source);
         }
