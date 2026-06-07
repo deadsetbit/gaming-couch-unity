@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
 using DSB.GC;
 using NUnit.Framework;
+using UnityEngine;
 
 public sealed class GamingCouchEditorInputTests
 {
@@ -111,5 +113,77 @@ public sealed class GamingCouchEditorInputTests
         Assert.That(resolved.a1, Is.EqualTo(0.25f));
         Assert.That(resolved.b0, Is.EqualTo(0));
         Assert.That(resolved.b1, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void DevAppInputApplyPreservesB2AndAcceptsNeutralRelease()
+    {
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch devapp input test");
+        try
+        {
+            SetPrivateField(
+                gamingCouch,
+                "activePlayerMapping",
+                GCActiveRunProjection.Create(CreatePlayOptions(123, GCPlayerType.player)).ActivePlayerMapping
+            );
+
+            gamingCouch.ApplyDevAppInput(
+                0,
+                new GCControllerInputsData
+                {
+                    a0 = 0.75f,
+                    a1 = -0.5f,
+                    b0 = 1,
+                    b2 = 1,
+                }
+            );
+
+            var activeInputs = gamingCouch.GetInputsByPlayerIndex(0).RawData;
+            Assert.That(activeInputs.a0, Is.EqualTo(0.75f));
+            Assert.That(activeInputs.a1, Is.EqualTo(-0.5f));
+            Assert.That(activeInputs.b0, Is.EqualTo(1));
+            Assert.That(activeInputs.b2, Is.EqualTo(1));
+
+            gamingCouch.ApplyDevAppInput(0, new GCControllerInputsData());
+
+            var neutralInputs = gamingCouch.GetInputsByPlayerIndex(0).RawData;
+            Assert.That(neutralInputs.a0, Is.EqualTo(0f));
+            Assert.That(neutralInputs.a1, Is.EqualTo(0f));
+            Assert.That(neutralInputs.b0, Is.EqualTo(0));
+            Assert.That(neutralInputs.b1, Is.EqualTo(0));
+            Assert.That(neutralInputs.b2, Is.EqualTo(0));
+        }
+        finally
+        {
+            Object.DestroyImmediate(gamingCouch.gameObject);
+        }
+    }
+
+    private static void SetPrivateField(object target, string fieldName, object value)
+    {
+        target
+            .GetType()
+            .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
+            .SetValue(target, value);
+    }
+
+    private static GCPlayOptions CreatePlayOptions(int seed, params GCPlayerType[] playerTypes)
+    {
+        var players = new GCActivePlayerOptions[playerTypes.Length];
+        for (var index = 0; index < playerTypes.Length; index++)
+        {
+            players[index] = new GCActivePlayerOptions
+            {
+                playerIndex = index,
+                type = playerTypes[index].ToString(),
+                color = GCPlayerColor.blue.ToString(),
+            };
+        }
+
+        return new GCPlayOptions
+        {
+            players = players,
+            seed = seed,
+        };
     }
 }

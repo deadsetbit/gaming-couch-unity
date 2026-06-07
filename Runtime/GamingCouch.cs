@@ -468,23 +468,11 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchInputs(string playerIndexAndInputs)
         {
-            if (paused)
-            {
-                return;
-            }
-
             string[] playerIndexAndInputsArray = playerIndexAndInputs.Split('|');
             var inputsData = GCControllerInputsData.CreateFromJSON(playerIndexAndInputsArray[1]);
-            GCControllerInputs inputs = new GCControllerInputs(inputsData);
-
             var playerIndex = int.Parse(playerIndexAndInputsArray[0]);
-            if (!TryValidateActivePlayerIndex(playerIndex, "input", out _))
-            {
-                return;
-            }
 
-            externalInputsByPlayerIndex[playerIndex] = inputs;
-            inputsByPlayerIndex[playerIndex] = inputs;
+            ApplyDevAppInput(playerIndex, inputsData);
         }
         #endregion
 
@@ -881,6 +869,23 @@ namespace DSB.GC
             GCLog.LogDebug("ClearInputs");
             inputsByPlayerIndex.Clear();
             externalInputsByPlayerIndex.Clear();
+        }
+
+        internal void ApplyDevAppInput(int playerIndex, GCControllerInputsData inputsData)
+        {
+            if (paused)
+            {
+                return;
+            }
+
+            if (!TryValidateActivePlayerIndex(playerIndex, "devapp_input", out _))
+            {
+                return;
+            }
+
+            var inputs = new GCControllerInputs(inputsData);
+            externalInputsByPlayerIndex[playerIndex] = inputs;
+            inputsByPlayerIndex[playerIndex] = inputs;
         }
 
         internal bool TryGetPlayerIndexForSourceSeat(int sourceSeatIndex, out int playerIndex)

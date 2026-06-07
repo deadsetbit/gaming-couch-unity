@@ -211,6 +211,50 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(appliedOptions.unityLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
     }
 
+    [Test]
+    public void CompactControllerInputParserPreservesRouteSequenceAxesAndB2()
+    {
+        var frame = CreateCompactInputFrame(
+            playerIndex: 2,
+            seq: 123,
+            timestampMs: 456,
+            a0: 500,
+            a1: -250,
+            buttons: 0b00000101
+        );
+
+        Assert.That(GCDevAppIntegration.TryParseCompactControllerInputFrame(frame, out var inputFrame), Is.True);
+        Assert.That(inputFrame.playerIndex, Is.EqualTo(2));
+        Assert.That(inputFrame.seq, Is.EqualTo(123u));
+        Assert.That(inputFrame.timestampMs, Is.EqualTo(456u));
+        Assert.That(inputFrame.inputs.a0, Is.EqualTo(0.5f));
+        Assert.That(inputFrame.inputs.a1, Is.EqualTo(-0.25f));
+        Assert.That(inputFrame.inputs.b0, Is.EqualTo(1));
+        Assert.That(inputFrame.inputs.b1, Is.EqualTo(0));
+        Assert.That(inputFrame.inputs.b2, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void CompactControllerInputParserReadsNeutralReleaseFrame()
+    {
+        var frame = CreateCompactInputFrame(
+            playerIndex: 1,
+            seq: 124,
+            timestampMs: 789,
+            a0: 0,
+            a1: 0,
+            buttons: 0
+        );
+
+        Assert.That(GCDevAppIntegration.TryParseCompactControllerInputFrame(frame, out var inputFrame), Is.True);
+        Assert.That(inputFrame.playerIndex, Is.EqualTo(1));
+        Assert.That(inputFrame.inputs.a0, Is.EqualTo(0f));
+        Assert.That(inputFrame.inputs.a1, Is.EqualTo(0f));
+        Assert.That(inputFrame.inputs.b0, Is.EqualTo(0));
+        Assert.That(inputFrame.inputs.b1, Is.EqualTo(0));
+        Assert.That(inputFrame.inputs.b2, Is.EqualTo(0));
+    }
+
     private static GCSeatIdentity[] CreateSeatIdentities()
     {
         return new[]
@@ -245,6 +289,46 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(capabilities.restart, Is.True);
         Assert.That(capabilities.pause, Is.True);
         Assert.That(capabilities.timescale, Is.True);
+    }
+
+    private static byte[] CreateCompactInputFrame(
+        ushort playerIndex,
+        uint seq,
+        uint timestampMs,
+        short a0,
+        short a1,
+        byte buttons
+    )
+    {
+        var frame = new byte[GCDevAppIntegration.CompactControllerInputByteLength];
+        frame[0] = GCDevAppIntegration.CompactControllerInputTypeByte;
+        WriteUInt16LittleEndian(frame, 1, playerIndex);
+        WriteUInt32LittleEndian(frame, 3, seq);
+        WriteUInt32LittleEndian(frame, 7, timestampMs);
+        WriteInt16LittleEndian(frame, 11, a0);
+        WriteInt16LittleEndian(frame, 13, a1);
+        frame[15] = buttons;
+        return frame;
+    }
+
+    private static void WriteUInt16LittleEndian(byte[] bytes, int offset, ushort value)
+    {
+        bytes[offset] = (byte)(value & 0xff);
+        bytes[offset + 1] = (byte)((value >> 8) & 0xff);
+    }
+
+    private static void WriteInt16LittleEndian(byte[] bytes, int offset, short value)
+    {
+        bytes[offset] = (byte)(value & 0xff);
+        bytes[offset + 1] = (byte)((value >> 8) & 0xff);
+    }
+
+    private static void WriteUInt32LittleEndian(byte[] bytes, int offset, uint value)
+    {
+        bytes[offset] = (byte)(value & 0xff);
+        bytes[offset + 1] = (byte)((value >> 8) & 0xff);
+        bytes[offset + 2] = (byte)((value >> 16) & 0xff);
+        bytes[offset + 3] = (byte)((value >> 24) & 0xff);
     }
 
     private sealed class TestProjectRootResolver : IGCLocalProjectRootResolver

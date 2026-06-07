@@ -2,6 +2,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -36,6 +37,11 @@ namespace DSB.GC.Dev
         private bool isSnapshotSendInFlight = false;
         private string currentRunId;
         private string lastSentSnapshotSignature;
+        private readonly Dictionary<int, uint> lastInputSeqByPlayerIndex = new Dictionary<int, uint>();
+
+        internal const byte CompactControllerInputTypeByte = 0x44;
+        internal const int CompactControllerInputByteLength = 16;
+        private const float CompactControllerInputAxisScale = 1000f;
 
         private void Start()
         {
@@ -272,6 +278,7 @@ namespace DSB.GC.Dev
                 LogWebSocket("Connected.");
                 currentRunId = BuildRunId();
                 lastSentSnapshotSignature = null;
+                lastInputSeqByPlayerIndex.Clear();
                 yield return SendRuntimeRegisterMessage();
                 TryPublishRuntimeSnapshot();
                 StartCoroutine(ReceiveMessages());
@@ -284,6 +291,7 @@ namespace DSB.GC.Dev
         {
             var buffer = new byte[1024 * 16];
             var messageBuilder = new StringBuilder(1024);
+            var binaryMessage = new List<byte>(CompactControllerInputByteLength);
 
             LogWebSocket("Receive loop started.");
             while (websocket != null && websocket.State == WebSocketState.Open)
@@ -339,6 +347,19 @@ namespace DSB.GC.Dev
                         ProcessWebSocketMessage(message);
                     }
                 }
+                else if (result.MessageType == WebSocketMessageType.Binary)
+                {
+                    for (var i = 0; i < result.Count; i += 1)
+                    {
+                        binaryMessage.Add(buffer[i]);
+                    }
+
+                    if (result.EndOfMessage)
+                    {
+                        ProcessBinaryWebSocketMessage(binaryMessage.ToArray());
+                        binaryMessage.Clear();
+                    }
+                }
             }
 
             LogWebSocket("Receive loop ended.");
@@ -385,6 +406,45 @@ namespace DSB.GC.Dev
             {
                 Debug.LogError($"Error parsing WebSocket message: {e.Message}\nMessage: {message}");
             }
+        }
+
+        void ProcessBinaryWebSocketMessage(byte[] message)
+        {
+            try
+            {
+                if (!TryParseCompactControllerInputFrame(message, out var inputFrame))
+                {
+                    LogWebSocket($"Unhandled binary message length: {message.Length}");
+                    return;
+                }
+
+                ApplyCompactControllerInput(inputFrame);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error parsing binary WebSocket message: {e.Message}");
+            }
+        }
+
+        void ApplyCompactControllerInput(CompactControllerInputFrame inputFrame)
+        {
+            if (GamingCouch.Instance == null)
+            {
+                return;
+            }
+
+            if (!GamingCouch.Instance.TryValidateActivePlayerIndex(inputFrame.playerIndex, "devapp_compact_input", out _))
+            {
+                return;
+            }
+
+            if (lastInputSeqByPlayerIndex.TryGetValue(inputFrame.playerIndex, out var lastSeq) && inputFrame.seq <= lastSeq)
+            {
+                return;
+            }
+
+            lastInputSeqByPlayerIndex[inputFrame.playerIndex] = inputFrame.seq;
+            GamingCouch.Instance.ApplyDevAppInput(inputFrame.playerIndex, inputFrame.inputs);
         }
 
         void HandleDevToolAction(WebSocketDevToolMessage message)
@@ -493,7 +553,7 @@ namespace DSB.GC.Dev
                 a3 = 0f,
                 b0 = inputs.b0 > 0.5f ? 1 : 0,
                 b1 = inputs.b1 > 0.5f ? 1 : 0,
-                b2 = 0,
+                b2 = inputs.b2 > 0.5f ? 1 : 0,
                 b3 = 0,
                 b12 = 0,
                 b13 = 0,
@@ -501,9 +561,78 @@ namespace DSB.GC.Dev
                 b15 = 0
             };
 
-            string inputString = $"{playerIndex}|{JsonUtility.ToJson(inputData)}";
-            LogWebSocket($"Outgoing (to GamingCouch): {inputString}");
-            GamingCouch.Instance.SendMessage("GamingCouchInputs", inputString);
+            LogWebSocket($"Applying JSON input to GamingCouch player {playerIndex}");
+            GamingCouch.Instance.ApplyDevAppInput(playerIndex, inputData);
+        }
+
+        internal static bool TryParseCompactControllerInputFrame(byte[] message, out CompactControllerInputFrame inputFrame)
+        {
+            inputFrame = default;
+            if (message == null || message.Length != CompactControllerInputByteLength)
+            {
+                return false;
+            }
+
+            if (message[0] != CompactControllerInputTypeByte)
+            {
+                return false;
+            }
+
+            var offset = 1;
+            var playerIndex = ReadUInt16LittleEndian(message, offset);
+            offset += 2;
+            var seq = ReadUInt32LittleEndian(message, offset);
+            offset += 4;
+            var timestampMs = ReadUInt32LittleEndian(message, offset);
+            offset += 4;
+            var a0 = Mathf.Clamp(ReadInt16LittleEndian(message, offset), -1000, 1000) / CompactControllerInputAxisScale;
+            offset += 2;
+            var a1 = Mathf.Clamp(ReadInt16LittleEndian(message, offset), -1000, 1000) / CompactControllerInputAxisScale;
+            offset += 2;
+            var buttons = message[offset];
+
+            inputFrame = new CompactControllerInputFrame
+            {
+                playerIndex = playerIndex,
+                seq = seq,
+                timestampMs = timestampMs,
+                inputs = new GCControllerInputsData
+                {
+                    a0 = a0,
+                    a1 = a1,
+                    a2 = 0f,
+                    a3 = 0f,
+                    b0 = (buttons & 1) != 0 ? 1 : 0,
+                    b1 = (buttons & 2) != 0 ? 1 : 0,
+                    b2 = (buttons & 4) != 0 ? 1 : 0,
+                    b3 = 0,
+                    b12 = 0,
+                    b13 = 0,
+                    b14 = 0,
+                    b15 = 0
+                }
+            };
+            return true;
+        }
+
+        private static ushort ReadUInt16LittleEndian(byte[] bytes, int offset)
+        {
+            return (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+        }
+
+        private static short ReadInt16LittleEndian(byte[] bytes, int offset)
+        {
+            return (short)(bytes[offset] | (bytes[offset + 1] << 8));
+        }
+
+        private static uint ReadUInt32LittleEndian(byte[] bytes, int offset)
+        {
+            return (uint)(
+                bytes[offset] |
+                (bytes[offset + 1] << 8) |
+                (bytes[offset + 2] << 16) |
+                (bytes[offset + 3] << 24)
+            );
         }
 
         void CloseWebSocket()
@@ -511,6 +640,7 @@ namespace DSB.GC.Dev
             currentRunId = null;
             lastSentSnapshotSignature = null;
             isSnapshotSendInFlight = false;
+            lastInputSeqByPlayerIndex.Clear();
 
             if (websocket != null)
             {
@@ -561,6 +691,14 @@ namespace DSB.GC.Dev
     }
 
 #if UNITY_EDITOR
+    public struct CompactControllerInputFrame
+    {
+        public int playerIndex;
+        public uint seq;
+        public uint timestampMs;
+        public GCControllerInputsData inputs;
+    }
+
     [Serializable]
     public class WebSocketInputData
     {
@@ -568,6 +706,7 @@ namespace DSB.GC.Dev
         public float a1;
         public float b0;
         public float b1;
+        public float b2;
     }
 
     [Serializable]
