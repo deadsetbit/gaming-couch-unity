@@ -59,10 +59,11 @@ namespace DSB.GC.Hud
 
             GamingCouch.Instance.Hud.QueuePointData(new GCScreenPointDataPoint
             {
-                type = "name",
+                type = "playerOverhead",
                 playerIndex = player.Index,
-                x = screenPosition.x / Screen.width,
-                y = screenPosition.y / Screen.height
+                x = Mathf.Clamp01(screenPosition.x / Screen.width),
+                y = Mathf.Clamp01(screenPosition.y / Screen.height),
+                isOffScreen = false
             });
         }
 

@@ -25,44 +25,6 @@ mergeInto(LibraryManager.library, {
     window.gamingCouchSetupHud(hudConfig);
   },
 
-  GamingCouchUpdatePlayersHud: function (playersHudDataJsonString) {
-    if (!window.gamingCouchUpdatePlayersHud) {
-      console.error("gamingCouchUpdatePlayersHud is not defined");
-      return;
-    }
-
-    var playersHudData = JSON.parse(UTF8ToString(playersHudDataJsonString));
-    window.gamingCouchUpdatePlayersHud(playersHudData);
-  },
-
-  GamingCouchUpdateScreenPointHud: function (screenPointHudDataJsonString) {
-    if (!window.gamingCouchUpdateScreenPointHud) {
-      console.error("gamingCouchUpdateScreenPointHud is not defined");
-      return;
-    }
-
-    var screenPointHudData = JSON.parse(
-      UTF8ToString(screenPointHudDataJsonString)
-    );
-    window.gamingCouchUpdateScreenPointHud(screenPointHudData);
-  },
-
-  GamingCouchGameEnd: function (
-    placementsByPlayerIndex,
-    placementsByPlayerIndexLength
-  ) {
-    if (!window.gamingCouchGameEnd) {
-      console.error("gamingCouchGameEnd is not defined");
-      return;
-    }
-
-    var playerIndicesByPlacement = [];
-    for (var i = 0; i < placementsByPlayerIndexLength; i++) {
-      playerIndicesByPlacement.push(HEAPU8[(placementsByPlayerIndex >> 0) + i]);
-    }
-    window.gamingCouchGameEnd({ playerIndicesByPlacement: playerIndicesByPlacement });
-  },
-
   GamingCouchSendProjectInfo: function (projectNameString) {
     if (!window.gamingCouchSendProjectInfo) {
       console.error("gamingCouchSendProjectInfo is not defined");

@@ -39,9 +39,6 @@ namespace DSB.GC
         private static extern void GamingCouchSetupDone();
 
         [DllImport("__Internal")]
-        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerIndex, int placementsByPlayerIndexLength);
-
-        [DllImport("__Internal")]
         private static extern void GamingCouchSendProjectInfo(string projectName);
 
         private static int MAX_PLAYERS = 8;
@@ -647,22 +644,12 @@ namespace DSB.GC
                 GCLog.LogInfo($"Player index {playerIndex} placed {i + 1}");
             }
 
-            byte[] result = new byte[playerIndicesByPlacement.Length];
-            for (int i = 0; i < playerIndicesByPlacement.Length; i++)
-            {
-                result[i] = (byte)playerIndicesByPlacement[i];
-            }
-
             if (!TrySubmitGameOverPlacement(playerIndicesByPlacement, out _))
             {
                 return;
             }
 
             StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchGameEnd(result, result.Length);
-#endif
         }
 
         internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload()

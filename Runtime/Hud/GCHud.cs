@@ -154,12 +154,6 @@ namespace DSB.GC.Hud
         [DllImport("__Internal")]
         private static extern void GamingCouchSetupHud(string hudConfigJson);
 
-        [DllImport("__Internal")]
-        private static extern void GamingCouchUpdatePlayersHud(string playersHudDataJson);
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchUpdateScreenPointHud(string playersHudDataJson);
-
         private Camera camera = null;
         public Camera Camera
         {
@@ -190,39 +184,21 @@ namespace DSB.GC.Hud
         /// </summary>
         public void UpdatePlayers(GCPlayersHudData playersHudData)
         {
-            string playersHudDataJson = JsonUtility.ToJson(playersHudData);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdatePlayersHud(playersHudDataJson);
-#endif
         }
 
         public void UpdateScreenPointHud(GCScreenPointData pointData)
         {
-            string screenPointHudDataJson = JsonUtility.ToJson(pointData);
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdateScreenPointHud(screenPointHudDataJson);
-#endif
         }
 
-        private List<GCScreenPointDataPoint> pointDataQueue = new List<GCScreenPointDataPoint>();
         private List<GCRuntimeScreenSpaceAnchor> screenSpaceQueue = new List<GCRuntimeScreenSpaceAnchor>();
 
         public void QueuePointData(GCScreenPointDataPoint pointData)
         {
-            pointDataQueue.Add(pointData);
             QueueScreenSpaceAnchor(pointData);
         }
 
         public void HandleQueue()
         {
-            var pointData = new GCScreenPointData
-            {
-                points = pointDataQueue.ToArray()
-            };
-            UpdateScreenPointHud(pointData);
-            pointDataQueue.Clear();
-
             try
             {
                 GCRuntimeOutput.EmitScreenSpace(Time.frameCount, screenSpaceQueue.ToArray());

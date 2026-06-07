@@ -391,6 +391,25 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void CurrentWebGLRuntimeSourcesDoNotEmitLegacyHudOrGameOverBridges()
+    {
+        var packageRootPath = FindPackageRootPath();
+        var bridgeSource = File.ReadAllText(Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib"));
+        var hudSource = File.ReadAllText(Path.Combine(packageRootPath, "Runtime", "Hud", "GCHud.cs"));
+        var nameTagSource = File.ReadAllText(Path.Combine(packageRootPath, "Runtime", "Hud", "GCNameTag.cs"));
+        var runtimeSource = File.ReadAllText(Path.Combine(packageRootPath, "Runtime", "GamingCouch.cs"));
+
+        Assert.That(bridgeSource, Does.Not.Contain("GamingCouchUpdatePlayersHud"));
+        Assert.That(bridgeSource, Does.Not.Contain("GamingCouchUpdateScreenPointHud"));
+        Assert.That(bridgeSource, Does.Not.Contain("GamingCouchGameEnd"));
+        Assert.That(hudSource, Does.Not.Contain("GamingCouchUpdatePlayersHud"));
+        Assert.That(hudSource, Does.Not.Contain("GamingCouchUpdateScreenPointHud"));
+        Assert.That(nameTagSource, Does.Not.Contain("type = \"name\""));
+        Assert.That(nameTagSource, Does.Contain("type = \"playerOverhead\""));
+        Assert.That(runtimeSource, Does.Not.Contain("GamingCouchGameEnd"));
+    }
+
+    [Test]
     public void ScreenSpaceRejectsDuplicateAnchorPairs()
     {
         CreateRuntimeGame(1);
