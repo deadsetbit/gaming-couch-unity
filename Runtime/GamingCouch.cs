@@ -371,7 +371,7 @@ namespace DSB.GC
         /// </summary>
         private void Play(GCPlayOptions options)
         {
-            Play(options, CreateFallbackSeatIdentities(options));
+            Play(options, null);
         }
 
         /// <summary>
@@ -379,51 +379,15 @@ namespace DSB.GC
         /// </summary>
         private void Play(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
         {
-            var playerCount = options?.players?.Length ?? 0;
-            var resolvedSeatIdentities = seatIdentities ?? CreateFallbackSeatIdentities(options);
-            if (resolvedSeatIdentities.Length != playerCount)
-            {
-                throw new ArgumentException("[GamingCouch] Seat identity count must match play player count.");
-            }
-
-            activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
-            playOptions = activePlayerMapping.CreateGameFacingPlayOptions();
-            playOptions.runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions();
-            playOptions.platformData = GCPlatformRuntimeView.CopyForRuntime(options.platformData);
-#if UNITY_EDITOR
-            playOptions.runtimeOutput = GCDevAppRuntimeOutputSettings.Apply(playOptions.runtimeOutput);
-#endif
-            playSeatIdentities = CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping);
+            var activeRunProjection = GCActiveRunProjection.Create(options, seatIdentities);
+            activePlayerMapping = activeRunProjection.ActivePlayerMapping;
+            playOptions = activeRunProjection.GameFacingPlayOptions;
+            playSeatIdentities = activeRunProjection.MappedSeatIdentities;
             GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
             EmitPlatformMetadataDiagnostics(playOptions.platformData);
             listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
             QueueRuntimeStateSnapshot();
-        }
-
-        private static GCPlayOptions CopyPlayOptions(GCPlayOptions options)
-        {
-            if (options == null)
-            {
-                return null;
-            }
-
-            GCActivePlayerOptions[] players = null;
-            if (options.players != null)
-            {
-                players = new GCActivePlayerOptions[options.players.Length];
-                Array.Copy(options.players, players, options.players.Length);
-            }
-
-            return new GCPlayOptions
-            {
-                players = players,
-                seed = options.seed,
-                runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions(),
-                platformData = GCPlatformRuntimeView.CopyForRuntime(options.platformData),
-                participantIdentities = CopyParticipantIdentities(options.participantIdentities),
-                usesMappedActivePlayers = options.usesMappedActivePlayers,
-            };
         }
 
         internal static void EmitPlatformMetadataDiagnostics(GCPlatformRuntimeView platformData)
@@ -490,18 +454,6 @@ namespace DSB.GC
             return context;
         }
 
-        private static GCPlatformParticipantIdentity[] CopyParticipantIdentities(GCPlatformParticipantIdentity[] participantIdentities)
-        {
-            if (participantIdentities == null || participantIdentities.Length == 0)
-            {
-                return Array.Empty<GCPlatformParticipantIdentity>();
-            }
-
-            var copiedParticipantIdentities = new GCPlatformParticipantIdentity[participantIdentities.Length];
-            Array.Copy(participantIdentities, copiedParticipantIdentities, participantIdentities.Length);
-            return copiedParticipantIdentities;
-        }
-
         private static GCSeatIdentity[] CopySeatIdentities(GCSeatIdentity[] seatIdentities)
         {
             if (seatIdentities == null || seatIdentities.Length == 0)
@@ -512,65 +464,6 @@ namespace DSB.GC
             var copiedSeatIdentities = new GCSeatIdentity[seatIdentities.Length];
             Array.Copy(seatIdentities, copiedSeatIdentities, seatIdentities.Length);
             return copiedSeatIdentities;
-        }
-
-        private static GCSeatIdentity[] CreateFallbackSeatIdentities(GCPlayOptions options)
-        {
-            if (options?.players == null)
-            {
-                return Array.Empty<GCSeatIdentity>();
-            }
-
-            var seatIdentities = new GCSeatIdentity[options.players.Length];
-            for (var index = 0; index < options.players.Length; index++)
-            {
-                var playerOption = options.players[index];
-                var sourceSeatIndex = index + 1;
-                var participantIdentity = options.participantIdentities != null && index < options.participantIdentities.Length
-                    ? options.participantIdentities[index]
-                    : default;
-                seatIdentities[index] = new GCSeatIdentity
-                {
-                    platformPlayerId = participantIdentity.platformPlayerId,
-                    sourceSeatIndex = sourceSeatIndex,
-                    stableKey = !string.IsNullOrWhiteSpace(participantIdentity.stableKey) ? participantIdentity.stableKey : sourceSeatIndex.ToString(),
-                    label = "Seat " + sourceSeatIndex,
-                    playerType = ResolvePlayerType(playerOption.type),
-                    playerColor = ResolvePlayerColor(playerOption.color),
-                };
-            }
-
-            return seatIdentities;
-        }
-
-        private static GCSeatIdentity[] CreateMappedSeatIdentities(
-            GCSeatIdentity[] capturedSeatIdentities,
-            GCActivePlayerMapping mapping
-        )
-        {
-            if (mapping == null || capturedSeatIdentities == null || capturedSeatIdentities.Length == 0)
-            {
-                return Array.Empty<GCSeatIdentity>();
-            }
-
-            var mappedSeatIdentities = new GCSeatIdentity[capturedSeatIdentities.Length];
-            for (var playerIndex = 0; playerIndex < capturedSeatIdentities.Length; playerIndex++)
-            {
-                var entry = mapping.GetByPlayerIndex(playerIndex);
-                mappedSeatIdentities[playerIndex] = capturedSeatIdentities[entry.CapturedOrder];
-            }
-
-            return mappedSeatIdentities;
-        }
-
-        private static GCPlayerType ResolvePlayerType(string value)
-        {
-            return string.Equals(value, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? GCPlayerType.bot : GCPlayerType.player;
-        }
-
-        private static GCPlayerColor ResolvePlayerColor(string value)
-        {
-            return !string.IsNullOrEmpty(value) && Enum.TryParse(value, true, out GCPlayerColor playerColor) ? playerColor : GCPlayerColor.blue;
         }
 
         /// <summary>
