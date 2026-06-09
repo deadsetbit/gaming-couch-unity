@@ -57,6 +57,21 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
+    public void TextMessageRoutesMissingActivePlayerIndexForAdapterValidation()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        var decision = inbound.RouteTextMessage(
+            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"inputs\":{\"a0\":1.0}}}",
+            Context()
+        );
+
+        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
+        Assert.That(decision.activePlayerIndex, Is.EqualTo(-1));
+    }
+
+    [Test]
     public void TextMessageIgnoresInputWhenLegacyPlayerIdCannotResolve()
     {
         var inbound = new GCDevAppRuntimeInbound();
@@ -68,6 +83,28 @@ public sealed class GCDevAppRuntimeInboundTests
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
         Assert.That(decision.reason, Is.EqualTo("unresolved_active_player_index"));
+    }
+
+    [Test]
+    public void TextMessageLeavesNonDevToolMalformedTextUnhandled()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        var decision = inbound.RouteTextMessage("{not json", Context());
+
+        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Unhandled));
+        Assert.That(decision.reason, Is.EqualTo("unsupported_message_type"));
+    }
+
+    [Test]
+    public void TextMessageLetsMalformedDevToolJsonReachAdapterErrorHandling()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        Assert.That(
+            () => inbound.RouteTextMessage("{\"type\":\"gcdevtool\",", Context()),
+            Throws.Exception
+        );
     }
 
     [Test]
@@ -140,6 +177,27 @@ public sealed class GCDevAppRuntimeInboundTests
         Assert.That(inputFrame.inputs.b0, Is.EqualTo(1));
         Assert.That(inputFrame.inputs.b1, Is.EqualTo(0));
         Assert.That(inputFrame.inputs.b2, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void CompactInputParserReadsNeutralReleaseFrame()
+    {
+        var frame = CreateCompactInputFrame(
+            playerIndex: 1,
+            seq: 124,
+            timestampMs: 789,
+            a0: 0,
+            a1: 0,
+            buttons: 0
+        );
+
+        Assert.That(GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(frame, out var inputFrame), Is.True);
+        Assert.That(inputFrame.playerIndex, Is.EqualTo(1));
+        Assert.That(inputFrame.inputs.a0, Is.EqualTo(0f));
+        Assert.That(inputFrame.inputs.a1, Is.EqualTo(0f));
+        Assert.That(inputFrame.inputs.b0, Is.EqualTo(0));
+        Assert.That(inputFrame.inputs.b1, Is.EqualTo(0));
+        Assert.That(inputFrame.inputs.b2, Is.EqualTo(0));
     }
 
     [Test]

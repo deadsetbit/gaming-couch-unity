@@ -37,11 +37,7 @@ namespace DSB.GC.Dev
         private bool isSnapshotSendInFlight = false;
         private string currentRunId;
         private string lastSentSnapshotSignature;
-        private readonly Dictionary<int, uint> lastInputSeqByPlayerIndex = new Dictionary<int, uint>();
-
-        internal const byte CompactControllerInputTypeByte = 0x44;
-        internal const int CompactControllerInputByteLength = 16;
-        private const float CompactControllerInputAxisScale = 1000f;
+        private readonly GCDevAppRuntimeInbound runtimeInbound = new GCDevAppRuntimeInbound();
 
         private void Start()
         {
@@ -278,7 +274,7 @@ namespace DSB.GC.Dev
                 LogWebSocket("Connected.");
                 currentRunId = BuildRunId();
                 lastSentSnapshotSignature = null;
-                lastInputSeqByPlayerIndex.Clear();
+                runtimeInbound.ResetInputSequences();
                 yield return SendRuntimeRegisterMessage();
                 TryPublishRuntimeSnapshot();
                 StartCoroutine(ReceiveMessages());
@@ -291,7 +287,7 @@ namespace DSB.GC.Dev
         {
             var buffer = new byte[1024 * 16];
             var messageBuilder = new StringBuilder(1024);
-            var binaryMessage = new List<byte>(CompactControllerInputByteLength);
+            var binaryMessage = new List<byte>(GCDevAppRuntimeInbound.CompactControllerInputByteLength);
 
             LogWebSocket("Receive loop started.");
             while (websocket != null && websocket.State == WebSocketState.Open)
@@ -389,15 +385,10 @@ namespace DSB.GC.Dev
         {
             try
             {
-                if (message.Contains("\"type\":\"gcdevtool\""))
-                {
-                    var data = JsonUtility.FromJson<WebSocketDevToolMessage>(message);
-                    if (data.type == "gcdevtool")
-                    {
-                        HandleDevToolAction(data);
-                    }
-                }
-                else
+                var decision = runtimeInbound.RouteTextMessage(message, BuildInboundContext());
+                ApplyInboundDecision(decision, "devapp_input");
+
+                if (decision.status == GCDevAppRuntimeInboundStatus.Unhandled)
                 {
                     LogWebSocket("Unhandled message type." + message);
                 }
@@ -412,13 +403,24 @@ namespace DSB.GC.Dev
         {
             try
             {
-                if (!TryParseCompactControllerInputFrame(message, out var inputFrame))
+                if (!GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(message, out var inputFrame))
                 {
-                    LogWebSocket($"Unhandled binary message length: {message.Length}");
+                    LogWebSocket($"Unhandled binary message length: {message?.Length ?? 0}");
                     return;
                 }
 
-                ApplyCompactControllerInput(inputFrame);
+                if (GamingCouch.Instance == null)
+                {
+                    return;
+                }
+
+                if (!GamingCouch.Instance.TryValidateActivePlayerIndex(inputFrame.playerIndex, "devapp_compact_input", out _))
+                {
+                    return;
+                }
+
+                var decision = runtimeInbound.RouteValidatedCompactControllerInputFrame(inputFrame);
+                ApplyInboundDecision(decision, null);
             }
             catch (Exception e)
             {
@@ -426,51 +428,36 @@ namespace DSB.GC.Dev
             }
         }
 
-        void ApplyCompactControllerInput(CompactControllerInputFrame inputFrame)
+        GCDevAppRuntimeInboundContext BuildInboundContext()
         {
-            if (GamingCouch.Instance == null)
+            var gamingCouch = GamingCouch.Instance;
+            return new GCDevAppRuntimeInboundContext
             {
-                return;
-            }
-
-            if (!GamingCouch.Instance.TryValidateActivePlayerIndex(inputFrame.playerIndex, "devapp_compact_input", out _))
-            {
-                return;
-            }
-
-            if (lastInputSeqByPlayerIndex.TryGetValue(inputFrame.playerIndex, out var lastSeq) && inputFrame.seq <= lastSeq)
-            {
-                return;
-            }
-
-            lastInputSeqByPlayerIndex[inputFrame.playerIndex] = inputFrame.seq;
-            GamingCouch.Instance.ApplyDevAppInput(inputFrame.playerIndex, inputFrame.inputs);
+                activePlayerResolver = gamingCouch != null ? new GamingCouchActivePlayerResolver(gamingCouch) : null,
+                isPaused = gamingCouch != null && gamingCouch.IsPaused,
+            };
         }
 
-        void HandleDevToolAction(WebSocketDevToolMessage message)
+        void ApplyInboundDecision(GCDevAppRuntimeInboundDecision decision, string inputValidationSource)
         {
-            switch (message.action)
+            if (decision.status != GCDevAppRuntimeInboundStatus.Intent)
             {
-                case "restart":
+                return;
+            }
+
+            switch (decision.intentKind)
+            {
+                case GCDevAppRuntimeInboundIntentKind.Restart:
                     RestartGame();
                     break;
-                case "input":
-                    if (message.payload != null && message.payload.inputs != null)
-                    {
-                        ForwardToGamingCouch(message.payload, message.payload.inputs);
-                    }
+                case GCDevAppRuntimeInboundIntentKind.Input:
+                    ApplyInboundInput(decision, inputValidationSource);
                     break;
-                case "timescale_state":
-                    if (message.payload != null)
-                    {
-                        ApplyTimescaleState(message.payload);
-                    }
+                case GCDevAppRuntimeInboundIntentKind.TimescaleState:
+                    ApplyTimescaleState(decision);
                     break;
-                case "runtime_output_options":
-                    if (message.payload != null)
-                    {
-                        ApplyRuntimeOutputOptions(message.payload);
-                    }
+                case GCDevAppRuntimeInboundIntentKind.RuntimeOutputOptions:
+                    ApplyRuntimeOutputOptions(decision);
                     break;
             }
         }
@@ -502,137 +489,57 @@ namespace DSB.GC.Dev
             Time.timeScale = Mathf.Clamp(timescale, 0.1f, 10.0f);
         }
 
-        void ApplyTimescaleState(WebSocketDevToolPayload message)
-        {
-            SetTimescale(message.timescale);
-            if (GamingCouch.Instance?.IsPaused == message.paused)
-            {
-                return;
-            }
-
-            SetPause(message.paused);
-        }
-
-        void ApplyRuntimeOutputOptions(WebSocketDevToolPayload message)
-        {
-            if (message.runtimeOutput == null)
-            {
-                return;
-            }
-
-            GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(message.runtimeOutput.unityLogCapture);
-        }
-
-
-        void ForwardToGamingCouch(WebSocketDevToolPayload payload, WebSocketInputData inputs)
+        void ApplyInboundInput(GCDevAppRuntimeInboundDecision decision, string validationSource)
         {
             if (GamingCouch.Instance == null)
             {
                 return;
             }
 
-            var playerIndex = payload.playerIndex;
-            if (playerIndex < 0 && payload.playerId > 0)
-            {
-                if (!GamingCouch.Instance.TryGetPlayerIndexForLegacyPlayerId(payload.playerId, out playerIndex))
-                {
-                    return;
-                }
-            }
-
-            if (!GamingCouch.Instance.TryValidateActivePlayerIndex(playerIndex, "devapp_input", out _))
+            if (!string.IsNullOrEmpty(validationSource) &&
+                !GamingCouch.Instance.TryValidateActivePlayerIndex(decision.activePlayerIndex, validationSource, out _))
             {
                 return;
             }
 
-            var inputData = new GCControllerInputsData
+            if (string.Equals(validationSource, "devapp_input", StringComparison.Ordinal))
             {
-                a0 = inputs.a0,
-                a1 = inputs.a1,
-                a2 = 0f,
-                a3 = 0f,
-                b0 = inputs.b0 > 0.5f ? 1 : 0,
-                b1 = inputs.b1 > 0.5f ? 1 : 0,
-                b2 = inputs.b2 > 0.5f ? 1 : 0,
-                b3 = 0,
-                b12 = 0,
-                b13 = 0,
-                b14 = 0,
-                b15 = 0
-            };
-
-            LogWebSocket($"Applying JSON input to GamingCouch player {playerIndex}");
-            GamingCouch.Instance.ApplyDevAppInput(playerIndex, inputData);
-        }
-
-        internal static bool TryParseCompactControllerInputFrame(byte[] message, out CompactControllerInputFrame inputFrame)
-        {
-            inputFrame = default;
-            if (message == null || message.Length != CompactControllerInputByteLength)
-            {
-                return false;
+                LogWebSocket($"Applying JSON input to GamingCouch player {decision.activePlayerIndex}");
             }
 
-            if (message[0] != CompactControllerInputTypeByte)
+            GamingCouch.Instance.ApplyDevAppInput(decision.activePlayerIndex, decision.inputs);
+        }
+
+        void ApplyTimescaleState(GCDevAppRuntimeInboundDecision decision)
+        {
+            SetTimescale(decision.timescale);
+            if (decision.shouldApplyPause)
             {
-                return false;
+                SetPause(decision.paused);
+            }
+        }
+
+        void ApplyRuntimeOutputOptions(GCDevAppRuntimeInboundDecision decision)
+        {
+            GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(decision.unityLogCaptureMode);
+        }
+
+        private sealed class GamingCouchActivePlayerResolver : IGCDevAppRuntimeActivePlayerResolver
+        {
+            private readonly GamingCouch gamingCouch;
+
+            internal GamingCouchActivePlayerResolver(GamingCouch gamingCouch)
+            {
+                this.gamingCouch = gamingCouch;
             }
 
-            var offset = 1;
-            var playerIndex = ReadUInt16LittleEndian(message, offset);
-            offset += 2;
-            var seq = ReadUInt32LittleEndian(message, offset);
-            offset += 4;
-            var timestampMs = ReadUInt32LittleEndian(message, offset);
-            offset += 4;
-            var a0 = Mathf.Clamp(ReadInt16LittleEndian(message, offset), -1000, 1000) / CompactControllerInputAxisScale;
-            offset += 2;
-            var a1 = Mathf.Clamp(ReadInt16LittleEndian(message, offset), -1000, 1000) / CompactControllerInputAxisScale;
-            offset += 2;
-            var buttons = message[offset];
-
-            inputFrame = new CompactControllerInputFrame
+            bool IGCDevAppRuntimeActivePlayerResolver.TryGetActivePlayerIndexForLegacyPlayerId(
+                int platformPlayerId,
+                out int activePlayerIndex
+            )
             {
-                playerIndex = playerIndex,
-                seq = seq,
-                timestampMs = timestampMs,
-                inputs = new GCControllerInputsData
-                {
-                    a0 = a0,
-                    a1 = a1,
-                    a2 = 0f,
-                    a3 = 0f,
-                    b0 = (buttons & 1) != 0 ? 1 : 0,
-                    b1 = (buttons & 2) != 0 ? 1 : 0,
-                    b2 = (buttons & 4) != 0 ? 1 : 0,
-                    b3 = 0,
-                    b12 = 0,
-                    b13 = 0,
-                    b14 = 0,
-                    b15 = 0
-                }
-            };
-            return true;
-        }
-
-        private static ushort ReadUInt16LittleEndian(byte[] bytes, int offset)
-        {
-            return (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
-        }
-
-        private static short ReadInt16LittleEndian(byte[] bytes, int offset)
-        {
-            return (short)(bytes[offset] | (bytes[offset + 1] << 8));
-        }
-
-        private static uint ReadUInt32LittleEndian(byte[] bytes, int offset)
-        {
-            return (uint)(
-                bytes[offset] |
-                (bytes[offset + 1] << 8) |
-                (bytes[offset + 2] << 16) |
-                (bytes[offset + 3] << 24)
-            );
+                return gamingCouch.TryGetPlayerIndexForLegacyPlayerId(platformPlayerId, out activePlayerIndex);
+            }
         }
 
         void CloseWebSocket()
@@ -640,7 +547,7 @@ namespace DSB.GC.Dev
             currentRunId = null;
             lastSentSnapshotSignature = null;
             isSnapshotSendInFlight = false;
-            lastInputSeqByPlayerIndex.Clear();
+            runtimeInbound.ResetInputSequences();
 
             if (websocket != null)
             {
@@ -691,14 +598,6 @@ namespace DSB.GC.Dev
     }
 
 #if UNITY_EDITOR
-    public struct CompactControllerInputFrame
-    {
-        public int playerIndex;
-        public uint seq;
-        public uint timestampMs;
-        public GCControllerInputsData inputs;
-    }
-
     [Serializable]
     public class WebSocketInputData
     {

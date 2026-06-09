@@ -34,6 +34,14 @@ namespace DSB.GC.Dev
         RuntimeOutputOptions,
     }
 
+    public struct CompactControllerInputFrame
+    {
+        public int playerIndex;
+        public uint seq;
+        public uint timestampMs;
+        public GCControllerInputsData inputs;
+    }
+
     internal sealed class GCDevAppRuntimeInboundDecision
     {
         internal readonly GCDevAppRuntimeInboundStatus status;
@@ -211,16 +219,12 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Unhandled("empty_message");
             }
 
-            GCDevAppRuntimeDevToolMessage data;
-            try
+            if (!message.Contains("\"type\":\"gcdevtool\""))
             {
-                data = JsonUtility.FromJson<GCDevAppRuntimeDevToolMessage>(message);
-            }
-            catch (Exception)
-            {
-                return GCDevAppRuntimeInboundDecision.Ignored("invalid_json");
+                return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_message_type");
             }
 
+            var data = JsonUtility.FromJson<GCDevAppRuntimeDevToolMessage>(message);
             if (data == null || !string.Equals(data.type, "gcdevtool", StringComparison.Ordinal))
             {
                 return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_message_type");
@@ -393,9 +397,13 @@ namespace DSB.GC.Dev
                 return true;
             }
 
-            if (payload.playerId <= 0 || context.activePlayerResolver == null)
+            if (payload.playerId <= 0)
             {
-                activePlayerIndex = -1;
+                return true;
+            }
+
+            if (context.activePlayerResolver == null)
+            {
                 return false;
             }
 
