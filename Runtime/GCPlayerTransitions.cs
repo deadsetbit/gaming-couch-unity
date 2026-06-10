@@ -193,6 +193,147 @@ namespace DSB.GC
         }
     }
 
+    internal readonly struct GCPlayerAcceptedTransition
+    {
+        private GCPlayerAcceptedTransition(
+            GCPlayerTransitionKind kind,
+            int playerIndex,
+            string reasonText,
+            float changedAtGameTime,
+            bool emitsSemanticTransition,
+            GCPlayerLatestStateDirtyFlags latestStateDirtyFlags,
+            int previousIntValue,
+            int intValue,
+            GCPlayerStatusValue previousStatusValue,
+            GCPlayerStatusValue statusValue,
+            GCPlayerEliminationState previousEliminationState,
+            GCPlayerEliminationState eliminationState,
+            GCPlayerFinishState previousFinishState,
+            GCPlayerFinishState finishState
+        )
+        {
+            Kind = kind;
+            PlayerIndex = playerIndex;
+            ReasonText = reasonText;
+            ChangedAtGameTime = changedAtGameTime;
+            EmitsSemanticTransition = emitsSemanticTransition;
+            LatestStateDirtyFlags = latestStateDirtyFlags;
+            PreviousIntValue = previousIntValue;
+            IntValue = intValue;
+            PreviousStatusValue = previousStatusValue;
+            StatusValue = statusValue;
+            PreviousEliminationState = previousEliminationState;
+            EliminationState = eliminationState;
+            PreviousFinishState = previousFinishState;
+            FinishState = finishState;
+        }
+
+        internal GCPlayerTransitionKind Kind { get; }
+        internal int PlayerIndex { get; }
+        internal string ReasonText { get; }
+        internal float ChangedAtGameTime { get; }
+        internal bool EmitsSemanticTransition { get; }
+        internal GCPlayerLatestStateDirtyFlags LatestStateDirtyFlags { get; }
+        internal bool MarksRuntimeStateSnapshotDirty =>
+            (LatestStateDirtyFlags & GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot) != 0;
+        internal bool MarksPlayersHudDirty =>
+            (LatestStateDirtyFlags & GCPlayerLatestStateDirtyFlags.PlayersHud) != 0;
+        internal int PreviousIntValue { get; }
+        internal int IntValue { get; }
+        internal GCPlayerStatusValue PreviousStatusValue { get; }
+        internal GCPlayerStatusValue StatusValue { get; }
+        internal GCPlayerEliminationState PreviousEliminationState { get; }
+        internal GCPlayerEliminationState EliminationState { get; }
+        internal GCPlayerFinishState PreviousFinishState { get; }
+        internal GCPlayerFinishState FinishState { get; }
+
+        internal static GCPlayerAcceptedTransition FromElimination(
+            GCPlayerTransitionResult<GCPlayerEliminationState> transition
+        )
+        {
+            return new GCPlayerAcceptedTransition(
+                transition.Kind,
+                transition.PlayerIndex,
+                transition.ReasonText,
+                transition.ChangedAtGameTime,
+                transition.EmitsSemanticTransition,
+                transition.LatestStateDirtyFlags,
+                0,
+                0,
+                default,
+                default,
+                transition.PreviousValue,
+                transition.Value,
+                default,
+                default
+            );
+        }
+
+        internal static GCPlayerAcceptedTransition FromFinish(
+            GCPlayerTransitionResult<GCPlayerFinishState> transition
+        )
+        {
+            return new GCPlayerAcceptedTransition(
+                transition.Kind,
+                transition.PlayerIndex,
+                transition.ReasonText,
+                transition.ChangedAtGameTime,
+                transition.EmitsSemanticTransition,
+                transition.LatestStateDirtyFlags,
+                0,
+                0,
+                default,
+                default,
+                default,
+                default,
+                transition.PreviousValue,
+                transition.Value
+            );
+        }
+
+        internal static GCPlayerAcceptedTransition FromInt(GCPlayerTransitionResult<int> transition)
+        {
+            return new GCPlayerAcceptedTransition(
+                transition.Kind,
+                transition.PlayerIndex,
+                transition.ReasonText,
+                transition.ChangedAtGameTime,
+                transition.EmitsSemanticTransition,
+                transition.LatestStateDirtyFlags,
+                transition.PreviousValue,
+                transition.Value,
+                default,
+                default,
+                default,
+                default,
+                default,
+                default
+            );
+        }
+
+        internal static GCPlayerAcceptedTransition FromStatus(
+            GCPlayerTransitionResult<GCPlayerStatusValue> transition
+        )
+        {
+            return new GCPlayerAcceptedTransition(
+                transition.Kind,
+                transition.PlayerIndex,
+                transition.ReasonText,
+                transition.ChangedAtGameTime,
+                transition.EmitsSemanticTransition,
+                transition.LatestStateDirtyFlags,
+                0,
+                0,
+                transition.PreviousValue,
+                transition.Value,
+                default,
+                default,
+                default,
+                default
+            );
+        }
+    }
+
     internal static class GCPlayerTransitions
     {
         internal static GCPlayerTransitionResult<GCPlayerEliminationState> SetEliminatedPermanent(

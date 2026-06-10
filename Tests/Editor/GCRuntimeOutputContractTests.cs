@@ -530,6 +530,114 @@ public sealed class GCRuntimeOutputContractTests
         );
     }
 
+    [Test]
+    public void PackageInternalConsumersUseAcceptedTransitionsWhenPublicCallbacksAreCleared()
+    {
+        var context = CreateRuntimeGame(2);
+        context.gamingCouch.FlushRuntimeOutput();
+        ClearLegacyPlayerCallbacks(context.players[0]);
+        ClearLegacyPlayerCallbacks(context.players[1]);
+
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        context.players[0].SetScore(10, "score");
+        context.players[0].SetLives(2, "lives");
+        context.players[0].SetStatus(GCPlayerStatus.Success, "ready", "status");
+        context.players[0].SetMeter(50, "meter");
+        context.players[1].SetEliminatedPermanent("out");
+        context.players[1].SetFinishedRevokable("finish");
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        var json = emitted[0];
+        AssertMessageOrder(
+            json,
+            "\"messageType\":\"gc.player.score_changed\"",
+            "\"messageType\":\"gc.player.lives_changed\"",
+            "\"messageType\":\"gc.player.status_changed\"",
+            "\"messageType\":\"gc.player.meter_changed\"",
+            "\"messageType\":\"gc.player.elimination_state_changed\"",
+            "\"messageType\":\"gc.player.finish_state_changed\"",
+            "\"messageType\":\"gc.state.snapshot\""
+        );
+        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+
+        var store = context.gamingCouch.InternalPlayerStore;
+        Assert.That(store.PlayersEliminated, Is.EqualTo(new[] { context.players[1] }));
+        Assert.That(store.PlayersEliminatedPermanent, Is.EqualTo(new[] { context.players[1] }));
+        Assert.That(store.PlayersFinished, Is.EqualTo(new[] { context.players[1] }));
+        Assert.That(store.PlayersFinishedRevokable, Is.EqualTo(new[] { context.players[1] }));
+
+        var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
+        AssertSnapshotPlayer(
+            snapshot.players[0],
+            playerIndex: 0,
+            score: 10,
+            lives: 2,
+            status: "Success",
+            statusText: "ready",
+            meter: 50,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None"
+        );
+        AssertSnapshotPlayer(
+            snapshot.players[1],
+            playerIndex: 1,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 2,
+            eliminationState: "Permanent",
+            finishState: "Revokable"
+        );
+
+        var hudData = context.game.BuildPlayersHudData();
+        Assert.That(hudData.players, Has.Length.EqualTo(2));
+        AssertHudPlayer(
+            hudData.players[0],
+            playerIndex: 0,
+            score: 10,
+            lives: 2,
+            status: "Success",
+            statusText: "ready",
+            meter: 50,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None",
+            eliminated: false,
+            value: null
+        );
+        AssertHudPlayer(
+            hudData.players[1],
+            playerIndex: 1,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 2,
+            eliminationState: "Permanent",
+            finishState: "Revokable",
+            eliminated: true,
+            value: null
+        );
+
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
+        Assert.That(gameOverEnvelope, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(gameOverEnvelope, Does.Contain("\"messageType\":\"gc.game.game_over\""));
+        Assert.That(gameOverEnvelope, Does.Contain("\"status\":\"game_over\""));
+        Assert.That(gameOverEnvelope, Does.Contain("\"playerIndicesByPlacement\":[0,1]"));
+        AssertMessageOrder(
+            gameOverEnvelope,
+            "\"messageType\":\"gc.state.snapshot\"",
+            "\"messageType\":\"gc.game.game_over\""
+        );
+    }
+
     private RuntimeGameContext CreateRuntimeGame(int playerCount)
     {
         var gameObject = new GameObject("Gaming Couch");
@@ -584,6 +692,17 @@ public sealed class GCRuntimeOutputContractTests
             colorName = "blue",
         });
         return player;
+    }
+
+    private static void ClearLegacyPlayerCallbacks(GCPlayer player)
+    {
+        player.OnEliminationStateChanged = null;
+        player.OnFinishStateChanged = null;
+        player.OnScoreChanged = null;
+        player.OnLivesChanged = null;
+        player.OnMeterChanged = null;
+        player.OnStatusChanged = null;
+        player.OnStatusTransitionChanged = null;
     }
 
     private static GCActivePlayerMapping CreateActivePlayerMapping(int playerCount)
@@ -642,6 +761,19 @@ public sealed class GCRuntimeOutputContractTests
         return count;
     }
 
+    private static void AssertMessageOrder(string value, params string[] needles)
+    {
+        var previousIndex = -1;
+
+        foreach (var needle in needles)
+        {
+            var index = value.IndexOf(needle, System.StringComparison.Ordinal);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), "Expected output to contain " + needle);
+            Assert.That(index, Is.GreaterThan(previousIndex), "Expected " + needle + " to appear in order.");
+            previousIndex = index;
+        }
+    }
+
     private static void AssertHudPlayer(
         GCPlayersHudDataPlayer player,
         int playerIndex,
@@ -668,6 +800,30 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(player.finishState, Is.EqualTo(finishState));
         Assert.That(player.eliminated, Is.EqualTo(eliminated));
         Assert.That(player.value, Is.EqualTo(value));
+    }
+
+    private static void AssertSnapshotPlayer(
+        GCRuntimeStateSnapshotPlayer player,
+        int playerIndex,
+        int score,
+        int lives,
+        string status,
+        string statusText,
+        int meter,
+        int placement,
+        string eliminationState,
+        string finishState
+    )
+    {
+        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
+        Assert.That(player.score, Is.EqualTo(score));
+        Assert.That(player.lives, Is.EqualTo(lives));
+        Assert.That(player.status, Is.EqualTo(status));
+        Assert.That(player.statusText, Is.EqualTo(statusText));
+        Assert.That(player.meter, Is.EqualTo(meter));
+        Assert.That(player.placement, Is.EqualTo(placement));
+        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
+        Assert.That(player.finishState, Is.EqualTo(finishState));
     }
 
     private readonly struct RuntimeGameContext

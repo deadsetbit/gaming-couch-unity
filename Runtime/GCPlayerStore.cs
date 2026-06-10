@@ -125,15 +125,7 @@ namespace DSB.GC
             playerByIndex[player.Index] = player;
             RebuildStateCollections();
 
-            player.OnEliminationStateChanged += args =>
-            {
-                RebuildStateCollections();
-            };
-
-            player.OnFinishStateChanged += args =>
-            {
-                RebuildStateCollections();
-            };
+            player.AcceptedTransition += HandleAcceptedTransition;
         }
 
         public void Clear()
@@ -202,6 +194,17 @@ namespace DSB.GC
             Debug.Assert(playersBot.Count + playersNonBot.Count == players.Count, "Player store bot lists out of sync");
             Debug.Assert(playersEliminatedPermanent.Count + playersEliminatedRevokable.Count == playersEliminated.Count, "Player store eliminated state lists out of sync");
             Debug.Assert(playersFinishedPermanent.Count + playersFinishedRevokable.Count == playersFinished.Count, "Player store finished state lists out of sync");
+        }
+
+        private void HandleAcceptedTransition(GCPlayerAcceptedTransition transition)
+        {
+            if (transition.Kind != GCPlayerTransitionKind.PlayerEliminationStateChanged &&
+                transition.Kind != GCPlayerTransitionKind.PlayerFinishStateChanged)
+            {
+                return;
+            }
+
+            RebuildStateCollections();
         }
 
         private void ClearStateCollections()

@@ -88,6 +88,7 @@ namespace DSB.GC
         public Action<int, int, string> OnMeterChanged;
         public Action<GCPlayerStatus, string, string> OnStatusChanged;
         internal Action<GCPlayerStatus, string, GCPlayerStatus, string, string> OnStatusTransitionChanged;
+        internal event Action<GCPlayerAcceptedTransition> AcceptedTransition;
         public GCPlayerType PlayerType = GCPlayerType.unset;
         public bool IsBot => PlayerType == GCPlayerType.bot;
         private int index = -1;
@@ -549,6 +550,7 @@ namespace DSB.GC
             }
 
             GCLog.LogInfo($"Player index {index} {logAction} - reason: " + transition.ReasonText);
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromElimination(transition));
             OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
                 index,
                 oldState,
@@ -585,6 +587,7 @@ namespace DSB.GC
             }
 
             GCLog.LogInfo($"Player index {index} {logAction} - reason: " + transition.ReasonText);
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromFinish(transition));
             OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
                 index,
                 oldState,
@@ -600,6 +603,7 @@ namespace DSB.GC
             score = transition.Value;
 
             GCLog.LogInfo($"Player index {index} score set to {score} - reason: " + transition.ReasonText);
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromInt(transition));
             OnScoreChanged?.Invoke(oldScore, score, transition.ReasonText);
         }
 
@@ -609,6 +613,7 @@ namespace DSB.GC
             lives = transition.Value;
 
             GCLog.LogInfo($"Player index {index} lives set to {lives} - reason: " + transition.ReasonText);
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromInt(transition));
             OnLivesChanged?.Invoke(oldLives, lives, transition.ReasonText);
         }
 
@@ -622,6 +627,7 @@ namespace DSB.GC
             status = value.Status;
             statusText = value.StatusText;
 
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromStatus(transition));
             OnStatusTransitionChanged?.Invoke(
                 oldValue.Status,
                 oldValue.StatusText,
@@ -637,6 +643,7 @@ namespace DSB.GC
             var oldMeter = transition.PreviousValue;
             meter = transition.Value;
 
+            AcceptedTransition?.Invoke(GCPlayerAcceptedTransition.FromInt(transition));
             OnMeterChanged?.Invoke(oldMeter, meter, transition.ReasonText);
         }
 
