@@ -8,6 +8,9 @@ namespace DSB.GC
         PlayerStatusChanged = 1,
         PlayerEliminationStateChanged = 2,
         PlayerFinishStateChanged = 3,
+        PlayerScoreChanged = 4,
+        PlayerLivesChanged = 5,
+        PlayerMeterChanged = 6,
     }
 
     internal enum GCPlayerTransitionRejectionReason
@@ -76,6 +79,7 @@ namespace DSB.GC
             float changedAtGameTime,
             bool emitsSemanticTransition,
             GCPlayerLatestStateDirtyFlags latestStateDirtyFlags,
+            bool wasClamped,
             GCPlayerTransitionRejectionReason rejectionReason
         )
         {
@@ -88,6 +92,7 @@ namespace DSB.GC
             ChangedAtGameTime = changedAtGameTime;
             EmitsSemanticTransition = emitsSemanticTransition;
             LatestStateDirtyFlags = latestStateDirtyFlags;
+            WasClamped = wasClamped;
             RejectionReason = rejectionReason;
         }
 
@@ -103,6 +108,7 @@ namespace DSB.GC
         internal float ChangedAtGameTime { get; }
         internal bool EmitsSemanticTransition { get; }
         internal GCPlayerLatestStateDirtyFlags LatestStateDirtyFlags { get; }
+        internal bool WasClamped { get; }
         internal GCPlayerTransitionRejectionReason RejectionReason { get; }
         internal bool MarksLatestStateDirty => LatestStateDirtyFlags != GCPlayerLatestStateDirtyFlags.None;
         internal bool MarksRuntimeStateSnapshotDirty =>
@@ -118,7 +124,8 @@ namespace DSB.GC
             string reasonText,
             float changedAtGameTime,
             bool emitsSemanticTransition,
-            GCPlayerLatestStateDirtyFlags latestStateDirtyFlags
+            GCPlayerLatestStateDirtyFlags latestStateDirtyFlags,
+            bool wasClamped = false
         )
         {
             return new GCPlayerTransitionResult<TValue>(
@@ -131,6 +138,7 @@ namespace DSB.GC
                 changedAtGameTime,
                 emitsSemanticTransition,
                 latestStateDirtyFlags,
+                wasClamped,
                 GCPlayerTransitionRejectionReason.None
             );
         }
@@ -141,7 +149,8 @@ namespace DSB.GC
             TValue currentValue,
             TValue requestedValue,
             string reasonText,
-            GCPlayerTransitionRejectionReason rejectionReason
+            GCPlayerTransitionRejectionReason rejectionReason,
+            bool wasClamped = false
         )
         {
             return new GCPlayerTransitionResult<TValue>(
@@ -154,6 +163,7 @@ namespace DSB.GC
                 -1f,
                 false,
                 GCPlayerLatestStateDirtyFlags.None,
+                wasClamped,
                 rejectionReason
             );
         }
@@ -177,6 +187,7 @@ namespace DSB.GC
                 -1f,
                 false,
                 GCPlayerLatestStateDirtyFlags.None,
+                false,
                 rejectionReason
             );
         }
@@ -383,6 +394,79 @@ namespace DSB.GC
             );
         }
 
+        internal static GCPlayerTransitionResult<int> SetScore(
+            int playerIndex,
+            int currentScore,
+            int requestedScore,
+            string reasonText
+        )
+        {
+            return SetIntValue(
+                GCPlayerTransitionKind.PlayerScoreChanged,
+                playerIndex,
+                currentScore,
+                requestedScore,
+                reasonText
+            );
+        }
+
+        internal static GCPlayerTransitionResult<int> SetLives(
+            int playerIndex,
+            int currentLives,
+            int requestedLives,
+            string reasonText
+        )
+        {
+            var value = requestedLives;
+            var wasClamped = false;
+
+            if (value < 0)
+            {
+                value = 0;
+                wasClamped = true;
+            }
+
+            return SetIntValue(
+                GCPlayerTransitionKind.PlayerLivesChanged,
+                playerIndex,
+                currentLives,
+                value,
+                reasonText,
+                wasClamped
+            );
+        }
+
+        internal static GCPlayerTransitionResult<int> SetMeter(
+            int playerIndex,
+            int currentMeter,
+            int requestedMeter,
+            string reasonText
+        )
+        {
+            var value = requestedMeter;
+            var wasClamped = false;
+
+            if (value < -1)
+            {
+                value = -1;
+                wasClamped = true;
+            }
+            else if (value > 100)
+            {
+                value = 100;
+                wasClamped = true;
+            }
+
+            return SetIntValue(
+                GCPlayerTransitionKind.PlayerMeterChanged,
+                playerIndex,
+                currentMeter,
+                value,
+                reasonText,
+                wasClamped
+            );
+        }
+
         private static GCPlayerTransitionResult<GCPlayerEliminationState> AcceptEliminationStateChange(
             int playerIndex,
             GCPlayerEliminationState currentState,
@@ -420,6 +504,42 @@ namespace DSB.GC
                 emitsSemanticTransition: true,
                 latestStateDirtyFlags: GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot |
                     GCPlayerLatestStateDirtyFlags.PlayersHud
+            );
+        }
+
+        private static GCPlayerTransitionResult<int> SetIntValue(
+            GCPlayerTransitionKind kind,
+            int playerIndex,
+            int currentValue,
+            int requestedValue,
+            string reasonText,
+            bool wasClamped = false
+        )
+        {
+            if (currentValue == requestedValue)
+            {
+                return GCPlayerTransitionResult<int>.NoOp(
+                    kind,
+                    playerIndex,
+                    currentValue,
+                    requestedValue,
+                    reasonText,
+                    GCPlayerTransitionRejectionReason.DuplicateValue,
+                    wasClamped
+                );
+            }
+
+            return GCPlayerTransitionResult<int>.Accept(
+                kind,
+                playerIndex,
+                currentValue,
+                requestedValue,
+                reasonText,
+                Time.time,
+                emitsSemanticTransition: true,
+                latestStateDirtyFlags: GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot |
+                    GCPlayerLatestStateDirtyFlags.PlayersHud,
+                wasClamped: wasClamped
             );
         }
     }

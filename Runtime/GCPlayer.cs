@@ -302,14 +302,11 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetScore")) return;
 
-            if (this.score == newScore) return;
+            var transition = GCPlayerTransitions.SetScore(index, score, newScore, reason);
 
-            GCLog.LogInfo($"Player index {index} score set to {newScore} - reason: " + reason);
+            if (!transition.Accepted) return;
 
-            var oldScore = this.score;
-            score = newScore;
-
-            OnScoreChanged?.Invoke(oldScore, newScore, reason);
+            ApplyScoreTransition(transition);
         }
 
         /// <summary>
@@ -400,9 +397,10 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetLives")) return;
 
-            if (newLives < 0)
+            var transition = GCPlayerTransitions.SetLives(index, lives, newLives, reason);
+
+            if (transition.WasClamped)
             {
-                newLives = 0;
                 EmitStateDiagnostic(
                     GCDiagnosticCodes.ClampedValue,
                     "Lives were clamped.",
@@ -412,14 +410,9 @@ namespace DSB.GC
                 );
             }
 
-            if (this.lives == newLives) return;
+            if (!transition.Accepted) return;
 
-            GCLog.LogInfo($"Player index {index} lives set to {newLives} - reason: " + reason);
-
-            var oldLives = this.lives;
-            lives = newLives;
-
-            OnLivesChanged?.Invoke(oldLives, newLives, reason);
+            ApplyLivesTransition(transition);
         }
 
         /// <summary>
@@ -468,22 +461,7 @@ namespace DSB.GC
 
             if (!transition.Accepted) return;
 
-            var oldValue = transition.PreviousValue;
-            var value = transition.Value;
-
-            GCLog.LogInfo($"Player index {index} status set to {value.Status} with text {value.StatusText} - reason: " + transition.ReasonText);
-
-            this.status = value.Status;
-            this.statusText = value.StatusText;
-
-            OnStatusTransitionChanged?.Invoke(
-                oldValue.Status,
-                oldValue.StatusText,
-                this.status,
-                this.statusText,
-                transition.ReasonText
-            );
-            OnStatusChanged?.Invoke(this.status, this.statusText, transition.ReasonText);
+            ApplyStatusTransition(transition);
         }
 
         /// <summary>
@@ -494,20 +472,10 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetMeter")) return;
 
-            if (newMeter < -1)
+            var transition = GCPlayerTransitions.SetMeter(index, meter, newMeter, reason);
+
+            if (transition.WasClamped)
             {
-                newMeter = -1;
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.ClampedValue,
-                    "Meter was clamped.",
-                    "SetMeter",
-                    null,
-                    null
-                );
-            }
-            else if (newMeter > 100)
-            {
-                newMeter = 100;
                 EmitStateDiagnostic(
                     GCDiagnosticCodes.ClampedValue,
                     "Meter was clamped.",
@@ -517,12 +485,9 @@ namespace DSB.GC
                 );
             }
 
-            if (this.meter == newMeter) return;
+            if (!transition.Accepted) return;
 
-            var oldMeter = this.meter;
-            meter = newMeter;
-
-            OnMeterChanged?.Invoke(oldMeter, newMeter, reason);
+            ApplyMeterTransition(transition);
         }
 
         /// <summary>
@@ -627,6 +592,52 @@ namespace DSB.GC
                 transition.ReasonText,
                 changedAtGameTime
             ));
+        }
+
+        private void ApplyScoreTransition(GCPlayerTransitionResult<int> transition)
+        {
+            var oldScore = transition.PreviousValue;
+            score = transition.Value;
+
+            GCLog.LogInfo($"Player index {index} score set to {score} - reason: " + transition.ReasonText);
+            OnScoreChanged?.Invoke(oldScore, score, transition.ReasonText);
+        }
+
+        private void ApplyLivesTransition(GCPlayerTransitionResult<int> transition)
+        {
+            var oldLives = transition.PreviousValue;
+            lives = transition.Value;
+
+            GCLog.LogInfo($"Player index {index} lives set to {lives} - reason: " + transition.ReasonText);
+            OnLivesChanged?.Invoke(oldLives, lives, transition.ReasonText);
+        }
+
+        private void ApplyStatusTransition(GCPlayerTransitionResult<GCPlayerStatusValue> transition)
+        {
+            var oldValue = transition.PreviousValue;
+            var value = transition.Value;
+
+            GCLog.LogInfo($"Player index {index} status set to {value.Status} with text {value.StatusText} - reason: " + transition.ReasonText);
+
+            status = value.Status;
+            statusText = value.StatusText;
+
+            OnStatusTransitionChanged?.Invoke(
+                oldValue.Status,
+                oldValue.StatusText,
+                status,
+                statusText,
+                transition.ReasonText
+            );
+            OnStatusChanged?.Invoke(status, statusText, transition.ReasonText);
+        }
+
+        private void ApplyMeterTransition(GCPlayerTransitionResult<int> transition)
+        {
+            var oldMeter = transition.PreviousValue;
+            meter = transition.Value;
+
+            OnMeterChanged?.Invoke(oldMeter, meter, transition.ReasonText);
         }
 
         private void EmitEliminationTransitionDiagnostic(

@@ -497,6 +497,7 @@ public sealed class GCPlayerStateModelTests
         Assert.That(accepted.MarksLatestStateDirty, Is.True);
         Assert.That(accepted.MarksRuntimeStateSnapshotDirty, Is.True);
         Assert.That(accepted.MarksPlayersHudDirty, Is.True);
+        Assert.That(accepted.WasClamped, Is.False);
         Assert.That(accepted.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.None));
 
         var noOp = GCPlayerTransitions.SetStatus(
@@ -525,6 +526,7 @@ public sealed class GCPlayerStateModelTests
         Assert.That(noOp.MarksLatestStateDirty, Is.False);
         Assert.That(noOp.MarksRuntimeStateSnapshotDirty, Is.False);
         Assert.That(noOp.MarksPlayersHudDirty, Is.False);
+        Assert.That(noOp.WasClamped, Is.False);
         Assert.That(noOp.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.DuplicateValue));
 
         var rejected = GCPlayerTransitionResult<GCPlayerStatusValue>.Reject(
@@ -551,7 +553,142 @@ public sealed class GCPlayerStateModelTests
         Assert.That(rejected.EmitsSemanticTransition, Is.False);
         Assert.That(rejected.LatestStateDirtyFlags, Is.EqualTo(GCPlayerLatestStateDirtyFlags.None));
         Assert.That(rejected.MarksLatestStateDirty, Is.False);
+        Assert.That(rejected.WasClamped, Is.False);
         Assert.That(rejected.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.InvalidTransition));
+    }
+
+    [Test]
+    public void ScalarTransitionsPreservePublicCallbacksNoOpsAndClampDiagnostics()
+    {
+        var player = CreatePlayer(10);
+        var longReason = new string('s', 300);
+        var scoreEvents = new List<(int oldValue, int value, string reason)>();
+        var livesEvents = new List<(int oldValue, int value, string reason)>();
+        var meterEvents = new List<(int oldValue, int value, string reason)>();
+        player.OnScoreChanged += (oldValue, value, reason) => scoreEvents.Add((oldValue, value, reason));
+        player.OnLivesChanged += (oldValue, value, reason) => livesEvents.Add((oldValue, value, reason));
+        player.OnMeterChanged += (oldValue, value, reason) => meterEvents.Add((oldValue, value, reason));
+
+        player.SetScore(10, longReason);
+        player.SetScore(10, "duplicate score");
+        player.AddScore(5, "score bonus");
+        player.SubtractScore(3, "score penalty");
+
+        player.SetLives(3, "lives");
+        player.SetLives(3, "duplicate lives");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Lives were clamped.");
+        player.SetLives(-2, "clamped lives");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Lives were clamped.");
+        player.SetLives(-1, "clamped duplicate lives");
+
+        player.SetMeter(50, "meter");
+        player.SetMeter(50, "duplicate meter");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Meter was clamped.");
+        player.SetMeter(150, "clamped high meter");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Meter was clamped.");
+        player.SetMeter(120, "clamped high duplicate meter");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Meter was clamped.");
+        player.SetMeter(-5, "clamped low meter");
+        LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.clamped_value: Meter was clamped.");
+        player.SetMeter(-2, "clamped low duplicate meter");
+
+        Assert.That(player.Score, Is.EqualTo(12));
+        Assert.That(scoreEvents, Has.Count.EqualTo(3));
+        Assert.That(scoreEvents[0], Is.EqualTo((0, 10, longReason)));
+        Assert.That(scoreEvents[1], Is.EqualTo((10, 15, "score bonus")));
+        Assert.That(scoreEvents[2], Is.EqualTo((15, 12, "score penalty")));
+
+        Assert.That(player.Lives, Is.EqualTo(0));
+        Assert.That(livesEvents, Has.Count.EqualTo(2));
+        Assert.That(livesEvents[0], Is.EqualTo((0, 3, "lives")));
+        Assert.That(livesEvents[1], Is.EqualTo((3, 0, "clamped lives")));
+
+        Assert.That(player.Meter, Is.EqualTo(-1));
+        Assert.That(meterEvents, Has.Count.EqualTo(3));
+        Assert.That(meterEvents[0], Is.EqualTo((-1, 50, "meter")));
+        Assert.That(meterEvents[1], Is.EqualTo((50, 100, "clamped high meter")));
+        Assert.That(meterEvents[2], Is.EqualTo((100, -1, "clamped low meter")));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void ScalarTransitionModelsRepresentAcceptedNoOpAndClampedResults()
+    {
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetScore(2, 0, 10, "score"),
+            GCPlayerTransitionKind.PlayerScoreChanged,
+            2,
+            0,
+            10,
+            "score"
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetScore(2, 10, 10, "duplicate score"),
+            GCPlayerTransitionOutcome.NoOp,
+            GCPlayerTransitionKind.PlayerScoreChanged,
+            2,
+            10,
+            10,
+            "duplicate score",
+            GCPlayerTransitionRejectionReason.DuplicateValue
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetLives(3, 2, -5, "clamped lives"),
+            GCPlayerTransitionKind.PlayerLivesChanged,
+            3,
+            2,
+            0,
+            "clamped lives",
+            wasClamped: true
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetLives(3, 0, -1, "clamped duplicate lives"),
+            GCPlayerTransitionOutcome.NoOp,
+            GCPlayerTransitionKind.PlayerLivesChanged,
+            3,
+            0,
+            0,
+            "clamped duplicate lives",
+            GCPlayerTransitionRejectionReason.DuplicateValue,
+            wasClamped: true
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetMeter(4, -1, 75, "meter"),
+            GCPlayerTransitionKind.PlayerMeterChanged,
+            4,
+            -1,
+            75,
+            "meter"
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetMeter(4, 75, 150, "clamped high meter"),
+            GCPlayerTransitionKind.PlayerMeterChanged,
+            4,
+            75,
+            100,
+            "clamped high meter",
+            wasClamped: true
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetMeter(4, 25, -5, "clamped low meter"),
+            GCPlayerTransitionKind.PlayerMeterChanged,
+            4,
+            25,
+            -1,
+            "clamped low meter",
+            wasClamped: true
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetMeter(4, -1, -2, "clamped duplicate meter"),
+            GCPlayerTransitionOutcome.NoOp,
+            GCPlayerTransitionKind.PlayerMeterChanged,
+            4,
+            -1,
+            -1,
+            "clamped duplicate meter",
+            GCPlayerTransitionRejectionReason.DuplicateValue,
+            wasClamped: true
+        );
     }
 
     [Test]
@@ -961,7 +1098,8 @@ public sealed class GCPlayerStateModelTests
         int playerIndex,
         TValue previousValue,
         TValue value,
-        string reason
+        string reason,
+        bool wasClamped = false
     )
     {
         Assert.That(transition.Accepted, Is.True);
@@ -981,6 +1119,7 @@ public sealed class GCPlayerStateModelTests
         Assert.That(transition.MarksLatestStateDirty, Is.True);
         Assert.That(transition.MarksRuntimeStateSnapshotDirty, Is.True);
         Assert.That(transition.MarksPlayersHudDirty, Is.True);
+        Assert.That(transition.WasClamped, Is.EqualTo(wasClamped));
         Assert.That(transition.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.None));
     }
 
@@ -992,7 +1131,8 @@ public sealed class GCPlayerStateModelTests
         TValue previousValue,
         TValue value,
         string reason,
-        GCPlayerTransitionRejectionReason rejectionReason
+        GCPlayerTransitionRejectionReason rejectionReason,
+        bool wasClamped = false
     )
     {
         Assert.That(transition.Accepted, Is.False);
@@ -1010,6 +1150,7 @@ public sealed class GCPlayerStateModelTests
         Assert.That(transition.MarksLatestStateDirty, Is.False);
         Assert.That(transition.MarksRuntimeStateSnapshotDirty, Is.False);
         Assert.That(transition.MarksPlayersHudDirty, Is.False);
+        Assert.That(transition.WasClamped, Is.EqualTo(wasClamped));
         Assert.That(transition.RejectionReason, Is.EqualTo(rejectionReason));
     }
 
