@@ -553,18 +553,33 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetStatus")) return;
 
-            var normalizedStatusText = statusText ?? "";
-            if (this.status == status && this.statusText == normalizedStatusText) return;
+            var transition = GCPlayerTransitions.SetStatus(
+                index,
+                this.status,
+                this.statusText,
+                status,
+                statusText,
+                reason
+            );
 
-            GCLog.LogInfo($"Player index {index} status set to {status} with text {normalizedStatusText} - reason: " + reason);
+            if (!transition.Accepted) return;
 
-            var oldStatus = this.status;
-            var oldStatusText = this.statusText;
-            this.status = status;
-            this.statusText = normalizedStatusText;
+            var oldValue = transition.PreviousValue;
+            var value = transition.Value;
 
-            OnStatusTransitionChanged?.Invoke(oldStatus, oldStatusText, this.status, this.statusText, reason);
-            OnStatusChanged?.Invoke(this.status, this.statusText, reason);
+            GCLog.LogInfo($"Player index {index} status set to {value.Status} with text {value.StatusText} - reason: " + transition.ReasonText);
+
+            this.status = value.Status;
+            this.statusText = value.StatusText;
+
+            OnStatusTransitionChanged?.Invoke(
+                oldValue.Status,
+                oldValue.StatusText,
+                this.status,
+                this.statusText,
+                transition.ReasonText
+            );
+            OnStatusChanged?.Invoke(this.status, this.statusText, transition.ReasonText);
         }
 
         /// <summary>

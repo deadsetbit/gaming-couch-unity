@@ -235,6 +235,134 @@ public sealed class GCPlayerStateModelTests
     }
 
     [Test]
+    public void StatusTransitionsPreservePublicCallbackAndNoOpBehavior()
+    {
+        var player = CreatePlayer(9);
+        var longReason = new string('r', 300);
+        var events = new List<(GCPlayerStatus status, string statusText, string reason)>();
+        var transitionEvents = new List<(
+            GCPlayerStatus oldStatus,
+            string oldStatusText,
+            GCPlayerStatus status,
+            string statusText,
+            string reason
+        )>();
+        player.OnStatusChanged += (status, statusText, reason) => events.Add((status, statusText, reason));
+        player.OnStatusTransitionChanged += (oldStatus, oldStatusText, status, statusText, reason) =>
+            transitionEvents.Add((oldStatus, oldStatusText, status, statusText, reason));
+
+        player.SetStatus(GCPlayerStatus.Success, "Finished lap", longReason);
+
+        Assert.That(player.Status, Is.EqualTo(GCPlayerStatus.Success));
+        Assert.That(player.StatusText, Is.EqualTo("Finished lap"));
+        Assert.That(events, Has.Count.EqualTo(1));
+        Assert.That(events[0].status, Is.EqualTo(GCPlayerStatus.Success));
+        Assert.That(events[0].statusText, Is.EqualTo("Finished lap"));
+        Assert.That(events[0].reason, Is.EqualTo(longReason));
+        Assert.That(transitionEvents, Has.Count.EqualTo(1));
+        Assert.That(transitionEvents[0].oldStatus, Is.EqualTo(GCPlayerStatus.Neutral));
+        Assert.That(transitionEvents[0].oldStatusText, Is.EqualTo(""));
+        Assert.That(transitionEvents[0].status, Is.EqualTo(GCPlayerStatus.Success));
+        Assert.That(transitionEvents[0].statusText, Is.EqualTo("Finished lap"));
+        Assert.That(transitionEvents[0].reason, Is.EqualTo(longReason));
+
+        player.SetStatus(GCPlayerStatus.Success, "Finished lap", "duplicate status");
+
+        Assert.That(player.Status, Is.EqualTo(GCPlayerStatus.Success));
+        Assert.That(player.StatusText, Is.EqualTo("Finished lap"));
+        Assert.That(events, Has.Count.EqualTo(1));
+        Assert.That(transitionEvents, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void StatusTransitionModelRepresentsAcceptedNoOpAndRejectedResults()
+    {
+        var accepted = GCPlayerTransitions.SetStatus(
+            2,
+            GCPlayerStatus.Neutral,
+            "",
+            GCPlayerStatus.Warning,
+            "low fuel",
+            "status reason"
+        );
+
+        Assert.That(accepted.Accepted, Is.True);
+        Assert.That(accepted.Outcome, Is.EqualTo(GCPlayerTransitionOutcome.Accepted));
+        Assert.That(accepted.IsNoOp, Is.False);
+        Assert.That(accepted.IsRejected, Is.False);
+        Assert.That(accepted.Kind, Is.EqualTo(GCPlayerTransitionKind.PlayerStatusChanged));
+        Assert.That(accepted.PlayerIndex, Is.EqualTo(2));
+        Assert.That(accepted.PreviousValue.Status, Is.EqualTo(GCPlayerStatus.Neutral));
+        Assert.That(accepted.PreviousValue.StatusText, Is.EqualTo(""));
+        Assert.That(accepted.Value.Status, Is.EqualTo(GCPlayerStatus.Warning));
+        Assert.That(accepted.Value.StatusText, Is.EqualTo("low fuel"));
+        Assert.That(accepted.ReasonText, Is.EqualTo("status reason"));
+        Assert.That(accepted.ChangedAtGameTime, Is.GreaterThanOrEqualTo(0));
+        Assert.That(accepted.EmitsSemanticTransition, Is.True);
+        Assert.That(accepted.LatestStateDirtyFlags, Is.EqualTo(
+            GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot | GCPlayerLatestStateDirtyFlags.PlayersHud
+        ));
+        Assert.That(accepted.MarksLatestStateDirty, Is.True);
+        Assert.That(accepted.MarksRuntimeStateSnapshotDirty, Is.True);
+        Assert.That(accepted.MarksPlayersHudDirty, Is.True);
+        Assert.That(accepted.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.None));
+
+        var noOp = GCPlayerTransitions.SetStatus(
+            2,
+            GCPlayerStatus.Warning,
+            "",
+            GCPlayerStatus.Warning,
+            null,
+            "duplicate reason"
+        );
+
+        Assert.That(noOp.Accepted, Is.False);
+        Assert.That(noOp.Outcome, Is.EqualTo(GCPlayerTransitionOutcome.NoOp));
+        Assert.That(noOp.IsNoOp, Is.True);
+        Assert.That(noOp.IsRejected, Is.False);
+        Assert.That(noOp.Kind, Is.EqualTo(GCPlayerTransitionKind.PlayerStatusChanged));
+        Assert.That(noOp.PlayerIndex, Is.EqualTo(2));
+        Assert.That(noOp.PreviousValue.Status, Is.EqualTo(GCPlayerStatus.Warning));
+        Assert.That(noOp.PreviousValue.StatusText, Is.EqualTo(""));
+        Assert.That(noOp.Value.Status, Is.EqualTo(GCPlayerStatus.Warning));
+        Assert.That(noOp.Value.StatusText, Is.EqualTo(""));
+        Assert.That(noOp.ReasonText, Is.EqualTo("duplicate reason"));
+        Assert.That(noOp.ChangedAtGameTime, Is.EqualTo(-1f));
+        Assert.That(noOp.EmitsSemanticTransition, Is.False);
+        Assert.That(noOp.LatestStateDirtyFlags, Is.EqualTo(GCPlayerLatestStateDirtyFlags.None));
+        Assert.That(noOp.MarksLatestStateDirty, Is.False);
+        Assert.That(noOp.MarksRuntimeStateSnapshotDirty, Is.False);
+        Assert.That(noOp.MarksPlayersHudDirty, Is.False);
+        Assert.That(noOp.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.DuplicateValue));
+
+        var rejected = GCPlayerTransitionResult<GCPlayerStatusValue>.Reject(
+            GCPlayerTransitionKind.PlayerStatusChanged,
+            2,
+            new GCPlayerStatusValue(GCPlayerStatus.Failure, "done"),
+            new GCPlayerStatusValue(GCPlayerStatus.Pending, "retry"),
+            "invalid reason",
+            GCPlayerTransitionRejectionReason.InvalidTransition
+        );
+
+        Assert.That(rejected.Accepted, Is.False);
+        Assert.That(rejected.Outcome, Is.EqualTo(GCPlayerTransitionOutcome.Rejected));
+        Assert.That(rejected.IsNoOp, Is.False);
+        Assert.That(rejected.IsRejected, Is.True);
+        Assert.That(rejected.Kind, Is.EqualTo(GCPlayerTransitionKind.PlayerStatusChanged));
+        Assert.That(rejected.PlayerIndex, Is.EqualTo(2));
+        Assert.That(rejected.PreviousValue.Status, Is.EqualTo(GCPlayerStatus.Failure));
+        Assert.That(rejected.PreviousValue.StatusText, Is.EqualTo("done"));
+        Assert.That(rejected.Value.Status, Is.EqualTo(GCPlayerStatus.Pending));
+        Assert.That(rejected.Value.StatusText, Is.EqualTo("retry"));
+        Assert.That(rejected.ReasonText, Is.EqualTo("invalid reason"));
+        Assert.That(rejected.ChangedAtGameTime, Is.EqualTo(-1f));
+        Assert.That(rejected.EmitsSemanticTransition, Is.False);
+        Assert.That(rejected.LatestStateDirtyFlags, Is.EqualTo(GCPlayerLatestStateDirtyFlags.None));
+        Assert.That(rejected.MarksLatestStateDirty, Is.False);
+        Assert.That(rejected.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.InvalidTransition));
+    }
+
+    [Test]
     public void StoreBroadEliminationListsTrackNoneVersusAnyEliminatedState()
     {
         var player = CreatePlayer(7);
