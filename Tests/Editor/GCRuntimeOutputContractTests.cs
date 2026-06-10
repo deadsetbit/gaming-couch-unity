@@ -278,6 +278,45 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void GameOverPlacementFlushesPendingTransitionsAndFinalSnapshotBeforeGameOver()
+    {
+        var context = CreateRuntimeGame(2);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        context.players[0].SetEliminatedRevokable("pit");
+        context.players[0].SetRevokeEliminated("respawn");
+        context.players[1].SetMeter(90, "finish charge");
+
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(gameOverEnvelope, Is.EqualTo(emitted[0]));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.elimination_state_changed\""), Is.EqualTo(2));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.meter_changed\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.game.game_over\""), Is.EqualTo(1));
+        AssertMessageOrder(
+            gameOverEnvelope,
+            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":1",
+            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":2",
+            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":3",
+            "\"messageType\":\"gc.state.snapshot\",\"sequence\":4",
+            "\"messageType\":\"gc.game.game_over\",\"sequence\":5"
+        );
+        AssertMessageOrder(
+            gameOverEnvelope,
+            "\"previousValue\":\"None\",\"value\":\"Revokable\",\"reasonText\":\"pit\"",
+            "\"previousValue\":\"Revokable\",\"value\":\"None\",\"reasonText\":\"respawn\"",
+            "\"previousValue\":-1,\"value\":90,\"reasonText\":\"finish charge\"",
+            "\"payload\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":-1,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"},{\"playerIndex\":1,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":90,\"placement\":2,\"eliminationState\":\"None\",\"finishState\":\"None\"}]}",
+            "\"payload\":{\"playerIndicesByPlacement\":[0,1]}"
+        );
+        Assert.That(gameOverEnvelope, Does.Not.Contain("\"payload\":[0,1]"));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
     public void GameOverPlacementRejectsReentrantSubmissionBeforePublishingSecondResult()
     {
         var context = CreateRuntimeGame(2);
