@@ -612,6 +612,142 @@ public sealed class GCPlayerStateModelTests
     }
 
     [Test]
+    public void PublicPlayerMutatorsAndCallbackShapesStayGameFacingCompatible()
+    {
+        var player = CreatePlayer(11);
+        var eliminationEvents = new List<GCPlayerEliminationStateChangedEventArgs>();
+        var finishEvents = new List<GCPlayerFinishStateChangedEventArgs>();
+        var scoreEvents = new List<(int oldValue, int value, string reason)>();
+        var livesEvents = new List<(int oldValue, int value, string reason)>();
+        var meterEvents = new List<(int oldValue, int value, string reason)>();
+        var statusEvents = new List<(GCPlayerStatus status, string statusText, string reason)>();
+
+        AssertPublicCallbackField(
+            "OnEliminationStateChanged",
+            typeof(Action<GCPlayerEliminationStateChangedEventArgs>)
+        );
+        AssertPublicCallbackField(
+            "OnFinishStateChanged",
+            typeof(Action<GCPlayerFinishStateChangedEventArgs>)
+        );
+        AssertPublicCallbackField("OnScoreChanged", typeof(Action<int, int, string>));
+        AssertPublicCallbackField("OnLivesChanged", typeof(Action<int, int, string>));
+        AssertPublicCallbackField("OnMeterChanged", typeof(Action<int, int, string>));
+        AssertPublicCallbackField("OnStatusChanged", typeof(Action<GCPlayerStatus, string, string>));
+
+        Action<string> setEliminatedPermanent = player.SetEliminatedPermanent;
+        Action<string> setEliminatedRevokable = player.SetEliminatedRevokable;
+        Action<string> setRevokeEliminated = player.SetRevokeEliminated;
+        Action<string> setFinishedPermanent = player.SetFinishedPermanent;
+        Action<string> setFinishedRevokable = player.SetFinishedRevokable;
+        Action<string> setRevokeFinished = player.SetRevokeFinished;
+        Action<int, string> setScore = player.SetScore;
+        Action<int, string> addScore = player.AddScore;
+        Action<int, string> subtractScore = player.SubtractScore;
+        Action<int, string> setLives = player.SetLives;
+        Action<int, string> addLives = player.AddLives;
+        Action<int, string> subtractLives = player.SubtractLives;
+        Action<GCPlayerStatus, string, string> setStatus = player.SetStatus;
+        Action<int, string> setMeter = player.SetMeter;
+
+        player.OnEliminationStateChanged += eliminationEvents.Add;
+        player.OnFinishStateChanged += finishEvents.Add;
+        player.OnScoreChanged += (oldValue, value, reason) => scoreEvents.Add((oldValue, value, reason));
+        player.OnLivesChanged += (oldValue, value, reason) => livesEvents.Add((oldValue, value, reason));
+        player.OnMeterChanged += (oldValue, value, reason) => meterEvents.Add((oldValue, value, reason));
+        player.OnStatusChanged += (status, statusText, reason) => statusEvents.Add((status, statusText, reason));
+
+        setEliminatedRevokable("temporary elimination");
+        setRevokeEliminated("respawn");
+        setEliminatedPermanent("final elimination");
+        setFinishedRevokable("temporary finish");
+        setRevokeFinished("rollback");
+        setFinishedPermanent("final finish");
+        setScore(10, "score");
+        addScore(5, "bonus");
+        subtractScore(2, "penalty");
+        setLives(3, "lives");
+        addLives(2, "extra life");
+        subtractLives(4, "damage");
+        setStatus(GCPlayerStatus.Warning, "Low health", "status");
+        setMeter(42, "meter");
+
+        Assert.That(eliminationEvents, Has.Count.EqualTo(3));
+        AssertEliminationEvent(
+            eliminationEvents[0],
+            11,
+            GCPlayerEliminationState.None,
+            GCPlayerEliminationState.Revokable,
+            "temporary elimination",
+            player.LastSetEliminatedRevokableGameTime
+        );
+        AssertEliminationEvent(
+            eliminationEvents[1],
+            11,
+            GCPlayerEliminationState.Revokable,
+            GCPlayerEliminationState.None,
+            "respawn",
+            player.LastSetRevokeEliminatedGameTime
+        );
+        AssertEliminationEvent(
+            eliminationEvents[2],
+            11,
+            GCPlayerEliminationState.None,
+            GCPlayerEliminationState.Permanent,
+            "final elimination",
+            player.LastSetEliminatedPermanentGameTime
+        );
+
+        Assert.That(finishEvents, Has.Count.EqualTo(3));
+        AssertFinishEvent(
+            finishEvents[0],
+            11,
+            GCPlayerFinishState.None,
+            GCPlayerFinishState.Revokable,
+            "temporary finish",
+            player.LastSetFinishedRevokableGameTime
+        );
+        AssertFinishEvent(
+            finishEvents[1],
+            11,
+            GCPlayerFinishState.Revokable,
+            GCPlayerFinishState.None,
+            "rollback",
+            player.LastSetRevokeFinishedGameTime
+        );
+        AssertFinishEvent(
+            finishEvents[2],
+            11,
+            GCPlayerFinishState.None,
+            GCPlayerFinishState.Permanent,
+            "final finish",
+            player.LastSetFinishedPermanentGameTime
+        );
+
+        Assert.That(scoreEvents, Is.EqualTo(new[]
+        {
+            (0, 10, "score"),
+            (10, 15, "bonus"),
+            (15, 13, "penalty"),
+        }));
+        Assert.That(livesEvents, Is.EqualTo(new[]
+        {
+            (0, 3, "lives"),
+            (3, 5, "extra life"),
+            (5, 1, "damage"),
+        }));
+        Assert.That(statusEvents, Is.EqualTo(new[]
+        {
+            (GCPlayerStatus.Warning, "Low health", "status"),
+        }));
+        Assert.That(meterEvents, Is.EqualTo(new[]
+        {
+            (-1, 42, "meter"),
+        }));
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
     public void ScalarTransitionModelsRepresentAcceptedNoOpAndClampedResults()
     {
         AssertAcceptedTransition(
@@ -1090,6 +1226,14 @@ public sealed class GCPlayerStateModelTests
         Assert.That(obsolete, Is.Not.Null);
         Assert.That(obsolete.IsError, Is.True);
         Assert.That(obsolete.Message, Does.Contain(expectedGuidance));
+    }
+
+    private static void AssertPublicCallbackField(string fieldName, Type fieldType)
+    {
+        var field = typeof(GCPlayer).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+
+        Assert.That(field, Is.Not.Null);
+        Assert.That(field.FieldType, Is.EqualTo(fieldType));
     }
 
     private static void AssertAcceptedTransition<TValue>(

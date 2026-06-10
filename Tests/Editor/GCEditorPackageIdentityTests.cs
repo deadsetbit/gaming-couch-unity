@@ -8,6 +8,17 @@ using UnityEngine;
 public sealed class GCEditorPackageIdentityTests
 {
     [Test]
+    public void PlayerTransitionRefactorKeepsGameProtocolVersionUnchanged()
+    {
+        const int compatiblePlayerTransitionProtocolVersion = 1;
+
+        Assert.That(
+            GCEditorPackageIdentity.GameProtocolVersion,
+            Is.EqualTo(compatiblePlayerTransitionProtocolVersion)
+        );
+    }
+
+    [Test]
     public void ResolveUsesCurrentPackageManifestValuesAndRuntimeFields()
     {
         var manifest = ReadPackageManifest(FindPackageRootPath());

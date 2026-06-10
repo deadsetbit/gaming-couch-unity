@@ -91,8 +91,15 @@ internal readonly struct GCPlayerTransitionResult
 | Task 4 | Consolidate package-internal consumers onto the accepted-change path. | Completed | Player store, placement, snapshots, HUD state, and game-over preparation consume accepted state changes consistently, with tests proving externally visible state remains correct. | Task 2, Task 3 | Avoid replacing public callbacks with a new public event surface. |
 | Task 5 | Preserve ordered semantic runtime transitions while coalescing latest-state projections only. | Completed | Multiple accepted changes before one rendered-frame flush emit ordered transition records, while snapshots/HUD projection may reflect only the latest current state; tests include eliminate-then-respawn and meter-change cases. | Task 4 | `LateUpdate` may flush batches but must not erase semantic facts from FixedUpdate or Update. |
 | Task 6 | Preserve effectful message ordering around game-over. | Completed | Pending state transitions and latest snapshot state are flushed before, or in the same ordered batch immediately before, game-over output; tests prove receivers can observe final semantic facts before the effectful result. | Task 5 | Keep the object-wrapped game-over result shape from the runtime output contract. |
-| Task 7 | Add compatibility and protocol review coverage. | Not started | Tests or compile-time checks prove existing game-facing events and mutators still work, docs call out whether `gameProtocolVersion` remains unchanged, and any required protocol risk is escalated to the user before implementation proceeds. | Task 6 | Default assumption is no protocol bump because public/wire behavior should be preserved or clarified, not broken. |
+| Task 7 | Add compatibility and protocol review coverage. | Completed | Tests or compile-time checks prove existing game-facing events and mutators still work, docs call out whether `gameProtocolVersion` remains unchanged, and any required protocol risk is escalated to the user before implementation proceeds. | Task 6 | Default assumption is no protocol bump because public/wire behavior should be preserved or clarified, not broken. |
 | Task 8 | Validate hot-path behavior and document remaining contract follow-ups. | Not started | High-frequency meter/stat calls avoid avoidable allocations and unbounded queues, bounded reason text behavior is preserved, and docs retain TODOs for `SetMeter` naming and stable reason codes. | Task 7 | Do not solve `SetMeter` renaming or reason-code design in this slice. |
+
+## Task 7 Protocol Review
+
+- `gameProtocolVersion` remains unchanged at `1` for this player transition refactor.
+- No protocol bump is required because the public `GCPlayer` mutator names, public callback delegate shapes, runtime transition message names, snapshot fields, HUD projection fields, and object-wrapped game-over payload shape remain compatible with the existing contract.
+- New coverage locks this decision with compile-time public mutator/callback guards and an editor identity test that asserts the compatible protocol version is still `1`.
+- If a later task changes public or wire-facing schema shape, pause before implementation and ask whether `gameProtocolVersion` should be bumped.
 
 ## Out of Scope
 
