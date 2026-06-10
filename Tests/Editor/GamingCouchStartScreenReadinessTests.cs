@@ -786,9 +786,14 @@ public sealed class GamingCouchStartScreenReadinessTests
         GCWebGLExportReadiness webGLExport = null,
         GCStartScreenLocalPlayJsonReadiness localPlayJson = null,
         bool hasSerializedListenerReference = false,
-        bool hasMissingSerializedListenerReference = false
+        bool hasMissingSerializedListenerReference = false,
+        bool useDefaultWebGLExportReadiness = true
     )
     {
+        var effectiveWebGLExport = useDefaultWebGLExportReadiness
+            ? webGLExport ?? CreateReadyWebGLExportReadiness()
+            : webGLExport;
+
         return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(
             testScene,
             gamingCouch != null ? new[] { gamingCouch } : new GamingCouch[0],
@@ -798,7 +803,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             localPlayJson ?? CreateValidLocalPlayJsonReadiness(),
             buildSettings ?? CreateReadyBuildSettingsReadiness(),
             gameViewAspect ?? CreateReadyGameViewAspectReadiness(),
-            webGLExport ?? CreateReadyWebGLExportReadiness(),
+            effectiveWebGLExport,
             hasSerializedListenerReference,
             hasMissingSerializedListenerReference
         ));
@@ -881,7 +886,13 @@ public sealed class GamingCouchStartScreenReadinessTests
         GCWebGLExportReadiness webGLExport
     )
     {
-        return CreateReadiness(gamingCouch, listener, playerPrefab, webGLExport: webGLExport);
+        return CreateReadiness(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            webGLExport: webGLExport,
+            useDefaultWebGLExportReadiness: false
+        );
     }
 
     private GCStartScreenReadiness CreateReadyStartScreenReadiness(
