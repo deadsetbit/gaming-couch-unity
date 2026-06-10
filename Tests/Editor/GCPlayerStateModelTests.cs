@@ -41,10 +41,11 @@ public sealed class GCPlayerStateModelTests
     public void EliminationTransitionsExposeStateBooleansTimestampsAndEventArgs()
     {
         var player = CreatePlayer(2);
+        var longRevokableReason = new string('e', 300);
         var events = new List<GCPlayerEliminationStateChangedEventArgs>();
         player.OnEliminationStateChanged += events.Add;
 
-        player.SetEliminatedRevokable("temporary hazard");
+        player.SetEliminatedRevokable(longRevokableReason);
 
         Assert.That(player.EliminationState, Is.EqualTo(GCPlayerEliminationState.Revokable));
         Assert.That(player.IsEliminated, Is.True);
@@ -58,7 +59,7 @@ public sealed class GCPlayerStateModelTests
             2,
             GCPlayerEliminationState.None,
             GCPlayerEliminationState.Revokable,
-            "temporary hazard",
+            longRevokableReason,
             player.LastSetEliminatedRevokableGameTime
         );
 
@@ -84,10 +85,11 @@ public sealed class GCPlayerStateModelTests
     public void FinishTransitionsExposeStateBooleansTimestampsAndEventArgs()
     {
         var player = CreatePlayer(1);
+        var longRevokableReason = new string('f', 300);
         var events = new List<GCPlayerFinishStateChangedEventArgs>();
         player.OnFinishStateChanged += events.Add;
 
-        player.SetFinishedRevokable("checkpoint");
+        player.SetFinishedRevokable(longRevokableReason);
 
         Assert.That(player.FinishState, Is.EqualTo(GCPlayerFinishState.Revokable));
         Assert.That(player.IsFinished, Is.True);
@@ -101,7 +103,7 @@ public sealed class GCPlayerStateModelTests
             1,
             GCPlayerFinishState.None,
             GCPlayerFinishState.Revokable,
-            "checkpoint",
+            longRevokableReason,
             player.LastSetFinishedRevokableGameTime
         );
 
@@ -127,6 +129,11 @@ public sealed class GCPlayerStateModelTests
     public void RevokingRevokableStatesClearsOnlyTheMatchingState()
     {
         var player = CreatePlayer(3);
+        var eliminationEvents = new List<GCPlayerEliminationStateChangedEventArgs>();
+        var finishEvents = new List<GCPlayerFinishStateChangedEventArgs>();
+        player.OnEliminationStateChanged += eliminationEvents.Add;
+        player.OnFinishStateChanged += finishEvents.Add;
+
         player.SetEliminatedRevokable("temporary");
         player.SetFinishedRevokable("checkpoint");
 
@@ -138,6 +145,16 @@ public sealed class GCPlayerStateModelTests
         Assert.That(player.IsFinished, Is.True);
         Assert.That(player.LastSetRevokeEliminatedGameTime, Is.GreaterThanOrEqualTo(0));
         Assert.That(player.LastSetRevokeGameTime, Is.EqualTo(player.LastSetRevokeEliminatedGameTime));
+        Assert.That(eliminationEvents, Has.Count.EqualTo(2));
+        AssertEliminationEvent(
+            eliminationEvents[1],
+            3,
+            GCPlayerEliminationState.Revokable,
+            GCPlayerEliminationState.None,
+            "respawn",
+            player.LastSetRevokeEliminatedGameTime
+        );
+        Assert.That(finishEvents, Has.Count.EqualTo(1));
 
         player.SetRevokeFinished("rollback");
 
@@ -145,6 +162,16 @@ public sealed class GCPlayerStateModelTests
         Assert.That(player.IsFinished, Is.False);
         Assert.That(player.LastSetRevokeFinishedGameTime, Is.GreaterThanOrEqualTo(0));
         Assert.That(player.LastSetRevokeGameTime, Is.EqualTo(player.LastSetRevokeFinishedGameTime));
+        Assert.That(finishEvents, Has.Count.EqualTo(2));
+        AssertFinishEvent(
+            finishEvents[1],
+            3,
+            GCPlayerFinishState.Revokable,
+            GCPlayerFinishState.None,
+            "rollback",
+            player.LastSetRevokeFinishedGameTime
+        );
+        Assert.That(eliminationEvents, Has.Count.EqualTo(2));
     }
 
     [Test]
@@ -153,6 +180,8 @@ public sealed class GCPlayerStateModelTests
         var player = CreatePlayer(4);
         player.SetEliminatedPermanent("final");
         player.SetFinishedPermanent("final");
+        var emittedDiagnostics = new List<string>();
+        GCRuntimeMessageOutput.RuntimeMessagesEmitted += emittedDiagnostics.Add;
         var eliminationEventCount = 0;
         var finishEventCount = 0;
         player.OnEliminationStateChanged += args => eliminationEventCount++;
@@ -180,6 +209,55 @@ public sealed class GCPlayerStateModelTests
         Assert.That(player.FinishState, Is.EqualTo(GCPlayerFinishState.Permanent));
         Assert.That(eliminationEventCount, Is.EqualTo(0));
         Assert.That(finishEventCount, Is.EqualTo(0));
+        Assert.That(emittedDiagnostics, Has.Count.EqualTo(6));
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[0],
+            "gc.state.duplicate_elimination",
+            4,
+            "SetEliminatedPermanent",
+            "Permanent",
+            "Permanent"
+        );
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[1],
+            "gc.state.invalid_transition",
+            4,
+            "SetEliminatedRevokable",
+            "Permanent",
+            "Revokable"
+        );
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[2],
+            "gc.state.invalid_revoke",
+            4,
+            "SetRevokeEliminated",
+            "Permanent",
+            "None"
+        );
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[3],
+            "gc.state.duplicate_finish",
+            4,
+            "SetFinishedPermanent",
+            "Permanent",
+            "Permanent"
+        );
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[4],
+            "gc.state.invalid_transition",
+            4,
+            "SetFinishedRevokable",
+            "Permanent",
+            "Revokable"
+        );
+        AssertStateDiagnosticContext(
+            emittedDiagnostics[5],
+            "gc.state.invalid_revoke",
+            4,
+            "SetRevokeFinished",
+            "Permanent",
+            "None"
+        );
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -232,6 +310,120 @@ public sealed class GCPlayerStateModelTests
 
         Assert.That(player.IsEliminatedPermanent, Is.True);
         Assert.That(player.IsFinished, Is.False);
+    }
+
+    [Test]
+    public void EliminationAndFinishTransitionModelsRepresentAcceptedNoOpAndRejectedResults()
+    {
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetEliminatedRevokable(3, GCPlayerEliminationState.None, "temporary"),
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.None,
+            GCPlayerEliminationState.Revokable,
+            "temporary"
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetEliminatedPermanent(3, GCPlayerEliminationState.Revokable, "promotion"),
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.Revokable,
+            GCPlayerEliminationState.Permanent,
+            "promotion"
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetRevokeEliminated(3, GCPlayerEliminationState.Revokable, "respawn"),
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.Revokable,
+            GCPlayerEliminationState.None,
+            "respawn"
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetEliminatedPermanent(3, GCPlayerEliminationState.Permanent, "duplicate"),
+            GCPlayerTransitionOutcome.NoOp,
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.Permanent,
+            GCPlayerEliminationState.Permanent,
+            "duplicate",
+            GCPlayerTransitionRejectionReason.DuplicateValue
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetEliminatedRevokable(3, GCPlayerEliminationState.Permanent, "invalid"),
+            GCPlayerTransitionOutcome.Rejected,
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.Permanent,
+            GCPlayerEliminationState.Revokable,
+            "invalid",
+            GCPlayerTransitionRejectionReason.InvalidTransition
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetRevokeEliminated(3, GCPlayerEliminationState.None, "invalid revoke"),
+            GCPlayerTransitionOutcome.Rejected,
+            GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            3,
+            GCPlayerEliminationState.None,
+            GCPlayerEliminationState.None,
+            "invalid revoke",
+            GCPlayerTransitionRejectionReason.InvalidRevoke
+        );
+
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetFinishedRevokable(4, GCPlayerFinishState.None, "checkpoint"),
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.None,
+            GCPlayerFinishState.Revokable,
+            "checkpoint"
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetFinishedPermanent(4, GCPlayerFinishState.Revokable, "finish"),
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.Revokable,
+            GCPlayerFinishState.Permanent,
+            "finish"
+        );
+        AssertAcceptedTransition(
+            GCPlayerTransitions.SetRevokeFinished(4, GCPlayerFinishState.Revokable, "rollback"),
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.Revokable,
+            GCPlayerFinishState.None,
+            "rollback"
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetFinishedPermanent(4, GCPlayerFinishState.Permanent, "duplicate"),
+            GCPlayerTransitionOutcome.NoOp,
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.Permanent,
+            GCPlayerFinishState.Permanent,
+            "duplicate",
+            GCPlayerTransitionRejectionReason.DuplicateValue
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetFinishedRevokable(4, GCPlayerFinishState.Permanent, "invalid"),
+            GCPlayerTransitionOutcome.Rejected,
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.Permanent,
+            GCPlayerFinishState.Revokable,
+            "invalid",
+            GCPlayerTransitionRejectionReason.InvalidTransition
+        );
+        AssertInactiveTransition(
+            GCPlayerTransitions.SetRevokeFinished(4, GCPlayerFinishState.None, "invalid revoke"),
+            GCPlayerTransitionOutcome.Rejected,
+            GCPlayerTransitionKind.PlayerFinishStateChanged,
+            4,
+            GCPlayerFinishState.None,
+            GCPlayerFinishState.None,
+            "invalid revoke",
+            GCPlayerTransitionRejectionReason.InvalidRevoke
+        );
     }
 
     [Test]
@@ -763,6 +955,64 @@ public sealed class GCPlayerStateModelTests
         Assert.That(obsolete.Message, Does.Contain(expectedGuidance));
     }
 
+    private static void AssertAcceptedTransition<TValue>(
+        GCPlayerTransitionResult<TValue> transition,
+        GCPlayerTransitionKind kind,
+        int playerIndex,
+        TValue previousValue,
+        TValue value,
+        string reason
+    )
+    {
+        Assert.That(transition.Accepted, Is.True);
+        Assert.That(transition.Outcome, Is.EqualTo(GCPlayerTransitionOutcome.Accepted));
+        Assert.That(transition.IsNoOp, Is.False);
+        Assert.That(transition.IsRejected, Is.False);
+        Assert.That(transition.Kind, Is.EqualTo(kind));
+        Assert.That(transition.PlayerIndex, Is.EqualTo(playerIndex));
+        Assert.That(transition.PreviousValue, Is.EqualTo(previousValue));
+        Assert.That(transition.Value, Is.EqualTo(value));
+        Assert.That(transition.ReasonText, Is.EqualTo(reason));
+        Assert.That(transition.ChangedAtGameTime, Is.GreaterThanOrEqualTo(0));
+        Assert.That(transition.EmitsSemanticTransition, Is.True);
+        Assert.That(transition.LatestStateDirtyFlags, Is.EqualTo(
+            GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot | GCPlayerLatestStateDirtyFlags.PlayersHud
+        ));
+        Assert.That(transition.MarksLatestStateDirty, Is.True);
+        Assert.That(transition.MarksRuntimeStateSnapshotDirty, Is.True);
+        Assert.That(transition.MarksPlayersHudDirty, Is.True);
+        Assert.That(transition.RejectionReason, Is.EqualTo(GCPlayerTransitionRejectionReason.None));
+    }
+
+    private static void AssertInactiveTransition<TValue>(
+        GCPlayerTransitionResult<TValue> transition,
+        GCPlayerTransitionOutcome outcome,
+        GCPlayerTransitionKind kind,
+        int playerIndex,
+        TValue previousValue,
+        TValue value,
+        string reason,
+        GCPlayerTransitionRejectionReason rejectionReason
+    )
+    {
+        Assert.That(transition.Accepted, Is.False);
+        Assert.That(transition.Outcome, Is.EqualTo(outcome));
+        Assert.That(transition.IsNoOp, Is.EqualTo(outcome == GCPlayerTransitionOutcome.NoOp));
+        Assert.That(transition.IsRejected, Is.EqualTo(outcome == GCPlayerTransitionOutcome.Rejected));
+        Assert.That(transition.Kind, Is.EqualTo(kind));
+        Assert.That(transition.PlayerIndex, Is.EqualTo(playerIndex));
+        Assert.That(transition.PreviousValue, Is.EqualTo(previousValue));
+        Assert.That(transition.Value, Is.EqualTo(value));
+        Assert.That(transition.ReasonText, Is.EqualTo(reason));
+        Assert.That(transition.ChangedAtGameTime, Is.EqualTo(-1f));
+        Assert.That(transition.EmitsSemanticTransition, Is.False);
+        Assert.That(transition.LatestStateDirtyFlags, Is.EqualTo(GCPlayerLatestStateDirtyFlags.None));
+        Assert.That(transition.MarksLatestStateDirty, Is.False);
+        Assert.That(transition.MarksRuntimeStateSnapshotDirty, Is.False);
+        Assert.That(transition.MarksPlayersHudDirty, Is.False);
+        Assert.That(transition.RejectionReason, Is.EqualTo(rejectionReason));
+    }
+
     private static void AssertEliminationEvent(
         GCPlayerEliminationStateChangedEventArgs args,
         int playerIndex,
@@ -793,6 +1043,24 @@ public sealed class GCPlayerStateModelTests
         Assert.That(args.newState, Is.EqualTo(newState));
         Assert.That(args.reason, Is.EqualTo(reason));
         Assert.That(args.changedAtGameTime, Is.EqualTo(changedAtGameTime));
+    }
+
+    private static void AssertStateDiagnosticContext(
+        string json,
+        string code,
+        int playerIndex,
+        string mutator,
+        string oldState,
+        string requestedState
+    )
+    {
+        Assert.That(json, Does.Contain("\"messageType\":\"gc.diagnostic\""));
+        Assert.That(json, Does.Contain("\"code\":\"" + code + "\""));
+        Assert.That(json, Does.Contain("\"sourceArea\":\"state\""));
+        Assert.That(json, Does.Contain("\"playerIndex\":" + playerIndex));
+        Assert.That(json, Does.Contain("\"mutator\":\"" + mutator + "\""));
+        Assert.That(json, Does.Contain("\"oldState\":\"" + oldState + "\""));
+        Assert.That(json, Does.Contain("\"requestedState\":\"" + requestedState + "\""));
     }
 
     private static void AssertSnapshotPlayer(

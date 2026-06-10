@@ -241,105 +241,57 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetEliminatedPermanent")) return;
 
-            if (eliminationState == GCPlayerEliminationState.Permanent)
+            var transition = GCPlayerTransitions.SetEliminatedPermanent(index, eliminationState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateElimination,
-                    "Player is already permanently eliminated.",
-                    "SetEliminatedPermanent",
-                    eliminationState.ToString(),
-                    GCPlayerEliminationState.Permanent.ToString()
-                );
+                EmitEliminationTransitionDiagnostic("SetEliminatedPermanent", transition);
                 return;
             }
 
-            var oldState = eliminationState;
-            var changedAtGameTime = Time.time;
-            eliminationState = GCPlayerEliminationState.Permanent;
-            lastSetEliminatedPermanentGameTime = changedAtGameTime;
-            lastSetEliminatedGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} permanently eliminated - reason: " + reason);
-            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
-                index,
-                oldState,
-                eliminationState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyEliminationTransition(
+                transition,
+                GCPlayerEliminationTimestampTarget.Permanent,
+                "permanently eliminated"
+            );
         }
 
         public void SetEliminatedRevokable(string reason)
         {
             if (!TryAllowMutation("SetEliminatedRevokable")) return;
 
-            if (eliminationState == GCPlayerEliminationState.Revokable)
+            var transition = GCPlayerTransitions.SetEliminatedRevokable(index, eliminationState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateElimination,
-                    "Player is already revokably eliminated.",
-                    "SetEliminatedRevokable",
-                    eliminationState.ToString(),
-                    GCPlayerEliminationState.Revokable.ToString()
-                );
+                EmitEliminationTransitionDiagnostic("SetEliminatedRevokable", transition);
                 return;
             }
 
-            if (eliminationState == GCPlayerEliminationState.Permanent)
-            {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidTransition,
-                    "Permanent elimination cannot transition back to revokable elimination.",
-                    "SetEliminatedRevokable",
-                    eliminationState.ToString(),
-                    GCPlayerEliminationState.Revokable.ToString()
-                );
-                return;
-            }
-
-            var oldState = eliminationState;
-            var changedAtGameTime = Time.time;
-            eliminationState = GCPlayerEliminationState.Revokable;
-            lastSetEliminatedRevokableGameTime = changedAtGameTime;
-            lastSetEliminatedGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} revokably eliminated - reason: " + reason);
-            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
-                index,
-                oldState,
-                eliminationState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyEliminationTransition(
+                transition,
+                GCPlayerEliminationTimestampTarget.Revokable,
+                "revokably eliminated"
+            );
         }
 
         public void SetRevokeEliminated(string reason)
         {
             if (!TryAllowMutation("SetRevokeEliminated")) return;
 
-            if (eliminationState != GCPlayerEliminationState.Revokable)
+            var transition = GCPlayerTransitions.SetRevokeEliminated(index, eliminationState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidRevoke,
-                    "Only revokable elimination can be revoked.",
-                    "SetRevokeEliminated",
-                    eliminationState.ToString(),
-                    GCPlayerEliminationState.None.ToString()
-                );
+                EmitEliminationTransitionDiagnostic("SetRevokeEliminated", transition);
                 return;
             }
 
-            var oldState = eliminationState;
-            var changedAtGameTime = Time.time;
-            eliminationState = GCPlayerEliminationState.None;
-            lastSetRevokeEliminatedGameTime = changedAtGameTime;
-            lastSetRevokeGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} elimination revoked - reason: " + reason);
-            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
-                index,
-                oldState,
-                eliminationState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyEliminationTransition(
+                transition,
+                GCPlayerEliminationTimestampTarget.Revoke,
+                "elimination revoked"
+            );
         }
 
         /// <summary>
@@ -388,105 +340,57 @@ namespace DSB.GC
         {
             if (!TryAllowMutation("SetFinishedPermanent")) return;
 
-            if (finishState == GCPlayerFinishState.Permanent)
+            var transition = GCPlayerTransitions.SetFinishedPermanent(index, finishState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateFinish,
-                    "Player is already permanently finished.",
-                    "SetFinishedPermanent",
-                    finishState.ToString(),
-                    GCPlayerFinishState.Permanent.ToString()
-                );
+                EmitFinishTransitionDiagnostic("SetFinishedPermanent", transition);
                 return;
             }
 
-            var oldState = finishState;
-            var changedAtGameTime = Time.time;
-            finishState = GCPlayerFinishState.Permanent;
-            lastSetFinishedPermanentGameTime = changedAtGameTime;
-            lastSetFinishedGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} permanently finished - reason: " + reason);
-            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
-                index,
-                oldState,
-                finishState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyFinishTransition(
+                transition,
+                GCPlayerFinishTimestampTarget.Permanent,
+                "permanently finished"
+            );
         }
 
         public void SetFinishedRevokable(string reason)
         {
             if (!TryAllowMutation("SetFinishedRevokable")) return;
 
-            if (finishState == GCPlayerFinishState.Revokable)
+            var transition = GCPlayerTransitions.SetFinishedRevokable(index, finishState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateFinish,
-                    "Player is already revokably finished.",
-                    "SetFinishedRevokable",
-                    finishState.ToString(),
-                    GCPlayerFinishState.Revokable.ToString()
-                );
+                EmitFinishTransitionDiagnostic("SetFinishedRevokable", transition);
                 return;
             }
 
-            if (finishState == GCPlayerFinishState.Permanent)
-            {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidTransition,
-                    "Permanent finish cannot transition back to revokable finish.",
-                    "SetFinishedRevokable",
-                    finishState.ToString(),
-                    GCPlayerFinishState.Revokable.ToString()
-                );
-                return;
-            }
-
-            var oldState = finishState;
-            var changedAtGameTime = Time.time;
-            finishState = GCPlayerFinishState.Revokable;
-            lastSetFinishedRevokableGameTime = changedAtGameTime;
-            lastSetFinishedGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} revokably finished - reason: " + reason);
-            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
-                index,
-                oldState,
-                finishState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyFinishTransition(
+                transition,
+                GCPlayerFinishTimestampTarget.Revokable,
+                "revokably finished"
+            );
         }
 
         public void SetRevokeFinished(string reason)
         {
             if (!TryAllowMutation("SetRevokeFinished")) return;
 
-            if (finishState != GCPlayerFinishState.Revokable)
+            var transition = GCPlayerTransitions.SetRevokeFinished(index, finishState, reason);
+
+            if (!transition.Accepted)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidRevoke,
-                    "Only revokable finish can be revoked.",
-                    "SetRevokeFinished",
-                    finishState.ToString(),
-                    GCPlayerFinishState.None.ToString()
-                );
+                EmitFinishTransitionDiagnostic("SetRevokeFinished", transition);
                 return;
             }
 
-            var oldState = finishState;
-            var changedAtGameTime = Time.time;
-            finishState = GCPlayerFinishState.None;
-            lastSetRevokeFinishedGameTime = changedAtGameTime;
-            lastSetRevokeGameTime = changedAtGameTime;
-            GCLog.LogInfo($"Player index {index} finish revoked - reason: " + reason);
-            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
-                index,
-                oldState,
-                finishState,
-                reason,
-                changedAtGameTime
-            ));
+            ApplyFinishTransition(
+                transition,
+                GCPlayerFinishTimestampTarget.Revoke,
+                "finish revoked"
+            );
         }
 
         /// <summary>
@@ -637,6 +541,180 @@ namespace DSB.GC
         virtual public string GetHudValueText()
         {
             throw new Exception("GetHudValueText not implemented. Implement this in your GCPlayer subclass to display a custom value in the HUD.");
+        }
+
+        private enum GCPlayerEliminationTimestampTarget
+        {
+            Permanent,
+            Revokable,
+            Revoke,
+        }
+
+        private enum GCPlayerFinishTimestampTarget
+        {
+            Permanent,
+            Revokable,
+            Revoke,
+        }
+
+        private void ApplyEliminationTransition(
+            GCPlayerTransitionResult<GCPlayerEliminationState> transition,
+            GCPlayerEliminationTimestampTarget timestampTarget,
+            string logAction
+        )
+        {
+            var oldState = transition.PreviousValue;
+            var changedAtGameTime = transition.ChangedAtGameTime;
+            eliminationState = transition.Value;
+
+            switch (timestampTarget)
+            {
+                case GCPlayerEliminationTimestampTarget.Permanent:
+                    lastSetEliminatedPermanentGameTime = changedAtGameTime;
+                    lastSetEliminatedGameTime = changedAtGameTime;
+                    break;
+                case GCPlayerEliminationTimestampTarget.Revokable:
+                    lastSetEliminatedRevokableGameTime = changedAtGameTime;
+                    lastSetEliminatedGameTime = changedAtGameTime;
+                    break;
+                case GCPlayerEliminationTimestampTarget.Revoke:
+                    lastSetRevokeEliminatedGameTime = changedAtGameTime;
+                    lastSetRevokeGameTime = changedAtGameTime;
+                    break;
+            }
+
+            GCLog.LogInfo($"Player index {index} {logAction} - reason: " + transition.ReasonText);
+            OnEliminationStateChanged?.Invoke(new GCPlayerEliminationStateChangedEventArgs(
+                index,
+                oldState,
+                eliminationState,
+                transition.ReasonText,
+                changedAtGameTime
+            ));
+        }
+
+        private void ApplyFinishTransition(
+            GCPlayerTransitionResult<GCPlayerFinishState> transition,
+            GCPlayerFinishTimestampTarget timestampTarget,
+            string logAction
+        )
+        {
+            var oldState = transition.PreviousValue;
+            var changedAtGameTime = transition.ChangedAtGameTime;
+            finishState = transition.Value;
+
+            switch (timestampTarget)
+            {
+                case GCPlayerFinishTimestampTarget.Permanent:
+                    lastSetFinishedPermanentGameTime = changedAtGameTime;
+                    lastSetFinishedGameTime = changedAtGameTime;
+                    break;
+                case GCPlayerFinishTimestampTarget.Revokable:
+                    lastSetFinishedRevokableGameTime = changedAtGameTime;
+                    lastSetFinishedGameTime = changedAtGameTime;
+                    break;
+                case GCPlayerFinishTimestampTarget.Revoke:
+                    lastSetRevokeFinishedGameTime = changedAtGameTime;
+                    lastSetRevokeGameTime = changedAtGameTime;
+                    break;
+            }
+
+            GCLog.LogInfo($"Player index {index} {logAction} - reason: " + transition.ReasonText);
+            OnFinishStateChanged?.Invoke(new GCPlayerFinishStateChangedEventArgs(
+                index,
+                oldState,
+                finishState,
+                transition.ReasonText,
+                changedAtGameTime
+            ));
+        }
+
+        private void EmitEliminationTransitionDiagnostic(
+            string mutatorName,
+            GCPlayerTransitionResult<GCPlayerEliminationState> transition
+        )
+        {
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.DuplicateValue)
+            {
+                var message = transition.Value == GCPlayerEliminationState.Permanent
+                    ? "Player is already permanently eliminated."
+                    : "Player is already revokably eliminated.";
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateElimination,
+                    message,
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+                return;
+            }
+
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidTransition)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidTransition,
+                    "Permanent elimination cannot transition back to revokable elimination.",
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+                return;
+            }
+
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidRevoke)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidRevoke,
+                    "Only revokable elimination can be revoked.",
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+            }
+        }
+
+        private void EmitFinishTransitionDiagnostic(
+            string mutatorName,
+            GCPlayerTransitionResult<GCPlayerFinishState> transition
+        )
+        {
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.DuplicateValue)
+            {
+                var message = transition.Value == GCPlayerFinishState.Permanent
+                    ? "Player is already permanently finished."
+                    : "Player is already revokably finished.";
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.DuplicateFinish,
+                    message,
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+                return;
+            }
+
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidTransition)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidTransition,
+                    "Permanent finish cannot transition back to revokable finish.",
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+                return;
+            }
+
+            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidRevoke)
+            {
+                EmitStateDiagnostic(
+                    GCDiagnosticCodes.InvalidRevoke,
+                    "Only revokable finish can be revoked.",
+                    mutatorName,
+                    transition.PreviousValue.ToString(),
+                    transition.Value.ToString()
+                );
+            }
         }
 
         private bool TryAllowMutation(string mutatorName)
