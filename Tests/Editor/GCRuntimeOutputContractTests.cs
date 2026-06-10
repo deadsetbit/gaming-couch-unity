@@ -76,6 +76,139 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void EliminateThenRespawnBeforeFlushEmitsOrderedTransitionsAndLatestProjection()
+    {
+        var context = CreateRuntimeGame(2);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        context.players[0].SetEliminatedRevokable("pit");
+        context.players[0].SetRevokeEliminated("respawn");
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        var json = emitted[0];
+        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.player.elimination_state_changed\""), Is.EqualTo(2));
+        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        AssertMessageOrder(
+            json,
+            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":1",
+            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":2",
+            "\"messageType\":\"gc.state.snapshot\",\"sequence\":3"
+        );
+        Assert.That(
+            json,
+            Does.Contain(
+                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":-1,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"}"
+            )
+        );
+        AssertMessageOrder(
+            json,
+            "\"previousValue\":\"None\",\"value\":\"Revokable\",\"reasonText\":\"pit\"",
+            "\"previousValue\":\"Revokable\",\"value\":\"None\",\"reasonText\":\"respawn\"",
+            "\"messageType\":\"gc.state.snapshot\""
+        );
+
+        var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
+        AssertSnapshotPlayer(
+            snapshot.players[0],
+            playerIndex: 0,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None"
+        );
+
+        var hudData = context.game.BuildPlayersHudData();
+        AssertHudPlayer(
+            hudData.players[0],
+            playerIndex: 0,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: -1,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None",
+            eliminated: false,
+            value: null
+        );
+    }
+
+    [Test]
+    public void MeterChangesBeforeFlushEmitOrderedTransitionsAndOneLatestProjection()
+    {
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+
+        context.players[0].SetMeter(10, "charge");
+        context.players[0].SetMeter(25, "boost");
+        context.players[0].SetMeter(80, "finish");
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        var json = emitted[0];
+        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.player.meter_changed\""), Is.EqualTo(3));
+        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        AssertMessageOrder(
+            json,
+            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":1",
+            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":2",
+            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":3",
+            "\"messageType\":\"gc.state.snapshot\",\"sequence\":4"
+        );
+        Assert.That(
+            json,
+            Does.Contain(
+                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":80,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"}]}"
+            )
+        );
+        AssertMessageOrder(
+            json,
+            "\"previousValue\":-1,\"value\":10,\"reasonText\":\"charge\"",
+            "\"previousValue\":10,\"value\":25,\"reasonText\":\"boost\"",
+            "\"previousValue\":25,\"value\":80,\"reasonText\":\"finish\"",
+            "\"messageType\":\"gc.state.snapshot\""
+        );
+
+        var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
+        AssertSnapshotPlayer(
+            snapshot.players[0],
+            playerIndex: 0,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: 80,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None"
+        );
+
+        var hudData = context.game.BuildPlayersHudData();
+        AssertHudPlayer(
+            hudData.players[0],
+            playerIndex: 0,
+            score: 0,
+            lives: 0,
+            status: "Neutral",
+            statusText: "",
+            meter: 80,
+            placement: 1,
+            eliminationState: "None",
+            finishState: "None",
+            eliminated: false,
+            value: null
+        );
+    }
+
+    [Test]
     public void DiagnosticFlushesQueuedRuntimeMessagesInSequenceOrder()
     {
         var context = CreateRuntimeGame(1);
