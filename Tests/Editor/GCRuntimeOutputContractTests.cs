@@ -209,6 +209,147 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void DuplicateScalarAndMeterHotPathCallsDoNotQueueRuntimeOutput()
+    {
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        var callbackCount = 0;
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        context.players[0].OnScoreChanged += (oldValue, value, reason) => callbackCount++;
+        context.players[0].OnLivesChanged += (oldValue, value, reason) => callbackCount++;
+        context.players[0].OnMeterChanged += (oldValue, value, reason) => callbackCount++;
+
+        context.gamingCouch.FlushRuntimeOutput();
+        emitted.Clear();
+
+        for (var index = 0; index < 200; index++)
+        {
+            context.players[0].SetScore(0, "duplicate score");
+            context.players[0].SetLives(0, "duplicate lives");
+            context.players[0].SetMeter(-1, "duplicate meter");
+        }
+
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(callbackCount, Is.EqualTo(0));
+        Assert.That(emitted, Is.Empty);
+    }
+
+    [Test]
+    public void HighFrequencyStatTransitionsFlushInBoundedBatchesAndKeepLatestSnapshotCoalesced()
+    {
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        var transitionCount = GCRuntimeMessageOutput.MaxPendingMessagesPerBatch + 5;
+
+        for (var value = 1; value <= transitionCount; value++)
+        {
+            context.players[0].SetScore(value, "score " + value);
+        }
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(
+            CountOccurrences(emitted[0], "\"messageType\":\"gc.player.score_changed\""),
+            Is.EqualTo(GCRuntimeMessageOutput.MaxPendingMessagesPerBatch)
+        );
+        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.state.snapshot\""));
+        AssertMessageOrder(
+            emitted[0],
+            "\"messageType\":\"gc.player.score_changed\",\"sequence\":1",
+            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" +
+                GCRuntimeMessageOutput.MaxPendingMessagesPerBatch
+        );
+
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(
+            CountOccurrences(emitted[1], "\"messageType\":\"gc.player.score_changed\""),
+            Is.EqualTo(5)
+        );
+        Assert.That(CountOccurrences(emitted[1], "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        AssertMessageOrder(
+            emitted[1],
+            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" +
+                (GCRuntimeMessageOutput.MaxPendingMessagesPerBatch + 1),
+            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" + transitionCount,
+            "\"messageType\":\"gc.state.snapshot\",\"sequence\":" + (transitionCount + 1)
+        );
+        Assert.That(
+            emitted[1],
+            Does.Contain(
+                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":" +
+                    transitionCount
+            )
+        );
+    }
+
+    [Test]
+    public void GameOverAfterBoundedTransitionFlushKeepsFinalSnapshotBeforeGameOver()
+    {
+        var context = CreateRuntimeGame(2);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        var transitionCount = GCRuntimeMessageOutput.MaxPendingMessagesPerBatch + 1;
+
+        for (var value = 1; value <= transitionCount; value++)
+        {
+            context.players[0].SetScore(value, "score " + value);
+        }
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(
+            CountOccurrences(emitted[0], "\"messageType\":\"gc.player.score_changed\""),
+            Is.EqualTo(GCRuntimeMessageOutput.MaxPendingMessagesPerBatch)
+        );
+        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.game.game_over\""));
+
+        Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
+
+        Assert.That(emitted, Has.Count.EqualTo(2));
+        Assert.That(gameOverEnvelope, Is.EqualTo(emitted[1]));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.score_changed\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.game.game_over\""), Is.EqualTo(1));
+        AssertMessageOrder(
+            gameOverEnvelope,
+            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" + transitionCount,
+            "\"messageType\":\"gc.state.snapshot\",\"sequence\":" + (transitionCount + 1),
+            "\"messageType\":\"gc.game.game_over\",\"sequence\":" + (transitionCount + 2)
+        );
+        Assert.That(
+            gameOverEnvelope,
+            Does.Contain(
+                "\"payload\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":" +
+                    transitionCount
+            )
+        );
+    }
+
+    [Test]
+    public void RuntimeTransitionReasonTextIsBoundedWithoutChangingPublicReasonText()
+    {
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        var publicReasons = new List<string>();
+        var boundedReason = new string('r', GCRuntimePayloadBounds.MaxReasonTextLength);
+        var longReason = boundedReason + "overflow";
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        context.players[0].OnMeterChanged += (oldValue, value, reason) => publicReasons.Add(reason);
+
+        context.players[0].SetMeter(50, longReason);
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(publicReasons, Is.EqualTo(new[] { longReason }));
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.player.meter_changed\""));
+        Assert.That(emitted[0], Does.Contain("\"reasonText\":\"" + boundedReason + "\""));
+        Assert.That(emitted[0], Does.Not.Contain("overflow"));
+    }
+
+    [Test]
     public void DiagnosticFlushesQueuedRuntimeMessagesInSequenceOrder()
     {
         var context = CreateRuntimeGame(1);

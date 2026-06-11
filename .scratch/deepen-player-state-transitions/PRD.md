@@ -92,7 +92,7 @@ internal readonly struct GCPlayerTransitionResult
 | Task 5 | Preserve ordered semantic runtime transitions while coalescing latest-state projections only. | Completed | Multiple accepted changes before one rendered-frame flush emit ordered transition records, while snapshots/HUD projection may reflect only the latest current state; tests include eliminate-then-respawn and meter-change cases. | Task 4 | `LateUpdate` may flush batches but must not erase semantic facts from FixedUpdate or Update. |
 | Task 6 | Preserve effectful message ordering around game-over. | Completed | Pending state transitions and latest snapshot state are flushed before, or in the same ordered batch immediately before, game-over output; tests prove receivers can observe final semantic facts before the effectful result. | Task 5 | Keep the object-wrapped game-over result shape from the runtime output contract. |
 | Task 7 | Add compatibility and protocol review coverage. | Completed | Tests or compile-time checks prove existing game-facing events and mutators still work, docs call out whether `gameProtocolVersion` remains unchanged, and any required protocol risk is escalated to the user before implementation proceeds. | Task 6 | Default assumption is no protocol bump because public/wire behavior should be preserved or clarified, not broken. |
-| Task 8 | Validate hot-path behavior and document remaining contract follow-ups. | Not started | High-frequency meter/stat calls avoid avoidable allocations and unbounded queues, bounded reason text behavior is preserved, and docs retain TODOs for `SetMeter` naming and stable reason codes. | Task 7 | Do not solve `SetMeter` renaming or reason-code design in this slice. |
+| Task 8 | Validate hot-path behavior and document remaining contract follow-ups. | Completed | High-frequency meter/stat calls avoid avoidable allocations and unbounded queues, bounded reason text behavior is preserved, and docs retain TODOs for `SetMeter` naming and stable reason codes. | Task 7 | Do not solve `SetMeter` renaming or reason-code design in this slice. |
 
 ## Task 7 Protocol Review
 
@@ -100,6 +100,15 @@ internal readonly struct GCPlayerTransitionResult
 - No protocol bump is required because the public `GCPlayer` mutator names, public callback delegate shapes, runtime transition message names, snapshot fields, HUD projection fields, and object-wrapped game-over payload shape remain compatible with the existing contract.
 - New coverage locks this decision with compile-time public mutator/callback guards and an editor identity test that asserts the compatible protocol version is still `1`.
 - If a later task changes public or wire-facing schema shape, pause before implementation and ask whether `gameProtocolVersion` should be bumped.
+
+## Task 8 Hot-Path Review
+
+- Repeated no-op score, lives, and meter calls return before public callbacks, accepted-transition fanout, runtime transition queueing, and latest-state snapshot dirtying.
+- Accepted high-frequency player transitions retain ordered semantic facts, but the package now flushes pending runtime transition batches at an internal cap so the pending runtime-message list cannot grow without bound between rendered-frame flushes. This changes batch timing only, not message schema; latest-state snapshots remain coalesced to the next frame or forced output flush.
+- Forced game-over output after an auto-flushed transition batch remains ordered: already emitted semantic transition batches precede the final batch, and the final latest-state snapshot still appears before `gc.game.game_over`.
+- Runtime-facing `reasonText` continues to be truncated to `GCRuntimePayloadBounds.MaxReasonTextLength` when transition payloads are emitted. Public game-facing callbacks still receive the original developer reason string.
+- Unity allocation measurement is not used as a hard editor-test gate in this slice because it is noisy across Editor and bridge runs. Coverage instead locks the observable no-op behavior, bounded queue behavior, bounded runtime reason text, and the code structure that avoids transition/output fanout on duplicate calls.
+- Deferred contract follow-ups remain deferred: do not rename `SetMeter` or introduce stable public reason codes without a separate protocol review and user decision.
 
 ## Out of Scope
 

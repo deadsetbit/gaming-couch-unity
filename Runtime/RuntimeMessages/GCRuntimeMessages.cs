@@ -642,6 +642,7 @@ namespace DSB.GC.RuntimeMessages
     internal static class GCRuntimeMessageOutput
     {
         internal const int EnvelopeSchemaVersion = 1;
+        internal const int MaxPendingMessagesPerBatch = 128;
 
         private static long sequence;
         private static bool hasActiveRun;
@@ -700,6 +701,11 @@ namespace DSB.GC.RuntimeMessages
         internal static void QueueTransition(string messageType, string payloadJson)
         {
             QueueMessage(messageType, payloadJson);
+
+            if (pendingMessages.Count >= MaxPendingMessagesPerBatch)
+            {
+                FlushPending();
+            }
         }
 
         internal static void QueueMessage(string messageType, string payloadJson)
