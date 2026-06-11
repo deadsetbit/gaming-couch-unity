@@ -225,32 +225,9 @@ Now the hud is set to reflect the player score that is set by GCPlayer.SetScore 
 
 To see other HUD value types, see [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum).
 
-## Manually update the Players HUD
+## Players HUD updates
 
-NOTE: You need to disable the auto update in the SetupGame's GCGameHudOptions to manually update the Players HUD!
-
-```C#
-using System.Linq;
-using DSB.GC.Hud;
-
-GamingCouch.Instance.Hud.UpdatePlayers(new GCPlayersHudData
-{
-    players = playerStore.Players.Select((player, index) => new GCPlayersHudDataPlayer
-    {
-        playerIndex = player.Index,
-        score = player.Score,
-        lives = player.Lives,
-        status = player.Status.ToString(),
-        statusText = player.StatusText,
-        eliminationState = player.EliminationState.ToString(),
-        finishState = player.FinishState.ToString(),
-        eliminated = player.IsEliminated, // Compatibility projection for older HUD receivers.
-        placement = index + 1, // One-based placement used to sort the Players HUD.
-        value = "", // The value to display in the HUD. Set depending on the value type set in the GCGameHudOptions.
-        meter = player.Meter,
-    }).ToArray()
-});
-```
+The hosted Players HUD reads canonical runtime state from `runtime_messages`. Update player-facing HUD values by calling the `GCPlayer` state APIs, such as `SetScore`, `AddScore`, `SetLives`, `SetStatus`, and `SetMeter`.
 
 # Player integration
 

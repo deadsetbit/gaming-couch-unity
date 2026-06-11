@@ -286,7 +286,7 @@ namespace DSB.GC.Game
         {
             GCLog.LogDebug("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
-            gamingCouch.Hud.UpdatePlayers(BuildPlayersHudData());
+            gamingCouch.QueueRuntimeStateSnapshot();
         }
 
         internal GCPlayersHudData BuildPlayersHudData()

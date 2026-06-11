@@ -723,6 +723,26 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
+    public void LegacyHudUpdateApisAreCompileTimeErrorsWithMigrationMessages()
+    {
+        var updatePlayersObsolete = typeof(GCHud)
+            .GetMethod("UpdatePlayers")
+            .GetCustomAttribute<ObsoleteAttribute>();
+        var updateScreenPointHudObsolete = typeof(GCHud)
+            .GetMethod("UpdateScreenPointHud")
+            .GetCustomAttribute<ObsoleteAttribute>();
+
+        Assert.That(updatePlayersObsolete, Is.Not.Null);
+        Assert.That(updatePlayersObsolete.IsError, Is.True);
+        Assert.That(updatePlayersObsolete.Message, Does.Contain("Use GCPlayer score/lives/status/meter APIs"));
+        Assert.That(updatePlayersObsolete.Message, Does.Contain("runtime_messages state snapshots"));
+
+        Assert.That(updateScreenPointHudObsolete, Is.Not.Null);
+        Assert.That(updateScreenPointHudObsolete.IsError, Is.True);
+        Assert.That(updateScreenPointHudObsolete.Message, Does.Contain("Use QueuePointData"));
+    }
+
+    [Test]
     public void ScreenSpaceRejectsDuplicateAnchorPairs()
     {
         CreateRuntimeGame(1);
@@ -796,6 +816,26 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
         Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.player.status_changed\""));
+    }
+
+    [Test]
+    public void PlayersHudAutoUpdateQueuesCanonicalStateSnapshot()
+    {
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        context.gamingCouch.FlushRuntimeOutput();
+        emitted.Clear();
+
+        SetPrivateField(context.game, "isPlayersHudAutoUpdateEnabled", true);
+        SetPrivateField(context.game, "isPlayersHudAutoUpdatePending", true);
+
+        context.game.HandlePlayersHudAutoUpdate();
+        context.gamingCouch.FlushRuntimeOutput();
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(emitted[0], Does.Contain("\"payload\":{\"game\":{\"status\":\"playing\"}"));
     }
 
     [Test]

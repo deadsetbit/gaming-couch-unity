@@ -182,12 +182,16 @@ namespace DSB.GC.Hud
         /// <summary>
         /// Update the players in the HUD. Call Setup first.
         /// </summary>
+        [Obsolete("GCHud.UpdatePlayers has been removed from the game-facing runtime contract. Use GCPlayer score/lives/status/meter APIs; the hosted HUD consumes runtime_messages state snapshots.", true)]
         public void UpdatePlayers(GCPlayersHudData playersHudData)
         {
+            throw new InvalidOperationException("GCHud.UpdatePlayers has been removed. Use GCPlayer state APIs.");
         }
 
+        [Obsolete("GCHud.UpdateScreenPointHud has been removed from the game-facing runtime contract. Use QueuePointData for screen-space HUD anchors.", true)]
         public void UpdateScreenPointHud(GCScreenPointData pointData)
         {
+            throw new InvalidOperationException("GCHud.UpdateScreenPointHud has been removed. Use QueuePointData.");
         }
 
         private List<GCRuntimeScreenSpaceAnchor> screenSpaceQueue = new List<GCRuntimeScreenSpaceAnchor>();
