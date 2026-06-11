@@ -107,9 +107,16 @@ Define the runtime state model for permanent and revokable elimination, permanen
   - Complex state-aware ordering is deferred to a future custom placement comparer API.
 - Runtime player state is canonical. HUD remains configurable, but HUD rendering consumes runtime state, screen-space anchors, and HUD configuration instead of owning the semantic data model.
 - Runtime state snapshots should expose dynamic player fields: `playerIndex`, score, lives, status/statusText, meter, placement, `eliminationState`, and `finishState`.
+- Meter is semantic runtime state in v1. Calls to `SetMeter` may happen every physics or rendered frame, but accepted meter changes must remain ordered transition facts in `runtime_messages`; only latest-state projections such as snapshots and HUD output may be coalesced.
 - Static player type and color belong to the active-run roster/setup context, not to every dynamic state snapshot.
 - `screen_space` carries view-derived overhead and player-position anchors separately from semantic player state.
 - Temporary receiving-end adapters may derive old boolean `eliminated` behavior while platform/client code catches up.
+
+## Deferred Contract Follow-Ups
+
+- `SetMeter` is intentionally preserved as semantic state for v1, but the name is vague: it does not say what kind of game fact the platform should infer from the value. A future grilling session should decide whether `meter` remains a generic developer-facing progress field, becomes one or more platform-named semantic fields, or gains clearer capability metadata.
+- `reason` remains free-form developer text in this slice. Future contract planning should decide whether player-state mutators need stable reason codes plus bounded developer text, and should keep platform-facing reason semantics separate from debug-only explanation text.
+- Runtime output already treats transition `reasonText` as bounded; snapshots do not include `reason`. Future work should keep that split unless a specific product use case needs durable reason history in state snapshots or another message type.
 
 ## Diagnostics
 
@@ -122,6 +129,7 @@ Define the runtime state model for permanent and revokable elimination, permanen
 - Tests cover valid transitions, duplicate no-ops, invalid revoke attempts, revokable-to-permanent promotion, finish/elimination coexistence, and post-game-over no-ops.
 - Tests cover state event args, timestamps, derived booleans, store collections including bot/non-bot variants, hard-obsolete substitute messages for old store names, and placement with broad eliminated/finished criteria.
 - Tests cover runtime state snapshot fields, HUD rendering from runtime state, screen-space anchors, and temporary adapter-derived boolean behavior where that adapter exists.
+- Tests cover that meter changes are semantic transitions and are not hidden by rendered-frame or physics-frame batching.
 - Tests confirm input routing continues for all active participants regardless of elimination or finish state.
 
 ## Ready When

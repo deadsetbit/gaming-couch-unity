@@ -264,6 +264,7 @@ Track implementation-time API/protocol/runtime-contract breaks here as each task
 - The fallback platform entry name is `notdefined`, intentionally avoiding `undefined`.
 - Developer diagnostics should be treated as product infrastructure, not just logging, because they are the bridge to better DevApp and hosted developer tools.
 - Raw browser console history is not a reliable data source for product tooling. If console-like information needs durable ordering, it must be captured and stamped at the point of emission or treated as best-effort host debug output.
+- Future player-state contract grilling should revisit the generic `SetMeter` field and free-form mutator `reason` strings. Meter is semantic in v1, but the name is vague for platform interpretation; reasons should likely split into stable reason codes plus bounded developer text before they become product-facing semantics.
 
 ## Post-Legacy Cleanup Ledger
 
