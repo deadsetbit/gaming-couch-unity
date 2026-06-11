@@ -36,6 +36,7 @@ internal sealed class GCUnityBuildInfoSidecarWriteResult
 internal static class GCUnityBuildInfoSidecarWriter
 {
     internal const string SidecarFileName = "gc.unity-build-info.json";
+    private const string OutputPathDescription = "Unity build info sidecar";
 
     internal static GCUnityBuildInfoSidecarWriteResult WriteForBuild(
         BuildReport report,
@@ -48,7 +49,7 @@ internal static class GCUnityBuildInfoSidecarWriter
         }
 
         var summary = report.summary;
-        if (summary.platform != BuildTarget.WebGL)
+        if (!GCWebGLBuildSidecarTemplatePolicy.ShouldWriteUnityBuildInfo(summary.platform))
         {
             return WriteForBuild(
                 summary.platform,
@@ -62,15 +63,18 @@ internal static class GCUnityBuildInfoSidecarWriter
             );
         }
 
+        var outputRootPath = ResolveOutputRootPath(summary.outputPath);
+
         return WriteForBuild(
             summary.platform,
             summary.outputPath,
             webGLTemplate,
             GCEditorPackageIdentity.Resolve(),
-            GCUnityBuildInfoBuildSummaryCapture.Capture(report, ResolveOutputRootPath(summary.outputPath)),
+            GCUnityBuildInfoBuildSummaryCapture.Capture(report, outputRootPath),
             GCUnityBuildInfoWebGLSettingsCapture.Capture(),
             Application.unityVersion,
-            GCUnityBuildInfoCaptureClock.CaptureUtcNow()
+            GCUnityBuildInfoCaptureClock.CaptureUtcNow(),
+            outputRootPath
         );
     }
 
@@ -83,6 +87,31 @@ internal static class GCUnityBuildInfoSidecarWriter
         GCUnityBuildInfoWebGLSettings webGLSettings,
         string unityVersion,
         string capturedAtUtc
+    )
+    {
+        return WriteForBuild(
+            buildTarget,
+            buildOutputPath,
+            webGLTemplate,
+            packageIdentity,
+            buildSummary,
+            webGLSettings,
+            unityVersion,
+            capturedAtUtc,
+            null
+        );
+    }
+
+    private static GCUnityBuildInfoSidecarWriteResult WriteForBuild(
+        BuildTarget buildTarget,
+        string buildOutputPath,
+        string webGLTemplate,
+        GCPackageIdentity packageIdentity,
+        GCUnityBuildInfoBuildSummary buildSummary,
+        GCUnityBuildInfoWebGLSettings webGLSettings,
+        string unityVersion,
+        string capturedAtUtc,
+        string resolvedOutputRootPath
     )
     {
         if (buildTarget != BuildTarget.WebGL)
@@ -108,8 +137,82 @@ internal static class GCUnityBuildInfoSidecarWriter
             throw new ArgumentNullException(nameof(webGLSettings));
         }
 
-        var outputRootPath = ResolveOutputRootPath(buildOutputPath);
-        var sidecarPath = Path.Combine(outputRootPath, SidecarFileName);
+        var outputRootPath = resolvedOutputRootPath ?? ResolveOutputRootPath(buildOutputPath);
+        var sidecarPath = GCWebGLBuildSidecarOutputPaths.ResolveSidecarPath(outputRootPath, SidecarFileName);
+
+        return WriteSidecarUnchecked(
+            buildTarget,
+            outputRootPath,
+            sidecarPath,
+            webGLTemplate,
+            packageIdentity,
+            buildSummary,
+            webGLSettings,
+            unityVersion,
+            capturedAtUtc
+        );
+    }
+
+    internal static GCUnityBuildInfoSidecarWriteResult WriteSidecar(
+        BuildTarget buildTarget,
+        string outputRootPath,
+        string sidecarPath,
+        string webGLTemplate,
+        GCPackageIdentity packageIdentity,
+        GCUnityBuildInfoBuildSummary buildSummary,
+        GCUnityBuildInfoWebGLSettings webGLSettings,
+        string unityVersion,
+        string capturedAtUtc
+    )
+    {
+        if (!GCWebGLBuildSidecarTemplatePolicy.ShouldWriteUnityBuildInfo(buildTarget))
+        {
+            return new GCUnityBuildInfoSidecarWriteResult(
+                GCUnityBuildInfoSidecarWriteStatus.SkippedNonWebGLBuild,
+                sidecarPath
+            );
+        }
+
+        if (packageIdentity == null)
+        {
+            throw new ArgumentNullException(nameof(packageIdentity));
+        }
+
+        if (buildSummary == null)
+        {
+            throw new ArgumentNullException(nameof(buildSummary));
+        }
+
+        if (webGLSettings == null)
+        {
+            throw new ArgumentNullException(nameof(webGLSettings));
+        }
+
+        return WriteSidecarUnchecked(
+            buildTarget,
+            outputRootPath,
+            sidecarPath,
+            webGLTemplate,
+            packageIdentity,
+            buildSummary,
+            webGLSettings,
+            unityVersion,
+            capturedAtUtc
+        );
+    }
+
+    private static GCUnityBuildInfoSidecarWriteResult WriteSidecarUnchecked(
+        BuildTarget buildTarget,
+        string outputRootPath,
+        string sidecarPath,
+        string webGLTemplate,
+        GCPackageIdentity packageIdentity,
+        GCUnityBuildInfoBuildSummary buildSummary,
+        GCUnityBuildInfoWebGLSettings webGLSettings,
+        string unityVersion,
+        string capturedAtUtc
+    )
+    {
         var sidecar = GCUnityBuildInfoSidecarFactory.Create(
             buildTarget,
             webGLTemplate,
@@ -131,67 +234,18 @@ internal static class GCUnityBuildInfoSidecarWriter
 
     private static string TryResolveSidecarPath(string buildOutputPath)
     {
-        if (string.IsNullOrWhiteSpace(buildOutputPath))
-        {
-            return null;
-        }
-
-        try
-        {
-            return Path.Combine(ResolveOutputRootPath(buildOutputPath), SidecarFileName);
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
+        return GCWebGLBuildSidecarOutputPaths.TryResolveSidecarPath(
+            buildOutputPath,
+            SidecarFileName,
+            OutputPathDescription
+        );
     }
 
     internal static string ResolveOutputRootPath(string buildOutputPath)
     {
-        if (string.IsNullOrWhiteSpace(buildOutputPath))
-        {
-            throw new InvalidOperationException("Unity build info sidecar output path is empty.");
-        }
-
-        string fullOutputPath;
-        try
-        {
-            fullOutputPath = Path.GetFullPath(buildOutputPath);
-        }
-        catch (ArgumentException exception)
-        {
-            throw CreateInvalidOutputPathException(buildOutputPath, exception);
-        }
-        catch (NotSupportedException exception)
-        {
-            throw CreateInvalidOutputPathException(buildOutputPath, exception);
-        }
-        catch (PathTooLongException exception)
-        {
-            throw CreateInvalidOutputPathException(buildOutputPath, exception);
-        }
-
-        if (File.Exists(fullOutputPath))
-        {
-            var directoryName = Path.GetDirectoryName(fullOutputPath);
-            if (string.IsNullOrEmpty(directoryName))
-            {
-                throw new InvalidOperationException(
-                    "Unity build info sidecar output path has no containing directory: " + buildOutputPath
-                );
-            }
-
-            return directoryName;
-        }
-
-        return fullOutputPath;
-    }
-
-    private static InvalidOperationException CreateInvalidOutputPathException(string buildOutputPath, Exception exception)
-    {
-        return new InvalidOperationException(
-            "Unity build info sidecar output path is invalid: " + buildOutputPath,
-            exception
+        return GCWebGLBuildSidecarOutputPaths.ResolveOutputRootPath(
+            buildOutputPath,
+            OutputPathDescription
         );
     }
 }
