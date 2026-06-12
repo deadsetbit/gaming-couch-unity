@@ -218,22 +218,22 @@ public sealed class GCRuntimeDiagnosticsTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
         GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.WarningAndError,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.WarningAndError,
         });
         nowSeconds = 10.250;
 
         LogAssert.Expect(
             LogType.Warning,
-            new Regex(@"\[GC\] Diagnostic gc\.log\.unity_warning: Unity warning captured\.")
+            new Regex(@"\[GC\] Diagnostic gc\.log\.runtime_warning: Unity warning captured\.")
         );
         GCUnityLogCapture.CaptureForTests("Physics warning.", "stack line", LogType.Warning);
         GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(emitted[0], Does.Contain("\"runtimeTimeMs\":250"));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.unity_warning\""));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.runtime_warning\""));
         Assert.That(emitted[0], Does.Contain("\"severity\":\"warning\""));
-        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"debug\":{\"condition\":\"Physics warning.\",\"stackTrace\":\"stack line\"}"));
         LogAssert.NoUnexpectedReceived();
     }
@@ -245,15 +245,15 @@ public sealed class GCRuntimeDiagnosticsTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
         GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
         });
 
         GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"severity\":\"info\""));
-        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"unity_log\""));
+        Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"message\":\"Unity log captured.\""));
         LogAssert.NoUnexpectedReceived();
     }
@@ -265,7 +265,7 @@ public sealed class GCRuntimeDiagnosticsTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
         GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
         });
 
         GCUnityLogCapture.CaptureForTests(
@@ -285,7 +285,7 @@ public sealed class GCRuntimeDiagnosticsTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += emitted.Add;
         GCRuntimeMessageOutput.BeginActiveRun(new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
         });
 
         for (var index = 0; index < 25; index++)

@@ -147,13 +147,13 @@ public sealed class GCDevAppRuntimeInboundTests
         var inbound = new GCDevAppRuntimeInbound();
 
         var decision = inbound.RouteTextMessage(
-            "{\"type\":\"gcdevtool\",\"action\":\"runtime_output_options\",\"payload\":{\"runtimeOutput\":{\"unityLogCapture\":\"warning_and_error\"}}}",
+            "{\"type\":\"gcdevtool\",\"action\":\"runtime_output_options\",\"payload\":{\"runtimeOutput\":{\"runtimeLogCapture\":\"warning_and_error\"}}}",
             Context()
         );
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.RuntimeOutputOptions));
-        Assert.That(decision.unityLogCaptureMode, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
+        Assert.That(decision.runtimeLogCaptureMode, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
     }
 
     [Test]

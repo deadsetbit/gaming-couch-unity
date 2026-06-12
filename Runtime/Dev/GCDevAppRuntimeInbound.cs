@@ -53,7 +53,7 @@ namespace DSB.GC.Dev
         internal readonly float timescale;
         internal readonly bool paused;
         internal readonly bool shouldApplyPause;
-        internal readonly string unityLogCaptureMode;
+        internal readonly string runtimeLogCaptureMode;
         internal readonly string reason;
 
         private GCDevAppRuntimeInboundDecision(
@@ -66,7 +66,7 @@ namespace DSB.GC.Dev
             float timescale,
             bool paused,
             bool shouldApplyPause,
-            string unityLogCaptureMode,
+            string runtimeLogCaptureMode,
             string reason
         )
         {
@@ -79,7 +79,7 @@ namespace DSB.GC.Dev
             this.timescale = timescale;
             this.paused = paused;
             this.shouldApplyPause = shouldApplyPause;
-            this.unityLogCaptureMode = unityLogCaptureMode;
+            this.runtimeLogCaptureMode = runtimeLogCaptureMode;
             this.reason = reason;
         }
 
@@ -177,7 +177,7 @@ namespace DSB.GC.Dev
             );
         }
 
-        internal static GCDevAppRuntimeInboundDecision RuntimeOutputOptions(string unityLogCaptureMode)
+        internal static GCDevAppRuntimeInboundDecision RuntimeOutputOptions(string runtimeLogCaptureMode)
         {
             return new GCDevAppRuntimeInboundDecision(
                 GCDevAppRuntimeInboundStatus.Intent,
@@ -189,7 +189,7 @@ namespace DSB.GC.Dev
                 1f,
                 false,
                 false,
-                unityLogCaptureMode,
+                runtimeLogCaptureMode,
                 null
             );
         }
@@ -382,7 +382,7 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_runtime_output_payload");
             }
 
-            return GCDevAppRuntimeInboundDecision.RuntimeOutputOptions(payload.runtimeOutput.unityLogCapture);
+            return GCDevAppRuntimeInboundDecision.RuntimeOutputOptions(payload.runtimeOutput.runtimeLogCapture);
         }
 
         private static bool TryResolveActivePlayerIndex(
@@ -486,7 +486,7 @@ namespace DSB.GC.Dev
     [Serializable]
     internal sealed class GCDevAppRuntimeOutputOptionsMessage
     {
-        public string unityLogCapture;
+        public string runtimeLogCapture;
     }
 }
 #endif

@@ -16,7 +16,7 @@ Define the structured diagnostics path before API migration and state-model work
   - `error`: runtime output was rejected or blocked.
   - `warning`: behavior degraded, no-oped, fell back, hit a legacy bridge, or used unsupported API.
   - `info`: notable non-problem diagnostic state.
-- `sourceArea` is one of `api`, `mapping`, `state`, `runtime_messages`, `screen_space`, `metadata`, or `unity_log`.
+- `sourceArea` is one of `api`, `mapping`, `state`, `runtime_messages`, `screen_space`, `metadata`, or `runtime_log`.
 - Diagnostic timing uses the enclosing `runtime_messages` record `sequence` and unscaled `runtimeTimeMs`.
 - `runId` is active-run context metadata resolved by the receiver or adapter. In DevApp local play it identifies the active runtime play run and is not stable across restart.
 - `playerIndex` is optional but top-level when a diagnostic is about a game-facing active player. Public diagnostics must not expose platform player IDs.
@@ -51,9 +51,9 @@ Define the structured diagnostics path before API migration and state-model work
   - `gc.metadata.missing_platform_data`
   - `gc.metadata.invalid_platform_data`
   - `gc.metadata.fallback_active`
-  - `gc.log.unity_log`
-  - `gc.log.unity_warning`
-  - `gc.log.unity_error`
+  - `gc.log.runtime_log`
+  - `gc.log.runtime_warning`
+  - `gc.log.runtime_error`
 - Runtime message envelope, message catalog, and game-over placement validation diagnostics use `sourceArea: runtime_messages`.
 - Screen-space envelope and anchor validation diagnostics, including `gc.runtime.malformed_screen_space`, use `sourceArea: screen_space`.
 
@@ -113,7 +113,7 @@ Define the structured diagnostics path before API migration and state-model work
 - Map Unity `Log` to diagnostic severity `info`.
 - Map Unity `Warning` to diagnostic severity `warning`.
 - Map Unity `Error`, `Assert`, and `Exception` to diagnostic severity `error`.
-- Captured non-GC Unity logs use `sourceArea: unity_log` and codes `gc.log.unity_log`, `gc.log.unity_warning`, or `gc.log.unity_error`.
+- Captured non-GC Unity logs use `sourceArea: runtime_log` and codes `gc.log.runtime_log`, `gc.log.runtime_warning`, or `gc.log.runtime_error`.
 - Unity-specific fields such as Unity log type and bounded stack trace belong in `details` or `debug`.
 - Install v1 capture with a startup hook before scene `Awake` where practical, then use main-thread Unity log callbacks for capture. Multi-threaded capture is out of scope for v1; if it is added later, the threaded callback must only enqueue thread-safe data and a main-thread drain must emit diagnostics.
 - The package may attempt to set Unity logger filtering to the requested launch level, but third-party logs remain best-effort: developer code can disable or compile out log emission. Critical GC diagnostics must bypass Unity logging entirely.

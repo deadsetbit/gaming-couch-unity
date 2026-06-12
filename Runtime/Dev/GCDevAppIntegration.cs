@@ -521,7 +521,7 @@ namespace DSB.GC.Dev
 
         void ApplyRuntimeOutputOptions(GCDevAppRuntimeInboundDecision decision)
         {
-            GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(decision.unityLogCaptureMode);
+            GCDevAppRuntimeOutputSettings.SetRuntimeLogCaptureMode(decision.runtimeLogCaptureMode);
         }
 
         private sealed class GamingCouchActivePlayerResolver : IGCDevAppRuntimeActivePlayerResolver
@@ -631,7 +631,7 @@ namespace DSB.GC.Dev
     [Serializable]
     public class WebSocketRuntimeOutputOptions
     {
-        public string unityLogCapture;
+        public string runtimeLogCapture;
     }
 
 #endif

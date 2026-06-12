@@ -21,7 +21,7 @@ namespace DSB.GC
     {
         public bool stateSnapshots = true;
         public bool screenSpace = true;
-        public string unityLogCapture = GCRuntimeUnityLogCaptureMode.Off;
+        public string runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Off;
     }
 
     public static class GCRuntimeUnityLogCaptureMode

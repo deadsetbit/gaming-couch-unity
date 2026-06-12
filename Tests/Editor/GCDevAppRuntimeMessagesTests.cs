@@ -185,30 +185,30 @@ public sealed class GCDevAppRuntimeMessagesTests
     }
 
     [Test]
-    public void RuntimeOutputSettingsPreserveExplicitUnityLogCaptureWithoutDevAppOverride()
+    public void RuntimeOutputSettingsPreserveExplicitRuntimeLogCaptureWithoutDevAppOverride()
     {
         var options = new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
         };
 
         var appliedOptions = GCDevAppRuntimeOutputSettings.Apply(options);
 
-        Assert.That(appliedOptions.unityLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.Full));
+        Assert.That(appliedOptions.runtimeLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.Full));
     }
 
     [Test]
-    public void RuntimeOutputSettingsApplyDevAppUnityLogCaptureOverride()
+    public void RuntimeOutputSettingsApplyDevAppRuntimeLogCaptureOverride()
     {
         var options = new GCRuntimeOutputOptions
         {
-            unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+            runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
         };
-        GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(GCRuntimeUnityLogCaptureMode.WarningAndError);
+        GCDevAppRuntimeOutputSettings.SetRuntimeLogCaptureMode(GCRuntimeUnityLogCaptureMode.WarningAndError);
 
         var appliedOptions = GCDevAppRuntimeOutputSettings.Apply(options);
 
-        Assert.That(appliedOptions.unityLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
+        Assert.That(appliedOptions.runtimeLogCapture, Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError));
     }
 
     private static GCSeatIdentity[] CreateSeatIdentities()

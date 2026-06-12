@@ -22,7 +22,7 @@ namespace DSB.GC.RuntimeMessages
         internal const string RuntimeMessages = "runtime_messages";
         internal const string ScreenSpace = "screen_space";
         internal const string Metadata = "metadata";
-        internal const string UnityLog = "unity_log";
+        internal const string RuntimeLog = "runtime_log";
 
         private static readonly HashSet<string> KnownSourceAreas = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -32,7 +32,7 @@ namespace DSB.GC.RuntimeMessages
             RuntimeMessages,
             ScreenSpace,
             Metadata,
-            UnityLog,
+            RuntimeLog,
         };
 
         internal static bool IsKnown(string sourceArea)
@@ -64,9 +64,9 @@ namespace DSB.GC.RuntimeMessages
         internal const string MissingPlatformData = "gc.metadata.missing_platform_data";
         internal const string InvalidPlatformData = "gc.metadata.invalid_platform_data";
         internal const string FallbackActive = "gc.metadata.fallback_active";
-        internal const string UnityLog = "gc.log.unity_log";
-        internal const string UnityWarning = "gc.log.unity_warning";
-        internal const string UnityError = "gc.log.unity_error";
+        internal const string RuntimeLog = "gc.log.runtime_log";
+        internal const string RuntimeWarning = "gc.log.runtime_warning";
+        internal const string RuntimeError = "gc.log.runtime_error";
 
         private static readonly HashSet<string> KnownCodes = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -91,9 +91,9 @@ namespace DSB.GC.RuntimeMessages
             MissingPlatformData,
             InvalidPlatformData,
             FallbackActive,
-            UnityLog,
-            UnityWarning,
-            UnityError,
+            RuntimeLog,
+            RuntimeWarning,
+            RuntimeError,
         };
 
         internal static bool IsKnown(string code)
@@ -140,7 +140,7 @@ namespace DSB.GC.RuntimeMessages
 
             if (code.StartsWith("gc.log.", StringComparison.Ordinal))
             {
-                return string.Equals(sourceArea, GCDiagnosticSourceAreas.UnityLog, StringComparison.Ordinal);
+                return string.Equals(sourceArea, GCDiagnosticSourceAreas.RuntimeLog, StringComparison.Ordinal);
             }
 
             return false;
@@ -749,7 +749,7 @@ namespace DSB.GC.RuntimeMessages
             GCDiagnostics.Emit(
                 code,
                 severity,
-                GCDiagnosticSourceAreas.UnityLog,
+                GCDiagnosticSourceAreas.RuntimeLog,
                 ResolveMessage(type),
                 context
             );
@@ -807,15 +807,15 @@ namespace DSB.GC.RuntimeMessages
         {
             if (type == LogType.Log)
             {
-                return GCDiagnosticCodes.UnityLog;
+                return GCDiagnosticCodes.RuntimeLog;
             }
 
             if (type == LogType.Warning)
             {
-                return GCDiagnosticCodes.UnityWarning;
+                return GCDiagnosticCodes.RuntimeWarning;
             }
 
-            return GCDiagnosticCodes.UnityError;
+            return GCDiagnosticCodes.RuntimeError;
         }
 
         private static GCDiagnosticSeverity ResolveSeverity(LogType type)

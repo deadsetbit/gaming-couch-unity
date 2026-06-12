@@ -120,36 +120,36 @@ namespace DSB.GC.Dev
 
     internal static class GCDevAppRuntimeOutputSettings
     {
-        private static string unityLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
-        private static bool hasUnityLogCaptureModeOverride;
+        private static string runtimeLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
+        private static bool hasRuntimeLogCaptureModeOverride;
 
-        internal static void SetUnityLogCaptureMode(string mode)
+        internal static void SetRuntimeLogCaptureMode(string mode)
         {
             if (string.IsNullOrEmpty(mode))
             {
                 return;
             }
 
-            unityLogCaptureMode = GCUnityLogCapture.NormalizeMode(mode);
-            hasUnityLogCaptureModeOverride = true;
+            runtimeLogCaptureMode = GCUnityLogCapture.NormalizeMode(mode);
+            hasRuntimeLogCaptureModeOverride = true;
         }
 
         internal static GCRuntimeOutputOptions Apply(GCRuntimeOutputOptions options)
         {
             var outputOptions = options ?? new GCRuntimeOutputOptions();
-            if (!hasUnityLogCaptureModeOverride)
+            if (!hasRuntimeLogCaptureModeOverride)
             {
                 return outputOptions;
             }
 
-            outputOptions.unityLogCapture = unityLogCaptureMode;
+            outputOptions.runtimeLogCapture = runtimeLogCaptureMode;
             return outputOptions;
         }
 
         internal static void ResetForTests()
         {
-            unityLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
-            hasUnityLogCaptureModeOverride = false;
+            runtimeLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
+            hasRuntimeLogCaptureModeOverride = false;
         }
     }
 

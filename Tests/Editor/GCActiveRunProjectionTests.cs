@@ -146,15 +146,15 @@ public sealed class GCActiveRunProjectionTests
             },
             runtimeOutput = new GCRuntimeOutputOptions
             {
-                unityLogCapture = GCRuntimeUnityLogCaptureMode.Full,
+                runtimeLogCapture = GCRuntimeUnityLogCaptureMode.Full,
             },
         };
-        GCDevAppRuntimeOutputSettings.SetUnityLogCaptureMode(GCRuntimeUnityLogCaptureMode.WarningAndError);
+        GCDevAppRuntimeOutputSettings.SetRuntimeLogCaptureMode(GCRuntimeUnityLogCaptureMode.WarningAndError);
 
         var projection = GCActiveRunProjection.Create(options);
 
         Assert.That(
-            projection.GameFacingPlayOptions.runtimeOutput.unityLogCapture,
+            projection.GameFacingPlayOptions.runtimeOutput.runtimeLogCapture,
             Is.EqualTo(GCRuntimeUnityLogCaptureMode.WarningAndError)
         );
     }
