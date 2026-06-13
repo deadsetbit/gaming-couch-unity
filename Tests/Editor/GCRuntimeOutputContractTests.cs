@@ -61,18 +61,20 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(emitted, Has.Count.EqualTo(1));
         var json = emitted[0];
         Assert.That(json, Does.Contain("\"type\":\"runtime_messages\""));
-        Assert.That(json, Does.Contain("\"messageType\":\"gc.player.score_changed\""));
-        Assert.That(json, Does.Contain("\"previousValue\":0"));
-        Assert.That(json, Does.Contain("\"value\":10"));
-        Assert.That(json, Does.Contain("\"reasonText\":\"score reason\""));
-        Assert.That(json, Does.Contain("\"messageType\":\"gc.player.lives_changed\""));
-        Assert.That(json, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(json.IndexOf("\"messageType\":\"gc.player.score_changed\""), Is.LessThan(json.IndexOf("\"messageType\":\"gc.state.snapshot\"")));
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
-        Assert.That(json, Does.Contain("\"sequence\":1"));
-        Assert.That(json, Does.Contain("\"sequence\":2"));
-        Assert.That(json, Does.Contain("\"sequence\":3"));
-        Assert.That(json, Does.Contain("\"runtimeTimeMs\":125"));
+        Assert.That(json, Does.Contain("\"v\":1"));
+        Assert.That(json, Does.Contain("\"type\":\"gc.player\",\"name\":\"score_changed\""));
+        Assert.That(json, Does.Contain("\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":1,\"ms\":125,\"playerIndex\":0,\"data\":{\"from\":0"));
+        Assert.That(json, Does.Contain("\"from\":0"));
+        Assert.That(json, Does.Contain("\"to\":10"));
+        Assert.That(json, Does.Contain("\"reason\":\"score reason\""));
+        Assert.That(json, Does.Contain("\"type\":\"gc.player\",\"name\":\"lives_changed\""));
+        Assert.That(json, Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(json.IndexOf("\"type\":\"gc.player\",\"name\":\"score_changed\""), Is.LessThan(json.IndexOf("\"type\":\"gc.state\",\"name\":\"snapshot\"")));
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
+        Assert.That(json, Does.Contain("\"seq\":1"));
+        Assert.That(json, Does.Contain("\"seq\":2"));
+        Assert.That(json, Does.Contain("\"seq\":3"));
+        Assert.That(json, Does.Contain("\"ms\":125"));
     }
 
     [Test]
@@ -88,25 +90,25 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         var json = emitted[0];
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.player.elimination_state_changed\""), Is.EqualTo(2));
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.player\",\"name\":\"elimination_changed\""), Is.EqualTo(2));
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
         AssertMessageOrder(
             json,
-            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":1",
-            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":2",
-            "\"messageType\":\"gc.state.snapshot\",\"sequence\":3"
+            "\"type\":\"gc.player\",\"name\":\"elimination_changed\",\"seq\":1",
+            "\"type\":\"gc.player\",\"name\":\"elimination_changed\",\"seq\":2",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\",\"seq\":3"
         );
         Assert.That(
             json,
             Does.Contain(
-                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":-1,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"}"
+                "\"data\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"text\":\"\",\"meter\":-1,\"placement\":1,\"elimination\":\"None\",\"finish\":\"None\"}"
             )
         );
         AssertMessageOrder(
             json,
-            "\"previousValue\":\"None\",\"value\":\"Revokable\",\"reasonText\":\"pit\"",
-            "\"previousValue\":\"Revokable\",\"value\":\"None\",\"reasonText\":\"respawn\"",
-            "\"messageType\":\"gc.state.snapshot\""
+            "\"from\":\"None\",\"to\":\"Revokable\",\"reason\":\"pit\"",
+            "\"from\":\"Revokable\",\"to\":\"None\",\"reason\":\"respawn\"",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\""
         );
 
         var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
@@ -154,27 +156,27 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         var json = emitted[0];
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.player.meter_changed\""), Is.EqualTo(3));
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.player\",\"name\":\"meter_changed\""), Is.EqualTo(3));
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
         AssertMessageOrder(
             json,
-            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":1",
-            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":2",
-            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":3",
-            "\"messageType\":\"gc.state.snapshot\",\"sequence\":4"
+            "\"type\":\"gc.player\",\"name\":\"meter_changed\",\"seq\":1",
+            "\"type\":\"gc.player\",\"name\":\"meter_changed\",\"seq\":2",
+            "\"type\":\"gc.player\",\"name\":\"meter_changed\",\"seq\":3",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\",\"seq\":4"
         );
         Assert.That(
             json,
             Does.Contain(
-                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":80,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"}]}"
+                "\"data\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"text\":\"\",\"meter\":80,\"placement\":1,\"elimination\":\"None\",\"finish\":\"None\"}]}"
             )
         );
         AssertMessageOrder(
             json,
-            "\"previousValue\":-1,\"value\":10,\"reasonText\":\"charge\"",
-            "\"previousValue\":10,\"value\":25,\"reasonText\":\"boost\"",
-            "\"previousValue\":25,\"value\":80,\"reasonText\":\"finish\"",
-            "\"messageType\":\"gc.state.snapshot\""
+            "\"from\":-1,\"to\":10,\"reason\":\"charge\"",
+            "\"from\":10,\"to\":25,\"reason\":\"boost\"",
+            "\"from\":25,\"to\":80,\"reason\":\"finish\"",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\""
         );
 
         var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
@@ -250,14 +252,14 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(
-            CountOccurrences(emitted[0], "\"messageType\":\"gc.player.score_changed\""),
+            CountOccurrences(emitted[0], "\"type\":\"gc.player\",\"name\":\"score_changed\""),
             Is.EqualTo(GCRuntimeMessageOutput.MaxPendingMessagesPerBatch)
         );
-        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
         AssertMessageOrder(
             emitted[0],
-            "\"messageType\":\"gc.player.score_changed\",\"sequence\":1",
-            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" +
+            "\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":1",
+            "\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":" +
                 GCRuntimeMessageOutput.MaxPendingMessagesPerBatch
         );
 
@@ -265,21 +267,21 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(
-            CountOccurrences(emitted[1], "\"messageType\":\"gc.player.score_changed\""),
+            CountOccurrences(emitted[1], "\"type\":\"gc.player\",\"name\":\"score_changed\""),
             Is.EqualTo(5)
         );
-        Assert.That(CountOccurrences(emitted[1], "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(emitted[1], "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
         AssertMessageOrder(
             emitted[1],
-            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" +
+            "\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":" +
                 (GCRuntimeMessageOutput.MaxPendingMessagesPerBatch + 1),
-            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" + transitionCount,
-            "\"messageType\":\"gc.state.snapshot\",\"sequence\":" + (transitionCount + 1)
+            "\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":" + transitionCount,
+            "\"type\":\"gc.state\",\"name\":\"snapshot\",\"seq\":" + (transitionCount + 1)
         );
         Assert.That(
             emitted[1],
             Does.Contain(
-                "\"payload\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":" +
+                "\"data\":{\"game\":{\"status\":\"playing\"},\"players\":[{\"playerIndex\":0,\"score\":" +
                     transitionCount
             )
         );
@@ -300,29 +302,29 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(
-            CountOccurrences(emitted[0], "\"messageType\":\"gc.player.score_changed\""),
+            CountOccurrences(emitted[0], "\"type\":\"gc.player\",\"name\":\"score_changed\""),
             Is.EqualTo(GCRuntimeMessageOutput.MaxPendingMessagesPerBatch)
         );
-        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.game.game_over\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"gc.game\",\"name\":\"game_over\""));
 
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
 
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(gameOverEnvelope, Is.EqualTo(emitted[1]));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.score_changed\""), Is.EqualTo(1));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.game.game_over\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.player\",\"name\":\"score_changed\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.game\",\"name\":\"game_over\""), Is.EqualTo(1));
         AssertMessageOrder(
             gameOverEnvelope,
-            "\"messageType\":\"gc.player.score_changed\",\"sequence\":" + transitionCount,
-            "\"messageType\":\"gc.state.snapshot\",\"sequence\":" + (transitionCount + 1),
-            "\"messageType\":\"gc.game.game_over\",\"sequence\":" + (transitionCount + 2)
+            "\"type\":\"gc.player\",\"name\":\"score_changed\",\"seq\":" + transitionCount,
+            "\"type\":\"gc.state\",\"name\":\"snapshot\",\"seq\":" + (transitionCount + 1),
+            "\"type\":\"gc.game\",\"name\":\"game_over\",\"seq\":" + (transitionCount + 2)
         );
         Assert.That(
             gameOverEnvelope,
             Does.Contain(
-                "\"payload\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":" +
+                "\"data\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":" +
                     transitionCount
             )
         );
@@ -344,8 +346,8 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(publicReasons, Is.EqualTo(new[] { longReason }));
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.player.meter_changed\""));
-        Assert.That(emitted[0], Does.Contain("\"reasonText\":\"" + boundedReason + "\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.player\",\"name\":\"meter_changed\""));
+        Assert.That(emitted[0], Does.Contain("\"reason\":\"" + boundedReason + "\""));
         Assert.That(emitted[0], Does.Not.Contain("overflow"));
     }
 
@@ -362,14 +364,14 @@ public sealed class GCRuntimeOutputContractTests
         context.players[0].SetLives(-1, "invalid lives");
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.player.score_changed\""));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.diagnostic\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.player\",\"name\":\"score_changed\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.diagnostic\""));
         Assert.That(
-            emitted[0].IndexOf("\"messageType\":\"gc.player.score_changed\""),
-            Is.LessThan(emitted[0].IndexOf("\"messageType\":\"gc.diagnostic\""))
+            emitted[0].IndexOf("\"type\":\"gc.player\",\"name\":\"score_changed\""),
+            Is.LessThan(emitted[0].IndexOf("\"type\":\"gc.diagnostic\""))
         );
-        Assert.That(emitted[0], Does.Contain("\"sequence\":1"));
-        Assert.That(emitted[0], Does.Contain("\"sequence\":2"));
+        Assert.That(emitted[0], Does.Contain("\"seq\":1"));
+        Assert.That(emitted[0], Does.Contain("\"seq\":2"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -389,8 +391,8 @@ public sealed class GCRuntimeOutputContractTests
         context.gamingCouch.FlushRuntimeOutput();
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.player.meter_changed\""));
-        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.state.snapshot\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.player\",\"name\":\"meter_changed\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
     }
 
     [Test]
@@ -403,18 +405,18 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var firstEnvelope), Is.True);
 
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
-        Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(firstEnvelope, Does.Contain("\"messageType\":\"gc.game.game_over\""));
-        Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(firstEnvelope.IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(firstEnvelope.IndexOf("\"messageType\":\"gc.game.game_over\"")));
+        Assert.That(firstEnvelope, Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(firstEnvelope, Does.Contain("\"type\":\"gc.game\",\"name\":\"game_over\""));
+        Assert.That(firstEnvelope, Does.Contain("\"data\":{\"playersByPlacement\":[0,1]}"));
+        Assert.That(firstEnvelope.IndexOf("\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.LessThan(firstEnvelope.IndexOf("\"type\":\"gc.game\",\"name\":\"game_over\"")));
 
         LogAssert.Expect(LogType.Error, "[GC] Diagnostic gc.runtime.invalid_game_over_placement: Game-over placement was already accepted for this active run.");
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var secondEnvelope), Is.False);
         Assert.That(secondEnvelope, Is.Null);
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[1], Does.Contain("\"messageType\":\"gc.diagnostic\""));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
-        Assert.That(emitted[1], Does.Not.Contain("\"messageType\":\"gc.game.game_over\""));
+        Assert.That(emitted[1], Does.Contain("\"type\":\"gc.diagnostic\""));
+        Assert.That(emitted[1], Does.Contain("\"name\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[1], Does.Not.Contain("\"type\":\"gc.game\",\"name\":\"game_over\""));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -433,27 +435,27 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(gameOverEnvelope, Is.EqualTo(emitted[0]));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.elimination_state_changed\""), Is.EqualTo(2));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.player.meter_changed\""), Is.EqualTo(1));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
-        Assert.That(CountOccurrences(gameOverEnvelope, "\"messageType\":\"gc.game.game_over\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.player\",\"name\":\"elimination_changed\""), Is.EqualTo(2));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.player\",\"name\":\"meter_changed\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
+        Assert.That(CountOccurrences(gameOverEnvelope, "\"type\":\"gc.game\",\"name\":\"game_over\""), Is.EqualTo(1));
         AssertMessageOrder(
             gameOverEnvelope,
-            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":1",
-            "\"messageType\":\"gc.player.elimination_state_changed\",\"sequence\":2",
-            "\"messageType\":\"gc.player.meter_changed\",\"sequence\":3",
-            "\"messageType\":\"gc.state.snapshot\",\"sequence\":4",
-            "\"messageType\":\"gc.game.game_over\",\"sequence\":5"
+            "\"type\":\"gc.player\",\"name\":\"elimination_changed\",\"seq\":1",
+            "\"type\":\"gc.player\",\"name\":\"elimination_changed\",\"seq\":2",
+            "\"type\":\"gc.player\",\"name\":\"meter_changed\",\"seq\":3",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\",\"seq\":4",
+            "\"type\":\"gc.game\",\"name\":\"game_over\",\"seq\":5"
         );
         AssertMessageOrder(
             gameOverEnvelope,
-            "\"previousValue\":\"None\",\"value\":\"Revokable\",\"reasonText\":\"pit\"",
-            "\"previousValue\":\"Revokable\",\"value\":\"None\",\"reasonText\":\"respawn\"",
-            "\"previousValue\":-1,\"value\":90,\"reasonText\":\"finish charge\"",
-            "\"payload\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":-1,\"placement\":1,\"eliminationState\":\"None\",\"finishState\":\"None\"},{\"playerIndex\":1,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"statusText\":\"\",\"meter\":90,\"placement\":2,\"eliminationState\":\"None\",\"finishState\":\"None\"}]}",
-            "\"payload\":{\"playerIndicesByPlacement\":[0,1]}"
+            "\"from\":\"None\",\"to\":\"Revokable\",\"reason\":\"pit\"",
+            "\"from\":\"Revokable\",\"to\":\"None\",\"reason\":\"respawn\"",
+            "\"from\":-1,\"to\":90,\"reason\":\"finish charge\"",
+            "\"data\":{\"game\":{\"status\":\"game_over\"},\"players\":[{\"playerIndex\":0,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"text\":\"\",\"meter\":-1,\"placement\":1,\"elimination\":\"None\",\"finish\":\"None\"},{\"playerIndex\":1,\"score\":0,\"lives\":0,\"status\":\"Neutral\",\"text\":\"\",\"meter\":90,\"placement\":2,\"elimination\":\"None\",\"finish\":\"None\"}]}",
+            "\"data\":{\"playersByPlacement\":[0,1]}"
         );
-        Assert.That(gameOverEnvelope, Does.Not.Contain("\"payload\":[0,1]"));
+        Assert.That(gameOverEnvelope, Does.Not.Contain("\"data\":[0,1]"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -466,7 +468,7 @@ public sealed class GCRuntimeOutputContractTests
         GCRuntimeOutput.RuntimeMessagesEmitted += json =>
         {
             emitted.Add(json);
-            if (reentered || !json.Contains("\"messageType\":\"gc.game.game_over\""))
+            if (reentered || !json.Contains("\"type\":\"gc.game\",\"name\":\"game_over\""))
             {
                 return;
             }
@@ -481,9 +483,9 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
-        Assert.That(emitted[1], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(emitted[0], Does.Contain("\"data\":{\"playersByPlacement\":[0,1]}"));
+        Assert.That(emitted[1], Does.Contain("\"name\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[1], Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -496,7 +498,7 @@ public sealed class GCRuntimeOutputContractTests
         GCRuntimeOutput.RuntimeMessagesEmitted += json =>
         {
             emitted.Add(json);
-            if (reentered || !json.Contains("\"messageType\":\"gc.game.game_over\""))
+            if (reentered || !json.Contains("\"type\":\"gc.game\",\"name\":\"game_over\""))
             {
                 return;
             }
@@ -533,11 +535,11 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(firstEnvelope, Is.EqualTo(emitted[0]));
         Assert.That(acceptedCallbackCount, Is.EqualTo(1));
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.game.game_over\""));
-        Assert.That(emitted[0].IndexOf("\"messageType\":\"gc.state.snapshot\""), Is.LessThan(emitted[0].IndexOf("\"messageType\":\"gc.game.game_over\"")));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
-        Assert.That(emitted[1], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.game\",\"name\":\"game_over\""));
+        Assert.That(emitted[0].IndexOf("\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.LessThan(emitted[0].IndexOf("\"type\":\"gc.game\",\"name\":\"game_over\"")));
+        Assert.That(emitted[1], Does.Contain("\"name\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[1], Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -579,11 +581,11 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(reentrantEnvelope, Is.Null);
         Assert.That(acceptedCallbackCount, Is.EqualTo(1));
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
-        Assert.That(emitted[0], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         Assert.That(firstEnvelope, Is.EqualTo(emitted[1]));
-        Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(firstEnvelope, Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(firstEnvelope, Does.Contain("\"data\":{\"playersByPlacement\":[0,1]}"));
+        Assert.That(firstEnvelope, Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -625,11 +627,11 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(reentrantEnvelope, Is.Null);
         Assert.That(acceptedCallbackCount, Is.EqualTo(1));
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.runtime.invalid_game_over_placement\""));
-        Assert.That(emitted[0], Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.runtime.invalid_game_over_placement\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         Assert.That(firstEnvelope, Is.EqualTo(emitted[1]));
-        Assert.That(firstEnvelope, Does.Contain("\"payload\":{\"playerIndicesByPlacement\":[0,1]}"));
-        Assert.That(firstEnvelope, Does.Not.Contain("\"payload\":{\"playerIndicesByPlacement\":[1,0]}"));
+        Assert.That(firstEnvelope, Does.Contain("\"data\":{\"playersByPlacement\":[0,1]}"));
+        Assert.That(firstEnvelope, Does.Not.Contain("\"data\":{\"playersByPlacement\":[1,0]}"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -641,7 +643,7 @@ public sealed class GCRuntimeOutputContractTests
         Assert.Throws<System.ArgumentException>(() => GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0, 2 }, 2));
         Assert.That(
             GCRuntimeGameOverPlacementPayload.BuildJson(new[] { 0, 1 }, 2),
-            Is.EqualTo("{\"playerIndicesByPlacement\":[0,1]}")
+            Is.EqualTo("{\"playersByPlacement\":[0,1]}")
         );
     }
 
@@ -682,13 +684,16 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(emitted, Has.Count.EqualTo(1));
         Assert.That(emitted[0], Does.Contain("\"type\":\"screen_space\""));
-        Assert.That(emitted[0], Does.Contain("\"anchorType\":\"playerOverhead\""));
-        Assert.That(emitted[0], Does.Contain("\"anchorType\":\"playerPosition\""));
+        Assert.That(emitted[0], Does.Contain("\"v\":1"));
+        Assert.That(emitted[0], Does.Contain("\"frame\":"));
+        Assert.That(emitted[0], Does.Contain("\"ms\":0"));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"playerOverhead\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"playerPosition\""));
         Assert.That(emitted[0], Does.Contain("\"playerIndex\":0"));
         Assert.That(emitted[0], Does.Contain("\"x\":1"));
         Assert.That(emitted[0], Does.Contain("\"y\":0"));
-        Assert.That(emitted[0], Does.Contain("\"isOffScreen\":true"));
-        Assert.That(emitted[0], Does.Not.Contain("\"anchorType\":\"name\""));
+        Assert.That(emitted[0], Does.Contain("\"offscreen\":true"));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"name\""));
     }
 
     [Test]
@@ -793,7 +798,7 @@ public sealed class GCRuntimeOutputContractTests
         hud.HandleQueue();
 
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.mapping.invalid_player_index\""));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.mapping.invalid_player_index\""));
         Assert.That(emitted[1], Does.Contain("\"type\":\"screen_space\""));
         Assert.That(emitted[1], Does.Contain("\"anchors\":[]"));
         Assert.That(emitted[1], Does.Not.Contain("\"playerIndex\":1"));
@@ -814,8 +819,8 @@ public sealed class GCRuntimeOutputContractTests
 
         Assert.That(publicCallbackCount, Is.EqualTo(0));
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(emitted[0], Does.Not.Contain("\"messageType\":\"gc.player.status_changed\""));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(emitted[0], Does.Not.Contain("\"type\":\"gc.player\",\"name\":\"status_changed\""));
     }
 
     [Test]
@@ -834,8 +839,8 @@ public sealed class GCRuntimeOutputContractTests
         context.gamingCouch.FlushRuntimeOutput();
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(emitted[0], Does.Contain("\"payload\":{\"game\":{\"status\":\"playing\"}"));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(emitted[0], Does.Contain("\"data\":{\"game\":{\"status\":\"playing\"}"));
     }
 
     [Test]
@@ -906,15 +911,19 @@ public sealed class GCRuntimeOutputContractTests
         var json = emitted[0];
         AssertMessageOrder(
             json,
-            "\"messageType\":\"gc.player.score_changed\"",
-            "\"messageType\":\"gc.player.lives_changed\"",
-            "\"messageType\":\"gc.player.status_changed\"",
-            "\"messageType\":\"gc.player.meter_changed\"",
-            "\"messageType\":\"gc.player.elimination_state_changed\"",
-            "\"messageType\":\"gc.player.finish_state_changed\"",
-            "\"messageType\":\"gc.state.snapshot\""
+            "\"type\":\"gc.player\",\"name\":\"score_changed\"",
+            "\"type\":\"gc.player\",\"name\":\"lives_changed\"",
+            "\"type\":\"gc.player\",\"name\":\"status_changed\"",
+            "\"type\":\"gc.player\",\"name\":\"meter_changed\"",
+            "\"type\":\"gc.player\",\"name\":\"elimination_changed\"",
+            "\"type\":\"gc.player\",\"name\":\"finish_changed\"",
+            "\"type\":\"gc.state\",\"name\":\"snapshot\""
         );
-        Assert.That(CountOccurrences(json, "\"messageType\":\"gc.state.snapshot\""), Is.EqualTo(1));
+        Assert.That(
+            json,
+            Does.Contain("\"data\":{\"from\":{\"status\":\"Neutral\",\"text\":\"\"},\"to\":{\"status\":\"Success\",\"text\":\"ready\"},\"reason\":\"status\"}")
+        );
+        Assert.That(CountOccurrences(json, "\"type\":\"gc.state\",\"name\":\"snapshot\""), Is.EqualTo(1));
 
         var store = context.gamingCouch.InternalPlayerStore;
         Assert.That(store.PlayersEliminated, Is.EqualTo(new[] { context.players[1] }));
@@ -980,14 +989,14 @@ public sealed class GCRuntimeOutputContractTests
         );
 
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
-        Assert.That(gameOverEnvelope, Does.Contain("\"messageType\":\"gc.state.snapshot\""));
-        Assert.That(gameOverEnvelope, Does.Contain("\"messageType\":\"gc.game.game_over\""));
+        Assert.That(gameOverEnvelope, Does.Contain("\"type\":\"gc.state\",\"name\":\"snapshot\""));
+        Assert.That(gameOverEnvelope, Does.Contain("\"type\":\"gc.game\",\"name\":\"game_over\""));
         Assert.That(gameOverEnvelope, Does.Contain("\"status\":\"game_over\""));
-        Assert.That(gameOverEnvelope, Does.Contain("\"playerIndicesByPlacement\":[0,1]"));
+        Assert.That(gameOverEnvelope, Does.Contain("\"playersByPlacement\":[0,1]"));
         AssertMessageOrder(
             gameOverEnvelope,
-            "\"messageType\":\"gc.state.snapshot\"",
-            "\"messageType\":\"gc.game.game_over\""
+            "\"type\":\"gc.state\",\"name\":\"snapshot\"",
+            "\"type\":\"gc.game\",\"name\":\"game_over\""
         );
     }
 

@@ -15,15 +15,22 @@ namespace DSB.GC.RuntimeMessages
 
     internal static class GCRuntimeMessageTypes
     {
+        internal const string Player = "gc.player";
+        internal const string State = "gc.state";
+        internal const string Game = "gc.game";
         internal const string Diagnostic = "gc.diagnostic";
-        internal const string StateSnapshot = "gc.state.snapshot";
-        internal const string PlayerScoreChanged = "gc.player.score_changed";
-        internal const string PlayerLivesChanged = "gc.player.lives_changed";
-        internal const string PlayerStatusChanged = "gc.player.status_changed";
-        internal const string PlayerMeterChanged = "gc.player.meter_changed";
-        internal const string PlayerEliminationStateChanged = "gc.player.elimination_state_changed";
-        internal const string PlayerFinishStateChanged = "gc.player.finish_state_changed";
-        internal const string GameOver = "gc.game.game_over";
+    }
+
+    internal static class GCRuntimeMessageNames
+    {
+        internal const string Snapshot = "snapshot";
+        internal const string ScoreChanged = "score_changed";
+        internal const string LivesChanged = "lives_changed";
+        internal const string StatusChanged = "status_changed";
+        internal const string MeterChanged = "meter_changed";
+        internal const string EliminationChanged = "elimination_changed";
+        internal const string FinishChanged = "finish_changed";
+        internal const string GameOver = "game_over";
     }
 
     internal static class GCRuntimeScreenSpaceAnchorTypes
@@ -96,9 +103,9 @@ namespace DSB.GC.RuntimeMessages
             isStateSnapshotPending = true;
         }
 
-        internal static void QueuePlayerTransition(string messageType, string payloadJson)
+        internal static void QueuePlayerTransition(string name, int playerIndex, string dataJson)
         {
-            GCRuntimeMessageOutput.QueueTransition(messageType, payloadJson);
+            GCRuntimeMessageOutput.QueuePlayerTransition(name, playerIndex, dataJson);
         }
 
         internal static string FlushFrameOutput(Func<string> buildStateSnapshotPayloadJson)
@@ -107,10 +114,10 @@ namespace DSB.GC.RuntimeMessages
             return GCRuntimeMessageOutput.FlushPending();
         }
 
-        internal static string EmitDiagnosticPayload(string payloadJson)
+        internal static string EmitDiagnosticPayload(string name, string dataJson, int? playerIndex)
         {
             return GCRuntimeMessageOutput.FlushPendingWith(
-                GCRuntimeMessageOutput.CreateRecord(GCRuntimeMessageTypes.Diagnostic, payloadJson)
+                GCRuntimeMessageOutput.CreateRecord(GCRuntimeMessageTypes.Diagnostic, name, dataJson, playerIndex)
             );
         }
 
@@ -179,7 +186,8 @@ namespace DSB.GC.RuntimeMessages
                 FlushStateSnapshotToPending(buildStateSnapshotPayloadJson);
 
                 var gameOverRecord = GCRuntimeMessageOutput.CreateRecord(
-                    GCRuntimeMessageTypes.GameOver,
+                    GCRuntimeMessageTypes.Game,
+                    GCRuntimeMessageNames.GameOver,
                     gameOverPayloadJson
                 );
                 gameOverPlacementAccepted = true;
@@ -296,13 +304,13 @@ namespace DSB.GC.RuntimeMessages
             builder.Append(",\"lives\":").Append(lives);
             builder.Append(",\"status\":");
             GCRuntimeJson.AppendString(builder, status);
-            builder.Append(",\"statusText\":");
+            builder.Append(",\"text\":");
             GCRuntimeJson.AppendString(builder, statusText);
             builder.Append(",\"meter\":").Append(meter);
             builder.Append(",\"placement\":").Append(placement);
-            builder.Append(",\"eliminationState\":");
+            builder.Append(",\"elimination\":");
             GCRuntimeJson.AppendString(builder, eliminationState);
-            builder.Append(",\"finishState\":");
+            builder.Append(",\"finish\":");
             GCRuntimeJson.AppendString(builder, finishState);
             builder.Append("}");
         }
@@ -453,9 +461,9 @@ namespace DSB.GC.RuntimeMessages
         internal static string BuildIntJson(int playerIndex, int previousValue, int value, string reason)
         {
             ValidatePlayerIndex(playerIndex);
-            var builder = BeginTransitionPayload(playerIndex);
-            builder.Append(",\"previousValue\":").Append(previousValue);
-            builder.Append(",\"value\":").Append(value);
+            var builder = new StringBuilder();
+            builder.Append("{\"from\":").Append(previousValue);
+            builder.Append(",\"to\":").Append(value);
             AppendReason(builder, reason);
             builder.Append("}");
             return builder.ToString();
@@ -464,10 +472,10 @@ namespace DSB.GC.RuntimeMessages
         internal static string BuildStringJson(int playerIndex, string previousValue, string value, string reason)
         {
             ValidatePlayerIndex(playerIndex);
-            var builder = BeginTransitionPayload(playerIndex);
-            builder.Append(",\"previousValue\":");
+            var builder = new StringBuilder();
+            builder.Append("{\"from\":");
             GCRuntimeJson.AppendString(builder, previousValue);
-            builder.Append(",\"value\":");
+            builder.Append(",\"to\":");
             GCRuntimeJson.AppendString(builder, value);
             AppendReason(builder, reason);
             builder.Append("}");
@@ -484,28 +492,21 @@ namespace DSB.GC.RuntimeMessages
         )
         {
             ValidatePlayerIndex(playerIndex);
-            var builder = BeginTransitionPayload(playerIndex);
-            builder.Append(",\"previousValue\":");
+            var builder = new StringBuilder();
+            builder.Append("{\"from\":");
             AppendStatusValue(builder, previousStatus, previousStatusText);
-            builder.Append(",\"value\":");
+            builder.Append(",\"to\":");
             AppendStatusValue(builder, status, statusText);
             AppendReason(builder, reason);
             builder.Append("}");
             return builder.ToString();
         }
 
-        private static StringBuilder BeginTransitionPayload(int playerIndex)
-        {
-            var builder = new StringBuilder();
-            builder.Append("{\"playerIndex\":").Append(playerIndex);
-            return builder;
-        }
-
         private static void AppendStatusValue(StringBuilder builder, GCPlayerStatus status, string statusText)
         {
             builder.Append("{\"status\":");
             GCRuntimeJson.AppendString(builder, status.ToString());
-            builder.Append(",\"statusText\":");
+            builder.Append(",\"text\":");
             GCRuntimeJson.AppendString(builder, GCRuntimePayloadBounds.Truncate(statusText ?? ""));
             builder.Append("}");
         }
@@ -517,7 +518,7 @@ namespace DSB.GC.RuntimeMessages
                 return;
             }
 
-            builder.Append(",\"reasonText\":");
+            builder.Append(",\"reason\":");
             GCRuntimeJson.AppendString(builder, GCRuntimePayloadBounds.Truncate(reason, GCRuntimePayloadBounds.MaxReasonTextLength));
         }
 
@@ -537,7 +538,7 @@ namespace DSB.GC.RuntimeMessages
             Validate(playerIndicesByPlacement, activePlayerCount);
 
             var builder = new StringBuilder();
-            builder.Append("{\"playerIndicesByPlacement\":[");
+            builder.Append("{\"playersByPlacement\":[");
             for (var index = 0; index < playerIndicesByPlacement.Length; index++)
             {
                 if (index > 0)
@@ -590,50 +591,68 @@ namespace DSB.GC.RuntimeMessages
 
     internal sealed class GCRuntimeMessageRecord
     {
-        internal const int SchemaVersion = 1;
+        internal readonly string type;
+        internal readonly string name;
+        internal readonly long seq;
+        internal readonly long ms;
+        internal readonly string dataJson;
+        internal readonly int? playerIndex;
 
-        internal readonly string messageType;
-        internal readonly long sequence;
-        internal readonly long runtimeTimeMs;
-        internal readonly string payloadJson;
-
-        internal GCRuntimeMessageRecord(string messageType, long sequence, long runtimeTimeMs, string payloadJson)
+        internal GCRuntimeMessageRecord(string type, string name, long seq, long ms, string dataJson, int? playerIndex)
         {
-            if (string.IsNullOrWhiteSpace(messageType))
+            if (string.IsNullOrWhiteSpace(type))
             {
-                throw new ArgumentException("Runtime message type is required.", nameof(messageType));
+                throw new ArgumentException("Runtime message type is required.", nameof(type));
             }
 
-            if (sequence < 1)
+            if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentOutOfRangeException(nameof(sequence), "Runtime message sequence must be one-based.");
+                throw new ArgumentException("Runtime message name is required.", nameof(name));
             }
 
-            if (runtimeTimeMs < 0)
+            if (seq < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(runtimeTimeMs), "Runtime message time must be non-negative.");
+                throw new ArgumentOutOfRangeException(nameof(seq), "Runtime message sequence must be one-based.");
             }
 
-            if (string.IsNullOrWhiteSpace(payloadJson))
+            if (ms < 0)
             {
-                throw new ArgumentException("Runtime message payload JSON is required.", nameof(payloadJson));
+                throw new ArgumentOutOfRangeException(nameof(ms), "Runtime message time must be non-negative.");
             }
 
-            this.messageType = messageType;
-            this.sequence = sequence;
-            this.runtimeTimeMs = runtimeTimeMs;
-            this.payloadJson = payloadJson;
+            if (string.IsNullOrWhiteSpace(dataJson))
+            {
+                throw new ArgumentException("Runtime message data JSON is required.", nameof(dataJson));
+            }
+
+            if (playerIndex.HasValue && playerIndex.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), "Runtime message playerIndex must be non-negative.");
+            }
+
+            this.type = type;
+            this.name = name;
+            this.seq = seq;
+            this.ms = ms;
+            this.dataJson = dataJson;
+            this.playerIndex = playerIndex;
         }
 
         internal string ToJson()
         {
             var builder = new StringBuilder();
-            builder.Append("{\"schemaVersion\":").Append(SchemaVersion);
-            builder.Append(",\"messageType\":");
-            GCRuntimeJson.AppendString(builder, messageType);
-            builder.Append(",\"sequence\":").Append(sequence.ToString(CultureInfo.InvariantCulture));
-            builder.Append(",\"runtimeTimeMs\":").Append(runtimeTimeMs.ToString(CultureInfo.InvariantCulture));
-            builder.Append(",\"payload\":").Append(payloadJson);
+            builder.Append("{\"type\":");
+            GCRuntimeJson.AppendString(builder, type);
+            builder.Append(",\"name\":");
+            GCRuntimeJson.AppendString(builder, name);
+            builder.Append(",\"seq\":").Append(seq.ToString(CultureInfo.InvariantCulture));
+            builder.Append(",\"ms\":").Append(ms.ToString(CultureInfo.InvariantCulture));
+            if (playerIndex.HasValue)
+            {
+                builder.Append(",\"playerIndex\":").Append(playerIndex.Value.ToString(CultureInfo.InvariantCulture));
+            }
+
+            builder.Append(",\"data\":").Append(dataJson);
             builder.Append("}");
             return builder.ToString();
         }
@@ -641,7 +660,7 @@ namespace DSB.GC.RuntimeMessages
 
     internal static class GCRuntimeMessageOutput
     {
-        internal const int EnvelopeSchemaVersion = 1;
+        internal const int EnvelopeVersion = 1;
         internal const int MaxPendingMessagesPerBatch = 128;
 
         private static long sequence;
@@ -677,30 +696,37 @@ namespace DSB.GC.RuntimeMessages
         internal static bool IsStateSnapshotsEnabled => outputConfiguration.stateSnapshotsEnabled;
         internal static bool IsScreenSpaceEnabled => outputConfiguration.screenSpaceEnabled;
 
-        internal static GCRuntimeMessageRecord CreateRecord(string messageType, string payloadJson)
+        internal static GCRuntimeMessageRecord CreateRecord(string type, string name, string dataJson)
+        {
+            return CreateRecord(type, name, dataJson, null);
+        }
+
+        internal static GCRuntimeMessageRecord CreateRecord(string type, string name, string dataJson, int? playerIndex)
         {
             EnsureActiveRun();
             return new GCRuntimeMessageRecord(
-                messageType,
+                type,
+                name,
                 ++sequence,
                 ResolveRuntimeTimeMs(),
-                payloadJson
+                dataJson,
+                playerIndex
             );
         }
 
-        internal static void QueueStateSnapshot(string payloadJson)
+        internal static void QueueStateSnapshot(string dataJson)
         {
             if (!IsStateSnapshotsEnabled)
             {
                 return;
             }
 
-            QueueMessage(GCRuntimeMessageTypes.StateSnapshot, payloadJson);
+            QueueMessage(GCRuntimeMessageTypes.State, GCRuntimeMessageNames.Snapshot, dataJson, null);
         }
 
-        internal static void QueueTransition(string messageType, string payloadJson)
+        internal static void QueuePlayerTransition(string name, int playerIndex, string dataJson)
         {
-            QueueMessage(messageType, payloadJson);
+            QueueMessage(GCRuntimeMessageTypes.Player, name, dataJson, playerIndex);
 
             if (pendingMessages.Count >= MaxPendingMessagesPerBatch)
             {
@@ -708,9 +734,9 @@ namespace DSB.GC.RuntimeMessages
             }
         }
 
-        internal static void QueueMessage(string messageType, string payloadJson)
+        internal static void QueueMessage(string type, string name, string dataJson, int? playerIndex)
         {
-            pendingMessages.Add(CreateRecord(messageType, payloadJson));
+            pendingMessages.Add(CreateRecord(type, name, dataJson, playerIndex));
         }
 
         internal static string FlushPending()
@@ -736,9 +762,9 @@ namespace DSB.GC.RuntimeMessages
             return FlushPending();
         }
 
-        internal static string EmitSingle(string messageType, string payloadJson)
+        internal static string EmitSingle(string type, string name, string dataJson)
         {
-            return EmitBatch(new[] { CreateRecord(messageType, payloadJson) });
+            return EmitBatch(new[] { CreateRecord(type, name, dataJson) });
         }
 
         internal static string EmitBatch(IReadOnlyList<GCRuntimeMessageRecord> messages)
@@ -768,7 +794,7 @@ namespace DSB.GC.RuntimeMessages
             var builder = new StringBuilder();
             builder.Append("{\"type\":");
             GCRuntimeJson.AppendString(builder, GCRuntimeMessagePath.RuntimeMessages);
-            builder.Append(",\"schemaVersion\":").Append(EnvelopeSchemaVersion);
+            builder.Append(",\"v\":").Append(EnvelopeVersion);
             builder.Append(",\"messages\":[");
 
             for (var index = 0; index < messages.Count; index++)
@@ -869,19 +895,19 @@ namespace DSB.GC.RuntimeMessages
 
         internal void AppendJson(StringBuilder builder)
         {
-            builder.Append("{\"anchorType\":");
+            builder.Append("{\"type\":");
             GCRuntimeJson.AppendString(builder, anchorType);
             builder.Append(",\"playerIndex\":").Append(playerIndex);
             builder.Append(",\"x\":").Append(x.ToString("R", CultureInfo.InvariantCulture));
             builder.Append(",\"y\":").Append(y.ToString("R", CultureInfo.InvariantCulture));
-            builder.Append(",\"isOffScreen\":").Append(isOffScreen ? "true" : "false");
+            builder.Append(",\"offscreen\":").Append(isOffScreen ? "true" : "false");
             builder.Append("}");
         }
     }
 
     internal static class GCRuntimeScreenSpaceOutput
     {
-        internal const int EnvelopeSchemaVersion = 1;
+        internal const int EnvelopeVersion = 1;
 
         internal static event Action<string> ScreenSpaceEmitted;
 
@@ -929,9 +955,9 @@ namespace DSB.GC.RuntimeMessages
             var builder = new StringBuilder();
             builder.Append("{\"type\":");
             GCRuntimeJson.AppendString(builder, GCRuntimeMessagePath.ScreenSpace);
-            builder.Append(",\"schemaVersion\":").Append(EnvelopeSchemaVersion);
-            builder.Append(",\"frameIndex\":").Append(frameIndex.ToString(CultureInfo.InvariantCulture));
-            builder.Append(",\"runtimeTimeMs\":").Append(runtimeTimeMs.ToString(CultureInfo.InvariantCulture));
+            builder.Append(",\"v\":").Append(EnvelopeVersion);
+            builder.Append(",\"frame\":").Append(frameIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(",\"ms\":").Append(runtimeTimeMs.ToString(CultureInfo.InvariantCulture));
             builder.Append(",\"anchors\":[");
 
             for (var index = 0; index < anchors.Count; index++)

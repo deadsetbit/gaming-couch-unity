@@ -993,7 +993,7 @@ public sealed class GCPlayerStateModelTests
         Assert.That(json, Does.Contain("\"game\":{\"status\":\"playing\"}"));
         Assert.That(json, Does.Contain("\"playerIndex\":0"));
         Assert.That(json, Does.Contain("\"placement\":1"));
-        Assert.That(json, Does.Contain("\"eliminationState\":\"Permanent\""));
+        Assert.That(json, Does.Contain("\"elimination\":\"Permanent\""));
         Assert.That(json, Does.Not.Contain("\"type\""));
         Assert.That(json, Does.Not.Contain("\"color\""));
     }
@@ -1339,8 +1339,8 @@ public sealed class GCPlayerStateModelTests
         string requestedState
     )
     {
-        Assert.That(json, Does.Contain("\"messageType\":\"gc.diagnostic\""));
-        Assert.That(json, Does.Contain("\"code\":\"" + code + "\""));
+        Assert.That(json, Does.Contain("\"type\":\"gc.diagnostic\""));
+        Assert.That(json, Does.Contain("\"name\":\"" + code + "\""));
         Assert.That(json, Does.Contain("\"sourceArea\":\"state\""));
         Assert.That(json, Does.Contain("\"playerIndex\":" + playerIndex));
         Assert.That(json, Does.Contain("\"mutator\":\"" + mutator + "\""));

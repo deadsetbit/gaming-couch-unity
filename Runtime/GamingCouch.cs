@@ -668,9 +668,9 @@ namespace DSB.GC
             GCRuntimeOutput.QueueStateSnapshot();
         }
 
-        internal void QueueRuntimePlayerTransition(string messageType, string payloadJson)
+        internal void QueueRuntimePlayerTransition(string name, int playerIndex, string dataJson)
         {
-            GCRuntimeOutput.QueuePlayerTransition(messageType, payloadJson);
+            GCRuntimeOutput.QueuePlayerTransition(name, playerIndex, dataJson);
         }
 
         internal void FlushRuntimeOutput()

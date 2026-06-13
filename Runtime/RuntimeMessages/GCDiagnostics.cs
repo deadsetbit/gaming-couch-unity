@@ -526,8 +526,8 @@ namespace DSB.GC.RuntimeMessages
         )
         {
             ValidateDiagnostic(code, sourceArea, message, context);
-            var payloadJson = BuildPayloadJson(code, severity, sourceArea, message, context);
-            var envelopeJson = GCRuntimeOutput.EmitDiagnosticPayload(payloadJson);
+            var payloadJson = BuildPayloadJson(severity, sourceArea, message, context);
+            var envelopeJson = GCRuntimeOutput.EmitDiagnosticPayload(code, payloadJson, context?.playerIndex);
             MirrorToUnityConsole(code, severity, message);
             return envelopeJson;
         }
@@ -571,7 +571,6 @@ namespace DSB.GC.RuntimeMessages
         }
 
         private static string BuildPayloadJson(
-            string code,
             GCDiagnosticSeverity severity,
             string sourceArea,
             string message,
@@ -579,19 +578,12 @@ namespace DSB.GC.RuntimeMessages
         )
         {
             var builder = new StringBuilder();
-            builder.Append("{\"code\":");
-            GCRuntimeJson.AppendString(builder, code);
-            builder.Append(",\"severity\":");
+            builder.Append("{\"severity\":");
             GCRuntimeJson.AppendString(builder, FormatSeverity(severity));
             builder.Append(",\"sourceArea\":");
             GCRuntimeJson.AppendString(builder, sourceArea);
             builder.Append(",\"message\":");
             GCRuntimeJson.AppendString(builder, message);
-
-            if (context != null && context.playerIndex.HasValue)
-            {
-                builder.Append(",\"playerIndex\":").Append(context.playerIndex.Value.ToString(CultureInfo.InvariantCulture));
-            }
 
             if (context != null && context.mapping != null)
             {

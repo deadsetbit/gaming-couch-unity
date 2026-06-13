@@ -180,7 +180,8 @@ namespace DSB.GC.Game
             if (transition.EmitsSemanticTransition)
             {
                 gamingCouch?.QueueRuntimePlayerTransition(
-                    GetRuntimeMessageType(transition.Kind),
+                    GetRuntimeMessageName(transition.Kind),
+                    transition.PlayerIndex,
                     BuildRuntimeTransitionPayload(transition)
                 );
             }
@@ -191,22 +192,22 @@ namespace DSB.GC.Game
             }
         }
 
-        private static string GetRuntimeMessageType(GCPlayerTransitionKind kind)
+        private static string GetRuntimeMessageName(GCPlayerTransitionKind kind)
         {
             switch (kind)
             {
                 case GCPlayerTransitionKind.PlayerEliminationStateChanged:
-                    return GCRuntimeMessageTypes.PlayerEliminationStateChanged;
+                    return GCRuntimeMessageNames.EliminationChanged;
                 case GCPlayerTransitionKind.PlayerFinishStateChanged:
-                    return GCRuntimeMessageTypes.PlayerFinishStateChanged;
+                    return GCRuntimeMessageNames.FinishChanged;
                 case GCPlayerTransitionKind.PlayerScoreChanged:
-                    return GCRuntimeMessageTypes.PlayerScoreChanged;
+                    return GCRuntimeMessageNames.ScoreChanged;
                 case GCPlayerTransitionKind.PlayerLivesChanged:
-                    return GCRuntimeMessageTypes.PlayerLivesChanged;
+                    return GCRuntimeMessageNames.LivesChanged;
                 case GCPlayerTransitionKind.PlayerStatusChanged:
-                    return GCRuntimeMessageTypes.PlayerStatusChanged;
+                    return GCRuntimeMessageNames.StatusChanged;
                 case GCPlayerTransitionKind.PlayerMeterChanged:
-                    return GCRuntimeMessageTypes.PlayerMeterChanged;
+                    return GCRuntimeMessageNames.MeterChanged;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unhandled player transition kind.");
             }

@@ -261,7 +261,7 @@ namespace DSB.GC.Hud
                     GCDiagnosticSourceAreas.ScreenSpace,
                     "Malformed screen-space anchor was rejected.",
                     new GCDiagnosticContext()
-                        .AddDetail("anchorType", pointData.type)
+                        .AddDetail("type", pointData.type)
                         .AddDetail("reason", exception.Message)
                 );
             }

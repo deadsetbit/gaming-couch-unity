@@ -54,15 +54,16 @@ public sealed class GCRuntimeDiagnosticsTests
 
         Assert.That(envelopeJson, Is.EqualTo(emittedJson));
         Assert.That(envelopeJson, Does.Contain("\"type\":\"runtime_messages\""));
-        Assert.That(envelopeJson, Does.Contain("\"schemaVersion\":1"));
-        Assert.That(envelopeJson, Does.Contain("\"messageType\":\"gc.diagnostic\""));
-        Assert.That(envelopeJson, Does.Contain("\"sequence\":1"));
-        Assert.That(envelopeJson, Does.Contain("\"runtimeTimeMs\":125"));
-        Assert.That(envelopeJson, Does.Contain("\"payload\":{\"code\":\"gc.state.clamped_value\""));
+        Assert.That(envelopeJson, Does.Contain("\"v\":1"));
+        Assert.That(envelopeJson, Does.Contain("\"type\":\"gc.diagnostic\""));
+        Assert.That(envelopeJson, Does.Contain("\"name\":\"gc.state.clamped_value\""));
+        Assert.That(envelopeJson, Does.Contain("\"seq\":1"));
+        Assert.That(envelopeJson, Does.Contain("\"ms\":125"));
+        Assert.That(envelopeJson, Does.Contain("\"ms\":125,\"playerIndex\":0,\"data\":{\"severity\":\"warning\""));
         Assert.That(envelopeJson, Does.Contain("\"severity\":\"warning\""));
         Assert.That(envelopeJson, Does.Contain("\"sourceArea\":\"state\""));
         Assert.That(envelopeJson, Does.Contain("\"message\":\"Lives were clamped.\""));
-        Assert.That(envelopeJson, Does.Contain("\"playerIndex\":0"));
+        Assert.That(envelopeJson, Does.Not.Contain("\"message\":\"Lives were clamped.\",\"playerIndex\":0"));
         Assert.That(envelopeJson, Does.Contain("\"details\":{\"field\":\"lives\",\"inputValue\":-2,\"allowedRange\":[0,99]}"));
         Assert.That(envelopeJson, Does.Contain("\"debug\":{\"note\":\"test\"}"));
     }
@@ -88,10 +89,10 @@ public sealed class GCRuntimeDiagnosticsTests
             "Platform data is missing."
         );
 
-        Assert.That(first, Does.Contain("\"sequence\":1"));
-        Assert.That(first, Does.Contain("\"runtimeTimeMs\":1"));
-        Assert.That(second, Does.Contain("\"sequence\":2"));
-        Assert.That(second, Does.Contain("\"runtimeTimeMs\":250"));
+        Assert.That(first, Does.Contain("\"seq\":1"));
+        Assert.That(first, Does.Contain("\"ms\":1"));
+        Assert.That(second, Does.Contain("\"seq\":2"));
+        Assert.That(second, Does.Contain("\"ms\":250"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -118,7 +119,8 @@ public sealed class GCRuntimeDiagnosticsTests
         );
 
         Assert.That(envelopeJson, Does.Contain("\"sourceArea\":\"mapping\""));
-        Assert.That(envelopeJson, Does.Contain("\"playerIndex\":0"));
+        Assert.That(envelopeJson, Does.Contain("\"playerIndex\":0,\"data\":{\"severity\":\"warning\",\"sourceArea\":\"mapping\""));
+        Assert.That(envelopeJson, Does.Not.Contain("\"message\":\"Player index is outside the active mapping.\",\"playerIndex\":0"));
         Assert.That(envelopeJson, Does.Contain("\"mapping\":{\"mappingId\":\"run-map-1\",\"seed\":12345,\"participantCount\":2,\"offendingReference\":\"playerIndex:9\"}"));
     }
 
@@ -189,12 +191,12 @@ public sealed class GCRuntimeDiagnosticsTests
         GamingCouch.EmitPlatformMetadataDiagnostics(view);
 
         Assert.That(emitted, Has.Count.EqualTo(2));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.metadata.missing_platform_data\""));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.metadata.missing_platform_data\""));
         Assert.That(emitted[0], Does.Contain("\"severity\":\"warning\""));
         Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"metadata\""));
         Assert.That(emitted[0], Does.Contain("\"details\":{\"validationState\":\"missing\",\"selectedEntryKey\":\"notdefined\"}"));
-        Assert.That(emitted[1], Does.Contain("\"code\":\"gc.metadata.fallback_active\""));
-        Assert.That(emitted[1], Does.Contain("\"runtimeTimeMs\":0"));
+        Assert.That(emitted[1], Does.Contain("\"name\":\"gc.metadata.fallback_active\""));
+        Assert.That(emitted[1], Does.Contain("\"ms\":0"));
         LogAssert.NoUnexpectedReceived();
     }
 
@@ -230,8 +232,8 @@ public sealed class GCRuntimeDiagnosticsTests
         GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"runtimeTimeMs\":250"));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.runtime_warning\""));
+        Assert.That(emitted[0], Does.Contain("\"ms\":250"));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.log.runtime_warning\""));
         Assert.That(emitted[0], Does.Contain("\"severity\":\"warning\""));
         Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"debug\":{\"condition\":\"Physics warning.\",\"stackTrace\":\"stack line\"}"));
@@ -251,7 +253,7 @@ public sealed class GCRuntimeDiagnosticsTests
         GCUnityLogCapture.CaptureForTests("Normal development log.", "", LogType.Log);
 
         Assert.That(emitted, Has.Count.EqualTo(1));
-        Assert.That(emitted[0], Does.Contain("\"code\":\"gc.log.runtime_log\""));
+        Assert.That(emitted[0], Does.Contain("\"name\":\"gc.log.runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"severity\":\"info\""));
         Assert.That(emitted[0], Does.Contain("\"sourceArea\":\"runtime_log\""));
         Assert.That(emitted[0], Does.Contain("\"message\":\"Unity log captured.\""));

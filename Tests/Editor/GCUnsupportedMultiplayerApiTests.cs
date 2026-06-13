@@ -101,8 +101,8 @@ public sealed class GCUnsupportedMultiplayerApiTests
 
             Assert.That(exception.Message, Does.Contain("Gaming Couch online multiplayer APIs are unsupported"));
             Assert.That(exception.Message, Does.Contain("GC_ENABLE_UNSUPPORTED_MULTIPLAYER"));
-            Assert.That(emittedJson, Does.Contain("\"messageType\":\"gc.diagnostic\""));
-            Assert.That(emittedJson, Does.Contain("\"code\":\"gc.api.unsupported_multiplayer_api\""));
+            Assert.That(emittedJson, Does.Contain("\"type\":\"gc.diagnostic\""));
+            Assert.That(emittedJson, Does.Contain("\"name\":\"gc.api.unsupported_multiplayer_api\""));
             Assert.That(emittedJson, Does.Contain("\"severity\":\"error\""));
             Assert.That(emittedJson, Does.Contain("\"sourceArea\":\"api\""));
             Assert.That(emittedJson, Does.Contain("\"api\":\"" + apiName + "\""));
