@@ -190,7 +190,7 @@ public sealed class GCActivePlayerMappingTests
         LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.mapping.invalid_player_index: Player index is outside the active mapping.");
         Assert.That(mapping.TryValidatePlayerIndex(9, "test_input", out _), Is.False);
 
-        Assert.That(emittedJson, Does.Contain("\"code\":\"gc.mapping.invalid_player_index\""));
+        Assert.That(emittedJson, Does.Contain("\"name\":\"gc.mapping.invalid_player_index\""));
         Assert.That(emittedJson, Does.Contain("\"sourceArea\":\"mapping\""));
         Assert.That(emittedJson, Does.Contain("\"playerIndex\":9"));
         Assert.That(emittedJson, Does.Contain("\"mapping\""));
