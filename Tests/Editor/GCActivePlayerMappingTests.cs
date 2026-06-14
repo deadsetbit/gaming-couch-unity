@@ -45,6 +45,7 @@ public sealed class GCActivePlayerMappingTests
         Assert.That(mapping.GetByPlayerIndex(1).SourceSeatIndex, Is.EqualTo(1));
         Assert.That(mapping.GetByPlayerIndex(2).SourceSeatIndex, Is.EqualTo(3));
         Assert.That(gameFacingOptions.players[0].playerIndex, Is.EqualTo(0));
+        Assert.That(gameFacingOptions.players[0].playerSeed, Is.GreaterThan(0));
         Assert.That(gameFacingOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
         Assert.That(gameFacingOptions.players[0].color, Is.EqualTo(GCPlayerColor.brown.ToString()));
         Assert.That(gameFacingOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
@@ -122,16 +123,18 @@ public sealed class GCActivePlayerMappingTests
     {
         var options = GCPlayOptions.CreateFromJSON(
             "{\"seed\":424242,\"players\":[" +
-            "{\"playerId\":10,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerId\":20,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
+            "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
         );
         var json = JsonUtility.ToJson(options);
 
         Assert.That(options.players, Has.Length.EqualTo(2));
         Assert.That(options.players[0].playerIndex, Is.EqualTo(0));
+        Assert.That(options.players[0].playerSeed, Is.EqualTo(111111));
         Assert.That(options.players[0].type, Is.EqualTo("player"));
         Assert.That(options.players[1].playerIndex, Is.EqualTo(1));
+        Assert.That(options.players[1].playerSeed, Is.EqualTo(222222));
         Assert.That(options.players[1].type, Is.EqualTo("bot"));
         Assert.That(options.participantIdentities, Has.Length.EqualTo(2));
         Assert.That(options.participantIdentities[0].platformPlayerId, Is.EqualTo(10));
@@ -147,8 +150,8 @@ public sealed class GCActivePlayerMappingTests
     {
         var options = GCPlayOptions.CreateFromJSON(
             "{\"seed\":424242,\"activePlayers\":[" +
-            "{\"playerIndex\":1,\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerIndex\":0,\"type\":\"bot\",\"color\":\"green\"}" +
+            "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
         );
         var json = JsonUtility.ToJson(options);
@@ -172,8 +175,10 @@ public sealed class GCActivePlayerMappingTests
         Assert.That(mapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
         Assert.That(mapping.GetByPlayerIndex(1).CapturedOrder, Is.EqualTo(0));
         Assert.That(gameFacingOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
+        Assert.That(gameFacingOptions.players[0].playerSeed, Is.EqualTo(444444));
         Assert.That(gameFacingOptions.players[0].color, Is.EqualTo(GCPlayerColor.green.ToString()));
         Assert.That(gameFacingOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
+        Assert.That(gameFacingOptions.players[1].playerSeed, Is.EqualTo(333333));
         Assert.That(gameFacingOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
     }
 

@@ -480,6 +480,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
             options.players[activePlayerIndex] = new GCActivePlayerOptions
             {
                 playerIndex = activePlayerIndex,
+                playerSeed = GCPlayerSeed.FromPlayerName(seat.name),
                 type = playerType.ToString(),
                 color = playerColor.ToString(),
             };

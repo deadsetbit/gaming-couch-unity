@@ -21,12 +21,14 @@ public sealed class GCActiveRunProjectionTests
                 new GCActivePlayerOptions
                 {
                     playerIndex = 1,
+                    playerSeed = 333333,
                     type = GCPlayerType.player.ToString(),
                     color = GCPlayerColor.blue.ToString(),
                 },
                 new GCActivePlayerOptions
                 {
                     playerIndex = 0,
+                    playerSeed = 444444,
                     type = GCPlayerType.bot.ToString(),
                     color = GCPlayerColor.green.ToString(),
                 },
@@ -39,9 +41,11 @@ public sealed class GCActiveRunProjectionTests
         Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
         Assert.That(projection.GameFacingPlayOptions.seed, Is.EqualTo(123));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
+        Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
         Assert.That(projection.GameFacingPlayOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
         Assert.That(projection.GameFacingPlayOptions.players[0].color, Is.EqualTo(GCPlayerColor.green.ToString()));
         Assert.That(projection.GameFacingPlayOptions.players[1].playerIndex, Is.EqualTo(1));
+        Assert.That(projection.GameFacingPlayOptions.players[1].playerSeed, Is.EqualTo(333333));
         Assert.That(projection.GameFacingPlayOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
         Assert.That(projection.GameFacingPlayOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
 
@@ -112,8 +116,8 @@ public sealed class GCActiveRunProjectionTests
     {
         var options = GCPlayOptions.CreateFromJSON(
             "{\"seed\":424242,\"players\":[" +
-            "{\"playerId\":10,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerId\":20,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
+            "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
         );
 
@@ -129,6 +133,7 @@ public sealed class GCActiveRunProjectionTests
 
         var json = UnityEngine.JsonUtility.ToJson(projection.GameFacingPlayOptions);
         Assert.That(json, Does.Contain("\"playerIndex\""));
+        Assert.That(json, Does.Contain("\"playerSeed\""));
         Assert.That(json, Does.Not.Contain("playerId"));
         Assert.That(json, Does.Not.Contain("Alice"));
         Assert.That(json, Does.Not.Contain("Bob"));

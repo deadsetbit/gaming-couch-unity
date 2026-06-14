@@ -74,6 +74,7 @@ namespace DSB.GC
                     SourceSeatIndex = identity.sourceSeatIndex,
                     LegacyPlayerId = identity.platformPlayerId,
                     StableKey = stableKey,
+                    PlayerSeed = GCPlayerSeed.NormalizeOrFallback(players[capturedOrder].playerSeed, null, capturedOrder),
                     Type = identity.playerType != GCPlayerType.unset ? identity.playerType : ResolvePlayerType(players[capturedOrder].type),
                     ColorName = identity.playerColor.ToString(),
                 });
@@ -88,6 +89,7 @@ namespace DSB.GC
                     participant.SourceSeatIndex,
                     participant.LegacyPlayerId,
                     participant.StableKey,
+                    participant.PlayerSeed,
                     participant.Hash,
                     participant.Type,
                     ResolvePlayerColor(participant.ColorName)
@@ -130,6 +132,7 @@ namespace DSB.GC
                     identity.sourceSeatIndex,
                     identity.platformPlayerId,
                     stableKey,
+                    GCPlayerSeed.NormalizeOrFallback(player.playerSeed, null, playerIndex),
                     ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
                     ResolvePlayerType(player.type),
                     ResolvePlayerColor(player.color)
@@ -164,6 +167,7 @@ namespace DSB.GC
                 players[index] = new GCActivePlayerOptions
                 {
                     playerIndex = entry.PlayerIndex,
+                    playerSeed = entry.PlayerSeed,
                     type = entry.PlayerType.ToString(),
                     color = entry.PlayerColor.ToString(),
                 };
@@ -313,6 +317,7 @@ namespace DSB.GC
             internal int SourceSeatIndex;
             internal int LegacyPlayerId;
             internal string StableKey;
+            internal int PlayerSeed;
             internal GCPlayerType Type;
             internal string ColorName;
         }
@@ -325,6 +330,7 @@ namespace DSB.GC
         internal readonly int SourceSeatIndex;
         internal readonly int LegacyPlayerId;
         internal readonly string StableKey;
+        internal readonly int PlayerSeed;
         internal readonly uint Hash;
         internal readonly GCPlayerType PlayerType;
         internal readonly GCPlayerColor PlayerColor;
@@ -335,6 +341,7 @@ namespace DSB.GC
             int sourceSeatIndex,
             int legacyPlayerId,
             string stableKey,
+            int playerSeed,
             uint hash,
             GCPlayerType playerType,
             GCPlayerColor playerColor
@@ -345,6 +352,7 @@ namespace DSB.GC
             SourceSeatIndex = sourceSeatIndex;
             LegacyPlayerId = legacyPlayerId;
             StableKey = stableKey;
+            PlayerSeed = playerSeed;
             Hash = hash;
             PlayerType = playerType;
             PlayerColor = playerColor;

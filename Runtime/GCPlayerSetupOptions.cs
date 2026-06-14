@@ -6,6 +6,7 @@ namespace DSB.GC
     {
         public GCPlayerType type;
         public int playerIndex;
+        public int playerSeed;
         public GCPlayerColor colorEnum;
         public string colorName;
     }

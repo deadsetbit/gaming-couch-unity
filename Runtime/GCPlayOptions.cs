@@ -7,6 +7,7 @@ namespace DSB.GC
     public struct GCActivePlayerOptions
     {
         public int playerIndex;
+        public int playerSeed;
         public string type;
         public string color;
     }
@@ -537,6 +538,11 @@ namespace DSB.GC
                     players[index] = new GCActivePlayerOptions
                     {
                         playerIndex = index,
+                        playerSeed = GCPlayerSeed.NormalizeOrFallback(
+                            transport.players[index].playerSeed,
+                            transport.players[index].name,
+                            index
+                        ),
                         type = transport.players[index].type,
                         color = transport.players[index].color,
                     };
@@ -596,6 +602,7 @@ namespace DSB.GC
     {
         public string type;
         public int playerId;
+        public int playerSeed;
         public string name;
         public string color;
     }

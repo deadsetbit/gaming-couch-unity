@@ -738,6 +738,7 @@ namespace DSB.GC
             var playerSetupOptions = new GCPlayerSetupOptions
             {
                 playerIndex = options.playerIndex,
+                playerSeed = options.playerSeed,
                 type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
                 colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
                 colorName = options.color,

@@ -15,7 +15,7 @@ public sealed class GCUnityPlayerIdentityApiMigrationTests
             .OrderBy(name => name)
             .ToArray();
 
-        Assert.That(fieldNames, Is.EqualTo(new[] { "color", "playerIndex", "type" }));
+        Assert.That(fieldNames, Is.EqualTo(new[] { "color", "playerIndex", "playerSeed", "type" }));
         Assert.That(typeof(GCPlayOptions).GetField("players").FieldType, Is.EqualTo(typeof(GCActivePlayerOptions[])));
     }
 
