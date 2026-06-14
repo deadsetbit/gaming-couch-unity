@@ -25,6 +25,7 @@ Chosen path: staged adapter rollout.
 
 - Do not immediately bump `gameProtocolVersion` for the Unity-first source migration.
 - Ship strict hosted client/SDK adapter support for both new object-shaped game-over payloads and legacy top-level `playerIdsByPlacement` before recommending Unity package `0.2.0-alpha.1`; DevApp/local Unity support is strict-current only and accepts the new `runtime_messages` path.
+- For strict Unity package cleanup that rejects legacy inbound play/runtime identity, the current recommendation remains no `gameProtocolVersion` bump when client/SDK adapters translate legacy hosted `players[]`/`playerId` payloads into current `activePlayers[]`/`playerIndex` payloads before invoking Unity. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
 - Use package-version compatibility checks to block new Unity package usage against old DevApp/client paths.
 - Migrate internal Unity games to `Index`, `playerIndex`, explicit state APIs, and the new object game-over shape.
 - Keep the bridge until no internal deployed build emits legacy ID-shaped Unity payloads.

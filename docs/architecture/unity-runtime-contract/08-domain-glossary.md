@@ -19,6 +19,8 @@ Status: Current contract glossary for Task 13 documentation alignment.
 ## Boundaries
 
 - Unity game code uses `playerIndex` / `GCPlayer.Index`; it does not use Platform Player Id, player names, or seats.
-- DevApp and hosted adapters own all Seat-to-index and Platform Player Id-to-index mapping.
+- The Unity package boundary accepts current active-player / `playerIndex` identity only. Legacy hosted `players[]` and `playerId` payloads must be translated by the client/SDK before Unity is invoked.
+- The Unity package preserves source-seat mapping to Active Player Index for local editor play after capturing Local Play Settings. This is current local-play behavior, not hosted Platform Player Id compatibility.
+- Hosted adapters own Platform Player Id-to-index mapping. DevApp owns local seat assignment and display before local play capture.
 - HUD rendering consumes runtime state and screen-space anchors. HUD data is not the semantic source of truth.
 - Generated examples are a wiring demo for lifecycle, input polling, player state actions, runtime state/HUD essentials, diagnostics, and `GameOver()`. They are not a full sample game or a custom diagnostics API.

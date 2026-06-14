@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0-alpha.3] - Unreleased
+
+### Changed
+
+- Documented the Unity package as strict-current at its runtime boundary: hosted play payloads must arrive with current active-player identity, runtime input must use `playerIndex`, and legacy `players[]`/`playerId` adaptation belongs in the Gaming Couch client/SDK before Unity is invoked.
+- Clarified that source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
+- Documented retained obsolete Unity APIs as compile-time errors with migration guidance toward `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
+
+### Release Notes
+
+- Protocol-version decision: the current recommendation is no `gameProtocolVersion` bump if client/SDK adapters already translate legacy payloads and send current payloads to this package. Any bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
+
 ## [0.1.0-alpha.2] - 2026-05-09
 
 ### Added

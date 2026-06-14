@@ -30,6 +30,8 @@ Build diagnostic paths are normalized before JSON serialization: build-output pa
 
 `gameProtocolVersion` identifies the Gaming Couch game integration contract. Sidecar generation, package metadata, build diagnostics, and upload validation rules do not require a protocol bump unless the platform/game contract changes.
 
+For the package's strict current-runtime behavior, the current recommendation is no `gameProtocolVersion` bump if the Gaming Couch client/SDK already translates legacy hosted payloads into current Unity runtime payloads before invoking the package. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
+
 ## Local Editor Play Settings
 
 Unity editor play settings are file-backed. The `GamingCouch` inspector reads and writes the root `gc.dev.json` file in the Unity project, and uses it as the source of truth for local play entry, seed, and the eight-seat player roster.
@@ -62,6 +64,10 @@ The package depends on `com.unity.nuget.newtonsoft-json` for editor-only JSON pa
 Unity game code uses active player indices only. `GCPlayer.Index`, `GCActivePlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and game-over placement payloads all refer to the same zero-based run-scoped participant index.
 
 DevApp seats are one-based local development slots for controller assignment and display. Hosted platform player IDs are private adapter/platform bookkeeping. Neither seats nor platform player IDs are public Unity runtime identity, and structured diagnostics must not expose platform player IDs.
+
+The package accepts only current runtime identity at its boundary. Hosted play payloads must provide the current active-player roster (`activePlayers[]`), and runtime input must address players by `playerIndex`. Legacy hosted `players[]` rosters and `playerId` input are not adapted inside the Unity package; client/SDK adapters own that translation before Unity is invoked. Source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
+
+Legacy Unity source APIs retained for migration guidance are hard obsolete and fail at compile time. Follow the compiler messages to move old ID/name, input, timestamp, HUD helper, and ambiguous state calls to `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
 
 Player state APIs distinguish permanent and revokable state. Use `SetEliminatedPermanent`, `SetEliminatedRevokable`, and `SetRevokeEliminated` for elimination, and `SetFinishedPermanent`, `SetFinishedRevokable`, and `SetRevokeFinished` for finish. Revokable state counts while active and can be revoked; permanent state cannot be revoked.
 
