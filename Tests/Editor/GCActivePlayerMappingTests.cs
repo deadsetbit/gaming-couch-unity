@@ -119,30 +119,22 @@ public sealed class GCActivePlayerMappingTests
     }
 
     [Test]
-    public void LegacyPlayJsonStripsPlatformIdentityFromGameFacingOptionsAndKeepsPrivateMappingIdentity()
+    public void LegacyPlayJsonThrowsTargetedClientSdkTranslationError()
     {
-        var options = GCPlayOptions.CreateFromJSON(
-            "{\"seed\":424242,\"players\":[" +
-            "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
-            "]}"
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
+                "]}"
+            )
         );
-        var json = JsonUtility.ToJson(options);
 
-        Assert.That(options.players, Has.Length.EqualTo(2));
-        Assert.That(options.players[0].playerIndex, Is.EqualTo(0));
-        Assert.That(options.players[0].playerSeed, Is.EqualTo(111111));
-        Assert.That(options.players[0].type, Is.EqualTo("player"));
-        Assert.That(options.players[1].playerIndex, Is.EqualTo(1));
-        Assert.That(options.players[1].playerSeed, Is.EqualTo(222222));
-        Assert.That(options.players[1].type, Is.EqualTo("bot"));
-        Assert.That(options.participantIdentities, Has.Length.EqualTo(2));
-        Assert.That(options.participantIdentities[0].platformPlayerId, Is.EqualTo(10));
-        Assert.That(options.participantIdentities[0].stableKey, Is.EqualTo("10"));
-        Assert.That(json, Does.Contain("\"playerIndex\":0"));
-        Assert.That(json, Does.Not.Contain("playerId"));
-        Assert.That(json, Does.Not.Contain("Alice"));
-        Assert.That(json, Does.Not.Contain("Bob"));
+        Assert.That(exception.Message, Does.Contain("Legacy play payloads containing players[]"));
+        Assert.That(
+            exception.Message,
+            Does.Contain("client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity")
+        );
     }
 
     [Test]
@@ -159,6 +151,8 @@ public sealed class GCActivePlayerMappingTests
         Assert.That(options.players, Has.Length.EqualTo(2));
         Assert.That(options.usesMappedActivePlayers, Is.True);
         Assert.That(options.participantIdentities, Is.Empty);
+        Assert.That(options.players[0].playerIndex, Is.EqualTo(1));
+        Assert.That(options.players[1].playerIndex, Is.EqualTo(0));
         Assert.That(json, Does.Contain("\"playerIndex\":1"));
         Assert.That(json, Does.Contain("\"playerIndex\":0"));
         Assert.That(json, Does.Not.Contain("playerId"));

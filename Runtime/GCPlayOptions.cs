@@ -495,6 +495,9 @@ namespace DSB.GC
     [System.Serializable]
     public class GCPlayOptions
     {
+        internal const string LegacyPlayersPayloadErrorMessage =
+            "[GamingCouch] Legacy play payloads containing players[] are not accepted by the Unity package. The Gaming Couch client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity.";
+
         public GCActivePlayerOptions[] players;
         /**
         * Value between 1-999999.
@@ -528,56 +531,21 @@ namespace DSB.GC
                 return null;
             }
 
-            var players = transport.activePlayers;
-            var usesMappedActivePlayers = players != null && players.Length > 0;
-            if ((players == null || players.Length == 0) && transport.players != null)
+            var hasActivePlayers = transport.activePlayers != null && transport.activePlayers.Length > 0;
+            if (!hasActivePlayers && transport.players != null)
             {
-                players = new GCActivePlayerOptions[transport.players.Length];
-                for (var index = 0; index < transport.players.Length; index++)
-                {
-                    players[index] = new GCActivePlayerOptions
-                    {
-                        playerIndex = index,
-                        playerSeed = GCPlayerSeed.NormalizeOrFallback(
-                            transport.players[index].playerSeed,
-                            transport.players[index].name,
-                            index
-                        ),
-                        type = transport.players[index].type,
-                        color = transport.players[index].color,
-                    };
-                }
+                throw new ArgumentException(LegacyPlayersPayloadErrorMessage, nameof(optionsJson));
             }
 
             return new GCPlayOptions
             {
-                players = players,
+                players = transport.activePlayers,
                 seed = transport.seed,
                 runtimeOutput = transport.runtimeOutput ?? new GCRuntimeOutputOptions(),
                 platformData = GCPlatformRuntimeView.CopyForRuntime(transport.platformData),
-                participantIdentities = BuildParticipantIdentities(transport.players),
-                usesMappedActivePlayers = usesMappedActivePlayers,
+                participantIdentities = Array.Empty<GCPlatformParticipantIdentity>(),
+                usesMappedActivePlayers = hasActivePlayers,
             };
-        }
-
-        private static GCPlatformParticipantIdentity[] BuildParticipantIdentities(GCPlatformPlayerOptions[] players)
-        {
-            if (players == null || players.Length == 0)
-            {
-                return Array.Empty<GCPlatformParticipantIdentity>();
-            }
-
-            var identities = new GCPlatformParticipantIdentity[players.Length];
-            for (var index = 0; index < players.Length; index++)
-            {
-                identities[index] = new GCPlatformParticipantIdentity
-                {
-                    platformPlayerId = players[index].playerId,
-                    stableKey = players[index].playerId > 0 ? players[index].playerId.ToString() : (index + 1).ToString(),
-                };
-            }
-
-            return identities;
         }
     }
 

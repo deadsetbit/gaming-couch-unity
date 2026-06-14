@@ -112,10 +112,38 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void FallbackSeatIdentitiesUseLegacyParticipantIdentityForPrivateMappingOnly()
+    public void ActivePlayersJsonProjectionPreservesPreMappedPlayerIndexOrder()
     {
         var options = GCPlayOptions.CreateFromJSON(
-            "{\"seed\":424242,\"players\":[" +
+            "{\"seed\":424242,\"activePlayers\":[" +
+            "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
+            "]}"
+        );
+
+        var projection = GCActiveRunProjection.Create(options);
+
+        Assert.That(options.usesMappedActivePlayers, Is.True);
+        Assert.That(options.participantIdentities, Is.Empty);
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
+        Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
+        Assert.That(projection.GameFacingPlayOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
+        Assert.That(projection.GameFacingPlayOptions.players[0].color, Is.EqualTo(GCPlayerColor.green.ToString()));
+        Assert.That(projection.GameFacingPlayOptions.players[1].playerIndex, Is.EqualTo(1));
+        Assert.That(projection.GameFacingPlayOptions.players[1].playerSeed, Is.EqualTo(333333));
+        Assert.That(projection.GameFacingPlayOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
+        Assert.That(projection.GameFacingPlayOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
+    }
+
+    [Test]
+    public void ActivePlayersJsonProjectionDoesNotUseLegacyPlayersForPrivateMapping()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            "{\"seed\":424242,\"activePlayers\":[" +
+            "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
+            "],\"players\":[" +
             "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
             "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
@@ -123,13 +151,15 @@ public sealed class GCActiveRunProjectionTests
 
         var projection = GCActiveRunProjection.Create(options);
 
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(10, out var playerIndex), Is.True);
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(playerIndex).StableKey, Is.EqualTo("10"));
-        Assert.That(projection.MappedSeatIdentities[playerIndex].platformPlayerId, Is.EqualTo(10));
-        Assert.That(projection.MappedSeatIdentities[playerIndex].sourceSeatIndex, Is.EqualTo(1));
-        Assert.That(projection.MappedSeatIdentities[playerIndex].label, Is.EqualTo("Seat 1"));
-        Assert.That(projection.MappedSeatIdentities[playerIndex].playerType, Is.EqualTo(GCPlayerType.player));
-        Assert.That(projection.MappedSeatIdentities[playerIndex].playerColor, Is.EqualTo(GCPlayerColor.blue));
+        Assert.That(options.usesMappedActivePlayers, Is.True);
+        Assert.That(options.participantIdentities, Is.Empty);
+        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(10, out _), Is.False);
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.MappedSeatIdentities[0].platformPlayerId, Is.EqualTo(0));
+        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(2));
+        Assert.That(projection.MappedSeatIdentities[0].label, Is.EqualTo("Seat 2"));
+        Assert.That(projection.MappedSeatIdentities[0].playerType, Is.EqualTo(GCPlayerType.bot));
+        Assert.That(projection.MappedSeatIdentities[0].playerColor, Is.EqualTo(GCPlayerColor.green));
 
         var json = UnityEngine.JsonUtility.ToJson(projection.GameFacingPlayOptions);
         Assert.That(json, Does.Contain("\"playerIndex\""));
