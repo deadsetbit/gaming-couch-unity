@@ -75,8 +75,8 @@ namespace DSB.GC
                     sourceSeatIndex = sourceSeatIndex,
                     stableKey = stableKey,
                     label = sourceSeatIndex > 0 ? "Seat " + sourceSeatIndex : null,
-                    playerType = ResolvePlayerType(playerOption.type),
-                    playerColor = ResolvePlayerColor(playerOption.color),
+                    playerType = GCActivePlayerOptionResolver.ResolvePlayerType(playerOption.type),
+                    playerColor = GCActivePlayerOptionResolver.ResolvePlayerColor(playerOption.color),
                 };
             }
 
@@ -101,16 +101,6 @@ namespace DSB.GC
             }
 
             return mappedSeatIdentities;
-        }
-
-        private static GCPlayerType ResolvePlayerType(string value)
-        {
-            return string.Equals(value, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? GCPlayerType.bot : GCPlayerType.player;
-        }
-
-        private static GCPlayerColor ResolvePlayerColor(string value)
-        {
-            return !string.IsNullOrEmpty(value) && Enum.TryParse(value, true, out GCPlayerColor playerColor) ? playerColor : GCPlayerColor.blue;
         }
     }
 }

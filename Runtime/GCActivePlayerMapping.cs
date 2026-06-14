@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using DSB.GC.Dev;
 using DSB.GC.RuntimeMessages;
 
@@ -29,7 +28,6 @@ namespace DSB.GC
                 {
                     playerIndexBySourceSeatIndex[entry.SourceSeatIndex] = entry.PlayerIndex;
                 }
-
             }
         }
 
@@ -69,7 +67,9 @@ namespace DSB.GC
                     SourceSeatIndex = identity.sourceSeatIndex,
                     StableKey = stableKey,
                     PlayerSeed = GCPlayerSeed.NormalizeOrFallback(players[capturedOrder].playerSeed, null, capturedOrder),
-                    Type = identity.playerType != GCPlayerType.unset ? identity.playerType : ResolvePlayerType(players[capturedOrder].type),
+                    Type = identity.playerType != GCPlayerType.unset
+                        ? identity.playerType
+                        : GCActivePlayerOptionResolver.ResolvePlayerType(players[capturedOrder].type),
                     ColorName = identity.playerColor.ToString(),
                 });
             }
@@ -85,7 +85,7 @@ namespace DSB.GC
                     participant.PlayerSeed,
                     participant.Hash,
                     participant.Type,
-                    ResolvePlayerColor(participant.ColorName)
+                    GCActivePlayerOptionResolver.ResolvePlayerColor(participant.ColorName)
                 ))
                 .ToArray();
 
@@ -126,8 +126,8 @@ namespace DSB.GC
                     stableKey,
                     GCPlayerSeed.NormalizeOrFallback(player.playerSeed, null, playerIndex),
                     ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
-                    ResolvePlayerType(player.type),
-                    ResolvePlayerColor(player.color)
+                    GCActivePlayerOptionResolver.ResolvePlayerType(player.type),
+                    GCActivePlayerOptionResolver.ResolvePlayerColor(player.color)
                 );
             }
 
@@ -136,18 +136,7 @@ namespace DSB.GC
 
         internal static uint ComputeFnv1A32(string value)
         {
-            unchecked
-            {
-                var hash = 2166136261u;
-                var bytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
-                for (var index = 0; index < bytes.Length; index++)
-                {
-                    hash ^= bytes[index];
-                    hash *= 16777619u;
-                }
-
-                return hash;
-            }
+            return GCFnv1A32.Compute(value);
         }
 
         internal GCPlayOptions CreateGameFacingPlayOptions()
@@ -287,16 +276,6 @@ namespace DSB.GC
             return "map-" + ComputeFnv1A32(builder.ToString()).ToString("x8");
         }
 
-        private static GCPlayerType ResolvePlayerType(string value)
-        {
-            return string.Equals(value, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase) ? GCPlayerType.bot : GCPlayerType.player;
-        }
-
-        private static GCPlayerColor ResolvePlayerColor(string value)
-        {
-            return !string.IsNullOrEmpty(value) && Enum.TryParse(value, true, out GCPlayerColor playerColor) ? playerColor : GCPlayerColor.blue;
-        }
-
         private struct Participant
         {
             internal int CapturedOrder;
@@ -339,6 +318,23 @@ namespace DSB.GC
             Hash = hash;
             PlayerType = playerType;
             PlayerColor = playerColor;
+        }
+    }
+
+    internal static class GCActivePlayerOptionResolver
+    {
+        internal static GCPlayerType ResolvePlayerType(string value)
+        {
+            return string.Equals(value, GCPlayerType.bot.ToString(), StringComparison.OrdinalIgnoreCase)
+                ? GCPlayerType.bot
+                : GCPlayerType.player;
+        }
+
+        internal static GCPlayerColor ResolvePlayerColor(string value)
+        {
+            return !string.IsNullOrEmpty(value) && Enum.TryParse(value, true, out GCPlayerColor playerColor)
+                ? playerColor
+                : GCPlayerColor.blue;
         }
     }
 }

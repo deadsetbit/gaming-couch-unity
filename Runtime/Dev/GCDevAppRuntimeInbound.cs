@@ -191,6 +191,14 @@ namespace DSB.GC.Dev
 
     internal sealed class GCDevAppRuntimeInbound
     {
+        private const string DevToolMessageType = "gcdevtool";
+        private const string DevToolTypeProbe = "\"type\":\"" + DevToolMessageType + "\"";
+        private const string RestartAction = "restart";
+        private const string InputAction = "input";
+        private const string TimescaleStateAction = "timescale_state";
+        private const string RuntimeOutputOptionsAction = "runtime_output_options";
+        private const string UnsupportedMessageTypeReason = "unsupported_message_type";
+
         internal const byte CompactControllerInputTypeByte = 0x44;
         internal const int CompactControllerInputByteLength = 16;
         private const float CompactControllerInputAxisScale = 1000f;
@@ -213,15 +221,15 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Unhandled("empty_message");
             }
 
-            if (!message.Contains("\"type\":\"gcdevtool\""))
+            if (!message.Contains(DevToolTypeProbe))
             {
-                return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_message_type");
+                return GCDevAppRuntimeInboundDecision.Unhandled(UnsupportedMessageTypeReason);
             }
 
             var data = JsonUtility.FromJson<GCDevAppRuntimeDevToolMessage>(message);
-            if (data == null || !string.Equals(data.type, "gcdevtool", StringComparison.Ordinal))
+            if (data == null || !string.Equals(data.type, DevToolMessageType, StringComparison.Ordinal))
             {
-                return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_message_type");
+                return GCDevAppRuntimeInboundDecision.Unhandled(UnsupportedMessageTypeReason);
             }
 
             return RouteDevToolAction(data, context);
@@ -314,13 +322,13 @@ namespace DSB.GC.Dev
         {
             switch (message.action)
             {
-                case "restart":
+                case RestartAction:
                     return GCDevAppRuntimeInboundDecision.Restart();
-                case "input":
+                case InputAction:
                     return RouteTextInput(message.payload);
-                case "timescale_state":
+                case TimescaleStateAction:
                     return RouteTimescaleState(message.payload, context);
-                case "runtime_output_options":
+                case RuntimeOutputOptionsAction:
                     return RouteRuntimeOutputOptions(message.payload);
                 default:
                     return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_devtool_action");

@@ -30,18 +30,7 @@ namespace DSB.GC
 
         internal static uint ComputeFnv1A32(string value)
         {
-            unchecked
-            {
-                var hash = 2166136261u;
-                var bytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
-                for (var index = 0; index < bytes.Length; index++)
-                {
-                    hash ^= bytes[index];
-                    hash *= 16777619u;
-                }
-
-                return hash;
-            }
+            return GCFnv1A32.Compute(value);
         }
 
         private static string NormalizePlayerName(string playerName)
@@ -55,6 +44,25 @@ namespace DSB.GC
         private static int ToSeed(uint hash)
         {
             return (int)(hash % MaxSeed) + MinSeed;
+        }
+    }
+
+    internal static class GCFnv1A32
+    {
+        internal static uint Compute(string value)
+        {
+            unchecked
+            {
+                var hash = 2166136261u;
+                var bytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
+                for (var index = 0; index < bytes.Length; index++)
+                {
+                    hash ^= bytes[index];
+                    hash *= 16777619u;
+                }
+
+                return hash;
+            }
         }
     }
 }

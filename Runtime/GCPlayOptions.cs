@@ -549,14 +549,14 @@ namespace DSB.GC
     internal sealed class GCPlayOptionsTransport
     {
         public GCActivePlayerOptions[] activePlayers;
-        public GCPlatformPlayerOptions[] players;
+        public GCLegacyPlayerPayload[] players;
         public int seed;
         public GCRuntimeOutputOptions runtimeOutput;
         public GCPlatformRuntimeView platformData;
     }
 
     [System.Serializable]
-    internal struct GCPlatformPlayerOptions
+    internal struct GCLegacyPlayerPayload
     {
         public string type;
         public int playerId;
