@@ -61,11 +61,11 @@ The package depends on `com.unity.nuget.newtonsoft-json` for editor-only JSON pa
 
 ## Runtime Contract Notes
 
-Unity game code uses active player indices only. `GCPlayer.Index`, `GCActivePlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and game-over placement payloads all refer to the same zero-based run-scoped participant index.
+Unity game code uses player indices only. `GCPlayer.Index`, `GCPlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and game-over placement payloads all refer to the same zero-based run-scoped participant index.
 
 DevApp seats are one-based local development slots for controller assignment and display. Hosted platform player IDs are private adapter/platform bookkeeping. Neither seats nor platform player IDs are public Unity runtime identity, and structured diagnostics must not expose platform player IDs.
 
-The package accepts only current runtime identity at its boundary. Hosted play payloads must provide the current active-player roster (`activePlayers[]`), and runtime input must address players by `playerIndex`. Legacy hosted `players[]` rosters and `playerId` input are not adapted inside the Unity package; client/SDK adapters own that translation before Unity is invoked. Source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
+The package accepts only current runtime identity at its boundary. Game-facing play options provide the current player roster through `GCPlayOptions.players`, and runtime input addresses players by `playerIndex`. Legacy hosted roster and input payloads are not adapted inside the Unity package; client/SDK adapters own that translation before Unity is invoked. Source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
 
 Legacy Unity source APIs retained for migration guidance are hard obsolete and fail at compile time. Follow the compiler messages to move old ID/name, input, timestamp, HUD helper, and ambiguous state calls to `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
 

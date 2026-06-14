@@ -40,7 +40,7 @@ namespace DSB.GC.Dev
     {
         internal readonly GCDevAppRuntimeInboundStatus status;
         internal readonly GCDevAppRuntimeInboundIntentKind intentKind;
-        internal readonly int activePlayerIndex;
+        internal readonly int playerIndex;
         internal readonly GCControllerInputsData inputs;
         internal readonly bool hasInputSequence;
         internal readonly uint inputSequence;
@@ -53,7 +53,7 @@ namespace DSB.GC.Dev
         private GCDevAppRuntimeInboundDecision(
             GCDevAppRuntimeInboundStatus status,
             GCDevAppRuntimeInboundIntentKind intentKind,
-            int activePlayerIndex,
+            int playerIndex,
             GCControllerInputsData inputs,
             bool hasInputSequence,
             uint inputSequence,
@@ -66,7 +66,7 @@ namespace DSB.GC.Dev
         {
             this.status = status;
             this.intentKind = intentKind;
-            this.activePlayerIndex = activePlayerIndex;
+            this.playerIndex = playerIndex;
             this.inputs = inputs;
             this.hasInputSequence = hasInputSequence;
             this.inputSequence = inputSequence;
@@ -129,7 +129,7 @@ namespace DSB.GC.Dev
         }
 
         internal static GCDevAppRuntimeInboundDecision Input(
-            int activePlayerIndex,
+            int playerIndex,
             GCControllerInputsData inputs,
             bool hasInputSequence,
             uint inputSequence
@@ -138,7 +138,7 @@ namespace DSB.GC.Dev
             return new GCDevAppRuntimeInboundDecision(
                 GCDevAppRuntimeInboundStatus.Intent,
                 GCDevAppRuntimeInboundIntentKind.Input,
-                activePlayerIndex,
+                playerIndex,
                 inputs,
                 hasInputSequence,
                 inputSequence,
@@ -203,11 +203,11 @@ namespace DSB.GC.Dev
         internal const int CompactControllerInputByteLength = 16;
         private const float CompactControllerInputAxisScale = 1000f;
 
-        private readonly Dictionary<int, uint> lastInputSeqByActivePlayerIndex = new Dictionary<int, uint>();
+        private readonly Dictionary<int, uint> lastInputSeqByPlayerIndex = new Dictionary<int, uint>();
 
         internal void ResetInputSequences()
         {
-            lastInputSeqByActivePlayerIndex.Clear();
+            lastInputSeqByPlayerIndex.Clear();
         }
 
         internal GCDevAppRuntimeInboundDecision RouteTextMessage(
@@ -247,13 +247,13 @@ namespace DSB.GC.Dev
 
         internal GCDevAppRuntimeInboundDecision RouteValidatedCompactControllerInputFrame(CompactControllerInputFrame inputFrame)
         {
-            if (lastInputSeqByActivePlayerIndex.TryGetValue(inputFrame.playerIndex, out var lastSeq) &&
+            if (lastInputSeqByPlayerIndex.TryGetValue(inputFrame.playerIndex, out var lastSeq) &&
                 inputFrame.seq <= lastSeq)
             {
                 return GCDevAppRuntimeInboundDecision.Ignored("stale_input_sequence");
             }
 
-            lastInputSeqByActivePlayerIndex[inputFrame.playerIndex] = inputFrame.seq;
+            lastInputSeqByPlayerIndex[inputFrame.playerIndex] = inputFrame.seq;
             return GCDevAppRuntimeInboundDecision.Input(
                 inputFrame.playerIndex,
                 inputFrame.inputs,
@@ -351,7 +351,7 @@ namespace DSB.GC.Dev
 
             if (payload.playerIndex < 0)
             {
-                return GCDevAppRuntimeInboundDecision.Ignored("missing_active_player_index");
+                return GCDevAppRuntimeInboundDecision.Ignored("missing_player_index");
             }
 
             return GCDevAppRuntimeInboundDecision.Input(

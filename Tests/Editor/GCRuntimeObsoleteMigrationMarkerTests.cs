@@ -9,7 +9,6 @@ public sealed class GCRuntimeObsoleteMigrationMarkerTests
 {
     private static readonly ExpectedMarker[] ExpectedMarkers =
     {
-        Marker("T:DSB.GC.GCPlayerOptions", "GCActivePlayerOptions", "playerIndex"),
         Marker("T:DSB.GC.Hud.GCNameTag", "GCPlayerOverhead"),
         Marker("P:DSB.GC.GCPlayer.Id", "GCPlayer.Index"),
         Marker("P:DSB.GC.GCPlayer.PlayerName", "Player names are platform-owned"),

@@ -414,7 +414,7 @@ namespace DSB.GC.Dev
                     return;
                 }
 
-                if (!GamingCouch.Instance.TryValidateActivePlayerIndex(inputFrame.playerIndex, "devapp_compact_input", out _))
+                if (!GamingCouch.Instance.TryValidatePlayerIndex(inputFrame.playerIndex, "devapp_compact_input", out _))
                 {
                     return;
                 }
@@ -496,17 +496,17 @@ namespace DSB.GC.Dev
             }
 
             if (!string.IsNullOrEmpty(validationSource) &&
-                !GamingCouch.Instance.TryValidateActivePlayerIndex(decision.activePlayerIndex, validationSource, out _))
+                !GamingCouch.Instance.TryValidatePlayerIndex(decision.playerIndex, validationSource, out _))
             {
                 return;
             }
 
             if (string.Equals(validationSource, "devapp_input", StringComparison.Ordinal))
             {
-                LogWebSocket($"Applying JSON input to GamingCouch player {decision.activePlayerIndex}");
+                LogWebSocket($"Applying JSON input to GamingCouch player {decision.playerIndex}");
             }
 
-            GamingCouch.Instance.ApplyDevAppInput(decision.activePlayerIndex, decision.inputs);
+            GamingCouch.Instance.ApplyDevAppInput(decision.playerIndex, decision.inputs);
         }
 
         void ApplyTimescaleState(GCDevAppRuntimeInboundDecision decision)

@@ -4,11 +4,11 @@ Status: Core contract decisions captured. Implementation planning can proceed af
 
 ## Purpose
 
-Define the developer-facing Unity API migration from platform-owned identity and ambiguous state methods to Active Player Index identity and explicit permanent/revokable player state methods.
+Define the developer-facing Unity API migration from platform-owned identity and ambiguous state methods to Player Index identity and explicit permanent/revokable player state methods.
 
 This plan depends on:
 
-- `01-active-player-index-mapping.md` for `playerIndex` semantics.
+- `01-player-index-mapping.md` for `playerIndex` semantics.
 - `03-player-state-model.md` for elimination/finish state behavior.
 - `05-diagnostics-spine.md` for structured warnings and unsupported API diagnostics.
 - `07-cross-repo-rollout.md` for the short-lived platform/client/SDK bridge for older built games.
@@ -21,7 +21,7 @@ This plan depends on:
   - `playerIndex`
   - player type
   - player color
-- The replacement active-player DTO is named `GCActivePlayerOptions` unless implementation planning finds an established local naming pattern that is clearer. It replaces game-facing `GCPlayerOptions` usage that currently carries `playerId` and `name`.
+- The game-facing player DTO is named `GCPlayerOptions`. It carries `playerIndex`, type, and color without platform `playerId` or name fields.
 - Platform IDs, player names, local seats, and routing metadata live only in adapter/package-internal DTOs. Internal DTO names should include `Platform`, `Seat`, or `Internal` so they are not mistaken for game-facing API.
 - `PlayerName` and platform `playerId` have no game-facing replacement. This is intentional: Unity games must not be able to build gameplay or presentation rules around stable player identity or display names.
 - Old game-facing ID/name APIs become source-level compile breaks with explicit migration guidance where possible:
@@ -88,7 +88,7 @@ This plan depends on:
 ## Ready When
 
 - Every public API change has a replacement or explicit no-replacement decision.
-- Game-facing active-player DTOs contain no `name`, `playerId`, seat, or platform routing fields.
+- Game-facing player DTOs contain no `name`, `playerId`, seat, or platform routing fields.
 - The player-state API names match `03-player-state-model.md`.
 - Docs and examples map old game code to the new API.
 - Cross-repo rollout has a temporary bridge plan for older built games.

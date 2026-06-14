@@ -3,18 +3,16 @@ using System;
 
 namespace DSB.GC
 {
+    /// <summary>
+    /// Game-facing play options for one player in the current run.
+    /// </summary>
     [System.Serializable]
-    public struct GCActivePlayerOptions
+    public struct GCPlayerOptions
     {
         public int playerIndex;
         public int playerSeed;
         public string type;
         public string color;
-    }
-
-    [Obsolete("GCPlayerOptions has been removed from the game-facing runtime contract. Use GCActivePlayerOptions and playerIndex.", true)]
-    public struct GCPlayerOptions
-    {
     }
 
     [System.Serializable]
@@ -498,7 +496,7 @@ namespace DSB.GC
         internal const string LegacyPlayersPayloadErrorMessage =
             "[GamingCouch] Legacy play payloads containing players[] are not accepted by the Unity package. The Gaming Couch client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity.";
 
-        public GCActivePlayerOptions[] players;
+        public GCPlayerOptions[] players;
         /**
         * Value between 1-999999.
         *
@@ -518,7 +516,7 @@ namespace DSB.GC
         public GCPlatformRuntimeView platformData = GCPlatformRuntimeView.CreateFallbackMissing();
 
         [NonSerialized]
-        internal bool usesMappedActivePlayers;
+        internal bool usesProvidedPlayerIndexMapping;
 
         public static GCPlayOptions CreateFromJSON(string optionsJson)
         {
@@ -528,11 +526,12 @@ namespace DSB.GC
                 return null;
             }
 
-            var hasActivePlayers = transport.activePlayers != null && transport.activePlayers.Length > 0;
-            if (!hasActivePlayers && transport.players != null)
+            if (transport.players != null)
             {
                 throw new ArgumentException(LegacyPlayersPayloadErrorMessage, nameof(optionsJson));
             }
+
+            var hasTransportRoster = transport.activePlayers != null && transport.activePlayers.Length > 0;
 
             return new GCPlayOptions
             {
@@ -540,7 +539,7 @@ namespace DSB.GC
                 seed = transport.seed,
                 runtimeOutput = transport.runtimeOutput ?? new GCRuntimeOutputOptions(),
                 platformData = GCPlatformRuntimeView.CopyForRuntime(transport.platformData),
-                usesMappedActivePlayers = hasActivePlayers,
+                usesProvidedPlayerIndexMapping = hasTransportRoster,
             };
         }
     }
@@ -548,7 +547,7 @@ namespace DSB.GC
     [System.Serializable]
     internal sealed class GCPlayOptionsTransport
     {
-        public GCActivePlayerOptions[] activePlayers;
+        public GCPlayerOptions[] activePlayers;
         public GCLegacyPlayerPayload[] players;
         public int seed;
         public GCRuntimeOutputOptions runtimeOutput;

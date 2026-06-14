@@ -63,7 +63,7 @@ namespace DSB.GC.Hud
     public struct GCPlayersHudDataPlayer
     {
         /// <summary>
-        /// Active player index.
+        /// Player index.
         /// </summary>
         public int playerIndex;
         /// <summary>
@@ -123,7 +123,7 @@ namespace DSB.GC.Hud
     {
         public string type;
         /// <summary>
-        /// Active player index.
+        /// Player index.
         /// </summary>
         public int playerIndex;
         /// <summary>
@@ -238,7 +238,7 @@ namespace DSB.GC.Hud
             var gamingCouch = GamingCouch.Instance;
             if (gamingCouch != null &&
                 gamingCouch.Status == GCStatus.Playing &&
-                !gamingCouch.TryValidateActivePlayerIndex(pointData.playerIndex, "screen_space", out _))
+                !gamingCouch.TryValidatePlayerIndex(pointData.playerIndex, "screen_space", out _))
             {
                 return;
             }

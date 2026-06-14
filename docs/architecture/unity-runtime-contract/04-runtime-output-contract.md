@@ -16,7 +16,7 @@ Reserve platform-to-runtime ingress shape without implementing inbound behavior 
   - `runtime_messages` for semantic state, transitions, diagnostics, and effectful platform-state result messages.
   - `screen_space` for hot latest-state screen-coordinate anchors.
 - Host-owned WebGL loader output and browser console mirroring are not runtime output paths. They may be useful for local debugging, but `runtime_messages` and `screen_space` are the only v1 Unity runtime contract outputs.
-- Static active-player facts live in the active-run roster/setup context: `playerIndex`, player type, and player color. Dynamic state snapshots reference `playerIndex` and do not repeat type or color.
+- Static player facts live in the active-run roster/setup context: `playerIndex`, player type, and player color. Dynamic state snapshots reference `playerIndex` and do not repeat type or color.
 - Runtime message vocabulary reuses the `GCPlayer` state model from `03-player-state-model.md`: elimination state and finish state are each `None`, `Revokable`, or `Permanent`.
 - Runtime messages are not a public custom message API in v1. The Unity package emits cataloged messages from supported GC runtime APIs only.
 - The Unity package must not mirror runtime messages through `Debug.Log` or browser console output. Logging runtime messages would double the runtime output work and make console text look like a contract source.
@@ -121,7 +121,7 @@ All integer fields are JSON numbers that must be finite integers. Unless a field
 - Snapshots are full current run state, not deltas or patch operations.
 - Snapshots emit on play start, meaningful semantic state changes, and before game over. Unity flushes pending state snapshot output before, or in the same ordered batch immediately before, the game-over message; receiver acceptance happens after validation.
 - Snapshot emission is change-driven and coalesced. Do not emit every frame unless a semantic state value changes every frame.
-- Snapshot payloads include all active players exactly once.
+- Snapshot payloads include all players exactly once.
 - Player type and color are read from the active-run roster/setup context, not repeated in each dynamic snapshot.
 - Score, lives, status, status text, meter, placement, elimination state, finish state, and game status are v1 canonical semantic fields.
 - Arbitrary game-defined custom data is out of scope for v1.
@@ -133,14 +133,14 @@ All integer fields are JSON numbers that must be finite integers. Unless a field
 | --- | --- | --- | --- |
 | `game` | Yes | object | Exact fields below. |
 | `game.status` | Yes | enum `pending_setup`, `setup_done`, `playing`, `game_over` | Normalized runtime game status. |
-| `players` | Yes | array length equals active-player count | Contains every active `playerIndex` exactly once. |
-| `players[].playerIndex` | Yes | integer `0..activePlayerCount - 1` | Game-facing active-player index. |
+| `players` | Yes | array length equals player count | Contains every `playerIndex` exactly once. |
+| `players[].playerIndex` | Yes | integer `0..playerCount - 1` | Game-facing player index. |
 | `players[].score` | Yes | integer | Current score. |
 | `players[].lives` | Yes | integer `>= 0` | Current lives after clamping. |
 | `players[].status` | Yes | enum `Neutral`, `Pending`, `Success`, `Failure`, `Warning`, `Alert` | Mirrors `GCPlayerStatus`. |
 | `players[].statusText` | Yes | bounded string | Empty string is allowed; exact max length is an ingress implementation limit. |
 | `players[].meter` | Yes | integer `-1..100` | `-1` means no meter value. |
-| `players[].placement` | Yes | integer `1..activePlayerCount` | One-based current placement rank from configured broad placement order. |
+| `players[].placement` | Yes | integer `1..playerCount` | One-based current placement rank from configured broad placement order. |
 | `players[].eliminationState` | Yes | enum `None`, `Revokable`, `Permanent` | Uses the state model vocabulary. |
 | `players[].finishState` | Yes | enum `None`, `Revokable`, `Permanent` | Uses the state model vocabulary. |
 
@@ -199,7 +199,7 @@ Structured GC diagnostics and captured Unity log records are carried as `gc.diag
 | `severity` | Yes | enum `info`, `warning`, `error` | Based on behavior impact. |
 | `sourceArea` | Yes | known source area | Includes `runtime_messages` and `screen_space` as distinct sources. |
 | `message` | Yes | bounded string | Human text is not contractual; exact max length is an ingress implementation limit. |
-| `playerIndex` | No | integer `0..activePlayerCount - 1` | Only when the diagnostic is about a game-facing active player. |
+| `playerIndex` | No | integer `0..playerCount - 1` | Only when the diagnostic is about a game-facing player. |
 | `mapping` | No | object | Bounded run-scoped mapping context from the diagnostics spine. |
 | `details` | No | flat object | Primitive values, bounded strings, and small primitive arrays only. |
 | `debug` | No | bounded object | Non-fingerprinted troubleshooting evidence. |
@@ -219,7 +219,7 @@ Payload is the accepted v1 `GameOverResult` object:
 Rules:
 
 - `playerIndicesByPlacement` is required.
-- Every active `playerIndex` must appear exactly once.
+- Every `playerIndex` must appear exactly once.
 - `playerIndex: 0` is valid.
 - Missing, duplicate, non-integer, negative, out-of-range, extra, or unknown placement values reject the effectful message and do not publish platform result state.
 - Unknown payload fields reject the effectful message. Reserved future result fields also reject in v1.
@@ -242,8 +242,8 @@ Game-over acceptance is first-accepted-wins per active run:
 
 | Field | Required | Type/bounds | Notes |
 | --- | --- | --- | --- |
-| `playerIndicesByPlacement` | Yes | array length equals active-player count | Total one-based placement order encoded as zero-based `playerIndex` values. |
-| `playerIndicesByPlacement[]` | Yes | integer `0..activePlayerCount - 1` | Each active player appears exactly once. |
+| `playerIndicesByPlacement` | Yes | array length equals player count | Total one-based placement order encoded as zero-based `playerIndex` values. |
+| `playerIndicesByPlacement[]` | Yes | integer `0..playerCount - 1` | Each player appears exactly once. |
 
 ## Screen Space Path
 
@@ -295,14 +295,14 @@ Unity emits `screen_space` batches for latest-state screen-coordinate anchors:
 | `runId` | Transport-dependent | non-empty bounded string | Only for transports that are not strictly scoped to one active run; exact max length is an ingress implementation limit. |
 | `frameIndex` | Yes | integer `>= 0` | Monotonic rendered-frame index for the active run. |
 | `runtimeTimeMs` | Yes | integer `>= 0` | Unscaled milliseconds since active run start for this batch. |
-| `anchors` | Yes | array, max `2 * activePlayerCount` items | Empty array is allowed and means no anchors are visible in this latest batch. This bound is contractual because v1 has exactly two player anchor types. |
+| `anchors` | Yes | array, max `2 * playerCount` items | Empty array is allowed and means no anchors are visible in this latest batch. This bound is contractual because v1 has exactly two player anchor types. |
 
 `screen_space` anchor schema:
 
 | Field | Required | Type/bounds | Notes |
 | --- | --- | --- | --- |
 | `anchorType` | Yes | enum `playerOverhead`, `playerPosition` | V1 anchor catalog. |
-| `playerIndex` | Yes | integer `0..activePlayerCount - 1` | Game-facing active-player index. |
+| `playerIndex` | Yes | integer `0..playerCount - 1` | Game-facing player index. |
 | `x` | Yes | finite number `0..1` | Normalized and clamped horizontal screen coordinate. |
 | `y` | Yes | finite number `0..1` | Normalized and clamped vertical screen coordinate. |
 | `isOffScreen` | Yes | boolean | True when the source point is outside the camera view; `x` and `y` still carry the clamped normalized coordinate. |
@@ -402,7 +402,7 @@ Reserved ingress rules:
 - With snapshots disabled, transition messages and the game-over message still emit.
 - `screen_space` emits separate `playerOverhead` and `playerPosition` anchors for the same player.
 - `screen_space` can be disabled at boot without disabling the game-over message.
-- Game over with every active player index exactly once is accepted and updates platform result state.
+- Game over with every player index exactly once is accepted and updates platform result state.
 - Game over with a missing, duplicate, or out-of-range placement index is rejected and does not publish platform result state.
 - After one valid game-over message is accepted, any duplicate, replayed, or second game-over message is rejected and does not mutate platform result state again.
 - A malformed runtime message is rejected and diagnosed.

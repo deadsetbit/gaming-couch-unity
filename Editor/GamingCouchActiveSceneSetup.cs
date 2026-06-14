@@ -2209,7 +2209,7 @@ public class " + gameTypeName + @" : MonoBehaviour
     {
         players.Clear();
         emittedExampleDiagnostic = false;
-        Debug.Log(""GamingCouch play received for "" + options.players.Length + "" active players."");
+        Debug.Log(""GamingCouch play received for "" + options.players.Length + "" players."");
 
         GamingCouch.Instance.SetupPlayers<" + playerTypeName + @">(options.players, player =>
         {
@@ -2218,7 +2218,7 @@ public class " + gameTypeName + @" : MonoBehaviour
             player.SetLives(3, ""Example play start"");
             player.SetStatus(GCPlayerStatus.Pending, ""Ready"", ""Example play start"");
             player.SetMeter(0, ""Example play start"");
-            Debug.Log(""Spawned active player index "" + player.Index + ""."");
+            Debug.Log(""Spawned player index "" + player.Index + ""."");
         });
 
         if (roundCoroutine != null)
@@ -2307,7 +2307,7 @@ public class " + gameTypeName + @" : MonoBehaviour
         }
 
         emittedExampleDiagnostic = true;
-        Debug.Log(""Example diagnostic checkpoint: runtime state and HUD updated for "" + players.Players.Count + "" active players."");
+        Debug.Log(""Example diagnostic checkpoint: runtime state and HUD updated for "" + players.Players.Count + "" players."");
     }
 
     private void ApplyRandomFinalScores()

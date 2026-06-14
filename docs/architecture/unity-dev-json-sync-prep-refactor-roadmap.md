@@ -87,7 +87,7 @@ Preserve source seat index and color assignment separately from public `GCPlayOp
 
 - Keep `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` unchanged.
 - Track source seat indexes for captured editor play state.
-- Make DevApp runtime snapshots read captured seat identity instead of inferring seat index from active player array position.
+- Make DevApp runtime snapshots read captured seat identity instead of inferring seat index from player array position.
 
 Completion criteria:
 

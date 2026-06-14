@@ -1003,7 +1003,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         Assert.That(source, Does.Contain("meterTypeEnum = PlayersHudMeterType.Bar"));
         Assert.That(source, Does.Contain("GamingCouch.Instance.SetupDone();"));
         Assert.That(source, Does.Contain("private void GamingCouchPlay(GCPlayOptions options)"));
-        Assert.That(source, Does.Contain("Debug.Log(\"GamingCouch play received for \" + options.players.Length + \" active players.\""));
+        Assert.That(source, Does.Contain("Debug.Log(\"GamingCouch play received for \" + options.players.Length + \" players.\""));
         Assert.That(source, Does.Contain("GamingCouch.Instance.SetupPlayers<" + playerTypeName + ">(options.players"));
         Assert.That(source, Does.Contain("players.AddPlayer(player);"));
         Assert.That(source, Does.Contain("player.ApplyPlayerColor();"));

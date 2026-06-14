@@ -855,7 +855,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void StoreStateCollectionsExposePlayersPrefixAndBotNonBotSymmetry()
     {
-        var activePlayer = CreatePlayer(0);
+        var livePlayer = CreatePlayer(0);
         var eliminatedBot = CreatePlayer(1, GCPlayerType.bot);
         var eliminatedNonBot = CreatePlayer(2);
         var finishedBot = CreatePlayer(3, GCPlayerType.bot);
@@ -867,19 +867,19 @@ public sealed class GCPlayerStateModelTests
         finishedNonBot.SetFinishedPermanent("done");
 
         var store = new GCPlayerStore<GCPlayer>();
-        store.AddPlayer(activePlayer);
+        store.AddPlayer(livePlayer);
         store.AddPlayer(eliminatedBot);
         store.AddPlayer(eliminatedNonBot);
         store.AddPlayer(finishedBot);
         store.AddPlayer(finishedNonBot);
 
-        Assert.That(store.Players, Is.EqualTo(new[] { activePlayer, eliminatedBot, eliminatedNonBot, finishedBot, finishedNonBot }));
+        Assert.That(store.Players, Is.EqualTo(new[] { livePlayer, eliminatedBot, eliminatedNonBot, finishedBot, finishedNonBot }));
         Assert.That(store.PlayersBot, Is.EqualTo(new[] { eliminatedBot, finishedBot }));
-        Assert.That(store.PlayersNonBot, Is.EqualTo(new[] { activePlayer, eliminatedNonBot, finishedNonBot }));
+        Assert.That(store.PlayersNonBot, Is.EqualTo(new[] { livePlayer, eliminatedNonBot, finishedNonBot }));
 
-        Assert.That(store.PlayersUneliminated, Is.EqualTo(new[] { activePlayer, finishedBot, finishedNonBot }));
+        Assert.That(store.PlayersUneliminated, Is.EqualTo(new[] { livePlayer, finishedBot, finishedNonBot }));
         Assert.That(store.PlayersUneliminatedBot, Is.EqualTo(new[] { finishedBot }));
-        Assert.That(store.PlayersUneliminatedNonBot, Is.EqualTo(new[] { activePlayer, finishedNonBot }));
+        Assert.That(store.PlayersUneliminatedNonBot, Is.EqualTo(new[] { livePlayer, finishedNonBot }));
 
         Assert.That(store.PlayersEliminated, Is.EqualTo(new[] { eliminatedBot, eliminatedNonBot }));
         Assert.That(store.PlayersEliminatedBot, Is.EqualTo(new[] { eliminatedBot }));
@@ -921,7 +921,7 @@ public sealed class GCPlayerStateModelTests
     {
         var eliminatedRevokable = CreatePlayer(0);
         var eliminatedPermanent = CreatePlayer(1);
-        var activePlayer = CreatePlayer(2);
+        var livePlayer = CreatePlayer(2);
         eliminatedRevokable.SetEliminatedRevokable("temporary");
         eliminatedPermanent.SetEliminatedPermanent("final");
 
@@ -932,8 +932,8 @@ public sealed class GCPlayerStateModelTests
         finishedPermanent.SetFinishedPermanent("done");
 
         var eliminatedGame = CreateGameWithPlacementCriteria(GCPlacementSortCriteria.Eliminated);
-        var eliminatedOrder = eliminatedGame.GetPlayersInPlacementOrder(new[] { eliminatedRevokable, eliminatedPermanent, activePlayer });
-        Assert.That(eliminatedOrder, Is.EqualTo(new[] { eliminatedRevokable, eliminatedPermanent, activePlayer }));
+        var eliminatedOrder = eliminatedGame.GetPlayersInPlacementOrder(new[] { eliminatedRevokable, eliminatedPermanent, livePlayer });
+        Assert.That(eliminatedOrder, Is.EqualTo(new[] { eliminatedRevokable, eliminatedPermanent, livePlayer }));
 
         var finishedGame = CreateGameWithPlacementCriteria(GCPlacementSortCriteria.Finished);
         var finishedOrder = finishedGame.GetPlayersInPlacementOrder(new[] { finishedRevokable, finishedPermanent, unfinishedPlayer });

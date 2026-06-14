@@ -1016,7 +1016,7 @@ public sealed class GCRuntimeOutputContractTests
         });
         SetPrivateField(gamingCouch, "game", game);
         SetPrivateField(gamingCouch, "status", GCStatus.Playing);
-        SetPrivateField(gamingCouch, "activePlayerMapping", CreateActivePlayerMapping(playerCount));
+        SetPrivateField(gamingCouch, "playerIndexMapping", CreatePlayerIndexMapping(playerCount));
 
         var players = new GCPlayer[playerCount];
         for (var index = 0; index < playerCount; index++)
@@ -1067,13 +1067,13 @@ public sealed class GCRuntimeOutputContractTests
         player.OnStatusTransitionChanged = null;
     }
 
-    private static GCActivePlayerMapping CreateActivePlayerMapping(int playerCount)
+    private static GCPlayerIndexMapping CreatePlayerIndexMapping(int playerCount)
     {
-        var players = new GCActivePlayerOptions[playerCount];
+        var players = new GCPlayerOptions[playerCount];
         var seats = new GCSeatIdentity[playerCount];
         for (var index = 0; index < playerCount; index++)
         {
-            players[index] = new GCActivePlayerOptions
+            players[index] = new GCPlayerOptions
             {
                 playerIndex = index,
                 type = "player",
@@ -1088,11 +1088,11 @@ public sealed class GCRuntimeOutputContractTests
             };
         }
 
-        return GCActivePlayerMapping.Create(new GCPlayOptions
+        return GCPlayerIndexMapping.Create(new GCPlayOptions
         {
             players = players,
             seed = 123,
-            usesMappedActivePlayers = true,
+            usesProvidedPlayerIndexMapping = true,
         }, seats);
     }
 

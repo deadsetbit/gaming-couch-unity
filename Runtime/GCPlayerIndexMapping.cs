@@ -1,25 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using DSB.GC.Dev;
 using DSB.GC.RuntimeMessages;
 
 namespace DSB.GC
 {
-    internal sealed class GCActivePlayerMapping
+    internal sealed class GCPlayerIndexMapping
     {
-        private readonly GCActivePlayerMappingEntry[] entriesByIndex;
+        private readonly GCPlayerIndexMappingEntry[] entriesByIndex;
         private readonly Dictionary<int, int> playerIndexBySourceSeatIndex = new Dictionary<int, int>();
 
         internal string MappingId { get; }
         internal int Seed { get; }
         internal int ParticipantCount => entriesByIndex.Length;
 
-        private GCActivePlayerMapping(string mappingId, int seed, GCActivePlayerMappingEntry[] entriesByIndex)
+        private GCPlayerIndexMapping(string mappingId, int seed, GCPlayerIndexMappingEntry[] entriesByIndex)
         {
             MappingId = mappingId;
             Seed = seed;
-            this.entriesByIndex = entriesByIndex ?? Array.Empty<GCActivePlayerMappingEntry>();
+            this.entriesByIndex = entriesByIndex ?? Array.Empty<GCPlayerIndexMappingEntry>();
 
             for (var index = 0; index < this.entriesByIndex.Length; index++)
             {
@@ -31,23 +32,23 @@ namespace DSB.GC
             }
         }
 
-        internal static GCActivePlayerMapping Create(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
+        internal static GCPlayerIndexMapping Create(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
         {
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
             }
 
-            var players = options.players ?? Array.Empty<GCActivePlayerOptions>();
+            var players = options.players ?? Array.Empty<GCPlayerOptions>();
             var identities = seatIdentities ?? Array.Empty<GCSeatIdentity>();
             if (identities.Length != players.Length)
             {
-                throw new ArgumentException("[GamingCouch] Seat identity count must match active player count.", nameof(seatIdentities));
+                throw new ArgumentException("[GamingCouch] Seat identity count must match player count.", nameof(seatIdentities));
             }
 
-            if (options.usesMappedActivePlayers)
+            if (options.usesProvidedPlayerIndexMapping)
             {
-                return CreateFromMappedActivePlayers(options, identities);
+                return CreateFromProvidedPlayerIndices(options, identities);
             }
 
             var participants = new List<Participant>(players.Length);
@@ -69,7 +70,7 @@ namespace DSB.GC
                     PlayerSeed = GCPlayerSeed.NormalizeOrFallback(players[capturedOrder].playerSeed, null, capturedOrder),
                     Type = identity.playerType != GCPlayerType.unset
                         ? identity.playerType
-                        : GCActivePlayerOptionResolver.ResolvePlayerType(players[capturedOrder].type),
+                        : GCPlayerOptionResolver.ResolvePlayerType(players[capturedOrder].type),
                     ColorName = identity.playerColor.ToString(),
                 });
             }
@@ -77,7 +78,7 @@ namespace DSB.GC
             var entries = participants
                 .OrderBy(participant => participant.Hash)
                 .ThenBy(participant => participant.CapturedOrder)
-                .Select((participant, playerIndex) => new GCActivePlayerMappingEntry(
+                .Select((participant, playerIndex) => new GCPlayerIndexMappingEntry(
                     playerIndex,
                     participant.CapturedOrder,
                     participant.SourceSeatIndex,
@@ -85,17 +86,17 @@ namespace DSB.GC
                     participant.PlayerSeed,
                     participant.Hash,
                     participant.Type,
-                    GCActivePlayerOptionResolver.ResolvePlayerColor(participant.ColorName)
+                    GCPlayerOptionResolver.ResolvePlayerColor(participant.ColorName)
                 ))
                 .ToArray();
 
-            return new GCActivePlayerMapping(BuildMappingId(options.seed, entries), options.seed, entries);
+            return new GCPlayerIndexMapping(BuildMappingId(options.seed, entries), options.seed, entries);
         }
 
-        private static GCActivePlayerMapping CreateFromMappedActivePlayers(GCPlayOptions options, GCSeatIdentity[] identities)
+        private static GCPlayerIndexMapping CreateFromProvidedPlayerIndices(GCPlayOptions options, GCSeatIdentity[] identities)
         {
-            var players = options.players ?? Array.Empty<GCActivePlayerOptions>();
-            var entries = new GCActivePlayerMappingEntry[players.Length];
+            var players = options.players ?? Array.Empty<GCPlayerOptions>();
+            var entries = new GCPlayerIndexMappingEntry[players.Length];
             var seenPlayerIndices = new bool[players.Length];
 
             for (var capturedOrder = 0; capturedOrder < players.Length; capturedOrder++)
@@ -119,19 +120,19 @@ namespace DSB.GC
                     ? identity.stableKey
                     : playerIndex.ToString();
 
-                entries[playerIndex] = new GCActivePlayerMappingEntry(
+                entries[playerIndex] = new GCPlayerIndexMappingEntry(
                     playerIndex,
                     capturedOrder,
                     identity.sourceSeatIndex,
                     stableKey,
                     GCPlayerSeed.NormalizeOrFallback(player.playerSeed, null, playerIndex),
                     ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
-                    GCActivePlayerOptionResolver.ResolvePlayerType(player.type),
-                    GCActivePlayerOptionResolver.ResolvePlayerColor(player.color)
+                    GCPlayerOptionResolver.ResolvePlayerType(player.type),
+                    GCPlayerOptionResolver.ResolvePlayerColor(player.color)
                 );
             }
 
-            return new GCActivePlayerMapping(BuildMappingId(options.seed, entries), options.seed, entries);
+            return new GCPlayerIndexMapping(BuildMappingId(options.seed, entries), options.seed, entries);
         }
 
         internal static uint ComputeFnv1A32(string value)
@@ -141,11 +142,11 @@ namespace DSB.GC
 
         internal GCPlayOptions CreateGameFacingPlayOptions()
         {
-            var players = new GCActivePlayerOptions[entriesByIndex.Length];
+            var players = new GCPlayerOptions[entriesByIndex.Length];
             for (var index = 0; index < entriesByIndex.Length; index++)
             {
                 var entry = entriesByIndex[index];
-                players[index] = new GCActivePlayerOptions
+                players[index] = new GCPlayerOptions
                 {
                     playerIndex = entry.PlayerIndex,
                     playerSeed = entry.PlayerSeed,
@@ -171,7 +172,7 @@ namespace DSB.GC
             return playerIndexBySourceSeatIndex.TryGetValue(sourceSeatIndex, out playerIndex);
         }
 
-        internal GCActivePlayerMappingEntry GetByPlayerIndex(int playerIndex)
+        internal GCPlayerIndexMappingEntry GetByPlayerIndex(int playerIndex)
         {
             if (!IsValidPlayerIndex(playerIndex))
             {
@@ -181,7 +182,7 @@ namespace DSB.GC
             return entriesByIndex[playerIndex];
         }
 
-        internal bool TryValidatePlayerIndex(int playerIndex, string source, out GCActivePlayerMappingEntry entry)
+        internal bool TryValidatePlayerIndex(int playerIndex, string source, out GCPlayerIndexMappingEntry entry)
         {
             if (IsValidPlayerIndex(playerIndex))
             {
@@ -258,7 +259,7 @@ namespace DSB.GC
             );
         }
 
-        private static string BuildMappingId(int seed, GCActivePlayerMappingEntry[] entries)
+        private static string BuildMappingId(int seed, GCPlayerIndexMappingEntry[] entries)
         {
             var builder = new StringBuilder();
             builder.Append(seed);
@@ -288,7 +289,7 @@ namespace DSB.GC
         }
     }
 
-    internal readonly struct GCActivePlayerMappingEntry
+    internal readonly struct GCPlayerIndexMappingEntry
     {
         internal readonly int PlayerIndex;
         internal readonly int CapturedOrder;
@@ -299,7 +300,7 @@ namespace DSB.GC
         internal readonly GCPlayerType PlayerType;
         internal readonly GCPlayerColor PlayerColor;
 
-        internal GCActivePlayerMappingEntry(
+        internal GCPlayerIndexMappingEntry(
             int playerIndex,
             int capturedOrder,
             int sourceSeatIndex,
@@ -321,7 +322,7 @@ namespace DSB.GC
         }
     }
 
-    internal static class GCActivePlayerOptionResolver
+    internal static class GCPlayerOptionResolver
     {
         internal static GCPlayerType ResolvePlayerType(string value)
         {

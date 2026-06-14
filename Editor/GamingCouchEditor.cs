@@ -454,16 +454,16 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         out GCSeatIdentity[] seatIdentities
     )
     {
-        var activePlayerCount = data.EnabledSeatCount;
+        var playerCount = data.EnabledSeatCount;
         var options = new GCPlayOptions
         {
-            players = new GCActivePlayerOptions[activePlayerCount],
+            players = new GCPlayerOptions[playerCount],
             seed = seed,
             platformData = platformData ?? GCPlatformRuntimeView.CreateFallbackMissing(),
         };
-        seatIdentities = new GCSeatIdentity[activePlayerCount];
+        seatIdentities = new GCSeatIdentity[playerCount];
 
-        var activePlayerIndex = 0;
+        var playerIndex = 0;
         for (var sourceSeatIndex = 0; sourceSeatIndex < data.seats.Length; sourceSeatIndex++)
         {
             var seat = data.seats[sourceSeatIndex];
@@ -476,15 +476,15 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
             var playerColor = SeatColors[sourceSeatIndex];
             var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
 
-            options.players[activePlayerIndex] = new GCActivePlayerOptions
+            options.players[playerIndex] = new GCPlayerOptions
             {
-                playerIndex = activePlayerIndex,
+                playerIndex = playerIndex,
                 playerSeed = GCPlayerSeed.FromPlayerName(seat.name),
                 type = playerType.ToString(),
                 color = playerColor.ToString(),
             };
 
-            seatIdentities[activePlayerIndex] = new GCSeatIdentity
+            seatIdentities[playerIndex] = new GCSeatIdentity
             {
                 sourceSeatIndex = oneBasedSourceSeatIndex,
                 stableKey = oneBasedSourceSeatIndex.ToString(),
@@ -493,7 +493,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
                 playerColor = playerColor,
             };
 
-            activePlayerIndex++;
+            playerIndex++;
         }
 
         return options;

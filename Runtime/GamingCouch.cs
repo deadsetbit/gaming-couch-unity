@@ -54,7 +54,7 @@ namespace DSB.GC
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
         private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
-        private GCActivePlayerMapping activePlayerMapping;
+        private GCPlayerIndexMapping playerIndexMapping;
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
         public bool IsPaused => paused;
@@ -377,7 +377,7 @@ namespace DSB.GC
         private void Play(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
         {
             var activeRunProjection = GCActiveRunProjection.Create(options, seatIdentities);
-            activePlayerMapping = activeRunProjection.ActivePlayerMapping;
+            playerIndexMapping = activeRunProjection.PlayerIndexMapping;
             playOptions = activeRunProjection.GameFacingPlayOptions;
             playSeatIdentities = activeRunProjection.MappedSeatIdentities;
             GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
@@ -694,7 +694,7 @@ namespace DSB.GC
 
 
         #region Player
-        private T InstantiatePlayer<T>(GCActivePlayerOptions options, Vector3 position, Quaternion rotation)
+        private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
         {
             GCLog.LogDebug($"InstantiatePlayer: {options.playerIndex}, {options.color}");
 
@@ -731,7 +731,7 @@ namespace DSB.GC
             }
         }
 
-        internal void _InternalSetPlayerProperties(GCPlayer player, GCActivePlayerOptions options)
+        internal void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
         {
             player.gameObject.name = "Player - " + options.playerIndex;
 
@@ -773,7 +773,7 @@ namespace DSB.GC
             public Quaternion rotation;
         }
 
-        public void SetupPlayers<T>(GCActivePlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
             SetupPlayers(playerOptions, null, onPlayerSetupReady);
         }
@@ -785,7 +785,7 @@ namespace DSB.GC
         /// <param name="playerOptions">Player options to instantiate the players with. These options are available via GamingCouchPlay</param>
         /// <param name="spawnProperties">Spawn properties to define the player spawn position and rotation.</param>
         /// <param name="onPlayerSetupReady">Callback to be called when the player is ready. This is useful to store the player in your own game specific player store to access players by your games player type.</param>
-        public void SetupPlayers<T>(GCActivePlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
+        public void SetupPlayers<T>(GCPlayerOptions[] playerOptions, GCPlayerSpawnProperties[] spawnProperties, Action<T> onPlayerSetupReady) where T : GCPlayer
         {
             GCLog.LogInfo("SetupPlayers");
 
@@ -826,7 +826,7 @@ namespace DSB.GC
             }
         }
 
-        public GCActivePlayerOptions GetPlayerOptions(int playerIndex)
+        public GCPlayerOptions GetPlayerOptions(int playerIndex)
         {
             return playOptions.players.Single(p => p.playerIndex == playerIndex);
         }
@@ -839,7 +839,7 @@ namespace DSB.GC
         /// <summary>
         /// Removed. Use GetInputsByPlayerIndex.
         /// </summary>
-        /// <param name="playerIndex">Active player index</param>
+        /// <param name="playerIndex">Player index</param>
         /// <returns>null if not available</returns>
         [Obsolete("GetInputsByPlayerId has been removed from the game-facing runtime contract. Use GetInputsByPlayerIndex.", true)]
         public GCControllerInputs GetInputsByPlayerId(int playerIndex)
@@ -848,9 +848,9 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Get player inputs by active player index.
+        /// Get player inputs by player index.
         /// </summary>
-        /// <param name="playerIndex">Active player index</param>
+        /// <param name="playerIndex">Player index</param>
         /// <returns>null if not available</returns>
         public GCControllerInputs GetInputsByPlayerIndex(int playerIndex)
         {
@@ -879,7 +879,7 @@ namespace DSB.GC
                 return;
             }
 
-            if (!TryValidateActivePlayerIndex(playerIndex, "devapp_input", out _))
+            if (!TryValidatePlayerIndex(playerIndex, "devapp_input", out _))
             {
                 return;
             }
@@ -892,23 +892,23 @@ namespace DSB.GC
         internal bool TryGetPlayerIndexForSourceSeat(int sourceSeatIndex, out int playerIndex)
         {
             playerIndex = -1;
-            return activePlayerMapping != null && activePlayerMapping.TryGetPlayerIndexForSourceSeat(sourceSeatIndex, out playerIndex);
+            return playerIndexMapping != null && playerIndexMapping.TryGetPlayerIndexForSourceSeat(sourceSeatIndex, out playerIndex);
         }
 
-        internal bool TryValidateActivePlayerIndex(int playerIndex, string source, out GCActivePlayerMappingEntry entry)
+        internal bool TryValidatePlayerIndex(int playerIndex, string source, out GCPlayerIndexMappingEntry entry)
         {
-            if (activePlayerMapping == null)
+            if (playerIndexMapping == null)
             {
                 entry = default;
                 return false;
             }
 
-            return activePlayerMapping.TryValidatePlayerIndex(playerIndex, source, out entry);
+            return playerIndexMapping.TryValidatePlayerIndex(playerIndex, source, out entry);
         }
 
         internal bool TryValidateGameOverPlacement(int[] playerIndicesByPlacement, string source)
         {
-            return activePlayerMapping != null && activePlayerMapping.TryValidatePlacement(playerIndicesByPlacement, source);
+            return playerIndexMapping != null && playerIndexMapping.TryValidatePlacement(playerIndicesByPlacement, source);
         }
         #endregion
 
@@ -1132,17 +1132,17 @@ namespace DSB.GC
         {
             internalPlayerStore.Clear();
             ClearInputs();
-            activePlayerMapping = null;
+            playerIndexMapping = null;
         }
 
-        public GCActivePlayerOptions[] GetCurrentPlayPlayerOptions()
+        public GCPlayerOptions[] GetCurrentPlayPlayerOptions()
         {
             if (playOptions?.players == null)
             {
-                return Array.Empty<GCActivePlayerOptions>();
+                return Array.Empty<GCPlayerOptions>();
             }
 
-            var playerOptions = new GCActivePlayerOptions[playOptions.players.Length];
+            var playerOptions = new GCPlayerOptions[playOptions.players.Length];
             Array.Copy(playOptions.players, playerOptions, playOptions.players.Length);
             return playerOptions;
         }

@@ -7,7 +7,7 @@
     "success": true,
     "entryKey": "duel",
     "seed": 12345,
-    "activePlayers": [
+    "players": [
       {
         "playerIndex": 0,
         "type": "player",

@@ -5,18 +5,18 @@ namespace DSB.GC
 {
     internal sealed class GCActiveRunProjection
     {
-        internal GCActivePlayerMapping ActivePlayerMapping { get; }
+        internal GCPlayerIndexMapping PlayerIndexMapping { get; }
         internal GCPlayOptions GameFacingPlayOptions { get; }
         internal GCSeatIdentity[] MappedSeatIdentities { get; }
         internal GCPlatformRuntimeView PlatformData => GameFacingPlayOptions.platformData;
 
         private GCActiveRunProjection(
-            GCActivePlayerMapping activePlayerMapping,
+            GCPlayerIndexMapping playerIndexMapping,
             GCPlayOptions gameFacingPlayOptions,
             GCSeatIdentity[] mappedSeatIdentities
         )
         {
-            ActivePlayerMapping = activePlayerMapping;
+            PlayerIndexMapping = playerIndexMapping;
             GameFacingPlayOptions = gameFacingPlayOptions;
             MappedSeatIdentities = mappedSeatIdentities ?? Array.Empty<GCSeatIdentity>();
         }
@@ -40,8 +40,8 @@ namespace DSB.GC
                 throw new ArgumentException("[GamingCouch] Seat identity count must match play player count.");
             }
 
-            var activePlayerMapping = GCActivePlayerMapping.Create(options, resolvedSeatIdentities);
-            var gameFacingPlayOptions = activePlayerMapping.CreateGameFacingPlayOptions();
+            var playerIndexMapping = GCPlayerIndexMapping.Create(options, resolvedSeatIdentities);
+            var gameFacingPlayOptions = playerIndexMapping.CreateGameFacingPlayOptions();
             gameFacingPlayOptions.runtimeOutput = options.runtimeOutput ?? new GCRuntimeOutputOptions();
             gameFacingPlayOptions.platformData = GCPlatformRuntimeView.CopyForRuntime(options.platformData);
 #if UNITY_EDITOR
@@ -49,9 +49,9 @@ namespace DSB.GC
 #endif
 
             return new GCActiveRunProjection(
-                activePlayerMapping,
+                playerIndexMapping,
                 gameFacingPlayOptions,
-                CreateMappedSeatIdentities(resolvedSeatIdentities, activePlayerMapping)
+                CreateMappedSeatIdentities(resolvedSeatIdentities, playerIndexMapping)
             );
         }
 
@@ -66,8 +66,8 @@ namespace DSB.GC
             for (var index = 0; index < options.players.Length; index++)
             {
                 var playerOption = options.players[index];
-                var sourceSeatIndex = options.usesMappedActivePlayers ? 0 : index + 1;
-                var stableKey = options.usesMappedActivePlayers
+                var sourceSeatIndex = options.usesProvidedPlayerIndexMapping ? 0 : index + 1;
+                var stableKey = options.usesProvidedPlayerIndexMapping
                     ? playerOption.playerIndex.ToString()
                     : sourceSeatIndex.ToString();
                 seatIdentities[index] = new GCSeatIdentity
@@ -75,8 +75,8 @@ namespace DSB.GC
                     sourceSeatIndex = sourceSeatIndex,
                     stableKey = stableKey,
                     label = sourceSeatIndex > 0 ? "Seat " + sourceSeatIndex : null,
-                    playerType = GCActivePlayerOptionResolver.ResolvePlayerType(playerOption.type),
-                    playerColor = GCActivePlayerOptionResolver.ResolvePlayerColor(playerOption.color),
+                    playerType = GCPlayerOptionResolver.ResolvePlayerType(playerOption.type),
+                    playerColor = GCPlayerOptionResolver.ResolvePlayerColor(playerOption.color),
                 };
             }
 
@@ -85,7 +85,7 @@ namespace DSB.GC
 
         private static GCSeatIdentity[] CreateMappedSeatIdentities(
             GCSeatIdentity[] capturedSeatIdentities,
-            GCActivePlayerMapping mapping
+            GCPlayerIndexMapping mapping
         )
         {
             if (mapping == null || capturedSeatIdentities == null || capturedSeatIdentities.Length == 0)

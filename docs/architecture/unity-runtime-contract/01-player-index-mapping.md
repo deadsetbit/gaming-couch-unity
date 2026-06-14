@@ -1,4 +1,4 @@
-## Active Player Index Mapping Plan
+## Player Index Mapping Plan
 
 Status: Core contract decisions captured; implementation-ready with the diagnostics spine and staged rollout plan.
 
@@ -8,27 +8,27 @@ Define the exact mapping contract between platform-owned player identity, DevApp
 
 ## Mapping Contract
 
-- Each Unity game run gets one **Active Player Mapping**. Games have a single run lifecycle; do not introduce a separate Unity round mapping lifecycle because the game restarts between plays.
+- Each Unity game run gets one **Player Index Mapping**. Games have a single run lifecycle; do not introduce a separate Unity round mapping lifecycle because the game restarts between plays.
 - The mapping is captured at play payload construction, after setup has finalized the active participants and immediately before Unity receives play data.
-- The mapping is frozen until restart or the next play run. Active player count does not change during a running Unity game.
-- Active Player Indices are zero-based, dense, and run-scoped. The same `playerIndex` may map to a different platform player or DevApp seat after restart.
+- The mapping is frozen until restart or the next play run. Player count does not change during a running Unity game.
+- Player Indices are zero-based, dense, and run-scoped. The same `playerIndex` may map to a different platform player or DevApp seat after restart.
 - Unity game-facing APIs receive `playerIndex`, player type, and player color only. Platform player IDs, player names, source seats, and DevApp routing details stay outside Unity runtime game code.
-- Bots are Active Players. They enter the same captured roster and deterministic shuffle as human players; only player type differs.
-- Runtime-facing active-player DTOs must not carry `name` or `playerId`. If adapters need platform names, platform IDs, or local seat data for routing, that data lives in adapter/internal structures and is stripped before Unity game code can observe the roster.
+- Bots are Players. They enter the same captured roster and deterministic shuffle as human players; only player type differs.
+- Runtime-facing player DTOs must not carry `name` or `playerId`. If adapters need platform names, platform IDs, or local seat data for routing, that data lives in adapter/internal structures and is stripped before Unity game code can observe the roster.
 
 ## Mapping Owners
 
 - Hosted WebGL: the SDK Unity adapter owns the mapping at the Unity platform boundary. It translates platform `playerId` to Unity `playerIndex` for inputs and translates Unity `playerIndex` back to platform `playerId` for screen-space anchors, runtime messages that drive platform/player-client features, and game-over payloads. Public diagnostics stay `playerIndex`-only; hosted adapters may correlate them to platform player IDs only in private adapter state after validation. Platform IDs and player names stay in adapter data and never enter game-facing Unity DTOs.
 - Hosted Client/SDK adapter implementation owns resolving and validating the platform/session active-run seed before the mapping is built. Production hosted play must fail before Unity play payload creation when the seed is absent.
 - Unity Editor local play: the Unity package local-play capture/runtime seam owns the mapping from enabled `gc.dev.json` seats to game-facing `playerIndex` values.
-- DevApp keeps one-based `seatIndex` as the controller routing and display concept. Any message crossing into Unity game-facing runtime behavior must use the captured mapping rather than inferring seat or player identity in multiple places. DevApp-local message names may keep `seatIndex` for controller assignment, but Unity runtime messages use `activePlayers`, `playerIndex`, and result objects rather than `playerId`.
+- DevApp keeps one-based `seatIndex` as the controller routing and display concept. Any message crossing into Unity game-facing runtime behavior must use the captured mapping rather than inferring seat or player identity in multiple places. DevApp-local message names may keep `seatIndex` for controller assignment, but Unity game-facing runtime APIs use `GCPlayOptions.players`, `playerIndex`, and result objects rather than `playerId`.
 
 ## Deterministic Shuffle
 
 - Shuffle is part of the initial contract, not a future-only seam. This prevents games from accidentally relying on stable roster order or giving `playerIndex: 0` persistent advantage.
 - Shuffle the participant records, not a list of IDs. Color and type move with the participant through shuffle.
-- The authoritative seed is resolved before the active-player mapping is built and is frozen with the active run:
-  - Hosted WebGL uses the platform/session active-run seed. If production hosted play lacks a seed, adapter validation fails before play and before the active-player mapping is built.
+- The authoritative seed is resolved before the player-index mapping is built and is frozen with the active run:
+  - Hosted WebGL uses the platform/session active-run seed. If production hosted play lacks a seed, adapter validation fails before play and before the player-index mapping is built.
   - Unity Editor local play uses the captured `gc.dev.json` seed. Fixed seeds are integer strings from `1..999999`; `"random"` resolves once at capture time to an integer in that range. The resolved integer, not the literal `"random"`, is used for mapping.
   - A resolved local `"random"` seed is replayable only inside the active captured Editor run. The package must not write the resolved seed back to `gc.dev.json`.
 - Use hash-sort for deterministic cross-language parity:
@@ -54,14 +54,14 @@ Required cross-language fixtures:
 
 - All mapping translation happens through one run-scoped mapping object per adapter. Input, `screen_space`, `runtime_messages`, diagnostics, and game-over paths must not each reimplement mapping rules.
 - Core diagnostics foundation must be available before mapping migration so invalid mapping references can emit stable diagnostics without waiting for the full runtime-output catalog.
-- Unity play payloads expose the shuffled active-player roster as `activePlayers[]` records with `playerIndex`, player type, and color. Legacy `players[]` payloads with `playerId` or `name` are adapter/internal only during migration.
+- Private hosted transport still carries the shuffled player roster as `activePlayers[]` records with `playerIndex`, player type, and color before Unity adapts it into `GCPlayOptions.players`. Legacy `players[]` payloads with `playerId` or `name` are adapter/internal only during migration.
 - Runtime input delivered to Unity uses `playerIndex`. DevApp/controller routing may start from `seatIndex`, and hosted routing may start from platform `playerId`, but both are translated before Unity game code sees input.
 - Platform-side input from unmapped post-play participants is dropped at the adapter boundary. The mapping is not mutated during the run.
 - Unity-originated invalid `playerIndex` references emit structured diagnostics.
 - Runtime output may include subsets of players, but every referenced `playerIndex` must exist in the current mapping.
 - New game-over payloads are object-wrapped so they cannot be confused with the legacy ID array. Initial shape is `GameOverResult { playerIndicesByPlacement: int[] }`; later runtime output planning may add richer fields for ties, teams, DNF, no-contest, score snapshots, and reasons after a general versioning policy is chosen.
-- During the temporary bridge, adapters accept either the new object shape or the legacy bare array. `Array.isArray(value)` means legacy `playerIdsByPlacement` and validates IDs as old platform IDs; object shape means new `playerIndicesByPlacement` and validates zero-based active player indices, including `playerIndex: 0`.
-- New game-over payloads must include every active `playerIndex` exactly once in v1. Missing, duplicate, or out-of-range indices reject the effectful message and do not publish platform results.
+- During the temporary bridge, adapters accept either the new object shape or the legacy bare array. `Array.isArray(value)` means legacy `playerIdsByPlacement` and validates IDs as old platform IDs; object shape means new `playerIndicesByPlacement` and validates zero-based player indices, including `playerIndex: 0`.
+- New game-over payloads must include every `playerIndex` exactly once in v1. Missing, duplicate, or out-of-range indices reject the effectful message and do not publish platform results.
 - The legacy array bridge is removal-bound and must not be extended with new result semantics.
 - Mapping diagnostics include run-scoped mapping context: `mappingId`, seed, participant count, and the offending reference where applicable.
 - Repeated mapping diagnostics are deduped or rate-limited by diagnostics policy. The diagnostics spine plan owns exact codes, timing, and retention behavior.
@@ -75,7 +75,7 @@ Required cross-language fixtures:
 
 ## Test Scenarios
 
-- Sparse local seats such as `1, 3, 8` become dense zero-based Active Player Indices after deterministic shuffle while preserving source seat identity for DevApp routing.
+- Sparse local seats such as `1, 3, 8` become dense zero-based Player Indices after deterministic shuffle while preserving source seat identity for DevApp routing.
 - `playerIndex: 0` is exercised in play payloads, input routing, `screen_space`, `runtime_messages`, diagnostics, and game over.
 - A shuffled participant keeps its original color and type, including when it becomes `playerIndex: 0`.
 - Hosted input maps platform `playerId` to Unity `playerIndex` through the run mapping.

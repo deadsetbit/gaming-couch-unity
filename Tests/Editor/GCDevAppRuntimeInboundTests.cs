@@ -19,7 +19,7 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
-    public void TextMessageRoutesPlayerIndexInputAsActivePlayerIndex()
+    public void TextMessageRoutesPlayerIndexInput()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
@@ -30,7 +30,7 @@ public sealed class GCDevAppRuntimeInboundTests
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(decision.activePlayerIndex, Is.EqualTo(2));
+        Assert.That(decision.playerIndex, Is.EqualTo(2));
         Assert.That(decision.hasInputSequence, Is.False);
         Assert.That(decision.inputs.a0, Is.EqualTo(0.25f));
         Assert.That(decision.inputs.a1, Is.EqualTo(-0.75f));
@@ -40,7 +40,7 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
-    public void TextMessageRoutesPlayerIndexZeroInputAsActivePlayerIndex()
+    public void TextMessageRoutesPlayerIndexZeroInput()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
@@ -51,7 +51,7 @@ public sealed class GCDevAppRuntimeInboundTests
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(decision.activePlayerIndex, Is.EqualTo(0));
+        Assert.That(decision.playerIndex, Is.EqualTo(0));
         Assert.That(decision.inputs.a0, Is.EqualTo(1.0f));
     }
 
@@ -70,7 +70,7 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
-    public void TextMessageIgnoresMissingActivePlayerIndex()
+    public void TextMessageIgnoresMissingPlayerIndex()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
@@ -80,7 +80,7 @@ public sealed class GCDevAppRuntimeInboundTests
         );
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
-        Assert.That(decision.reason, Is.EqualTo("missing_active_player_index"));
+        Assert.That(decision.reason, Is.EqualTo("missing_player_index"));
     }
 
     [Test]
@@ -95,7 +95,7 @@ public sealed class GCDevAppRuntimeInboundTests
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(decision.activePlayerIndex, Is.EqualTo(1));
+        Assert.That(decision.playerIndex, Is.EqualTo(1));
         Assert.That(decision.inputs.a0, Is.EqualTo(1.0f));
     }
 
@@ -215,32 +215,32 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
-    public void CompactInputSequenceSuppressesStaleFramesPerActivePlayerIndex()
+    public void CompactInputSequenceSuppressesStaleFramesPerPlayerIndex()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
         var first = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 100, 0, 0, 0));
         var duplicate = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
         var older = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 9, 120, 500, 0, 1));
-        var otherActivePlayer = inbound.RouteBinaryMessage(CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
+        var otherPlayer = inbound.RouteBinaryMessage(CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
         var next = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 11, 140, 500, 0, 1));
 
         Assert.That(first.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(first.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(first.activePlayerIndex, Is.EqualTo(1));
+        Assert.That(first.playerIndex, Is.EqualTo(1));
         Assert.That(first.hasInputSequence, Is.True);
         Assert.That(first.inputSequence, Is.EqualTo(10u));
         Assert.That(duplicate.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
         Assert.That(duplicate.reason, Is.EqualTo("stale_input_sequence"));
         Assert.That(older.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
-        Assert.That(otherActivePlayer.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
-        Assert.That(otherActivePlayer.activePlayerIndex, Is.EqualTo(2));
+        Assert.That(otherPlayer.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(otherPlayer.playerIndex, Is.EqualTo(2));
         Assert.That(next.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(next.inputSequence, Is.EqualTo(11u));
     }
 
     [Test]
-    public void CompactInputSequenceCanStartAfterActivePlayerIndexValidation()
+    public void CompactInputSequenceCanStartAfterPlayerIndexValidation()
     {
         var inbound = new GCDevAppRuntimeInbound();
         var frame = CreateCompactInputFrame(1, 10, 100, 0, 0, 0);
@@ -252,7 +252,7 @@ public sealed class GCDevAppRuntimeInboundTests
 
         Assert.That(acceptedAfterValidation.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(acceptedAfterValidation.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(acceptedAfterValidation.activePlayerIndex, Is.EqualTo(1));
+        Assert.That(acceptedAfterValidation.playerIndex, Is.EqualTo(1));
         Assert.That(acceptedAfterValidation.inputSequence, Is.EqualTo(10u));
         Assert.That(duplicateAfterValidation.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
         Assert.That(duplicateAfterValidation.reason, Is.EqualTo("stale_input_sequence"));

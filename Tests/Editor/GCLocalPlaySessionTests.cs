@@ -247,7 +247,7 @@ public sealed class GCLocalPlaySessionTests
         };
         var playOptions = new GCPlayOptions
         {
-            players = new GCActivePlayerOptions[enabledSeats.Length],
+            players = new GCPlayerOptions[enabledSeats.Length],
             seed = seed,
         };
         var seatIdentities = new GCSeatIdentity[enabledSeats.Length];
@@ -255,7 +255,7 @@ public sealed class GCLocalPlaySessionTests
         for (var index = 0; index < enabledSeats.Length; index++)
         {
             var seatIndex = enabledSeats[index];
-            playOptions.players[index] = new GCActivePlayerOptions
+            playOptions.players[index] = new GCPlayerOptions
             {
                 playerIndex = index,
                 type = GCPlayerType.player.ToString(),

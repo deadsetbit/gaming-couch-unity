@@ -522,7 +522,7 @@ Validation:
 - `git diff --check`: passed.
 - Serialized editor play source inspection: `GamingCouch` no longer creates editor setup/play snapshots from `gameModeId`, `playerData`, `numberOfPlayers`, or `randomizePlayerIds`; those fields remain only as hidden deserialization remnants and are not read by setup/play capture.
 - File-backed setup inspection: `GCEditorPlayCapture.Capture()` reads through `GCDevJsonStore.Read()`, so Task 2 platform data gates are applied when metadata is valid; setup options are built with `mode = GCMode.Development`, `isServer = true`, and `gameModeId = data.entryKey`.
-- File-backed play inspection: enabled seats are the only players; `activePlayerIndex + 1` creates dense runtime player IDs from sparse seats while `GCSeatIdentity.sourceSeatIndex` preserves the original one-based seat slot.
+- File-backed play inspection: enabled seats are the only players; `playerIndex + 1` creates dense runtime player IDs from sparse seats while `GCSeatIdentity.sourceSeatIndex` preserves the original one-based seat slot.
 - Color mapping inspection: source seat slots map through the fixed order `blue`, `red`, `green`, `yellow`, `purple`, `pink`, `cyan`, `brown`; disabled seats do not compress the color source slot.
 - Seed inspection: `seed: "random"` resolves once during `GCEditorPlayCapture.Capture()` with `UnityEngine.Random.Range(1, 1000000)`; fixed seed strings are parsed after existing `gc.dev.json` validation.
 - Invalid capture inspection: missing or invalid `gc.dev.json`, or valid-metadata gate errors, produce `success = false`; `GamingCouch` logs clear errors and returns before `listener.SendMessage("GamingCouchSetup", ...)` or `Play(...)` can call the listener with invalid options.
@@ -601,7 +601,7 @@ Parent validation:
 - Public DTO inspection: `git diff -- Runtime/GCSetupOptions.cs Runtime/GCPlayOptions.cs` produced no diff; `GCSetupOptions`, `GCPlayOptions`, and `GCPlayerOptions` shapes remain unchanged.
 - Scoped old serialized field inspection: `gameModeId`, `playerData`, `numberOfPlayers`, and `randomizePlayerIds` remain only as hidden deserialization fields; setup/play capture reads `gc.dev.json` data instead.
 - Callback bypass inspection: editor `GamingCouchSetupOptions`, `GamingCouchSetup`, `_EditorPlay`, `GamingCouchPlay`, and `SetupDone` all require the cached file-backed capture before listener setup/play callbacks can run.
-- Dense sparse-seat inspection: `GCEditorPlayCapture` counts enabled seats, assigns runtime `playerId = activePlayerIndex + 1`, and stores one-based source seat slots in `GCSeatIdentity.sourceSeatIndex`.
+- Dense sparse-seat inspection: `GCEditorPlayCapture` counts enabled seats, assigns runtime `playerId = playerIndex + 1`, and stores one-based source seat slots in `GCSeatIdentity.sourceSeatIndex`.
 - Seed inspection: `seed: "random"` resolves once in `GCEditorPlayCapture.Capture()` with `UnityEngine.Random.Range(1, 1000000)`; fixed seeds pass existing validation and parse into the same captured `GCPlayOptions`.
 - Custom inspector inspection: no active `CustomEditor`, `OnInspectorGUI`, `GamingCouchEditor`, or `Editor/` source changes were added in Task 3.
 - `git status --short`: only Task 3 owned files are modified beyond the pre-existing unrelated untracked files listed in the blocker log.
@@ -1501,14 +1501,14 @@ Review pass 2 findings:
 
 Review pass 2 patches:
 
-- Changed the successful Capture fixture schema from Unity payload-shaped `setup`/`play` objects to portable contract fields: `entryKey`, `seed`, and `activePlayers`.
-- Updated `GCDevJsonContractFixtureTests` to keep Unity-specific assertions in the Unity test (`GCMode.Development`, server setup, and `GCSetupOptions.gameModeId`) while mapping portable fixture `entryKey`, `seed`, `activePlayers`, and **Seat** identity expectations onto the captured Unity payloads.
+- Changed the successful Capture fixture schema from Unity payload-shaped `setup`/`play` objects to portable contract fields: `entryKey`, `seed`, and `players`.
+- Updated `GCDevJsonContractFixtureTests` to keep Unity-specific assertions in the Unity test (`GCMode.Development`, server setup, and `GCSetupOptions.gameModeId`) while mapping portable fixture `entryKey`, `seed`, `players`, and **Seat** identity expectations onto the captured Unity payloads.
 - Updated the top-level task state and notes to show review pass 2 completion while keeping Task 10 `In review` for parent validation and final closure.
 
 Review pass 2 validation:
 
 - `git diff --check`: passed.
-- Static corpus schema check: parsed every `ContractFixtures/LocalPlay/**/*.json`, confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, optional `gc.platform.json` parsing, no `capture.setup`/`capture.play` payload-shaped fields, and portable success Capture fields `entryKey`, `seed`, `activePlayers`, and `seatIdentities`.
+- Static corpus schema check: parsed every `ContractFixtures/LocalPlay/**/*.json`, confirmed exactly six case folders, required `gc.dev.json` and `expected.json` files, optional `gc.platform.json` parsing, no `capture.setup`/`capture.play` payload-shaped fields, and portable success Capture fields `entryKey`, `seed`, `players`, and `seatIdentities`.
 - Static test-consumption check: `GCDevJsonContractFixtureTests` still discovers `ContractFixtures/LocalPlay`, loads `expected.json` with `JsonUtility`, copies corpus `gc.dev.json` and optional `gc.platform.json` into a temp root, and exercises `GCDevJsonStore`, `GCPlatformDataStore`, and `GCLocalPlaySession.Capture`.
 - Inline-builder removal check: no `BuildDevJson`, `BuildMetadataJson`, `BuildSeats`, `StringBuilder`, `WriteDevJson`, `WriteMetadataJson`, or `AppendLine` matches remain in `GCDevJsonContractFixtureTests`.
 - Unity `.meta` hygiene and GUID check: every `ContractFixtures` directory/file has a sibling `.meta`, folder metas use `DefaultImporter`, JSON metas use `TextScriptImporter`, and the repo-wide `.meta` GUID scan found no duplicate GUIDs.

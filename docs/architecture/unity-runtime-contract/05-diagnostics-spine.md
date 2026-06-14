@@ -19,7 +19,7 @@ Define the structured diagnostics path before API migration and state-model work
 - `sourceArea` is one of `api`, `mapping`, `state`, `runtime_messages`, `screen_space`, `metadata`, or `runtime_log`.
 - Diagnostic timing uses the enclosing `runtime_messages` record `sequence` and unscaled `runtimeTimeMs`.
 - `runId` is active-run context metadata resolved by the receiver or adapter. In DevApp local play it identifies the active runtime play run and is not stable across restart.
-- `playerIndex` is optional but top-level when a diagnostic is about a game-facing active player. Public diagnostics must not expose platform player IDs.
+- `playerIndex` is optional but top-level when a diagnostic is about a game-facing player. Public diagnostics must not expose platform player IDs.
 - Hosted adapters may correlate diagnostics to platform player IDs in private adapter state after validation, but `RuntimeDiagnostic`, `details`, `debug`, DevApp UI, and hosted public diagnostics callbacks must not include platform player ID fields.
 - Mapping diagnostics may include an optional `mapping` object with bounded run-scoped context such as `mappingId`, seed, participant count, and the offending reference.
 - `details` is flat, bounded, fingerprint-friendly data: primitive values, bounded strings, and small primitive arrays.
@@ -135,5 +135,5 @@ Define the structured diagnostics path before API migration and state-model work
 ## Remaining Dependencies
 
 - Runtime output planning owns the runtime message catalog and strict payload schemas.
-- Active Player Index mapping owns exact mapping object construction, `mappingId`, and invalid index contexts.
+- Player Index mapping owns exact mapping object construction, `mappingId`, and invalid index contexts.
 - Cross-repo rollout owns branch order, release sequencing, and skew validation.

@@ -128,7 +128,7 @@ namespace DSB.GC.RuntimeMessages
 
         internal static bool TrySubmitGameOverPlacement(
             int[] playerIndicesByPlacement,
-            int activePlayerCount,
+            int playerCount,
             Func<int[], bool> validateGameOverPlacement,
             Action acceptGameOverPlacement,
             Func<string> buildStateSnapshotPayloadJson,
@@ -170,7 +170,7 @@ namespace DSB.GC.RuntimeMessages
                 string gameOverPayloadJson;
                 try
                 {
-                    gameOverPayloadJson = GCRuntimeGameOverPlacementPayload.BuildJson(playerIndicesByPlacement, activePlayerCount);
+                    gameOverPayloadJson = GCRuntimeGameOverPlacementPayload.BuildJson(playerIndicesByPlacement, playerCount);
                 }
                 catch (Exception exception)
                 {
@@ -338,7 +338,7 @@ namespace DSB.GC.RuntimeMessages
                 var player = players[index] ?? throw new ArgumentException("Runtime state snapshots cannot contain null players.", nameof(players));
                 if (player.Index < 0 || player.Index >= players.Count)
                 {
-                    throw new ArgumentException("Runtime state snapshot playerIndex must be within the active player range.", nameof(players));
+                    throw new ArgumentException("Runtime state snapshot playerIndex must be within the player range.", nameof(players));
                 }
 
                 if (seenPlayerIndices[player.Index])
@@ -350,7 +350,7 @@ namespace DSB.GC.RuntimeMessages
 
                 if (!placementsByPlayer.TryGetValue(player, out var placement))
                 {
-                    throw new ArgumentException("Runtime state snapshot placements must contain every active player exactly once.", nameof(playersByPlacement));
+                    throw new ArgumentException("Runtime state snapshot placements must contain every player exactly once.", nameof(playersByPlacement));
                 }
 
                 snapshotPlayers[index] = new GCRuntimeStateSnapshotPlayer
@@ -416,7 +416,7 @@ namespace DSB.GC.RuntimeMessages
 
             if (placementsByPlayer.Count != players.Count)
             {
-                throw new ArgumentException("Runtime state snapshot placements must match the active player count.", nameof(playersByPlacement));
+                throw new ArgumentException("Runtime state snapshot placements must match the player count.", nameof(playersByPlacement));
             }
 
             return placementsByPlayer;
@@ -533,9 +533,9 @@ namespace DSB.GC.RuntimeMessages
 
     internal static class GCRuntimeGameOverPlacementPayload
     {
-        internal static string BuildJson(int[] playerIndicesByPlacement, int activePlayerCount)
+        internal static string BuildJson(int[] playerIndicesByPlacement, int playerCount)
         {
-            Validate(playerIndicesByPlacement, activePlayerCount);
+            Validate(playerIndicesByPlacement, playerCount);
 
             var builder = new StringBuilder();
             builder.Append("{\"playersByPlacement\":[");
@@ -553,11 +553,11 @@ namespace DSB.GC.RuntimeMessages
             return builder.ToString();
         }
 
-        private static void Validate(int[] playerIndicesByPlacement, int activePlayerCount)
+        private static void Validate(int[] playerIndicesByPlacement, int playerCount)
         {
-            if (activePlayerCount < 0)
+            if (playerCount < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(activePlayerCount), "Active player count must be non-negative.");
+                throw new ArgumentOutOfRangeException(nameof(playerCount), "Player count must be non-negative.");
             }
 
             if (playerIndicesByPlacement == null)
@@ -565,18 +565,18 @@ namespace DSB.GC.RuntimeMessages
                 throw new ArgumentNullException(nameof(playerIndicesByPlacement));
             }
 
-            if (playerIndicesByPlacement.Length != activePlayerCount)
+            if (playerIndicesByPlacement.Length != playerCount)
             {
-                throw new ArgumentException("Game-over placement must contain every active player exactly once.", nameof(playerIndicesByPlacement));
+                throw new ArgumentException("Game-over placement must contain every player exactly once.", nameof(playerIndicesByPlacement));
             }
 
-            var seen = new bool[activePlayerCount];
+            var seen = new bool[playerCount];
             for (var index = 0; index < playerIndicesByPlacement.Length; index++)
             {
                 var playerIndex = playerIndicesByPlacement[index];
-                if (playerIndex < 0 || playerIndex >= activePlayerCount)
+                if (playerIndex < 0 || playerIndex >= playerCount)
                 {
-                    throw new ArgumentException("Game-over placement playerIndex is outside the active player range.", nameof(playerIndicesByPlacement));
+                    throw new ArgumentException("Game-over placement playerIndex is outside the player range.", nameof(playerIndicesByPlacement));
                 }
 
                 if (seen[playerIndex])

@@ -123,8 +123,8 @@ public sealed class GamingCouchEditorInputTests
         {
             SetPrivateField(
                 gamingCouch,
-                "activePlayerMapping",
-                GCActiveRunProjection.Create(CreatePlayOptions(123, GCPlayerType.player)).ActivePlayerMapping
+                "playerIndexMapping",
+                GCActiveRunProjection.Create(CreatePlayOptions(123, GCPlayerType.player)).PlayerIndexMapping
             );
 
             gamingCouch.ApplyDevAppInput(
@@ -169,10 +169,10 @@ public sealed class GamingCouchEditorInputTests
 
     private static GCPlayOptions CreatePlayOptions(int seed, params GCPlayerType[] playerTypes)
     {
-        var players = new GCActivePlayerOptions[playerTypes.Length];
+        var players = new GCPlayerOptions[playerTypes.Length];
         for (var index = 0; index < playerTypes.Length; index++)
         {
-            players[index] = new GCActivePlayerOptions
+            players[index] = new GCPlayerOptions
             {
                 playerIndex = index,
                 type = playerTypes[index].ToString(),

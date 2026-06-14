@@ -7,7 +7,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-public sealed class GCActivePlayerMappingTests
+public sealed class GCPlayerIndexMappingTests
 {
     [SetUp]
     public void SetUp()
@@ -27,11 +27,11 @@ public sealed class GCActivePlayerMappingTests
     [Test]
     public void FnvHashSortMatchesRequiredLocalSparseSeatFixture()
     {
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("111:8"), Is.EqualTo(426892096u));
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("111:1"), Is.EqualTo(577890667u));
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("111:3"), Is.EqualTo(611445905u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("111:8"), Is.EqualTo(426892096u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("111:1"), Is.EqualTo(577890667u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("111:3"), Is.EqualTo(611445905u));
 
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.bot),
             CreateSeatIdentities(
                 (1, "1", GCPlayerType.player, GCPlayerColor.blue),
@@ -60,12 +60,12 @@ public sealed class GCActivePlayerMappingTests
     [Test]
     public void FnvHashSortMatchesRequiredStableKeyFixture()
     {
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-d"), Is.EqualTo(264058611u));
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-a"), Is.EqualTo(314391468u));
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-c"), Is.EqualTo(347946706u));
-        Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-b"), Is.EqualTo(364724325u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("424242:player-d"), Is.EqualTo(264058611u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("424242:player-a"), Is.EqualTo(314391468u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("424242:player-c"), Is.EqualTo(347946706u));
+        Assert.That(GCPlayerIndexMapping.ComputeFnv1A32("424242:player-b"), Is.EqualTo(364724325u));
 
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(424242, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
                 (1, "player-a", GCPlayerType.player, GCPlayerColor.blue),
@@ -84,7 +84,7 @@ public sealed class GCActivePlayerMappingTests
     [Test]
     public void MappingTranslatesSparseSourceSeatsToPlayerIndices()
     {
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
                 (1, "1", GCPlayerType.player, GCPlayerColor.blue),
@@ -111,7 +111,7 @@ public sealed class GCActivePlayerMappingTests
             playOptions.players[index].color = GCPlayerColor.red.ToString();
         }
 
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             playOptions,
             CreateSeatIdentities(
                 (1, "1", GCPlayerType.player, GCPlayerColor.blue),
@@ -157,14 +157,14 @@ public sealed class GCActivePlayerMappingTests
         var json = JsonUtility.ToJson(options);
 
         Assert.That(options.players, Has.Length.EqualTo(2));
-        Assert.That(options.usesMappedActivePlayers, Is.True);
+        Assert.That(options.usesProvidedPlayerIndexMapping, Is.True);
         Assert.That(options.players[0].playerIndex, Is.EqualTo(1));
         Assert.That(options.players[1].playerIndex, Is.EqualTo(0));
         Assert.That(json, Does.Contain("\"playerIndex\":1"));
         Assert.That(json, Does.Contain("\"playerIndex\":0"));
         Assert.That(json, Does.Not.Contain("playerId"));
 
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             options,
             CreateSeatIdentities(
                 (1, "", GCPlayerType.player, GCPlayerColor.blue),
@@ -188,7 +188,7 @@ public sealed class GCActivePlayerMappingTests
     {
         string emittedJson = null;
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += json => emittedJson = json;
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player),
             CreateSeatIdentities((1, "1", GCPlayerType.player, GCPlayerColor.blue))
         );
@@ -210,7 +210,7 @@ public sealed class GCActivePlayerMappingTests
     {
         string emittedJson = null;
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += json => emittedJson = json;
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(424242, GCPlayerType.player),
             CreateSeatIdentities((1, "local-stable-key-secret", GCPlayerType.player, GCPlayerColor.blue))
         );
@@ -225,7 +225,7 @@ public sealed class GCActivePlayerMappingTests
     [Test]
     public void PlacementValidationAcceptsZeroIndexAndRejectsMissingDuplicateOrOutOfRangeIndices()
     {
-        var mapping = GCActivePlayerMapping.Create(
+        var mapping = GCPlayerIndexMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
                 (1, "1", GCPlayerType.player, GCPlayerColor.blue),
@@ -247,10 +247,10 @@ public sealed class GCActivePlayerMappingTests
 
     private static GCPlayOptions CreatePlayOptions(int seed, params GCPlayerType[] playerTypes)
     {
-        var players = new GCActivePlayerOptions[playerTypes.Length];
+        var players = new GCPlayerOptions[playerTypes.Length];
         for (var index = 0; index < playerTypes.Length; index++)
         {
-            players[index] = new GCActivePlayerOptions
+            players[index] = new GCPlayerOptions
             {
                 playerIndex = index,
                 type = playerTypes[index].ToString(),

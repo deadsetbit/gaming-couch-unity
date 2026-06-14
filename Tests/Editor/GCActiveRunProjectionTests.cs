@@ -11,21 +11,21 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersProjectionCreatesGameFacingOptionsWithoutInventingSourceSeats()
+    public void ProvidedPlayerIndexMappingCreatesGameFacingOptionsWithoutInventingSourceSeats()
     {
         var options = new GCPlayOptions
         {
             seed = 123,
             players = new[]
             {
-                new GCActivePlayerOptions
+                new GCPlayerOptions
                 {
                     playerIndex = 1,
                     playerSeed = 333333,
                     type = GCPlayerType.player.ToString(),
                     color = GCPlayerColor.blue.ToString(),
                 },
-                new GCActivePlayerOptions
+                new GCPlayerOptions
                 {
                     playerIndex = 0,
                     playerSeed = 444444,
@@ -33,15 +33,15 @@ public sealed class GCActiveRunProjectionTests
                     color = GCPlayerColor.green.ToString(),
                 },
             },
-            usesMappedActivePlayers = true,
+            usesProvidedPlayerIndexMapping = true,
         };
 
         var projection = GCActiveRunProjection.Create(options);
 
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.False);
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
+        Assert.That(projection.PlayerIndexMapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.False);
         Assert.That(projection.GameFacingPlayOptions.seed, Is.EqualTo(123));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
@@ -93,11 +93,11 @@ public sealed class GCActiveRunProjectionTests
 
         var projection = GCActiveRunProjection.Create(options, seatIdentities);
 
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(8, out var playerIndex), Is.True);
+        Assert.That(projection.PlayerIndexMapping.TryGetPlayerIndexForSourceSeat(8, out var playerIndex), Is.True);
         Assert.That(playerIndex, Is.EqualTo(0));
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out playerIndex), Is.True);
+        Assert.That(projection.PlayerIndexMapping.TryGetPlayerIndexForSourceSeat(1, out playerIndex), Is.True);
         Assert.That(playerIndex, Is.EqualTo(1));
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(3, out playerIndex), Is.True);
+        Assert.That(projection.PlayerIndexMapping.TryGetPlayerIndexForSourceSeat(3, out playerIndex), Is.True);
         Assert.That(playerIndex, Is.EqualTo(2));
         Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(8));
         Assert.That(projection.MappedSeatIdentities[1].sourceSeatIndex, Is.EqualTo(1));
@@ -130,10 +130,10 @@ public sealed class GCActiveRunProjectionTests
 
         var projection = GCActiveRunProjection.Create(options);
 
-        Assert.That(options.usesMappedActivePlayers, Is.True);
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
+        Assert.That(options.usesProvidedPlayerIndexMapping, Is.True);
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
+        Assert.That(projection.PlayerIndexMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
         Assert.That(projection.GameFacingPlayOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
@@ -145,38 +145,25 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersJsonProjectionDoesNotUseLegacyPlayersForPrivateMapping()
+    public void ActivePlayersJsonProjectionRejectsMixedLegacyPlayersPayload()
     {
-        var options = GCPlayOptions.CreateFromJSON(
-            "{\"seed\":424242,\"activePlayers\":[" +
-            "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
-            "],\"players\":[" +
-            "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-            "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
-            "]}"
+        var exception = Assert.Throws<System.ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"activePlayers\":[" +
+                "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
+                "],\"players\":[" +
+                "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
+                "]}"
+            )
         );
 
-        var projection = GCActiveRunProjection.Create(options);
-
-        Assert.That(options.usesMappedActivePlayers, Is.True);
-        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.False);
-        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(0));
-        Assert.That(projection.MappedSeatIdentities[0].stableKey, Is.EqualTo("0"));
-        Assert.That(projection.MappedSeatIdentities[0].label, Is.Null);
-        Assert.That(projection.MappedSeatIdentities[0].playerType, Is.EqualTo(GCPlayerType.bot));
-        Assert.That(projection.MappedSeatIdentities[0].playerColor, Is.EqualTo(GCPlayerColor.green));
-
-        var json = UnityEngine.JsonUtility.ToJson(projection.GameFacingPlayOptions);
-        Assert.That(json, Does.Contain("\"playerIndex\""));
-        Assert.That(json, Does.Contain("\"playerSeed\""));
-        Assert.That(json, Does.Not.Contain("playerId"));
-        Assert.That(json, Does.Not.Contain("platformPlayerId"));
-        Assert.That(json, Does.Not.Contain("sourceSeatIndex"));
-        Assert.That(json, Does.Not.Contain("stableKey"));
-        Assert.That(json, Does.Not.Contain("Alice"));
-        Assert.That(json, Does.Not.Contain("Bob"));
+        Assert.That(exception.Message, Does.Contain("Legacy play payloads containing players[]"));
+        Assert.That(
+            exception.Message,
+            Does.Contain("client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity")
+        );
     }
 
     [Test]
@@ -204,9 +191,9 @@ public sealed class GCActiveRunProjectionTests
         );
     }
 
-    private static GCActivePlayerOptions CreatePlayer(GCPlayerType playerType, GCPlayerColor playerColor)
+    private static GCPlayerOptions CreatePlayer(GCPlayerType playerType, GCPlayerColor playerColor)
     {
-        return new GCActivePlayerOptions
+        return new GCPlayerOptions
         {
             type = playerType.ToString(),
             color = playerColor.ToString(),

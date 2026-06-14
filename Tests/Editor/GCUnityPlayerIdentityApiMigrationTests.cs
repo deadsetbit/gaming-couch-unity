@@ -7,29 +7,23 @@ using NUnit.Framework;
 public sealed class GCUnityPlayerIdentityApiMigrationTests
 {
     [Test]
-    public void ActivePlayerOptionsExposeOnlyGameFacingIdentityFields()
+    public void PlayerOptionsExposeOnlyGameFacingIdentityFields()
     {
-        var fieldNames = typeof(GCActivePlayerOptions)
+        var fieldNames = typeof(GCPlayerOptions)
             .GetFields(BindingFlags.Instance | BindingFlags.Public)
             .Select(field => field.Name)
             .OrderBy(name => name)
             .ToArray();
 
         Assert.That(fieldNames, Is.EqualTo(new[] { "color", "playerIndex", "playerSeed", "type" }));
-        Assert.That(typeof(GCPlayOptions).GetField("players").FieldType, Is.EqualTo(typeof(GCActivePlayerOptions[])));
+        Assert.That(typeof(GCPlayOptions).GetField("players").FieldType, Is.EqualTo(typeof(GCPlayerOptions[])));
     }
 
     [Test]
-    public void RemovedPlayerOptionsTypeFailsAtSourceWithMigrationGuidance()
+    public void LegacyPlayerOptionsTypeIsNotPartOfPublicApi()
     {
-        var removedType = typeof(GCActivePlayerOptions).Assembly.GetType("DSB.GC.GCPlayerOptions");
-        Assert.That(removedType, Is.Not.Null);
-
-        var obsolete = removedType.GetCustomAttribute<ObsoleteAttribute>();
-        Assert.That(obsolete, Is.Not.Null);
-        Assert.That(obsolete.IsError, Is.True);
-        Assert.That(obsolete.Message, Does.Contain("GCActivePlayerOptions"));
-        Assert.That(obsolete.Message, Does.Contain("playerIndex"));
+        var removedType = typeof(GCPlayerOptions).Assembly.GetType("DSB.GC.GC" + "Active" + "PlayerOptions");
+        Assert.That(removedType, Is.Null);
     }
 
     [Test]

@@ -490,7 +490,7 @@ public sealed class GCDevJsonContractFixtureTests
         }
 
         Assert.That(expected.entryKey, Is.Not.Null.And.Not.Empty, "Successful capture fixture must include an entryKey expectation.");
-        Assert.That(expected.activePlayers, Is.Not.Null, "Successful capture fixture must include active player expectations.");
+        Assert.That(expected.players, Is.Not.Null, "Successful capture fixture must include player expectations.");
         Assert.That(capture.setupOptions, Is.Not.Null);
         Assert.That(capture.setupOptions.mode, Is.EqualTo(GCMode.Development));
         Assert.That(capture.setupOptions.isServer, Is.True);
@@ -498,12 +498,12 @@ public sealed class GCDevJsonContractFixtureTests
 
         Assert.That(capture.playOptions, Is.Not.Null);
         Assert.That(capture.playOptions.seed, Is.EqualTo(expected.seed));
-        var mapping = GCActivePlayerMapping.Create(capture.playOptions, capture.seatIdentities);
-        AssertPlayers(mapping.CreateGameFacingPlayOptions().players, expected.activePlayers);
+        var mapping = GCPlayerIndexMapping.Create(capture.playOptions, capture.seatIdentities);
+        AssertPlayers(mapping.CreateGameFacingPlayOptions().players, expected.players);
         AssertSeatIdentities(capture.seatIdentities, expected.seatIdentities);
     }
 
-    private static void AssertPlayers(GCActivePlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
+    private static void AssertPlayers(GCPlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
     {
         expectedPlayers = expectedPlayers ?? Array.Empty<ExpectedPlayer>();
         Assert.That(players, Has.Length.EqualTo(expectedPlayers.Length));
@@ -512,9 +512,9 @@ public sealed class GCDevJsonContractFixtureTests
         {
             var expectedPlayer = expectedPlayers[index];
             var player = players[index];
-            Assert.That(player.playerIndex, Is.EqualTo(expectedPlayer.playerIndex), "activePlayers[" + index + "].playerIndex");
-            Assert.That(player.type, Is.EqualTo(expectedPlayer.type), "activePlayers[" + index + "].type");
-            Assert.That(player.color, Is.EqualTo(expectedPlayer.color), "activePlayers[" + index + "].color");
+            Assert.That(player.playerIndex, Is.EqualTo(expectedPlayer.playerIndex), "players[" + index + "].playerIndex");
+            Assert.That(player.type, Is.EqualTo(expectedPlayer.type), "players[" + index + "].type");
+            Assert.That(player.color, Is.EqualTo(expectedPlayer.color), "players[" + index + "].color");
         }
     }
 
@@ -732,7 +732,7 @@ public sealed class GCDevJsonContractFixtureTests
         public bool success;
         public string entryKey;
         public int seed;
-        public ExpectedPlayer[] activePlayers;
+        public ExpectedPlayer[] players;
         public ExpectedSeatIdentity[] seatIdentities;
     }
 
