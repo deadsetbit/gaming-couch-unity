@@ -42,6 +42,12 @@ public sealed class GCUnsupportedMultiplayerApiTests
     }
 
     [Test]
+    public void InspectorDoesNotExposeLegacyMultiplayerToggle()
+    {
+        Assert.That(GamingCouchInspectorHost.ShouldDrawPropertyPath("onlineMultiplayerSupport"), Is.False);
+    }
+
+    [Test]
     public void ServerReadyThrowsUnsupportedErrorAndEmitsDiagnosticByDefault()
     {
         IgnoreWhenUnsupportedMultiplayerOptInIsActive();

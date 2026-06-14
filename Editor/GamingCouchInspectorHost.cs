@@ -11,6 +11,7 @@ internal static class GamingCouchInspectorHost
         "playerData",
         "numberOfPlayers",
         "randomizePlayerIds",
+        "onlineMultiplayerSupport",
     };
 
     internal static void DrawSerializedFields(SerializedObject serializedObject)
@@ -44,6 +45,11 @@ internal static class GamingCouchInspectorHost
 
     private static bool ShouldDrawProperty(SerializedProperty property)
     {
-        return property != null && !ExcludedPropertyPaths.Contains(property.propertyPath);
+        return property != null && ShouldDrawPropertyPath(property.propertyPath);
+    }
+
+    internal static bool ShouldDrawPropertyPath(string propertyPath)
+    {
+        return !string.IsNullOrEmpty(propertyPath) && !ExcludedPropertyPaths.Contains(propertyPath);
     }
 }
