@@ -189,12 +189,12 @@ namespace DSB.GC
         /// <summary>
         /// Removed. Use LastSetEliminatedGameTime or the explicit permanent/revokable timestamp properties.
         /// </summary>
-        [Obsolete("Use LastSetEliminatedGameTime, LastSetEliminatedPermanentGameTime, or LastSetEliminatedRevokableGameTime.", false)]
+        [Obsolete("Use LastSetEliminatedGameTime, LastSetEliminatedPermanentGameTime, or LastSetEliminatedRevokableGameTime.", true)]
         public float LastSetEliminatedTime => lastSetEliminatedGameTime;
         /// <summary>
         /// Removed. Use LastSetRevokeEliminatedGameTime.
         /// </summary>
-        [Obsolete("Use LastSetRevokeEliminatedGameTime.", false)]
+        [Obsolete("Use LastSetRevokeEliminatedGameTime.", true)]
         public float LastSetUneliminatedTime => lastSetRevokeEliminatedGameTime;
         private int score = 0;
         /// <summary>
@@ -210,7 +210,7 @@ namespace DSB.GC
         /// <summary>
         /// Removed. Use LastSetFinishedGameTime or the explicit permanent/revokable timestamp properties.
         /// </summary>
-        [Obsolete("Use LastSetFinishedGameTime, LastSetFinishedPermanentGameTime, or LastSetFinishedRevokableGameTime.", false)]
+        [Obsolete("Use LastSetFinishedGameTime, LastSetFinishedPermanentGameTime, or LastSetFinishedRevokableGameTime.", true)]
         public float FinishedTime => lastSetFinishedGameTime;
         private int meter = -1;
         /// <summary>

@@ -3,7 +3,7 @@ using System;
 
 namespace DSB.GC.Hud
 {
-    [Obsolete("GCNameTag is deprecated. Replace with GCPlayerOverhead.")]
+    [Obsolete("GCNameTag is deprecated. Replace with GCPlayerOverhead.", true)]
     public class GCNameTag : MonoBehaviour
     {
         [SerializeField]
