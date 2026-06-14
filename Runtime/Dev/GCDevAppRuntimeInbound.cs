@@ -5,16 +5,10 @@ using UnityEngine;
 
 namespace DSB.GC.Dev
 {
-    internal interface IGCDevAppRuntimeActivePlayerResolver
-    {
-        bool TryGetActivePlayerIndexForLegacyPlayerId(int platformPlayerId, out int activePlayerIndex);
-    }
-
     internal sealed class GCDevAppRuntimeInboundContext
     {
         internal static readonly GCDevAppRuntimeInboundContext Empty = new GCDevAppRuntimeInboundContext();
 
-        internal IGCDevAppRuntimeActivePlayerResolver activePlayerResolver;
         internal bool isPaused;
     }
 
@@ -323,7 +317,7 @@ namespace DSB.GC.Dev
                 case "restart":
                     return GCDevAppRuntimeInboundDecision.Restart();
                 case "input":
-                    return RouteTextInput(message.payload, context);
+                    return RouteTextInput(message.payload);
                 case "timescale_state":
                     return RouteTimescaleState(message.payload, context);
                 case "runtime_output_options":
@@ -334,8 +328,7 @@ namespace DSB.GC.Dev
         }
 
         private static GCDevAppRuntimeInboundDecision RouteTextInput(
-            GCDevAppRuntimeDevToolPayload payload,
-            GCDevAppRuntimeInboundContext context
+            GCDevAppRuntimeDevToolPayload payload
         )
         {
             if (payload == null || payload.inputs == null)
@@ -343,13 +336,18 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_input_payload");
             }
 
-            if (!TryResolveActivePlayerIndex(payload, context, out var activePlayerIndex))
+            if (payload.playerIndex < 0 && payload.playerId > 0)
             {
-                return GCDevAppRuntimeInboundDecision.Ignored("unresolved_active_player_index");
+                return GCDevAppRuntimeInboundDecision.Ignored("legacy_player_id_unsupported");
+            }
+
+            if (payload.playerIndex < 0)
+            {
+                return GCDevAppRuntimeInboundDecision.Ignored("missing_active_player_index");
             }
 
             return GCDevAppRuntimeInboundDecision.Input(
-                activePlayerIndex,
+                payload.playerIndex,
                 BuildControllerInputs(payload.inputs),
                 false,
                 0
@@ -383,34 +381,6 @@ namespace DSB.GC.Dev
             }
 
             return GCDevAppRuntimeInboundDecision.RuntimeOutputOptions(payload.runtimeOutput.runtimeLogCapture);
-        }
-
-        private static bool TryResolveActivePlayerIndex(
-            GCDevAppRuntimeDevToolPayload payload,
-            GCDevAppRuntimeInboundContext context,
-            out int activePlayerIndex
-        )
-        {
-            activePlayerIndex = payload.playerIndex;
-            if (activePlayerIndex >= 0)
-            {
-                return true;
-            }
-
-            if (payload.playerId <= 0)
-            {
-                return true;
-            }
-
-            if (context.activePlayerResolver == null)
-            {
-                return false;
-            }
-
-            return context.activePlayerResolver.TryGetActivePlayerIndexForLegacyPlayerId(
-                payload.playerId,
-                out activePlayerIndex
-            );
         }
 
         private static GCControllerInputsData BuildControllerInputs(GCDevAppRuntimeInputData inputs)

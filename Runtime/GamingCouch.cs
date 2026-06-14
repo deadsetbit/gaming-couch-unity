@@ -895,12 +895,6 @@ namespace DSB.GC
             return activePlayerMapping != null && activePlayerMapping.TryGetPlayerIndexForSourceSeat(sourceSeatIndex, out playerIndex);
         }
 
-        internal bool TryGetPlayerIndexForLegacyPlayerId(int playerId, out int playerIndex)
-        {
-            playerIndex = -1;
-            return activePlayerMapping != null && activePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(playerId, out playerIndex);
-        }
-
         internal bool TryValidateActivePlayerIndex(int playerIndex, string source, out GCActivePlayerMappingEntry entry)
         {
             if (activePlayerMapping == null)

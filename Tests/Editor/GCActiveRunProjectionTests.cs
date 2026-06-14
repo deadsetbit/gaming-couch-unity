@@ -90,8 +90,10 @@ public sealed class GCActiveRunProjectionTests
 
         Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(8, out var playerIndex), Is.True);
         Assert.That(playerIndex, Is.EqualTo(0));
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(88, out playerIndex), Is.True);
-        Assert.That(playerIndex, Is.EqualTo(0));
+        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out playerIndex), Is.True);
+        Assert.That(playerIndex, Is.EqualTo(1));
+        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(3, out playerIndex), Is.True);
+        Assert.That(playerIndex, Is.EqualTo(2));
         Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(8));
         Assert.That(projection.MappedSeatIdentities[1].sourceSeatIndex, Is.EqualTo(1));
         Assert.That(projection.MappedSeatIdentities[2].sourceSeatIndex, Is.EqualTo(3));
@@ -153,7 +155,6 @@ public sealed class GCActiveRunProjectionTests
 
         Assert.That(options.usesMappedActivePlayers, Is.True);
         Assert.That(options.participantIdentities, Is.Empty);
-        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForLegacyPlayerId(10, out _), Is.False);
         Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
         Assert.That(projection.MappedSeatIdentities[0].platformPlayerId, Is.EqualTo(0));
         Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(2));

@@ -433,7 +433,6 @@ namespace DSB.GC.Dev
             var gamingCouch = GamingCouch.Instance;
             return new GCDevAppRuntimeInboundContext
             {
-                activePlayerResolver = gamingCouch != null ? new GamingCouchActivePlayerResolver(gamingCouch) : null,
                 isPaused = gamingCouch != null && gamingCouch.IsPaused,
             };
         }
@@ -522,24 +521,6 @@ namespace DSB.GC.Dev
         void ApplyRuntimeOutputOptions(GCDevAppRuntimeInboundDecision decision)
         {
             GCDevAppRuntimeOutputSettings.SetRuntimeLogCaptureMode(decision.runtimeLogCaptureMode);
-        }
-
-        private sealed class GamingCouchActivePlayerResolver : IGCDevAppRuntimeActivePlayerResolver
-        {
-            private readonly GamingCouch gamingCouch;
-
-            internal GamingCouchActivePlayerResolver(GamingCouch gamingCouch)
-            {
-                this.gamingCouch = gamingCouch;
-            }
-
-            bool IGCDevAppRuntimeActivePlayerResolver.TryGetActivePlayerIndexForLegacyPlayerId(
-                int platformPlayerId,
-                out int activePlayerIndex
-            )
-            {
-                return gamingCouch.TryGetPlayerIndexForLegacyPlayerId(platformPlayerId, out activePlayerIndex);
-            }
         }
 
         void CloseWebSocket()

@@ -40,24 +40,37 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
-    public void TextMessageFallsBackFromLegacyPlayerIdToActivePlayerIndex()
+    public void TextMessageRoutesPlayerIndexZeroInputAsActivePlayerIndex()
     {
-        var resolver = new TestActivePlayerResolver(42, 3);
         var inbound = new GCDevAppRuntimeInbound();
 
         var decision = inbound.RouteTextMessage(
-            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"playerId\":42,\"inputs\":{\"a0\":1.0,\"a1\":0.0,\"b0\":1.0,\"b1\":0.0,\"b2\":0.0}}}",
-            Context(activePlayerResolver: resolver)
+            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"playerIndex\":0,\"inputs\":{\"a0\":1.0}}}",
+            Context()
         );
 
         Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(decision.activePlayerIndex, Is.EqualTo(3));
-        Assert.That(resolver.lastPlatformPlayerId, Is.EqualTo(42));
+        Assert.That(decision.activePlayerIndex, Is.EqualTo(0));
+        Assert.That(decision.inputs.a0, Is.EqualTo(1.0f));
     }
 
     [Test]
-    public void TextMessageRoutesMissingActivePlayerIndexForAdapterValidation()
+    public void TextMessageIgnoresLegacyPlayerIdInputWithoutPlayerIndex()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        var decision = inbound.RouteTextMessage(
+            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"playerId\":42,\"inputs\":{\"a0\":1.0,\"a1\":0.0,\"b0\":1.0,\"b1\":0.0,\"b2\":0.0}}}",
+            Context()
+        );
+
+        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
+        Assert.That(decision.reason, Is.EqualTo("legacy_player_id_unsupported"));
+    }
+
+    [Test]
+    public void TextMessageIgnoresMissingActivePlayerIndex()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
@@ -66,23 +79,24 @@ public sealed class GCDevAppRuntimeInboundTests
             Context()
         );
 
-        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
-        Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
-        Assert.That(decision.activePlayerIndex, Is.EqualTo(-1));
+        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
+        Assert.That(decision.reason, Is.EqualTo("missing_active_player_index"));
     }
 
     [Test]
-    public void TextMessageIgnoresInputWhenLegacyPlayerIdCannotResolve()
+    public void TextMessageRoutesPlayerIndexWhenLegacyPlayerIdIsAlsoPresent()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
         var decision = inbound.RouteTextMessage(
-            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"playerId\":99,\"inputs\":{\"a0\":1.0}}}",
-            Context(activePlayerResolver: new TestActivePlayerResolver(42, 3))
+            "{\"type\":\"gcdevtool\",\"action\":\"input\",\"payload\":{\"playerIndex\":1,\"playerId\":99,\"inputs\":{\"a0\":1.0}}}",
+            Context()
         );
 
-        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
-        Assert.That(decision.reason, Is.EqualTo("unresolved_active_player_index"));
+        Assert.That(decision.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(decision.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
+        Assert.That(decision.activePlayerIndex, Is.EqualTo(1));
+        Assert.That(decision.inputs.a0, Is.EqualTo(1.0f));
     }
 
     [Test]
@@ -256,15 +270,11 @@ public sealed class GCDevAppRuntimeInboundTests
         Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 120, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
     }
 
-    private static GCDevAppRuntimeInboundContext Context(
-        bool isPaused = false,
-        IGCDevAppRuntimeActivePlayerResolver activePlayerResolver = null
-    )
+    private static GCDevAppRuntimeInboundContext Context(bool isPaused = false)
     {
         return new GCDevAppRuntimeInboundContext
         {
             isPaused = isPaused,
-            activePlayerResolver = activePlayerResolver,
         };
     }
 
@@ -308,30 +318,4 @@ public sealed class GCDevAppRuntimeInboundTests
         bytes[offset + 3] = (byte)((value >> 24) & 0xff);
     }
 
-    private sealed class TestActivePlayerResolver : IGCDevAppRuntimeActivePlayerResolver
-    {
-        private readonly int platformPlayerId;
-        private readonly int activePlayerIndex;
-
-        internal int lastPlatformPlayerId = -1;
-
-        internal TestActivePlayerResolver(int platformPlayerId, int activePlayerIndex)
-        {
-            this.platformPlayerId = platformPlayerId;
-            this.activePlayerIndex = activePlayerIndex;
-        }
-
-        public bool TryGetActivePlayerIndexForLegacyPlayerId(int platformPlayerId, out int activePlayerIndex)
-        {
-            lastPlatformPlayerId = platformPlayerId;
-            if (platformPlayerId == this.platformPlayerId)
-            {
-                activePlayerIndex = this.activePlayerIndex;
-                return true;
-            }
-
-            activePlayerIndex = -1;
-            return false;
-        }
-    }
 }

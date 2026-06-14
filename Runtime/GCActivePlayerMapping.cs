@@ -11,7 +11,6 @@ namespace DSB.GC
     {
         private readonly GCActivePlayerMappingEntry[] entriesByIndex;
         private readonly Dictionary<int, int> playerIndexBySourceSeatIndex = new Dictionary<int, int>();
-        private readonly Dictionary<int, int> playerIndexByLegacyPlayerId = new Dictionary<int, int>();
 
         internal string MappingId { get; }
         internal int Seed { get; }
@@ -31,10 +30,6 @@ namespace DSB.GC
                     playerIndexBySourceSeatIndex[entry.SourceSeatIndex] = entry.PlayerIndex;
                 }
 
-                if (entry.LegacyPlayerId > 0)
-                {
-                    playerIndexByLegacyPlayerId[entry.LegacyPlayerId] = entry.PlayerIndex;
-                }
             }
         }
 
@@ -188,11 +183,6 @@ namespace DSB.GC
         internal bool TryGetPlayerIndexForSourceSeat(int sourceSeatIndex, out int playerIndex)
         {
             return playerIndexBySourceSeatIndex.TryGetValue(sourceSeatIndex, out playerIndex);
-        }
-
-        internal bool TryGetPlayerIndexForLegacyPlayerId(int playerId, out int playerIndex)
-        {
-            return playerIndexByLegacyPlayerId.TryGetValue(playerId, out playerIndex);
         }
 
         internal GCActivePlayerMappingEntry GetByPlayerIndex(int playerIndex)

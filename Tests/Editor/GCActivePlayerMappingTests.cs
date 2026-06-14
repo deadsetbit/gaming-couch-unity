@@ -77,7 +77,7 @@ public sealed class GCActivePlayerMappingTests
     }
 
     [Test]
-    public void MappingTranslatesSourceSeatsAndLegacyPlayerIdsToPlayerIndices()
+    public void MappingTranslatesSparseSourceSeatsToPlayerIndices()
     {
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player),
@@ -90,8 +90,11 @@ public sealed class GCActivePlayerMappingTests
 
         Assert.That(mapping.TryGetPlayerIndexForSourceSeat(8, out var playerIndex), Is.True);
         Assert.That(playerIndex, Is.EqualTo(0));
-        Assert.That(mapping.TryGetPlayerIndexForLegacyPlayerId(808, out playerIndex), Is.True);
-        Assert.That(playerIndex, Is.EqualTo(0));
+        Assert.That(mapping.TryGetPlayerIndexForSourceSeat(1, out playerIndex), Is.True);
+        Assert.That(playerIndex, Is.EqualTo(1));
+        Assert.That(mapping.TryGetPlayerIndexForSourceSeat(3, out playerIndex), Is.True);
+        Assert.That(playerIndex, Is.EqualTo(2));
+        Assert.That(mapping.TryGetPlayerIndexForSourceSeat(2, out playerIndex), Is.False);
     }
 
     [Test]
