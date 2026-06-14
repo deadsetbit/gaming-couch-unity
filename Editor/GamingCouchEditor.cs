@@ -474,7 +474,6 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
 
             var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
             var playerColor = SeatColors[sourceSeatIndex];
-            var platformPlayerId = activePlayerIndex + 1;
             var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
 
             options.players[activePlayerIndex] = new GCActivePlayerOptions
@@ -487,7 +486,6 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
 
             seatIdentities[activePlayerIndex] = new GCSeatIdentity
             {
-                platformPlayerId = platformPlayerId,
                 sourceSeatIndex = oneBasedSourceSeatIndex,
                 stableKey = oneBasedSourceSeatIndex.ToString(),
                 label = "Seat " + oneBasedSourceSeatIndex,

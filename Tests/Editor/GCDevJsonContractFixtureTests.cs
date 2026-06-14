@@ -527,7 +527,6 @@ public sealed class GCDevJsonContractFixtureTests
         {
             var expectedIdentity = expectedIdentities[index];
             var identity = identities[index];
-            Assert.That(identity.platformPlayerId, Is.EqualTo(expectedIdentity.playerId));
             Assert.That(identity.sourceSeatIndex, Is.EqualTo(expectedIdentity.sourceSeatIndex));
             Assert.That(identity.stableKey, Is.EqualTo(expectedIdentity.stableKey));
             Assert.That(identity.label, Is.EqualTo(expectedIdentity.label));
@@ -748,7 +747,6 @@ public sealed class GCDevJsonContractFixtureTests
     [Serializable]
     private sealed class ExpectedSeatIdentity
     {
-        public int playerId;
         public int sourceSeatIndex;
         public string stableKey;
         public string label;

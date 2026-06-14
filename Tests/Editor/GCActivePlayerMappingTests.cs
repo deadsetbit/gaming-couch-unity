@@ -34,9 +34,9 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.bot),
             CreateSeatIdentities(
-                (1, 11, "1", GCPlayerType.player, GCPlayerColor.blue),
-                (3, 33, "3", GCPlayerType.player, GCPlayerColor.green),
-                (8, 88, "8", GCPlayerType.bot, GCPlayerColor.brown)
+                (1, "1", GCPlayerType.player, GCPlayerColor.blue),
+                (3, "3", GCPlayerType.player, GCPlayerColor.green),
+                (8, "8", GCPlayerType.bot, GCPlayerColor.brown)
             )
         );
         var gameFacingOptions = mapping.CreateGameFacingPlayOptions();
@@ -50,10 +50,15 @@ public sealed class GCActivePlayerMappingTests
         Assert.That(gameFacingOptions.players[0].color, Is.EqualTo(GCPlayerColor.brown.ToString()));
         Assert.That(gameFacingOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
         Assert.That(gameFacingOptions.players[2].color, Is.EqualTo(GCPlayerColor.green.ToString()));
+        var json = JsonUtility.ToJson(gameFacingOptions);
+        Assert.That(json, Does.Contain("\"playerIndex\":0"));
+        Assert.That(json, Does.Not.Contain("playerId"));
+        Assert.That(json, Does.Not.Contain("sourceSeatIndex"));
+        Assert.That(json, Does.Not.Contain("stableKey"));
     }
 
     [Test]
-    public void FnvHashSortMatchesRequiredHostedPlatformIdFixture()
+    public void FnvHashSortMatchesRequiredStableKeyFixture()
     {
         Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-d"), Is.EqualTo(264058611u));
         Assert.That(GCActivePlayerMapping.ComputeFnv1A32("424242:player-a"), Is.EqualTo(314391468u));
@@ -63,10 +68,10 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(424242, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
-                (1, 1, "player-a", GCPlayerType.player, GCPlayerColor.blue),
-                (2, 2, "player-b", GCPlayerType.player, GCPlayerColor.red),
-                (3, 3, "player-c", GCPlayerType.player, GCPlayerColor.green),
-                (4, 4, "player-d", GCPlayerType.player, GCPlayerColor.yellow)
+                (1, "player-a", GCPlayerType.player, GCPlayerColor.blue),
+                (2, "player-b", GCPlayerType.player, GCPlayerColor.red),
+                (3, "player-c", GCPlayerType.player, GCPlayerColor.green),
+                (4, "player-d", GCPlayerType.player, GCPlayerColor.yellow)
             )
         );
 
@@ -82,9 +87,9 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
-                (1, 101, "1", GCPlayerType.player, GCPlayerColor.blue),
-                (3, 303, "3", GCPlayerType.player, GCPlayerColor.green),
-                (8, 808, "8", GCPlayerType.player, GCPlayerColor.brown)
+                (1, "1", GCPlayerType.player, GCPlayerColor.blue),
+                (3, "3", GCPlayerType.player, GCPlayerColor.green),
+                (8, "8", GCPlayerType.player, GCPlayerColor.brown)
             )
         );
 
@@ -109,9 +114,9 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             playOptions,
             CreateSeatIdentities(
-                (1, 101, "1", GCPlayerType.player, GCPlayerColor.blue),
-                (3, 303, "3", GCPlayerType.player, GCPlayerColor.green),
-                (8, 808, "8", GCPlayerType.player, GCPlayerColor.brown)
+                (1, "1", GCPlayerType.player, GCPlayerColor.blue),
+                (3, "3", GCPlayerType.player, GCPlayerColor.green),
+                (8, "8", GCPlayerType.player, GCPlayerColor.brown)
             )
         );
 
@@ -153,7 +158,6 @@ public sealed class GCActivePlayerMappingTests
 
         Assert.That(options.players, Has.Length.EqualTo(2));
         Assert.That(options.usesMappedActivePlayers, Is.True);
-        Assert.That(options.participantIdentities, Is.Empty);
         Assert.That(options.players[0].playerIndex, Is.EqualTo(1));
         Assert.That(options.players[1].playerIndex, Is.EqualTo(0));
         Assert.That(json, Does.Contain("\"playerIndex\":1"));
@@ -163,8 +167,8 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             options,
             CreateSeatIdentities(
-                (1, 0, "", GCPlayerType.player, GCPlayerColor.blue),
-                (2, 0, "", GCPlayerType.bot, GCPlayerColor.green)
+                (1, "", GCPlayerType.player, GCPlayerColor.blue),
+                (2, "", GCPlayerType.bot, GCPlayerColor.green)
             )
         );
         var gameFacingOptions = mapping.CreateGameFacingPlayOptions();
@@ -186,7 +190,7 @@ public sealed class GCActivePlayerMappingTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += json => emittedJson = json;
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player),
-            CreateSeatIdentities((1, 1, "1", GCPlayerType.player, GCPlayerColor.blue))
+            CreateSeatIdentities((1, "1", GCPlayerType.player, GCPlayerColor.blue))
         );
 
         LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.mapping.invalid_player_index: Player index is outside the active mapping.");
@@ -208,14 +212,14 @@ public sealed class GCActivePlayerMappingTests
         GCRuntimeMessageOutput.RuntimeMessagesEmitted += json => emittedJson = json;
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(424242, GCPlayerType.player),
-            CreateSeatIdentities((1, 1, "platform-player-secret", GCPlayerType.player, GCPlayerColor.blue))
+            CreateSeatIdentities((1, "local-stable-key-secret", GCPlayerType.player, GCPlayerColor.blue))
         );
 
         LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.mapping.invalid_player_index: Player index is outside the active mapping.");
         Assert.That(mapping.TryValidatePlayerIndex(9, "test_input", out _), Is.False);
 
         Assert.That(emittedJson, Does.Contain("\"mappingId\":\"map-"));
-        Assert.That(emittedJson, Does.Not.Contain("platform-player-secret"));
+        Assert.That(emittedJson, Does.Not.Contain("local-stable-key-secret"));
     }
 
     [Test]
@@ -224,8 +228,8 @@ public sealed class GCActivePlayerMappingTests
         var mapping = GCActivePlayerMapping.Create(
             CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player),
             CreateSeatIdentities(
-                (1, 1, "1", GCPlayerType.player, GCPlayerColor.blue),
-                (2, 2, "2", GCPlayerType.player, GCPlayerColor.red)
+                (1, "1", GCPlayerType.player, GCPlayerColor.blue),
+                (2, "2", GCPlayerType.player, GCPlayerColor.red)
             )
         );
 
@@ -262,7 +266,7 @@ public sealed class GCActivePlayerMappingTests
     }
 
     private static GCSeatIdentity[] CreateSeatIdentities(
-        params (int sourceSeatIndex, int legacyPlayerId, string stableKey, GCPlayerType playerType, GCPlayerColor playerColor)[] source
+        params (int sourceSeatIndex, string stableKey, GCPlayerType playerType, GCPlayerColor playerColor)[] source
     )
     {
         var identities = new GCSeatIdentity[source.Length];
@@ -271,7 +275,6 @@ public sealed class GCActivePlayerMappingTests
             identities[index] = new GCSeatIdentity
             {
                 sourceSeatIndex = source[index].sourceSeatIndex,
-                platformPlayerId = source[index].legacyPlayerId,
                 stableKey = source[index].stableKey,
                 label = "Seat " + source[index].sourceSeatIndex,
                 playerType = source[index].playerType,

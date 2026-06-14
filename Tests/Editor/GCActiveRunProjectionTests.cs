@@ -11,7 +11,7 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersProjectionCreatesGameFacingOptionsAndMappedFallbackSeatIdentities()
+    public void ActivePlayersProjectionCreatesGameFacingOptionsWithoutInventingSourceSeats()
     {
         var options = new GCPlayOptions
         {
@@ -39,6 +39,9 @@ public sealed class GCActiveRunProjectionTests
         var projection = GCActiveRunProjection.Create(options);
 
         Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
+        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.False);
         Assert.That(projection.GameFacingPlayOptions.seed, Is.EqualTo(123));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
@@ -49,12 +52,14 @@ public sealed class GCActiveRunProjectionTests
         Assert.That(projection.GameFacingPlayOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
         Assert.That(projection.GameFacingPlayOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
 
-        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(2));
-        Assert.That(projection.MappedSeatIdentities[0].label, Is.EqualTo("Seat 2"));
+        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(0));
+        Assert.That(projection.MappedSeatIdentities[0].stableKey, Is.EqualTo("0"));
+        Assert.That(projection.MappedSeatIdentities[0].label, Is.Null);
         Assert.That(projection.MappedSeatIdentities[0].playerType, Is.EqualTo(GCPlayerType.bot));
         Assert.That(projection.MappedSeatIdentities[0].playerColor, Is.EqualTo(GCPlayerColor.green));
-        Assert.That(projection.MappedSeatIdentities[1].sourceSeatIndex, Is.EqualTo(1));
-        Assert.That(projection.MappedSeatIdentities[1].label, Is.EqualTo("Seat 1"));
+        Assert.That(projection.MappedSeatIdentities[1].sourceSeatIndex, Is.EqualTo(0));
+        Assert.That(projection.MappedSeatIdentities[1].stableKey, Is.EqualTo("1"));
+        Assert.That(projection.MappedSeatIdentities[1].label, Is.Null);
         Assert.That(projection.MappedSeatIdentities[1].playerType, Is.EqualTo(GCPlayerType.player));
         Assert.That(projection.MappedSeatIdentities[1].playerColor, Is.EqualTo(GCPlayerColor.blue));
     }
@@ -81,9 +86,9 @@ public sealed class GCActiveRunProjectionTests
         };
         var seatIdentities = new[]
         {
-            CreateSeatIdentity(1, 11, "1", GCPlayerType.player, GCPlayerColor.blue),
-            CreateSeatIdentity(3, 33, "3", GCPlayerType.player, GCPlayerColor.green),
-            CreateSeatIdentity(8, 88, "8", GCPlayerType.bot, GCPlayerColor.brown),
+            CreateSeatIdentity(1, "1", GCPlayerType.player, GCPlayerColor.blue),
+            CreateSeatIdentity(3, "3", GCPlayerType.player, GCPlayerColor.green),
+            CreateSeatIdentity(8, "8", GCPlayerType.bot, GCPlayerColor.brown),
         };
 
         var projection = GCActiveRunProjection.Create(options, seatIdentities);
@@ -126,8 +131,9 @@ public sealed class GCActiveRunProjectionTests
         var projection = GCActiveRunProjection.Create(options);
 
         Assert.That(options.usesMappedActivePlayers, Is.True);
-        Assert.That(options.participantIdentities, Is.Empty);
         Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).StableKey, Is.EqualTo("0"));
+        Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(1).StableKey, Is.EqualTo("1"));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerIndex, Is.EqualTo(0));
         Assert.That(projection.GameFacingPlayOptions.players[0].playerSeed, Is.EqualTo(444444));
         Assert.That(projection.GameFacingPlayOptions.players[0].type, Is.EqualTo(GCPlayerType.bot.ToString()));
@@ -154,11 +160,11 @@ public sealed class GCActiveRunProjectionTests
         var projection = GCActiveRunProjection.Create(options);
 
         Assert.That(options.usesMappedActivePlayers, Is.True);
-        Assert.That(options.participantIdentities, Is.Empty);
         Assert.That(projection.ActivePlayerMapping.GetByPlayerIndex(0).CapturedOrder, Is.EqualTo(1));
-        Assert.That(projection.MappedSeatIdentities[0].platformPlayerId, Is.EqualTo(0));
-        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(2));
-        Assert.That(projection.MappedSeatIdentities[0].label, Is.EqualTo("Seat 2"));
+        Assert.That(projection.ActivePlayerMapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.False);
+        Assert.That(projection.MappedSeatIdentities[0].sourceSeatIndex, Is.EqualTo(0));
+        Assert.That(projection.MappedSeatIdentities[0].stableKey, Is.EqualTo("0"));
+        Assert.That(projection.MappedSeatIdentities[0].label, Is.Null);
         Assert.That(projection.MappedSeatIdentities[0].playerType, Is.EqualTo(GCPlayerType.bot));
         Assert.That(projection.MappedSeatIdentities[0].playerColor, Is.EqualTo(GCPlayerColor.green));
 
@@ -166,6 +172,9 @@ public sealed class GCActiveRunProjectionTests
         Assert.That(json, Does.Contain("\"playerIndex\""));
         Assert.That(json, Does.Contain("\"playerSeed\""));
         Assert.That(json, Does.Not.Contain("playerId"));
+        Assert.That(json, Does.Not.Contain("platformPlayerId"));
+        Assert.That(json, Does.Not.Contain("sourceSeatIndex"));
+        Assert.That(json, Does.Not.Contain("stableKey"));
         Assert.That(json, Does.Not.Contain("Alice"));
         Assert.That(json, Does.Not.Contain("Bob"));
     }
@@ -206,7 +215,6 @@ public sealed class GCActiveRunProjectionTests
 
     private static GCSeatIdentity CreateSeatIdentity(
         int sourceSeatIndex,
-        int platformPlayerId,
         string stableKey,
         GCPlayerType playerType,
         GCPlayerColor playerColor
@@ -215,7 +223,6 @@ public sealed class GCActiveRunProjectionTests
         return new GCSeatIdentity
         {
             sourceSeatIndex = sourceSeatIndex,
-            platformPlayerId = platformPlayerId,
             stableKey = stableKey,
             label = "Seat " + sourceSeatIndex,
             playerType = playerType,

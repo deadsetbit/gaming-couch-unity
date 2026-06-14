@@ -66,16 +66,15 @@ namespace DSB.GC
             for (var index = 0; index < options.players.Length; index++)
             {
                 var playerOption = options.players[index];
-                var sourceSeatIndex = index + 1;
-                var participantIdentity = options.participantIdentities != null && index < options.participantIdentities.Length
-                    ? options.participantIdentities[index]
-                    : default;
+                var sourceSeatIndex = options.usesMappedActivePlayers ? 0 : index + 1;
+                var stableKey = options.usesMappedActivePlayers
+                    ? playerOption.playerIndex.ToString()
+                    : sourceSeatIndex.ToString();
                 seatIdentities[index] = new GCSeatIdentity
                 {
-                    platformPlayerId = participantIdentity.platformPlayerId,
                     sourceSeatIndex = sourceSeatIndex,
-                    stableKey = !string.IsNullOrWhiteSpace(participantIdentity.stableKey) ? participantIdentity.stableKey : sourceSeatIndex.ToString(),
-                    label = "Seat " + sourceSeatIndex,
+                    stableKey = stableKey,
+                    label = sourceSeatIndex > 0 ? "Seat " + sourceSeatIndex : null,
                     playerType = ResolvePlayerType(playerOption.type),
                     playerColor = ResolvePlayerColor(playerOption.color),
                 };

@@ -518,9 +518,6 @@ namespace DSB.GC
         public GCPlatformRuntimeView platformData = GCPlatformRuntimeView.CreateFallbackMissing();
 
         [NonSerialized]
-        internal GCPlatformParticipantIdentity[] participantIdentities;
-
-        [NonSerialized]
         internal bool usesMappedActivePlayers;
 
         public static GCPlayOptions CreateFromJSON(string optionsJson)
@@ -543,16 +540,9 @@ namespace DSB.GC
                 seed = transport.seed,
                 runtimeOutput = transport.runtimeOutput ?? new GCRuntimeOutputOptions(),
                 platformData = GCPlatformRuntimeView.CopyForRuntime(transport.platformData),
-                participantIdentities = Array.Empty<GCPlatformParticipantIdentity>(),
                 usesMappedActivePlayers = hasActivePlayers,
             };
         }
-    }
-
-    internal struct GCPlatformParticipantIdentity
-    {
-        internal int platformPlayerId;
-        internal string stableKey;
     }
 
     [System.Serializable]

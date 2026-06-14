@@ -21,7 +21,6 @@
     ],
     "seatIdentities": [
       {
-        "playerId": 1,
         "sourceSeatIndex": 1,
         "stableKey": "1",
         "label": "Seat 1",

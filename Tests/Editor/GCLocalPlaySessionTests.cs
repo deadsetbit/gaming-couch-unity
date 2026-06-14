@@ -36,8 +36,19 @@ public sealed class GCLocalPlaySessionTests
             Assert.That(playOptions.seed, Is.EqualTo(12345));
             Assert.That(playOptions.players, Has.Length.EqualTo(2));
             Assert.That(seatIdentities, Has.Length.EqualTo(2));
+            Assert.That(playOptions.players[0].playerIndex, Is.EqualTo(0));
+            Assert.That(playOptions.players[1].playerIndex, Is.EqualTo(1));
             Assert.That(seatIdentities[0].sourceSeatIndex, Is.EqualTo(1));
+            Assert.That(seatIdentities[0].stableKey, Is.EqualTo("1"));
             Assert.That(seatIdentities[1].sourceSeatIndex, Is.EqualTo(3));
+            Assert.That(seatIdentities[1].stableKey, Is.EqualTo("3"));
+            var playOptionsJson = JsonUtility.ToJson(playOptions);
+            Assert.That(playOptionsJson, Does.Contain("\"playerIndex\":0"));
+            Assert.That(playOptionsJson, Does.Contain("\"playerIndex\":1"));
+            Assert.That(playOptionsJson, Does.Not.Contain("playerId"));
+            Assert.That(playOptionsJson, Does.Not.Contain("platformPlayerId"));
+            Assert.That(playOptionsJson, Does.Not.Contain("sourceSeatIndex"));
+            Assert.That(playOptionsJson, Does.Not.Contain("stableKey"));
             Assert.That(provider.CaptureCount, Is.EqualTo(1));
         }
     }
@@ -244,7 +255,6 @@ public sealed class GCLocalPlaySessionTests
         for (var index = 0; index < enabledSeats.Length; index++)
         {
             var seatIndex = enabledSeats[index];
-            var platformPlayerId = index + 1;
             playOptions.players[index] = new GCActivePlayerOptions
             {
                 playerIndex = index,
@@ -253,7 +263,6 @@ public sealed class GCLocalPlaySessionTests
             };
             seatIdentities[index] = new GCSeatIdentity
             {
-                platformPlayerId = platformPlayerId,
                 sourceSeatIndex = seatIndex,
                 stableKey = seatIndex.ToString(),
                 label = "Seat " + seatIndex,

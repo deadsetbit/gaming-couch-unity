@@ -67,7 +67,6 @@ namespace DSB.GC
                     CapturedOrder = capturedOrder,
                     Hash = ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
                     SourceSeatIndex = identity.sourceSeatIndex,
-                    LegacyPlayerId = identity.platformPlayerId,
                     StableKey = stableKey,
                     PlayerSeed = GCPlayerSeed.NormalizeOrFallback(players[capturedOrder].playerSeed, null, capturedOrder),
                     Type = identity.playerType != GCPlayerType.unset ? identity.playerType : ResolvePlayerType(players[capturedOrder].type),
@@ -82,7 +81,6 @@ namespace DSB.GC
                     playerIndex,
                     participant.CapturedOrder,
                     participant.SourceSeatIndex,
-                    participant.LegacyPlayerId,
                     participant.StableKey,
                     participant.PlayerSeed,
                     participant.Hash,
@@ -125,7 +123,6 @@ namespace DSB.GC
                     playerIndex,
                     capturedOrder,
                     identity.sourceSeatIndex,
-                    identity.platformPlayerId,
                     stableKey,
                     GCPlayerSeed.NormalizeOrFallback(player.playerSeed, null, playerIndex),
                     ComputeFnv1A32(options.seed.ToString() + ":" + stableKey),
@@ -305,7 +302,6 @@ namespace DSB.GC
             internal int CapturedOrder;
             internal uint Hash;
             internal int SourceSeatIndex;
-            internal int LegacyPlayerId;
             internal string StableKey;
             internal int PlayerSeed;
             internal GCPlayerType Type;
@@ -318,7 +314,6 @@ namespace DSB.GC
         internal readonly int PlayerIndex;
         internal readonly int CapturedOrder;
         internal readonly int SourceSeatIndex;
-        internal readonly int LegacyPlayerId;
         internal readonly string StableKey;
         internal readonly int PlayerSeed;
         internal readonly uint Hash;
@@ -329,7 +324,6 @@ namespace DSB.GC
             int playerIndex,
             int capturedOrder,
             int sourceSeatIndex,
-            int legacyPlayerId,
             string stableKey,
             int playerSeed,
             uint hash,
@@ -340,7 +334,6 @@ namespace DSB.GC
             PlayerIndex = playerIndex;
             CapturedOrder = capturedOrder;
             SourceSeatIndex = sourceSeatIndex;
-            LegacyPlayerId = legacyPlayerId;
             StableKey = stableKey;
             PlayerSeed = playerSeed;
             Hash = hash;

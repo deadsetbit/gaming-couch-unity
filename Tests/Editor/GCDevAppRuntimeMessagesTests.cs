@@ -180,6 +180,9 @@ public sealed class GCDevAppRuntimeMessagesTests
         Assert.That(json, Does.Contain("\"seatIndex\":4"));
         Assert.That(json, Does.Contain("\"label\":\"Seat 4\""));
         Assert.That(json, Does.Contain("\"type\":\"bot\""));
+        Assert.That(json, Does.Not.Contain("playerId"));
+        Assert.That(json, Does.Not.Contain("platformPlayerId"));
+        Assert.That(json, Does.Not.Contain("stableKey"));
         Assert.That(json, Does.Contain("\"paused\":true"));
         Assert.That(json, Does.Contain("\"timescale\":0.5"));
     }
@@ -217,21 +220,18 @@ public sealed class GCDevAppRuntimeMessagesTests
         {
             new GCSeatIdentity
             {
-                platformPlayerId = 1,
                 sourceSeatIndex = 4,
                 label = null,
                 playerType = GCPlayerType.bot,
             },
             new GCSeatIdentity
             {
-                platformPlayerId = 2,
                 sourceSeatIndex = 0,
                 label = string.Empty,
                 playerType = GCPlayerType.player,
             },
             new GCSeatIdentity
             {
-                platformPlayerId = 3,
                 sourceSeatIndex = 8,
                 label = "Custom Seat",
                 playerType = GCPlayerType.player,
