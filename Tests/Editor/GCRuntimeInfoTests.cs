@@ -16,16 +16,18 @@ public sealed class GCRuntimeInfoTests
     {
         var manifest = ReadPackageManifest();
         var runtimeInfo = GCEditorPackageIdentity.Resolve().ToRuntimeInfo();
-        var json = JsonUtility.ToJson(runtimeInfo);
+        var json = GCRuntimeInfoJson.Serialize(runtimeInfo);
+        var expectedJson = "{\"platform\":\"" + GCEditorPackageIdentity.Platform
+            + "\",\"packageName\":\"" + manifest.name
+            + "\",\"packageVersion\":\"" + manifest.version
+            + "\",\"gameProtocolVersion\":" + GCEditorPackageIdentity.GameProtocolVersion
+            + "}";
 
         Assert.That(runtimeInfo.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
         Assert.That(runtimeInfo.packageName, Is.EqualTo(manifest.name));
         Assert.That(runtimeInfo.packageVersion, Is.EqualTo(manifest.version));
         Assert.That(runtimeInfo.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
-        Assert.That(json, Does.Contain("\"platform\":\"" + GCEditorPackageIdentity.Platform + "\""));
-        Assert.That(json, Does.Contain("\"packageName\":\"" + manifest.name + "\""));
-        Assert.That(json, Does.Contain("\"packageVersion\":\"" + manifest.version + "\""));
-        Assert.That(json, Does.Contain("\"gameProtocolVersion\":" + GCEditorPackageIdentity.GameProtocolVersion));
+        Assert.That(json, Is.EqualTo(expectedJson));
     }
 
     [Test]
@@ -58,19 +60,37 @@ public sealed class GCRuntimeInfoTests
     }
 
     [Test]
-    public void WebGLRuntimeCallbackPathIsRemoved()
+    public void WebGLRuntimeAttestationPathUsesBakedCanonicalPayload()
     {
-        var bridgePath = Path.Combine(FindPackageRootPath(), "Plugins", "GamingCouch.jslib");
+        var packageRootPath = FindPackageRootPath();
+        var bridgePath = Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib");
         var bridge = File.ReadAllText(bridgePath);
-        var runtimePath = Path.Combine(FindPackageRootPath(), "Runtime", "GamingCouch.cs");
+        var bootstrapPath = Path.Combine(packageRootPath, "Runtime", "GCWebGLRuntimeInfoBootstrap.cs");
+        var bootstrap = File.ReadAllText(bootstrapPath);
+        var bakedPayloadPath = Path.Combine(
+            packageRootPath,
+            "Runtime",
+            "Resources",
+            GCWebGLRuntimeInfoBootstrap.RuntimeInfoResourceName + ".json"
+        );
+        var bakedPayload = File.ReadAllText(bakedPayloadPath).TrimEnd('\r', '\n');
+        var canonicalPayload = GCRuntimeInfoJson.Serialize(GCEditorPackageIdentity.Resolve().ToRuntimeInfo());
+        var runtimePath = Path.Combine(packageRootPath, "Runtime", "GamingCouch.cs");
         var runtime = File.ReadAllText(runtimePath);
 
+        Assert.That(bakedPayload, Is.EqualTo(canonicalPayload));
+        Assert.That(GCWebGLRuntimeInfoBootstrap.LoadBakedRuntimeInfoJson(), Is.EqualTo(canonicalPayload));
+        Assert.That(bootstrap, Does.Contain("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]"));
+        Assert.That(bootstrap, Does.Contain("Resources.Load<TextAsset>(RuntimeInfoResourceName)"));
+        Assert.That(bootstrap, Does.Contain("GamingCouchRegisterRuntimeInfo(runtimeInfoJson);"));
+        Assert.That(bootstrap, Does.Not.Contain("GCRuntimeInfoJson.Serialize"));
+        Assert.That(runtime, Does.Contain("private static extern void GamingCouchInstanceStarted();"));
         Assert.That(runtime, Does.Not.Contain("GamingCouchRegisterRuntimeInfo"));
         Assert.That(runtime, Does.Not.Contain("SendRuntimeInfo"));
         Assert.That(runtime, Does.Not.Contain("GCRuntimeInfo.ToJson"));
-        Assert.That(bridge, Does.Not.Contain("GamingCouchRegisterRuntimeInfo"));
-        Assert.That(bridge, Does.Not.Contain("gamingCouchRegisterRuntimeInfo"));
-        Assert.That(bridge, Does.Not.Contain("runtimeInfoJsonString"));
+        Assert.That(bridge, Does.Contain("GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString)"));
+        Assert.That(bridge, Does.Contain("window.gamingCouchRegisterRuntimeInfo"));
+        Assert.That(bridge, Does.Contain("JSON.parse(runtimeInfoJson)"));
     }
 
     [Test]

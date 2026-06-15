@@ -57,6 +57,33 @@ public sealed class GCWebGLRuntimeInfoSidecarWriterTests
     }
 
     [Test]
+    public void RuntimeInfoSidecarStringEqualsCanonicalBuilderOutputForFixtureIdentity()
+    {
+        var outputRootPath = CreateTemporaryBuildOutputRoot();
+
+        try
+        {
+            var identity = CreatePackageIdentity();
+            var result = GCWebGLRuntimeInfoSidecarWriter.WriteForBuild(
+                BuildTarget.WebGL,
+                outputRootPath,
+                GamingCouchWebGLExportSetup.ProjectTemplateIdentifier,
+                identity
+            );
+
+            Assert.That(File.ReadAllText(result.sidecarPath), Is.EqualTo(GCRuntimeInfoJson.Serialize(identity.ToRuntimeInfo())));
+            Assert.That(
+                File.ReadAllText(result.sidecarPath),
+                Is.EqualTo("{\"platform\":\"unity\",\"packageName\":\"com.test.sidecar\",\"packageVersion\":\"3.2.1-test.0\",\"gameProtocolVersion\":1}")
+            );
+        }
+        finally
+        {
+            DeleteTemporaryPath(outputRootPath);
+        }
+    }
+
+    [Test]
     public void WritesRuntimeInfoSidecarNextToIndexWhenBuildOutputPathIsIndexFile()
     {
         var outputRootPath = CreateTemporaryBuildOutputRoot();
@@ -305,6 +332,7 @@ public sealed class GCWebGLRuntimeInfoSidecarWriterTests
         Assert.That(sidecar.packageName, Is.EqualTo(identity.packageName));
         Assert.That(sidecar.packageVersion, Is.EqualTo(identity.packageVersion));
         Assert.That(sidecar.gameProtocolVersion, Is.EqualTo(identity.gameProtocolVersion));
+        Assert.That(json, Is.EqualTo(GCRuntimeInfoJson.Serialize(identity.ToRuntimeInfo())));
         Assert.That(json, Does.Contain("\"platform\""));
         Assert.That(json, Does.Contain("\"packageName\""));
         Assert.That(json, Does.Contain("\"packageVersion\""));

@@ -7,6 +7,24 @@ mergeInto(LibraryManager.library, {
     window.gamingCouchInstanceStarted();
   },
 
+  GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString) {
+    if (!window.gamingCouchRegisterRuntimeInfo) {
+      console.error("gamingCouchRegisterRuntimeInfo is not defined");
+      return;
+    }
+
+    var runtimeInfoJson = UTF8ToString(runtimeInfoJsonString);
+    var runtimeInfo;
+    try {
+      runtimeInfo = JSON.parse(runtimeInfoJson);
+    } catch (error) {
+      console.error("GamingCouchRegisterRuntimeInfo received invalid JSON", error);
+      return;
+    }
+
+    window.gamingCouchRegisterRuntimeInfo(runtimeInfo);
+  },
+
   GamingCouchSetupDone: function () {
     if (!window.gamingCouchSetupDone) {
       console.error("GamingCouchSetupDone is not defined");

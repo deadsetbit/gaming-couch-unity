@@ -235,7 +235,7 @@ internal static class GCWebGLRuntimeInfoSidecarWriter
     )
     {
         Directory.CreateDirectory(outputRootPath);
-        File.WriteAllText(sidecarPath, JsonUtility.ToJson(packageIdentity, true));
+        File.WriteAllText(sidecarPath, GCRuntimeInfoJson.Serialize(packageIdentity.ToRuntimeInfo()));
 
         return new GCWebGLRuntimeInfoSidecarWriteResult(
             GCWebGLRuntimeInfoSidecarWriteStatus.Written,

@@ -11,6 +11,8 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 PACKAGE_JSON_PATH = ROOT_DIR / "package.json"
 RUNTIME_INFO_PATH = ROOT_DIR / "Runtime" / "GCRuntimeInfo.cs"
 RUNTIME_DIR = ROOT_DIR / "Runtime"
+WEBGL_BOOTSTRAP_PATH = RUNTIME_DIR / "GCWebGLRuntimeInfoBootstrap.cs"
+BAKED_RUNTIME_INFO_PATH = RUNTIME_DIR / "Resources" / "GamingCouchRuntimeInfo.json"
 PACKAGE_CODE_DIRS = [
     ROOT_DIR / "Runtime",
     ROOT_DIR / "Editor",
@@ -52,6 +54,18 @@ def read_required_text(path, label):
         return path.read_text(encoding="utf-8")
     except FileNotFoundError:
         raise CheckError("{0} was not found.".format(label))
+
+
+def build_canonical_runtime_info_json(manifest):
+    return json.dumps(
+        {
+            "platform": "unity",
+            "packageName": manifest["name"],
+            "packageVersion": manifest["version"],
+            "gameProtocolVersion": 1,
+        },
+        separators=(",", ":"),
+    )
 
 
 def assert_runtime_info_has_no_package_metadata_constants(source):
@@ -289,22 +303,58 @@ def assert_manifest_values_not_hardcoded_in_package_sources(manifest):
     return failures
 
 
-def assert_runtime_callback_path_removed(runtime_source, bridge_source):
-    forbidden_tokens = [
+def assert_lifecycle_start_remains_payload_free(runtime_source):
+    failures = []
+    for token in [
         "GamingCouchRegisterRuntimeInfo",
-        "gamingCouchRegisterRuntimeInfo",
         "SendRuntimeInfo",
         "GCRuntimeInfo.ToJson",
+    ]:
+        if token in runtime_source:
+            failures.append("Runtime/GamingCouch.cs still contains {0}".format(token))
+
+    return failures
+
+
+def assert_runtime_attestation_path_present(bootstrap_source, bridge_source):
+    required_bootstrap_tokens = [
+        "RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)",
+        "Resources.Load<TextAsset>(RuntimeInfoResourceName)",
+        "GamingCouchRegisterRuntimeInfo(runtimeInfoJson)",
+    ]
+    required_bridge_tokens = [
+        "GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString)",
+        "window.gamingCouchRegisterRuntimeInfo",
+        "UTF8ToString(runtimeInfoJsonString)",
+        "JSON.parse(runtimeInfoJson)",
     ]
 
     failures = []
-    for token in forbidden_tokens:
-        if token in runtime_source:
-            failures.append("Runtime/GamingCouch.cs still contains {0}".format(token))
-        if token in bridge_source:
-            failures.append("Plugins/GamingCouch.jslib still contains {0}".format(token))
+    for token in required_bootstrap_tokens:
+        if token not in bootstrap_source:
+            failures.append("Runtime/GCWebGLRuntimeInfoBootstrap.cs is missing {0}".format(token))
+    if "GCRuntimeInfoJson.Serialize" in bootstrap_source:
+        failures.append("Runtime/GCWebGLRuntimeInfoBootstrap.cs should use the baked runtime-info payload")
+    for token in required_bridge_tokens:
+        if token not in bridge_source:
+            failures.append("Plugins/GamingCouch.jslib is missing {0}".format(token))
 
     return failures
+
+
+def assert_baked_runtime_info_matches_package_manifest(manifest, baked_runtime_info_source):
+    expected = build_canonical_runtime_info_json(manifest)
+    actual = baked_runtime_info_source.rstrip("\r\n")
+
+    if actual == expected:
+        return []
+
+    return [
+        (
+            "Runtime/Resources/GamingCouchRuntimeInfo.json does not match "
+            "canonical package.json runtime info"
+        )
+    ]
 
 
 def main():
@@ -317,6 +367,14 @@ def main():
         runtime_source = read_required_text(
             ROOT_DIR / "Runtime" / "GamingCouch.cs",
             "Runtime/GamingCouch.cs",
+        )
+        bootstrap_source = read_required_text(
+            WEBGL_BOOTSTRAP_PATH,
+            "Runtime/GCWebGLRuntimeInfoBootstrap.cs",
+        )
+        baked_runtime_info_source = read_required_text(
+            BAKED_RUNTIME_INFO_PATH,
+            "Runtime/Resources/GamingCouchRuntimeInfo.json",
         )
         bridge_source = read_required_text(
             WEBGL_BRIDGE_PATH,
@@ -333,7 +391,9 @@ def main():
     failures = []
     failures.extend(assert_runtime_info_has_no_package_metadata_constants(runtime_info_source))
     failures.extend(assert_manifest_values_not_hardcoded_in_package_sources(manifest))
-    failures.extend(assert_runtime_callback_path_removed(runtime_source, bridge_source))
+    failures.extend(assert_lifecycle_start_remains_payload_free(runtime_source))
+    failures.extend(assert_runtime_attestation_path_present(bootstrap_source, bridge_source))
+    failures.extend(assert_baked_runtime_info_matches_package_manifest(manifest, baked_runtime_info_source))
 
     if failures:
         print("Runtime package identity cleanup check failed.", file=sys.stderr)
@@ -341,7 +401,7 @@ def main():
             print("- {0}".format(failure), file=sys.stderr)
         print("", file=sys.stderr)
         print(
-            "Fix: remove runtime package metadata constants/callbacks, then rerun:",
+            "Fix: keep package metadata sourced from package.json and preserve the baked runtime attestation path, then rerun:",
             file=sys.stderr,
         )
         print("python3 Tools/check-runtime-package-info.py", file=sys.stderr)
@@ -351,7 +411,8 @@ def main():
     print("- name: {0}".format(manifest["name"]))
     print("- version: {0}".format(manifest["version"]))
     print("- package name/version source: package.json")
-    print("- hosted WebGL identity path: gc.runtime-info.json sidecar")
+    print("- baked runtime payload: Runtime/Resources/GamingCouchRuntimeInfo.json")
+    print("- hosted WebGL identity paths: gc.runtime-info.json sidecar + early runtime attestation")
     return 0
 
 
