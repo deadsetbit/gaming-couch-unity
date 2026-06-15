@@ -11,6 +11,7 @@ Define how the Unity package, Gaming Couch client, SDK, DevApp, and internal gam
 - Unity package source API should break old game-facing ID/name/state calls intentionally so internal game source migrates to `Index`, `playerIndex`, and explicit permanent/revokable state APIs.
 - Runtime game-facing DTOs should remove player names and platform player IDs completely. Temporary compatibility lives in platform/client/SDK adapters for already-built games, not in new Unity game source APIs.
 - Player-index deterministic shuffle is in scope for this migration and should land with the index mapping contract.
+- DevApp/local seat concepts (`seatIndex`, `activeSeats`, and `GCSeatIdentity`) remain local routing and source-seat provenance. Current Unity boot/runtime identity is the `players[]` roster and `playerIndex`.
 - Already-built older Unity games still need a short-lived platform/client/SDK runtime bridge during migration.
 - The bridge is a one-off internal migration bridge, not the long-term versioning, deployment, or legacy support strategy.
 - New Unity game-over messages use an object shape rather than a bare array so the result payload can expand later. The initial object carries `playerIndicesByPlacement` only; no one-off version field is introduced for this method.
@@ -25,7 +26,7 @@ Chosen path: staged adapter rollout.
 
 - Do not immediately bump `gameProtocolVersion` for the Unity-first source migration.
 - Ship strict hosted client/SDK adapter support for both new object-shaped game-over payloads and legacy top-level `playerIdsByPlacement` before recommending Unity package `0.2.0-alpha.1`; DevApp/local Unity support is strict-current only and accepts the new `runtime_messages` path.
-- For strict Unity package cleanup that rejects legacy inbound play/runtime identity, the current recommendation remains no `gameProtocolVersion` bump when client/SDK adapters translate legacy hosted `players[]`/`playerId` payloads into the current private Unity transport roster (`activePlayers[]` with `playerIndex`) before invoking Unity. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
+- For strict Unity package cleanup that rejects legacy inbound play/runtime identity, the current recommendation remains no `gameProtocolVersion` bump when client/SDK runtime selection keeps old Unity builds on the legacy payload path and sends current Unity builds the private transport roster as `players[]` with `playerIndex`. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
 - Use package-version compatibility checks to block new Unity package usage against old DevApp/client paths.
 - Migrate internal Unity games to `Index`, `playerIndex`, explicit state APIs, and the new object game-over shape.
 - Keep the bridge until no internal deployed build emits legacy ID-shaped Unity payloads.

@@ -20,8 +20,8 @@ Define the exact mapping contract between platform-owned player identity, DevApp
 
 - Hosted WebGL: the SDK Unity adapter owns the mapping at the Unity platform boundary. It translates platform `playerId` to Unity `playerIndex` for inputs and translates Unity `playerIndex` back to platform `playerId` for screen-space anchors, runtime messages that drive platform/player-client features, and game-over payloads. Public diagnostics stay `playerIndex`-only; hosted adapters may correlate them to platform player IDs only in private adapter state after validation. Platform IDs and player names stay in adapter data and never enter game-facing Unity DTOs.
 - Hosted Client/SDK adapter implementation owns resolving and validating the platform/session active-run seed before the mapping is built. Production hosted play must fail before Unity play payload creation when the seed is absent.
-- Unity Editor local play: the Unity package local-play capture/runtime seam owns the mapping from enabled `gc.dev.json` seats to game-facing `playerIndex` values.
-- DevApp keeps one-based `seatIndex` as the controller routing and display concept. Any message crossing into Unity game-facing runtime behavior must use the captured mapping rather than inferring seat or player identity in multiple places. DevApp-local message names may keep `seatIndex` for controller assignment, but Unity game-facing runtime APIs use `GCPlayOptions.players`, `playerIndex`, and result objects rather than `playerId`.
+- Unity Editor local play: the Unity package local-play capture/runtime seam owns the mapping from enabled `gc.dev.json` seats to game-facing `playerIndex` values. It may store source-seat provenance in internal `GCSeatIdentity[]` beside `GCPlayOptions.players`, but `GCSeatIdentity` is local routing/provenance data and is not serialized into game-facing play options.
+- DevApp keeps one-based `seatIndex` and `activeSeats` as controller routing and display concepts. Any message crossing into Unity game-facing runtime behavior must use the captured mapping rather than inferring seat or player identity in multiple places. DevApp-local message names may keep `seatIndex` for controller assignment, but Unity game-facing runtime APIs use `GCPlayOptions.players`, `playerIndex`, and result objects rather than `playerId`.
 
 ## Deterministic Shuffle
 
@@ -54,7 +54,8 @@ Required cross-language fixtures:
 
 - All mapping translation happens through one run-scoped mapping object per adapter. Input, `screen_space`, `runtime_messages`, diagnostics, and game-over paths must not each reimplement mapping rules.
 - Core diagnostics foundation must be available before mapping migration so invalid mapping references can emit stable diagnostics without waiting for the full runtime-output catalog.
-- Private hosted transport still carries the shuffled player roster as `activePlayers[]` records with `playerIndex`, player type, and color before Unity adapts it into `GCPlayOptions.players`. Legacy `players[]` payloads with `playerId` or `name` are adapter/internal only during migration.
+- Private hosted transport carries the shuffled player roster as `players[]` records with `playerIndex`, `playerSeed`, player type, and color, which Unity exposes as `GCPlayOptions.players`. Legacy `players[]` payloads with `playerId` or `name` are adapter/internal only during migration and must not cross into current Unity package boot payloads.
+- DevApp/local capture builds the same `GCPlayOptions.players` game-facing roster from local seat setup while keeping `GCSeatIdentity` and DevApp `seatIndex`/`activeSeats` state separate for source-seat display and controller routing.
 - Runtime input delivered to Unity uses `playerIndex`. DevApp/controller routing may start from `seatIndex`, and hosted routing may start from platform `playerId`, but both are translated before Unity game code sees input.
 - Platform-side input from unmapped post-play participants is dropped at the adapter boundary. The mapping is not mutated during the run.
 - Unity-originated invalid `playerIndex` references emit structured diagnostics.
