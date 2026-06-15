@@ -18,17 +18,23 @@ If Unity cannot switch the active build target automatically, setup leaves a war
 
 The v1 clean template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
 
-When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the package writes `gc.runtime-info.json` to the build output root, next to `index.html`. The sidecar contains `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; the Unity package name and version come from the package root `package.json`.
+When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the package writes `gc.runtime-info.json` to the build output root, next to `index.html`. The sidecar contains compact canonical JSON fields: `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; the Unity package name and version come from the package root `package.json`.
 
-The sidecar enables a Gaming Couch upload/client validation follow-up to inspect Unity build identity before loading the Unity player. This package does not define upload validation policy; that policy belongs in the Gaming Couch main repo.
+The same canonical payload is baked into the WebGL runtime resource. A package-owned static bootstrap runs with `RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)`, calls the `.jslib` bridge, and forwards the parsed metadata to `window.gamingCouchRegisterRuntimeInfo(metadata)`. `GamingCouchInstanceStarted()` remains a payload-free lifecycle startup signal.
+
+The Gaming Couch hosted SDK reads `gc.runtime-info.json` before `createUnityInstance`. If the sidecar is missing, transitional legacy behavior remains. If the sidecar exists, the hosted SDK stores the normalized identity and rejects startup if the subsequent runtime callback identity differs.
+
+Gaming Couch upload validation in the main repo now preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
 
 Any WebGL build also writes `gc.unity-build-info.json` beside `index.html`, even when another WebGL template is selected. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract and does not extend `gc.runtime-info.json`.
 
-Gaming Couch upload validation may use `gc.unity-build-info.json` to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
+Gaming Couch upload validation does not validate `gc.unity-build-info.json` in this slice. A later main-repo policy may use it to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
 
 Build diagnostic paths are normalized before JSON serialization: build-output paths are build-output-relative, project paths are project-relative, user-home paths use `${USER_HOME}`, and unknown absolute paths are redacted.
 
 `gameProtocolVersion` identifies the Gaming Couch game integration contract. Sidecar generation, package metadata, build diagnostics, and upload validation rules do not require a protocol bump unless the platform/game contract changes.
+
+These sidecars and runtime callbacks are drift detection and diagnostics, not cryptographic proof that the WebGL data or wasm was built with the declared package or settings.
 
 For the package's strict current-runtime behavior, the current recommendation is no `gameProtocolVersion` bump if the Gaming Couch client/SDK already translates legacy hosted payloads into current Unity runtime payloads before invoking the package. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
 

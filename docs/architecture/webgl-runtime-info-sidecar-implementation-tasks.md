@@ -1,7 +1,7 @@
 # WebGL Runtime Info Sidecar Implementation Tasks
 
-Status: Ready for implementation
-Last updated: 2026-05-27
+Status: Implemented; main-repo hosted and upload validation follow-up implemented
+Last updated: 2026-06-15
 Owner: Gaming Couch Unity package team
 
 ## Source Context
@@ -10,8 +10,8 @@ This plan turns the May 27, 2026 design discussion into an executable task list 
 
 Primary intent:
 
-- Write Unity package/runtime identity into WebGL build output before the Unity player is loaded.
-- Enable a follow-up Gaming Couch upload and hosted runtime preflight to validate Unity build identity without launching the Unity loader, wasm, or runtime.
+- Write Unity package/runtime identity into WebGL build output so the hosted SDK can read it before `createUnityInstance`.
+- Enable Gaming Couch upload and hosted runtime preflight to validate Unity build identity before Unity instance creation.
 - Remove package-version drift by treating `package.json` as the source of truth for package name and package version.
 - Keep DevApp Editor runtime registration working before any WebGL build exists.
 
@@ -28,8 +28,8 @@ Decisions:
 - `gameProtocolVersion` remains the Gaming Couch game integration contract version. This work must not bump it.
 - DevApp Editor runtime registration must not read `gc.runtime-info.json`; Editor play may happen before any WebGL build exists.
 - WebGL builds using the Gaming Couch export template write `gc.runtime-info.json` at the export root, next to `index.html`.
-- The sidecar is a build artifact identity for diagnostics and future upload validation, not cryptographic attestation.
-- Main Gaming Couch upload/client validation changes are out of scope for this Unity package task plan unless the user explicitly grants cross-repo edit permission.
+- The sidecar is a build artifact identity for diagnostics and upload validation, not cryptographic attestation.
+- Main Gaming Couch upload/client validation changes live outside this Unity package task plan. They have now been implemented separately with explicit cross-repo permission.
 
 Target sidecar shape; generated `packageName` and `packageVersion` values come from `package.json`:
 
@@ -88,6 +88,10 @@ Manual smoke validation, if time allows:
 - Inspect the JSON and confirm package version matches `package.json`.
 - Switch away from the Gaming Couch template, build or call the writer path, and confirm no sidecar is produced for non-Gaming Couch templates.
 
-## Follow-Up Outside This Repo
+## Implemented Main-Repo Follow-Up
 
-After this Unity package change lands, the Gaming Couch main repo can add upload/client validation that reads `gc.runtime-info.json` before loading Unity. That follow-up can decide whether and how to validate sidecar presence, `platform`, SemVer `packageVersion`, minimum supported package version, and supported `gameProtocolVersion`.
+The Gaming Couch main repo now reads `gc.runtime-info.json` before `createUnityInstance`. Missing sidecar metadata keeps transitional legacy behavior. When the sidecar exists, the hosted SDK stores normalized identity and rejects startup if the subsequent runtime callback identity differs.
+
+Build upload validation now preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
+
+The main repo still does not validate `gc.unity-build-info.json` in this slice. Future policy can add minimum package-version, stale-package, unsupported-package-version, or template/settings checks separately.
