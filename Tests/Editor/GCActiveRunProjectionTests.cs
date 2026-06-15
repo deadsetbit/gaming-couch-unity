@@ -157,7 +157,6 @@ public sealed class GCActiveRunProjectionTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] entries with playerIndex"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]

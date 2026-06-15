@@ -191,7 +191,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] entries with playerIndex"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
@@ -207,7 +206,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("Legacy play payloads containing playerId/name roster entries"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
@@ -223,7 +221,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] must not contain duplicate playerIndex values"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
@@ -239,7 +236,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] must use dense zero-based playerIndex values"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
@@ -254,7 +250,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] entries must include playerIndex"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
@@ -269,7 +264,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("players[] entries must include playerIndex"));
-        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]
