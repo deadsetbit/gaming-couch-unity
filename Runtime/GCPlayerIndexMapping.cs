@@ -105,12 +105,12 @@ namespace DSB.GC
                 var playerIndex = player.playerIndex;
                 if (playerIndex < 0 || playerIndex >= players.Length)
                 {
-                    throw new ArgumentException("[GamingCouch] activePlayers must use dense zero-based playerIndex values.", nameof(options));
+                    throw new ArgumentException("[GamingCouch] players[] must use dense zero-based playerIndex values.", nameof(options));
                 }
 
                 if (seenPlayerIndices[playerIndex])
                 {
-                    throw new ArgumentException("[GamingCouch] activePlayers must not contain duplicate playerIndex values.", nameof(options));
+                    throw new ArgumentException("[GamingCouch] players[] must not contain duplicate playerIndex values.", nameof(options));
                 }
 
                 seenPlayerIndices[playerIndex] = true;

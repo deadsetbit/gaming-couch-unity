@@ -127,29 +127,10 @@ public sealed class GCPlayerIndexMappingTests
     }
 
     [Test]
-    public void LegacyPlayJsonThrowsTargetedClientSdkTranslationError()
-    {
-        var exception = Assert.Throws<ArgumentException>(
-            () => GCPlayOptions.CreateFromJSON(
-                "{\"seed\":424242,\"players\":[" +
-                "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-                "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
-                "]}"
-            )
-        );
-
-        Assert.That(exception.Message, Does.Contain("Legacy play payloads containing players[]"));
-        Assert.That(
-            exception.Message,
-            Does.Contain("client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity")
-        );
-    }
-
-    [Test]
-    public void ActivePlayersJsonPreservesHostedBoundaryMappingWithoutPrivatePlatformIdentity()
+    public void CurrentPlayersJsonPreservesHostedBoundaryMappingWithoutPrivatePlatformIdentity()
     {
         var options = GCPlayOptions.CreateFromJSON(
-            "{\"seed\":424242,\"activePlayers\":[" +
+            "{\"seed\":424242,\"players\":[" +
             "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
             "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
@@ -181,6 +162,142 @@ public sealed class GCPlayerIndexMappingTests
         Assert.That(gameFacingOptions.players[1].type, Is.EqualTo(GCPlayerType.player.ToString()));
         Assert.That(gameFacingOptions.players[1].playerSeed, Is.EqualTo(333333));
         Assert.That(gameFacingOptions.players[1].color, Is.EqualTo(GCPlayerColor.blue.ToString()));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonAcceptsEscapedPlayerIndexFieldName()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            "{\"seed\":424242,\"players\":[" +
+            "{\"player\\u0049ndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
+            "{\"player\\u0049ndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
+            "]}"
+        );
+
+        Assert.That(options.players, Has.Length.EqualTo(2));
+        Assert.That(options.players[0].playerIndex, Is.EqualTo(1));
+        Assert.That(options.players[1].playerIndex, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void ActivePlayersJsonThrowsCurrentRosterError()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"activePlayers\":[" +
+                "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("activePlayers[] is not accepted"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void LegacyPlayersJsonThrowsCurrentRosterShapeError()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("Legacy play payloads containing playerId/name roster entries"));
+        Assert.That(exception.Message, Does.Not.Contain("activePlayers"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonRejectsDuplicatePlayerIndex()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerIndex\":0,\"playerSeed\":222222,\"type\":\"bot\",\"color\":\"green\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("players[] must not contain duplicate playerIndex values"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonRejectsNonDensePlayerIndex()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"playerIndex\":1,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}," +
+                "{\"playerIndex\":2,\"playerSeed\":222222,\"type\":\"bot\",\"color\":\"green\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("players[] must use dense zero-based playerIndex values"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonRequiresPlayerIndexField()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("players[] entries must include playerIndex"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonRequiresDirectPlayerIndexField()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayOptions.CreateFromJSON(
+                "{\"seed\":424242,\"players\":[" +
+                "{\"metadata\":{\"playerIndex\":0},\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
+                "]}"
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("players[] entries must include playerIndex"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
+    }
+
+    [Test]
+    public void CurrentPlayersJsonDoesNotTreatNestedUnknownMetadataAsLegacyRoster()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            "{\"seed\":424242,\"players\":[" +
+            "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"," +
+            "\"metadata\":{\"playerId\":10,\"name\":\"Debug\"}}" +
+            "]}"
+        );
+
+        Assert.That(options.players, Has.Length.EqualTo(1));
+        Assert.That(options.players[0].playerIndex, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void ActivePlayersJsonRejectsOnlyTopLevelRosterProperty()
+    {
+        var options = GCPlayOptions.CreateFromJSON(
+            "{\"seed\":424242,\"players\":[" +
+            "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
+            "],\"platformData\":{\"source\":{\"activePlayers\":\"not a roster\"}}}"
+        );
+
+        Assert.That(options.players, Has.Length.EqualTo(1));
+        Assert.That(options.players[0].playerIndex, Is.EqualTo(0));
     }
 
     [Test]

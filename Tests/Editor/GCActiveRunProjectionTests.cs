@@ -119,10 +119,10 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersJsonProjectionPreservesPreMappedPlayerIndexOrder()
+    public void PlayersJsonProjectionPreservesPreMappedPlayerIndexOrder()
     {
         var options = GCPlayOptions.CreateFromJSON(
-            "{\"seed\":424242,\"activePlayers\":[" +
+            "{\"seed\":424242,\"players\":[" +
             "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
             "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
             "]}"
@@ -145,25 +145,19 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersJsonProjectionRejectsMixedLegacyPlayersPayload()
+    public void ActivePlayersJsonProjectionRejectsNonCurrentRosterProperty()
     {
         var exception = Assert.Throws<System.ArgumentException>(
             () => GCPlayOptions.CreateFromJSON(
                 "{\"seed\":424242,\"activePlayers\":[" +
                 "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
                 "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
-                "],\"players\":[" +
-                "{\"playerId\":10,\"playerSeed\":111111,\"name\":\"Alice\",\"type\":\"player\",\"color\":\"blue\"}," +
-                "{\"playerId\":20,\"playerSeed\":222222,\"name\":\"Bob\",\"type\":\"bot\",\"color\":\"green\"}" +
                 "]}"
             )
         );
 
-        Assert.That(exception.Message, Does.Contain("Legacy play payloads containing players[]"));
-        Assert.That(
-            exception.Message,
-            Does.Contain("client/SDK must translate legacy players[] payloads to activePlayers[] before invoking Unity")
-        );
+        Assert.That(exception.Message, Does.Contain("activePlayers[] is not accepted"));
+        Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
     [Test]

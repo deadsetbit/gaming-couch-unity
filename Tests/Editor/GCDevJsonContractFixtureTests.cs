@@ -227,7 +227,7 @@ public sealed class GCDevJsonContractFixtureTests
         var options = GCPlayOptions.CreateFromJSON(
             @"{
   ""seed"": 424242,
-  ""activePlayers"": [
+  ""players"": [
     { ""playerIndex"": 0, ""type"": ""player"", ""color"": ""blue"" }
   ],
   ""platformData"": {
@@ -274,7 +274,7 @@ public sealed class GCDevJsonContractFixtureTests
         var options = GCPlayOptions.CreateFromJSON(
             @"{
   ""seed"": 424242,
-  ""activePlayers"": [
+  ""players"": [
     { ""playerIndex"": 0, ""type"": ""player"", ""color"": ""blue"" }
   ],
   ""platformData"": {
