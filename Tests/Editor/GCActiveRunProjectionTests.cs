@@ -145,18 +145,18 @@ public sealed class GCActiveRunProjectionTests
     }
 
     [Test]
-    public void ActivePlayersJsonProjectionRejectsNonCurrentRosterProperty()
+    public void ProjectionRejectsNonCurrentRosterProperty()
     {
         var exception = Assert.Throws<System.ArgumentException>(
             () => GCPlayOptions.CreateFromJSON(
-                "{\"seed\":424242,\"activePlayers\":[" +
+                "{\"seed\":424242,\"roster\":[" +
                 "{\"playerIndex\":1,\"playerSeed\":333333,\"type\":\"player\",\"color\":\"blue\"}," +
                 "{\"playerIndex\":0,\"playerSeed\":444444,\"type\":\"bot\",\"color\":\"green\"}" +
                 "]}"
             )
         );
 
-        Assert.That(exception.Message, Does.Contain("activePlayers[] is not accepted"));
+        Assert.That(exception.Message, Does.Contain("players[] entries with playerIndex"));
         Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 

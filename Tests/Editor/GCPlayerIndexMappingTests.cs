@@ -180,17 +180,17 @@ public sealed class GCPlayerIndexMappingTests
     }
 
     [Test]
-    public void ActivePlayersJsonThrowsCurrentRosterError()
+    public void NonCurrentRosterJsonThrowsCurrentPlayersRequiredError()
     {
         var exception = Assert.Throws<ArgumentException>(
             () => GCPlayOptions.CreateFromJSON(
-                "{\"seed\":424242,\"activePlayers\":[" +
+                "{\"seed\":424242,\"roster\":[" +
                 "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
                 "]}"
             )
         );
 
-        Assert.That(exception.Message, Does.Contain("activePlayers[] is not accepted"));
+        Assert.That(exception.Message, Does.Contain("players[] entries with playerIndex"));
         Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
@@ -207,7 +207,6 @@ public sealed class GCPlayerIndexMappingTests
         );
 
         Assert.That(exception.Message, Does.Contain("Legacy play payloads containing playerId/name roster entries"));
-        Assert.That(exception.Message, Does.Not.Contain("activePlayers"));
         Assert.That(exception.Message, Does.Not.Contain("translate"));
     }
 
@@ -288,12 +287,12 @@ public sealed class GCPlayerIndexMappingTests
     }
 
     [Test]
-    public void ActivePlayersJsonRejectsOnlyTopLevelRosterProperty()
+    public void PlayersJsonIgnoresNestedNonRosterMetadata()
     {
         var options = GCPlayOptions.CreateFromJSON(
             "{\"seed\":424242,\"players\":[" +
             "{\"playerIndex\":0,\"playerSeed\":111111,\"type\":\"player\",\"color\":\"blue\"}" +
-            "],\"platformData\":{\"source\":{\"activePlayers\":\"not a roster\"}}}"
+            "],\"platformData\":{\"source\":{\"legacyRoster\":\"not a roster\"}}}"
         );
 
         Assert.That(options.players, Has.Length.EqualTo(1));

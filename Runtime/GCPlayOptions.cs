@@ -494,8 +494,8 @@ namespace DSB.GC
     [System.Serializable]
     public class GCPlayOptions
     {
-        internal const string ActivePlayersPayloadErrorMessage =
-            "[GamingCouch] Hosted play payloads must use players[] with playerIndex. activePlayers[] is not accepted by the current Unity package.";
+        internal const string MissingPlayersPayloadErrorMessage =
+            "[GamingCouch] Hosted play payloads must include players[] entries with playerIndex.";
 
         internal const string LegacyPlayersPayloadErrorMessage =
             "[GamingCouch] Legacy play payloads containing playerId/name roster entries are not accepted by the Unity package. Use players[] entries with playerIndex, playerSeed, type, and color.";
@@ -533,12 +533,13 @@ namespace DSB.GC
 
         public static GCPlayOptions CreateFromJSON(string optionsJson)
         {
-            if (ContainsTopLevelJsonField(optionsJson, "activePlayers"))
-            {
-                throw new ArgumentException(ActivePlayersPayloadErrorMessage, nameof(optionsJson));
-            }
-
-            if (TryFindTopLevelJsonFieldValueRange(optionsJson, "players", out var playersValueStart, out var playersValueEnd))
+            var hasPlayersJsonField = TryFindTopLevelJsonFieldValueRange(
+                optionsJson,
+                "players",
+                out var playersValueStart,
+                out var playersValueEnd
+            );
+            if (hasPlayersJsonField)
             {
                 ValidatePlayersJsonShape(optionsJson, playersValueStart, playersValueEnd, nameof(optionsJson));
             }
@@ -547,6 +548,11 @@ namespace DSB.GC
             if (transport == null)
             {
                 return null;
+            }
+
+            if (!hasPlayersJsonField || transport.players == null)
+            {
+                throw new ArgumentException(MissingPlayersPayloadErrorMessage, nameof(optionsJson));
             }
 
             var hasTransportRoster = transport.players != null && transport.players.Length > 0;
@@ -630,11 +636,6 @@ namespace DSB.GC
 
                 seenPlayerIndices[playerIndex] = true;
             }
-        }
-
-        private static bool ContainsTopLevelJsonField(string json, string fieldName)
-        {
-            return TryFindTopLevelJsonFieldValueRange(json, fieldName, out _, out _);
         }
 
         private static bool TryFindTopLevelJsonFieldValueRange(
