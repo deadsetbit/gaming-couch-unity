@@ -28,7 +28,7 @@ Decisions:
 - `gameProtocolVersion` remains the Gaming Couch game integration contract version. This work must not bump it.
 - DevApp Editor runtime registration must not read `gc.runtime-info.json`; Editor play may happen before any WebGL build exists.
 - WebGL builds using the Gaming Couch export template write `gc.runtime-info.json` at the export root, next to `index.html`.
-- The sidecar is a build artifact identity for diagnostics and upload validation, not cryptographic attestation.
+- The sidecar is a build artifact identity for diagnostics and upload validation, not cryptographic proof.
 - Main Gaming Couch upload/client validation changes live outside this Unity package task plan. They have now been implemented separately with explicit cross-repo permission.
 
 Target sidecar shape; generated `packageName` and `packageVersion` values come from `package.json`:
@@ -86,12 +86,12 @@ Manual smoke validation, if time allows:
 
 - In a Unity host project using the Gaming Couch template, build WebGL and confirm `gc.runtime-info.json` exists next to `index.html`.
 - Inspect the JSON and confirm package version matches `package.json`.
-- Switch away from the Gaming Couch template, build or call the writer path, and confirm no sidecar is produced for non-Gaming Couch templates.
+- Switch away from the Gaming Couch template, build or call the writer path, and confirm no `gc.runtime-info.json` sidecar is produced for non-Gaming Couch templates.
 
 ## Implemented Main-Repo Follow-Up
 
 The Gaming Couch main repo now reads `gc.runtime-info.json` before `createUnityInstance`. Missing sidecar metadata keeps transitional legacy behavior. When the sidecar exists, the hosted SDK stores normalized identity and rejects startup if the subsequent runtime callback identity differs.
 
-Build upload validation now preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
+Build upload processing now preserves root `gc.runtime-info.json`; upload validation requires it for Unity uploads and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
 
-The main repo still does not validate `gc.unity-build-info.json` in this slice. Future policy can add minimum package-version, stale-package, unsupported-package-version, or template/settings checks separately.
+The main repo now preserves schema v2 root `gc.unity-build-info.json` for diagnostics when present, but does not require or validate it in this slice. Any future baked `Resources/GamingCouchUnityBuildInfo` / `window.gamingCouchRegisterUnityBuildInfo(metadata)` path is diagnostics-only and does not gate runtime startup; the root `gc.unity-build-info.json` sidecar remains the authoritative complete build diagnostic. Future policy can add minimum package-version, stale-package, unsupported-package-version, or template/settings checks separately.

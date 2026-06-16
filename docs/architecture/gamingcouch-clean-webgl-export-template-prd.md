@@ -17,7 +17,7 @@ The v1 template is a clean production/upload shell only. It provides Unity loadi
 - Apply previewed release defaults that are suitable for upload-oriented builds.
 - Require Unity 6 so splash/logo expectations match the supported editor line.
 - Keep setup explicit while reducing manual build prep: the clean WebGL export setup may switch the active build target to WebGL, and readiness still warns if Unity leaves another target active.
-- Emit package/runtime identity beside clean WebGL builds so upload and hosted-runtime validation can inspect Unity build metadata before Unity instance creation.
+- Emit package/runtime identity beside clean WebGL builds so upload and hosted-runtime validation can inspect Unity runtime identity before Unity instance creation.
 
 ## Requirements
 
@@ -55,9 +55,11 @@ Clean WebGL export setup applies generated release-oriented defaults. The previe
 - `gameProtocolVersion` remains the Gaming Couch game integration contract version. Sidecar generation, upload metadata checks, and package-version validation do not require a protocol bump unless the platform/game contract changes.
 - The same canonical payload is baked into the WebGL runtime resource and sent early through `window.gamingCouchRegisterRuntimeInfo(metadata)` by a package-owned `RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)` bootstrap. `GamingCouchInstanceStarted()` remains payload-free lifecycle startup.
 - Gaming Couch hosted runtime validation reads `gc.runtime-info.json` before `createUnityInstance`. Missing sidecar metadata keeps transitional legacy behavior. When the sidecar exists, the hosted SDK stores normalized identity and rejects startup if the subsequent runtime callback identity differs.
-- Gaming Couch upload validation in the main repo preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
-- Current Gaming Couch upload validation does not validate `gc.unity-build-info.json`; that diagnostic sidecar can be considered by a later template/settings policy.
-- The sidecar and runtime callback are drift detection and diagnostics, not cryptographic proof that the WebGL data or wasm was built with the declared package or settings.
+- Gaming Couch upload processing in the main repo preserves root `gc.runtime-info.json`; upload validation requires it for Unity uploads and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
+- Any WebGL build also writes schema v2 `gc.unity-build-info.json`, a separate diagnostic sidecar with runtime identity, build environment, host OS diagnostics, and build result sections.
+- If a future WebGL build includes a baked `Resources/GamingCouchUnityBuildInfo` payload, the package bootstrap may forward it to optional `window.gamingCouchRegisterUnityBuildInfo(metadata)`. That optional baked diagnostics path does not gate runtime startup; the root `gc.unity-build-info.json` sidecar remains the authoritative complete build diagnostic.
+- Gaming Couch upload processing preserves root `gc.unity-build-info.json` when present, but upload validation does not require or validate it; that diagnostic sidecar can be considered by a later template/settings policy.
+- The runtime-info sidecar and callback provide drift detection; build-info artifacts provide diagnostics. None are cryptographic proof that the WebGL data or wasm was built with the declared package or settings.
 
 ## Start Screen Integration
 

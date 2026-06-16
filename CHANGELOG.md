@@ -4,7 +4,8 @@
 
 ### Changed
 
-- Added WebGL runtime-info attestation: exports now write canonical root `gc.runtime-info.json`, bake the same payload into an early `GamingCouchRegisterRuntimeInfo` callback before splash screen, keep `GamingCouchInstanceStarted()` payload-free, let the hosted SDK fail startup on sidecar/runtime drift, and require upload validation for `gc.runtime-info.json` without validating `gc.unity-build-info.json`.
+- Added WebGL runtime-info drift detection: exports now write canonical root `gc.runtime-info.json`, bake the same payload into an early `GamingCouchRegisterRuntimeInfo` callback before splash screen, keep `GamingCouchInstanceStarted()` payload-free, let the hosted SDK fail startup on sidecar/runtime drift, and make upload validation require and validate `gc.runtime-info.json`.
+- Updated Unity build diagnostics: `gc.unity-build-info.json` is schema v2 with runtime identity, build environment, host OS diagnostics, and build result sections; upload processing preserves it when present, but upload validation does not require or validate it.
 - Documented the Unity package as strict-current at its runtime boundary: hosted play payloads must arrive with current active-player identity, runtime input must use `playerIndex`, and legacy `players[]`/`playerId` adaptation belongs in the Gaming Couch client/SDK before Unity is invoked.
 - Clarified that source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
 - Documented retained obsolete Unity APIs as compile-time errors with migration guidance toward `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
