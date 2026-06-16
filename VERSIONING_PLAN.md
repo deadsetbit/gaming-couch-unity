@@ -30,7 +30,8 @@
 ```
 
 - The same canonical runtime-info payload is baked into the WebGL runtime resource and sent early through `window.gamingCouchRegisterRuntimeInfo(metadata)` by a package-owned `RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)` bootstrap. `GamingCouchInstanceStarted()` remains payload-free lifecycle startup.
-- Any WebGL export also writes `gc.unity-build-info.json` at the export root, even when another WebGL template is selected. This is a separate schema-versioned diagnostic sidecar for Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values.
+- Any WebGL export also writes schema v2 `gc.unity-build-info.json` at the export root, even when another WebGL template is selected. This is a separate diagnostic sidecar for generator metadata, runtime identity, Unity editor/build/WebGL settings, build host OS diagnostics, and selected BuildReport result values.
+- If a baked `Resources/GamingCouchUnityBuildInfo` payload exists in a future build, the WebGL bootstrap forwards it to optional `window.gamingCouchRegisterUnityBuildInfo(metadata)` without changing runtime identity gating. The root `gc.unity-build-info.json` sidecar remains the authoritative complete build diagnostic.
 - `gc.unity-build-info.json` normalizes path-like values before JSON serialization. Build-output paths are build-output-relative, project paths are project-relative, user-home paths use `${USER_HOME}`, and unknown absolute paths are redacted.
 - Build diagnostics do not require a `gameProtocolVersion` bump because they do not change the platform/game runtime contract.
 - Current Gaming Couch upload validation preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.

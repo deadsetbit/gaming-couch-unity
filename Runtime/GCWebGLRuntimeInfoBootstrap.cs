@@ -6,10 +6,14 @@ namespace DSB.GC
     internal static class GCWebGLRuntimeInfoBootstrap
     {
         internal const string RuntimeInfoResourceName = "GamingCouchRuntimeInfo";
+        internal const string UnityBuildInfoResourceName = "GamingCouchUnityBuildInfo";
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern void GamingCouchRegisterRuntimeInfo(string runtimeInfoJson);
+
+        [DllImport("__Internal")]
+        private static extern void GamingCouchRegisterUnityBuildInfo(string unityBuildInfoJson);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         private static void RegisterRuntimeInfoBeforeSplashScreen()
@@ -22,18 +26,34 @@ namespace DSB.GC
             }
 
             GamingCouchRegisterRuntimeInfo(runtimeInfoJson);
+
+            var unityBuildInfoJson = LoadBakedUnityBuildInfoJson();
+            if (!string.IsNullOrWhiteSpace(unityBuildInfoJson))
+            {
+                GamingCouchRegisterUnityBuildInfo(unityBuildInfoJson);
+            }
         }
 #endif
 
         internal static string LoadBakedRuntimeInfoJson()
         {
-            var runtimeInfo = Resources.Load<TextAsset>(RuntimeInfoResourceName);
-            if (runtimeInfo == null)
+            return LoadBakedResourceJson(RuntimeInfoResourceName);
+        }
+
+        internal static string LoadBakedUnityBuildInfoJson()
+        {
+            return LoadBakedResourceJson(UnityBuildInfoResourceName);
+        }
+
+        private static string LoadBakedResourceJson(string resourceName)
+        {
+            var resource = Resources.Load<TextAsset>(resourceName);
+            if (resource == null)
             {
                 return null;
             }
 
-            return runtimeInfo.text.TrimEnd('\r', '\n');
+            return resource.text.TrimEnd('\r', '\n');
         }
     }
 }

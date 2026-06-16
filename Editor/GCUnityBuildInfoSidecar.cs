@@ -252,7 +252,8 @@ internal static class GCUnityBuildInfoSidecarWriter
 
 internal static class GCUnityBuildInfoSidecarFactory
 {
-    internal const int SchemaVersion = 1;
+    internal const int SchemaVersion = 2;
+    private const string Generator = "dsb.gamingcouch.unity";
 
     internal static GCUnityBuildInfoSidecar Create(
         BuildTarget buildTarget,
@@ -267,32 +268,50 @@ internal static class GCUnityBuildInfoSidecarFactory
         return new GCUnityBuildInfoSidecar
         {
             schemaVersion = SchemaVersion,
-            capture = new GCUnityBuildInfoCaptureMetadata
-            {
-                capturedAtUtc = string.IsNullOrWhiteSpace(capturedAtUtc)
-                    ? GCUnityBuildInfoCaptureClock.CaptureUtcNow()
-                    : capturedAtUtc,
-                generator = "dsb.gamingcouch.unity",
-            },
-            unity = new GCUnityBuildInfoUnityEditorMetadata
-            {
-                version = string.IsNullOrWhiteSpace(unityVersion) ? Application.unityVersion : unityVersion,
-            },
-            package = new GCUnityBuildInfoPackageMetadata
+            generator = Generator,
+            identity = new GCUnityBuildInfoIdentityMetadata
             {
                 platform = packageIdentity.platform,
                 packageName = packageIdentity.packageName,
                 packageVersion = packageIdentity.packageVersion,
                 gameProtocolVersion = packageIdentity.gameProtocolVersion,
             },
-            build = new GCUnityBuildInfoBuildMetadata
+            buildEnvironment = new GCUnityBuildInfoBuildEnvironment
             {
+                unityEditorVersion = string.IsNullOrWhiteSpace(unityVersion) ? Application.unityVersion : unityVersion,
                 target = buildTarget.ToString(),
                 targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget).ToString(),
-                template = webGLTemplate,
-                summary = buildSummary,
+                webGL = new GCUnityBuildInfoWebGLEnvironment
+                {
+                    template = webGLTemplate,
+                    settings = webGLSettings,
+                },
+                host = GCUnityBuildInfoHostDiagnosticsCapture.Capture(),
             },
-            webGLSettings = webGLSettings,
+            buildResult = CreateBuildResult(buildSummary, capturedAtUtc),
+        };
+    }
+
+    private static GCUnityBuildInfoBuildSummary CreateBuildResult(
+        GCUnityBuildInfoBuildSummary buildSummary,
+        string capturedAtUtc
+    )
+    {
+        return new GCUnityBuildInfoBuildSummary
+        {
+            capturedAtUtc = string.IsNullOrWhiteSpace(capturedAtUtc)
+                ? GCUnityBuildInfoCaptureClock.CaptureUtcNow()
+                : capturedAtUtc,
+            result = buildSummary.result,
+            totalSizeBytes = buildSummary.totalSizeBytes,
+            totalTimeSeconds = buildSummary.totalTimeSeconds,
+            totalWarnings = buildSummary.totalWarnings,
+            totalErrors = buildSummary.totalErrors,
+            guid = buildSummary.guid,
+            outputPath = buildSummary.outputPath,
+            outputPathKind = buildSummary.outputPathKind,
+            outputPathRedacted = buildSummary.outputPathRedacted,
+            outputPathRedactionReason = buildSummary.outputPathRedactionReason,
         };
     }
 }
@@ -419,32 +438,41 @@ internal static class GCUnityBuildInfoWebGLSettingsCapture
     }
 }
 
+internal static class GCUnityBuildInfoHostDiagnosticsCapture
+{
+    internal static GCUnityBuildInfoHostDiagnostics Capture()
+    {
+        return new GCUnityBuildInfoHostDiagnostics
+        {
+            editorPlatform = Application.platform.ToString(),
+            osFamily = SystemInfo.operatingSystemFamily.ToString(),
+            operatingSystem = ResolveOperatingSystem(),
+        };
+    }
+
+    private static string ResolveOperatingSystem()
+    {
+        if (!string.IsNullOrWhiteSpace(SystemInfo.operatingSystem))
+        {
+            return SystemInfo.operatingSystem;
+        }
+
+        return Environment.OSVersion.ToString();
+    }
+}
+
 [Serializable]
 internal sealed class GCUnityBuildInfoSidecar
 {
     public int schemaVersion;
-    public GCUnityBuildInfoCaptureMetadata capture;
-    public GCUnityBuildInfoUnityEditorMetadata unity;
-    public GCUnityBuildInfoPackageMetadata package;
-    public GCUnityBuildInfoBuildMetadata build;
-    public GCUnityBuildInfoWebGLSettings webGLSettings;
-}
-
-[Serializable]
-internal sealed class GCUnityBuildInfoCaptureMetadata
-{
-    public string capturedAtUtc;
     public string generator;
+    public GCUnityBuildInfoIdentityMetadata identity;
+    public GCUnityBuildInfoBuildEnvironment buildEnvironment;
+    public GCUnityBuildInfoBuildSummary buildResult;
 }
 
 [Serializable]
-internal sealed class GCUnityBuildInfoUnityEditorMetadata
-{
-    public string version;
-}
-
-[Serializable]
-internal sealed class GCUnityBuildInfoPackageMetadata
+internal sealed class GCUnityBuildInfoIdentityMetadata
 {
     public string platform;
     public string packageName;
@@ -453,17 +481,34 @@ internal sealed class GCUnityBuildInfoPackageMetadata
 }
 
 [Serializable]
-internal sealed class GCUnityBuildInfoBuildMetadata
+internal sealed class GCUnityBuildInfoBuildEnvironment
 {
+    public string unityEditorVersion;
     public string target;
     public string targetGroup;
+    public GCUnityBuildInfoWebGLEnvironment webGL;
+    public GCUnityBuildInfoHostDiagnostics host;
+}
+
+[Serializable]
+internal sealed class GCUnityBuildInfoWebGLEnvironment
+{
     public string template;
-    public GCUnityBuildInfoBuildSummary summary;
+    public GCUnityBuildInfoWebGLSettings settings;
+}
+
+[Serializable]
+internal sealed class GCUnityBuildInfoHostDiagnostics
+{
+    public string editorPlatform;
+    public string osFamily;
+    public string operatingSystem;
 }
 
 [Serializable]
 internal sealed class GCUnityBuildInfoBuildSummary
 {
+    public string capturedAtUtc;
     public string result;
     public long totalSizeBytes;
     public double totalTimeSeconds;

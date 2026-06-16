@@ -36,39 +36,58 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             var sidecar = JsonUtility.FromJson<GCUnityBuildInfoSidecar>(json);
 
             Assert.That(sidecar.schemaVersion, Is.EqualTo(GCUnityBuildInfoSidecarFactory.SchemaVersion));
-            Assert.That(sidecar.capture.capturedAtUtc, Is.EqualTo("2026-01-02T03:04:05Z"));
-            Assert.That(sidecar.capture.generator, Is.EqualTo("dsb.gamingcouch.unity"));
-            Assert.That(sidecar.unity.version, Is.EqualTo("6000.0.0f1-test"));
-            Assert.That(sidecar.package.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
-            Assert.That(sidecar.package.packageName, Is.EqualTo("com.test.build-info"));
-            Assert.That(sidecar.package.packageVersion, Is.EqualTo("4.5.6-test.0"));
-            Assert.That(sidecar.package.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
-            Assert.That(sidecar.build.target, Is.EqualTo("WebGL"));
-            Assert.That(sidecar.build.targetGroup, Is.EqualTo("WebGL"));
-            Assert.That(sidecar.build.template, Is.EqualTo(GamingCouchWebGLExportSetup.ProjectTemplateIdentifier));
-            Assert.That(sidecar.build.summary.result, Is.EqualTo("Succeeded"));
-            Assert.That(sidecar.build.summary.totalSizeBytes, Is.EqualTo(4096));
-            Assert.That(sidecar.build.summary.totalTimeSeconds, Is.EqualTo(1.25d));
-            Assert.That(sidecar.build.summary.totalWarnings, Is.EqualTo(2));
-            Assert.That(sidecar.build.summary.totalErrors, Is.EqualTo(0));
-            Assert.That(sidecar.build.summary.outputPath, Is.EqualTo("."));
-            Assert.That(sidecar.build.summary.outputPathKind, Is.EqualTo("buildOutputRelative"));
-            Assert.That(sidecar.build.summary.outputPathRedacted, Is.False);
-            Assert.That(sidecar.webGLSettings.il2CppCodeGeneration, Is.EqualTo("OptimizeSize"));
-            Assert.That(sidecar.webGLSettings.managedStrippingLevel, Is.EqualTo("High"));
-            Assert.That(sidecar.webGLSettings.stripUnusedMeshComponents, Is.True);
-            Assert.That(sidecar.webGLSettings.dataCaching, Is.True);
-            Assert.That(sidecar.webGLSettings.compressionFormat, Is.EqualTo("Disabled"));
-            Assert.That(sidecar.webGLSettings.exceptionSupport, Is.EqualTo("ExplicitlyThrownExceptionsOnly"));
-            Assert.That(sidecar.webGLSettings.debugSymbolMode, Is.EqualTo("Off"));
+            Assert.That(sidecar.schemaVersion, Is.EqualTo(2));
+            Assert.That(sidecar.generator, Is.EqualTo("dsb.gamingcouch.unity"));
+            Assert.That(sidecar.identity.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
+            Assert.That(sidecar.identity.packageName, Is.EqualTo("com.test.build-info"));
+            Assert.That(sidecar.identity.packageVersion, Is.EqualTo("4.5.6-test.0"));
+            Assert.That(sidecar.identity.gameProtocolVersion, Is.EqualTo(GCEditorPackageIdentity.GameProtocolVersion));
+            Assert.That(sidecar.buildEnvironment.unityEditorVersion, Is.EqualTo("6000.0.0f1-test"));
+            Assert.That(sidecar.buildEnvironment.target, Is.EqualTo("WebGL"));
+            Assert.That(sidecar.buildEnvironment.targetGroup, Is.EqualTo("WebGL"));
+            Assert.That(sidecar.buildEnvironment.webGL.template, Is.EqualTo(GamingCouchWebGLExportSetup.ProjectTemplateIdentifier));
+            Assert.That(sidecar.buildEnvironment.host.editorPlatform, Is.Not.Empty);
+            Assert.That(sidecar.buildEnvironment.host.osFamily, Is.Not.Empty);
+            Assert.That(sidecar.buildEnvironment.host.operatingSystem, Is.Not.Empty);
+            Assert.That(sidecar.buildResult.capturedAtUtc, Is.EqualTo("2026-01-02T03:04:05Z"));
+            Assert.That(sidecar.buildResult.result, Is.EqualTo("Succeeded"));
+            Assert.That(sidecar.buildResult.totalSizeBytes, Is.EqualTo(4096));
+            Assert.That(sidecar.buildResult.totalTimeSeconds, Is.EqualTo(1.25d));
+            Assert.That(sidecar.buildResult.totalWarnings, Is.EqualTo(2));
+            Assert.That(sidecar.buildResult.totalErrors, Is.EqualTo(0));
+            Assert.That(sidecar.buildResult.outputPath, Is.EqualTo("."));
+            Assert.That(sidecar.buildResult.outputPathKind, Is.EqualTo("buildOutputRelative"));
+            Assert.That(sidecar.buildResult.outputPathRedacted, Is.False);
+            Assert.That(sidecar.buildEnvironment.webGL.settings.il2CppCodeGeneration, Is.EqualTo("OptimizeSize"));
+            Assert.That(sidecar.buildEnvironment.webGL.settings.managedStrippingLevel, Is.EqualTo("High"));
+            Assert.That(sidecar.buildEnvironment.webGL.settings.stripUnusedMeshComponents, Is.True);
+            Assert.That(sidecar.buildEnvironment.webGL.settings.dataCaching, Is.True);
+            Assert.That(sidecar.buildEnvironment.webGL.settings.compressionFormat, Is.EqualTo("Disabled"));
+            Assert.That(sidecar.buildEnvironment.webGL.settings.exceptionSupport, Is.EqualTo("ExplicitlyThrownExceptionsOnly"));
+            Assert.That(sidecar.buildEnvironment.webGL.settings.debugSymbolMode, Is.EqualTo("Off"));
 #if UNITY_2023_1_OR_NEWER
-            Assert.That(sidecar.webGLSettings.webAssembly2023, Is.True);
+            Assert.That(sidecar.buildEnvironment.webGL.settings.webAssembly2023, Is.True);
 #endif
-            Assert.That(sidecar.webGLSettings.developmentBuild, Is.False);
-            Assert.That(sidecar.webGLSettings.codeOptimization, Is.EqualTo("DiskSizeLTO"));
+            Assert.That(sidecar.buildEnvironment.webGL.settings.developmentBuild, Is.False);
+            Assert.That(sidecar.buildEnvironment.webGL.settings.codeOptimization, Is.EqualTo("DiskSizeLTO"));
             Assert.That(json, Does.Contain("\"schemaVersion\""));
-            Assert.That(json, Does.Contain("\"webGLSettings\""));
+            Assert.That(json, Does.Contain("\"generator\""));
+            Assert.That(json, Does.Contain("\"identity\""));
+            Assert.That(json, Does.Contain("\"buildEnvironment\""));
+            Assert.That(json, Does.Contain("\"buildResult\""));
+            Assert.That(json, Does.Contain("\"host\""));
+            Assert.That(json, Does.Contain("\"editorPlatform\""));
+            Assert.That(json, Does.Contain("\"osFamily\""));
+            Assert.That(json, Does.Contain("\"operatingSystem\""));
+            Assert.That(json, Does.Contain("\"webGL\""));
+            Assert.That(json, Does.Contain("\"settings\""));
             Assert.That(json, Does.Contain("\"outputPathKind\""));
+            Assert.That(json, Does.Not.Contain("\"capture\""));
+            Assert.That(json, Does.Not.Contain("\"package\""));
+            Assert.That(json, Does.Not.Contain("\"build\""));
+            Assert.That(json, Does.Not.Contain("\"webGLSettings\""));
+            Assert.That(json, Does.Not.Contain("\"machineName\""));
+            Assert.That(json, Does.Not.Contain("\"hostName\""));
         }
         finally
         {
@@ -161,7 +180,7 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             Assert.That(result.status, Is.EqualTo(GCUnityBuildInfoSidecarWriteStatus.Written));
             Assert.That(result.sidecarPath, Is.EqualTo(sidecarPath));
             Assert.That(json, Does.Not.Contain("\"stale\""));
-            Assert.That(sidecar.build.template, Is.EqualTo("PROJECT:OtherTemplate"));
+            Assert.That(sidecar.buildEnvironment.webGL.template, Is.EqualTo("PROJECT:OtherTemplate"));
         }
         finally
         {
@@ -197,7 +216,7 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             Assert.That(File.Exists(runtimeSidecarPath), Is.False);
             Assert.That(File.Exists(buildInfoSidecarPath), Is.True);
             Assert.That(buildInfoJson, Does.Not.Contain("\"staleBuildInfo\""));
-            Assert.That(buildInfoSidecar.build.template, Is.EqualTo("PROJECT:OtherTemplate"));
+            Assert.That(buildInfoSidecar.buildEnvironment.webGL.template, Is.EqualTo("PROJECT:OtherTemplate"));
         }
         finally
         {

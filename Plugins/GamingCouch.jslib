@@ -25,6 +25,27 @@ mergeInto(LibraryManager.library, {
     window.gamingCouchRegisterRuntimeInfo(runtimeInfo);
   },
 
+  GamingCouchRegisterUnityBuildInfo: function (unityBuildInfoJsonString) {
+    if (!window.gamingCouchRegisterUnityBuildInfo) {
+      return;
+    }
+
+    var unityBuildInfoJson = UTF8ToString(unityBuildInfoJsonString);
+    var unityBuildInfo;
+    try {
+      unityBuildInfo = JSON.parse(unityBuildInfoJson);
+    } catch (error) {
+      console.error("GamingCouchRegisterUnityBuildInfo received invalid JSON", error);
+      return;
+    }
+
+    try {
+      window.gamingCouchRegisterUnityBuildInfo(unityBuildInfo);
+    } catch (error) {
+      console.error("GamingCouchRegisterUnityBuildInfo callback failed", error);
+    }
+  },
+
   GamingCouchSetupDone: function () {
     if (!window.gamingCouchSetupDone) {
       console.error("GamingCouchSetupDone is not defined");

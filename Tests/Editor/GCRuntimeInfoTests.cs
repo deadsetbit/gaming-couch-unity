@@ -81,7 +81,9 @@ public sealed class GCRuntimeInfoTests
         Assert.That(bakedPayload, Is.EqualTo(canonicalPayload));
         Assert.That(GCWebGLRuntimeInfoBootstrap.LoadBakedRuntimeInfoJson(), Is.EqualTo(canonicalPayload));
         Assert.That(bootstrap, Does.Contain("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]"));
-        Assert.That(bootstrap, Does.Contain("Resources.Load<TextAsset>(RuntimeInfoResourceName)"));
+        Assert.That(bootstrap, Does.Contain("LoadBakedResourceJson(RuntimeInfoResourceName)"));
+        Assert.That(bootstrap, Does.Contain("Resources.Load<TextAsset>(resourceName)"));
+        Assert.That(bootstrap, Does.Contain("Debug.LogError(\"Gaming Couch runtime info payload is missing.\");\n                return;"));
         Assert.That(bootstrap, Does.Contain("GamingCouchRegisterRuntimeInfo(runtimeInfoJson);"));
         Assert.That(bootstrap, Does.Not.Contain("GCRuntimeInfoJson.Serialize"));
         Assert.That(runtime, Does.Contain("private static extern void GamingCouchInstanceStarted();"));
@@ -91,6 +93,37 @@ public sealed class GCRuntimeInfoTests
         Assert.That(bridge, Does.Contain("GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString)"));
         Assert.That(bridge, Does.Contain("window.gamingCouchRegisterRuntimeInfo"));
         Assert.That(bridge, Does.Contain("JSON.parse(runtimeInfoJson)"));
+    }
+
+    [Test]
+    public void WebGLUnityBuildInfoCallbackPathUsesOptionalBakedPayload()
+    {
+        var packageRootPath = FindPackageRootPath();
+        var bridgePath = Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib");
+        var bridge = File.ReadAllText(bridgePath);
+        var bootstrapPath = Path.Combine(packageRootPath, "Runtime", "GCWebGLRuntimeInfoBootstrap.cs");
+        var bootstrap = File.ReadAllText(bootstrapPath);
+        var bakedPayloadPath = Path.Combine(
+            packageRootPath,
+            "Runtime",
+            "Resources",
+            GCWebGLRuntimeInfoBootstrap.UnityBuildInfoResourceName + ".json"
+        );
+
+        Assert.That(File.Exists(bakedPayloadPath), Is.False);
+        Assert.That(GCWebGLRuntimeInfoBootstrap.LoadBakedUnityBuildInfoJson(), Is.Null);
+        Assert.That(bootstrap, Does.Contain("internal const string UnityBuildInfoResourceName = \"GamingCouchUnityBuildInfo\";"));
+        Assert.That(bootstrap, Does.Contain("LoadBakedResourceJson(UnityBuildInfoResourceName)"));
+        Assert.That(bootstrap, Does.Contain("Resources.Load<TextAsset>(resourceName)"));
+        Assert.That(bootstrap, Does.Contain("if (!string.IsNullOrWhiteSpace(unityBuildInfoJson))"));
+        Assert.That(bootstrap, Does.Contain("GamingCouchRegisterUnityBuildInfo(unityBuildInfoJson);"));
+        Assert.That(bootstrap, Does.Not.Contain("GCUnityBuildInfoSidecarFactory"));
+        Assert.That(bridge, Does.Contain("GamingCouchRegisterUnityBuildInfo: function (unityBuildInfoJsonString)"));
+        Assert.That(bridge, Does.Contain("if (!window.gamingCouchRegisterUnityBuildInfo)"));
+        Assert.That(bridge, Does.Not.Contain("gamingCouchRegisterUnityBuildInfo is not defined"));
+        Assert.That(bridge, Does.Contain("JSON.parse(unityBuildInfoJson)"));
+        Assert.That(bridge, Does.Contain("window.gamingCouchRegisterUnityBuildInfo(unityBuildInfo)"));
+        Assert.That(bridge, Does.Contain("GamingCouchRegisterUnityBuildInfo callback failed"));
     }
 
     [Test]

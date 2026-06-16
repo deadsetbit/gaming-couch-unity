@@ -45,7 +45,9 @@ The Gaming Couch hosted SDK reads `gc.runtime-info.json` before `createUnityInst
 
 Gaming Couch upload validation in the main repo now preserves root `gc.runtime-info.json`, requires it for Unity uploads, and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
 
-Any WebGL build also writes `gc.unity-build-info.json` next to `index.html`, even when another WebGL template is selected. This separate diagnostic sidecar is schema-versioned and records capture metadata, Unity editor version, package identity, build target, active WebGL template, selected typed WebGL settings, and selected BuildReport summary values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
+Any WebGL build also writes schema v2 `gc.unity-build-info.json` next to `index.html`, even when another WebGL template is selected. This separate diagnostic sidecar records generator metadata, runtime identity, Unity editor/build/WebGL settings, build host OS diagnostics, and selected BuildReport result values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
+
+If a WebGL build later includes a baked `Resources/GamingCouchUnityBuildInfo` payload, the package bootstrap forwards it to optional `window.gamingCouchRegisterUnityBuildInfo(metadata)`. The root `gc.unity-build-info.json` sidecar remains the authoritative complete build diagnostic.
 
 Gaming Couch upload validation does not validate `gc.unity-build-info.json` in this slice. A later main-repo policy may use it to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
 
