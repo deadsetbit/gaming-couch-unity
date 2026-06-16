@@ -36,7 +36,6 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             var sidecar = JsonUtility.FromJson<GCUnityBuildInfoSidecar>(json);
 
             Assert.That(sidecar.schemaVersion, Is.EqualTo(GCUnityBuildInfoSidecarFactory.SchemaVersion));
-            Assert.That(sidecar.schemaVersion, Is.EqualTo(2));
             Assert.That(sidecar.generator, Is.EqualTo("dsb.gamingcouch.unity"));
             Assert.That(sidecar.identity.platform, Is.EqualTo(GCEditorPackageIdentity.Platform));
             Assert.That(sidecar.identity.packageName, Is.EqualTo("com.test.build-info"));

@@ -252,7 +252,7 @@ internal static class GCUnityBuildInfoSidecarWriter
 
 internal static class GCUnityBuildInfoSidecarFactory
 {
-    internal const int SchemaVersion = 2;
+    internal const int SchemaVersion = 1;
     private const string Generator = "dsb.gamingcouch.unity";
 
     internal static GCUnityBuildInfoSidecar Create(
