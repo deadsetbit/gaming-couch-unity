@@ -20,6 +20,7 @@ namespace DSB.GC
         /// Left stick Y-axis
         /// </summary>
         public float a1;
+        /// <summary>
         /// Button index 0 - Would match A on Xbox controller
         /// </summary>
         public int b0;
@@ -31,26 +32,6 @@ namespace DSB.GC
         /// Button index 2 - Would match X on Xbox controller
         /// </summary>
         public int b2;
-        /// <summary>
-        /// Button index 3 - Would match Y on Xbox controller
-        /// </summary>
-        public int b3;
-        /// <summary>
-        /// DPad up
-        /// </summary>
-        public int b12;
-        /// <summary>
-        /// DPad bottom
-        /// </summary>
-        public int b13;
-        /// <summary>
-        /// DPad left
-        /// </summary>
-        public int b14;
-        /// <summary>
-        /// DPad right
-        /// </summary>
-        public int b15;
 
         public static GCControllerInputsData CreateFromJSON(string inputsDataJson)
         {

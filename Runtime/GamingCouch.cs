@@ -1006,8 +1006,7 @@ namespace DSB.GC
                 return true;
             }
 
-            return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1 || inputs.b3 == 1 ||
-                inputs.b12 == 1 || inputs.b13 == 1 || inputs.b14 == 1 || inputs.b15 == 1;
+            return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1;
         }
 
         internal static GCControllerInputsData ResolveEditorInputs(
@@ -1034,11 +1033,6 @@ namespace DSB.GC
                 b0 = selectedInputs.b0,
                 b1 = selectedInputs.b1,
                 b2 = selectedInputs.b2,
-                b3 = selectedInputs.b3,
-                b12 = selectedInputs.b12,
-                b13 = selectedInputs.b13,
-                b14 = selectedInputs.b14,
-                b15 = selectedInputs.b15,
             };
         }
 

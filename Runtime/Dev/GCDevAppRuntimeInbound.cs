@@ -303,11 +303,6 @@ namespace DSB.GC.Dev
                     b0 = (buttons & 1) != 0 ? 1 : 0,
                     b1 = (buttons & 2) != 0 ? 1 : 0,
                     b2 = (buttons & 4) != 0 ? 1 : 0,
-                    b3 = 0,
-                    b12 = 0,
-                    b13 = 0,
-                    b14 = 0,
-                    b15 = 0
                 }
             };
             return true;
@@ -398,11 +393,6 @@ namespace DSB.GC.Dev
                 b0 = inputs.b0 > 0.5f ? 1 : 0,
                 b1 = inputs.b1 > 0.5f ? 1 : 0,
                 b2 = inputs.b2 > 0.5f ? 1 : 0,
-                b3 = 0,
-                b12 = 0,
-                b13 = 0,
-                b14 = 0,
-                b15 = 0
             };
         }
 

@@ -29,8 +29,21 @@ public sealed class GamingCouchEditorInputTests
 
         Assert.That(
             fieldNames,
-            Is.EquivalentTo(new[] { "a0", "a1", "b0", "b1", "b2", "b3", "b12", "b13", "b14", "b15" })
+            Is.EquivalentTo(new[] { "a0", "a1", "b0", "b1", "b2" })
         );
+    }
+
+    [Test]
+    public void ControllerInputsReadsLeftStickAxesDirectly()
+    {
+        var inputs = new GCControllerInputs(new GCControllerInputsData
+        {
+            a0 = 0.25f,
+            a1 = -0.5f,
+        });
+
+        Assert.That(inputs.leftX, Is.EqualTo(0.25f));
+        Assert.That(inputs.leftY, Is.EqualTo(-0.5f));
     }
 
     [Test]
