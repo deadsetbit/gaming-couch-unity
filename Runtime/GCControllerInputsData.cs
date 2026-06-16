@@ -20,15 +20,6 @@ namespace DSB.GC
         /// Left stick Y-axis
         /// </summary>
         public float a1;
-        /// <summary>
-        /// Right stick X-axis
-        /// </summary>
-        public float a2;
-        /// <summary>
-        /// Right stick Y-axis
-        /// </summary>
-        public float a3;
-        /// <summary>
         /// Button index 0 - Would match A on Xbox controller
         /// </summary>
         public int b0;

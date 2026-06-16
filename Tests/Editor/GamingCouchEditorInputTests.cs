@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using DSB.GC;
 using NUnit.Framework;
@@ -6,6 +7,32 @@ using UnityEngine;
 
 public sealed class GamingCouchEditorInputTests
 {
+    [Test]
+    public void ControllerInputsExposesOnlyCurrentInputShortcuts()
+    {
+        var propertyNames = typeof(GCControllerInputs)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Select(property => property.Name);
+
+        Assert.That(
+            propertyNames,
+            Is.EquivalentTo(new[] { "RawData", "leftX", "leftY", "primary", "secondary", "alt" })
+        );
+    }
+
+    [Test]
+    public void ControllerInputsDataExposesOnlyCurrentInputFields()
+    {
+        var fieldNames = typeof(GCControllerInputsData)
+            .GetFields(BindingFlags.Instance | BindingFlags.Public)
+            .Select(field => field.Name);
+
+        Assert.That(
+            fieldNames,
+            Is.EquivalentTo(new[] { "a0", "a1", "b0", "b1", "b2", "b3", "b12", "b13", "b14", "b15" })
+        );
+    }
+
     [Test]
     public void KeyboardInputWinsOverExternalInputForEditorControlledPlayer()
     {

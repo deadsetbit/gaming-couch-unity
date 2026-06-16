@@ -1006,11 +1006,6 @@ namespace DSB.GC
                 return true;
             }
 
-            if (Mathf.Abs(inputs.a2) > axisDeadzone || Mathf.Abs(inputs.a3) > axisDeadzone)
-            {
-                return true;
-            }
-
             return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1 || inputs.b3 == 1 ||
                 inputs.b12 == 1 || inputs.b13 == 1 || inputs.b14 == 1 || inputs.b15 == 1;
         }
@@ -1036,8 +1031,6 @@ namespace DSB.GC
             {
                 a0 = Mathf.Clamp(selectedInputs.a0, -1.0f, 1.0f),
                 a1 = Mathf.Clamp(selectedInputs.a1, -1.0f, 1.0f),
-                a2 = Mathf.Clamp(selectedInputs.a2, -1.0f, 1.0f),
-                a3 = Mathf.Clamp(selectedInputs.a3, -1.0f, 1.0f),
                 b0 = selectedInputs.b0,
                 b1 = selectedInputs.b1,
                 b2 = selectedInputs.b2,

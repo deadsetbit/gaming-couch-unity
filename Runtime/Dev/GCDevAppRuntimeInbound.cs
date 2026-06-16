@@ -300,8 +300,6 @@ namespace DSB.GC.Dev
                 {
                     a0 = a0,
                     a1 = a1,
-                    a2 = 0f,
-                    a3 = 0f,
                     b0 = (buttons & 1) != 0 ? 1 : 0,
                     b1 = (buttons & 2) != 0 ? 1 : 0,
                     b2 = (buttons & 4) != 0 ? 1 : 0,
@@ -397,8 +395,6 @@ namespace DSB.GC.Dev
             {
                 a0 = inputs.a0,
                 a1 = inputs.a1,
-                a2 = 0f,
-                a3 = 0f,
                 b0 = inputs.b0 > 0.5f ? 1 : 0,
                 b1 = inputs.b1 > 0.5f ? 1 : 0,
                 b2 = inputs.b2 > 0.5f ? 1 : 0,

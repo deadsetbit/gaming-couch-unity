@@ -30,18 +30,6 @@ namespace DSB.GC
          **/
         public float leftY => data.b12 == 1 ? 1.0f : (data.b13 == 1 ? -1.0f : data.a1);
         /**
-         * The right stick X-axis or DPad left/right.
-         * -1.0 is left
-         * 1.0 is right
-         **/
-        public float rightX => data.a2;
-        /**
-         * The right stick Y-axis or DPad up/down.
-         * -1.0 is down
-         * 1.0 is up
-         **/
-        public float rightY => data.a3;
-        /**
          * Primary action button. Represents the A button on an Xbox controller layout.
          **/
         public bool primary => data.b0 == 1;
