@@ -447,7 +447,7 @@ internal sealed class GCStartScreenReadiness
     private const string LocalPlayJsonValidHelpText = "Validates the DevApp-generated gc.dev.json used to start local Play Mode.";
     private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
     private const string GameViewAspectHelpText = "Keeps the Unity Game View preview on a 16:9 aspect ratio.";
-    private const string WebGLExportSetupHelpText = "Checks the WebGL target, template, and release settings for clean Gaming Couch exports.";
+    private const string WebGLExportSetupHelpText = "Checks the WebGL target, template, and release settings for web export readiness.";
     private const string FocusSceneObjectActionLabel = "Focus Scene Object";
     private const string FocusGameScriptActionLabel = "Focus Game Script";
     private const string FocusPrefabActionLabel = "Focus Prefab";
@@ -456,7 +456,7 @@ internal sealed class GCStartScreenReadiness
     private const string WirePlayerPrefabActionLabel = "Wire Player Prefab";
     private const string SetFirstBuildSettingsSceneActionLabel = "Set First Build Scene";
     private const string Select16By9GameViewActionLabel = "Select 16:9";
-    private const string SetUpWebGLExportActionLabel = "Set Up WebGL Export";
+    private const string SetUpWebGLExportActionLabel = "Set Up Web Export";
 
     internal readonly Scene scene;
     internal readonly string sceneName;
@@ -971,9 +971,9 @@ internal sealed class GCStartScreenReadiness
         {
             return new GCStartScreenReadinessCheck(
                 GCStartScreenReadinessCheckId.WebGLExportSetup,
-                "WebGL export settings configured",
+                "Web export settings configured",
                 GCStartScreenReadinessCheckState.Fail,
-                "Clean WebGL export setup readiness could not be inspected.",
+                "Web export settings readiness could not be inspected.",
                 WebGLExportSetupHelpText
             );
         }
@@ -994,7 +994,7 @@ internal sealed class GCStartScreenReadiness
 
         return new GCStartScreenReadinessCheck(
             GCStartScreenReadinessCheckId.WebGLExportSetup,
-            "WebGL export settings configured",
+            "Web export settings configured",
             state,
             webGLExport.message,
             WebGLExportSetupHelpText,

@@ -1614,7 +1614,7 @@ Only create the focused readiness test file if it improves **Locality** over ext
   - ready player prefab offers `Focus Prefab`
   - build settings row offers `Set First Build Scene` only when existing readiness can set the active scene first
   - Game View row offers `Select 16:9` only when existing readiness has a safe selection action
-  - WebGL export row offers `Set Up WebGL Export` only when existing readiness is blocked and setup is available
+  - web export row offers `Set Up Web Export` only when existing readiness is blocked and setup is available
   - Local Play JSON row never offers a setup action
 - Statically confirm `GamingCouchStartScreenWindow` no longer owns checklist action label or normal setup-action availability rules.
 - Statically confirm action execution side effects remain in `GamingCouchStartScreenWindow` for this slice.
@@ -1860,7 +1860,7 @@ Validation:
 - Parent review-and-patch pass 2: confirmed generated script, prefab, scene, non-overwrite, continuation, and WebGL setup behavior remain in existing setup Modules; `Editor/GamingCouchActiveSceneSetup.cs` and public runtime payload files were not changed.
 - `git diff --check`: passed.
 - `rg -n "[ \t]+$" Editor/GamingCouchStartScreenSetupActions.cs Editor/GamingCouchStartScreenSetupActions.cs.meta Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs.meta`: no trailing whitespace matches.
-- Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveScene*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureCleanWebGLExportSetup`.
+- Static inspection: `GamingCouchStartScreenWindow` no longer contains setup action id switch cases or direct calls to `EnsureActiveScene*`, `EnsureActiveSceneGamingCouch`, `EnsureActiveSceneFirstEnabled`, `SelectExisting16By9Size`, or `EnsureWebGLExportSetup`.
 - Static inspection: `GamingCouchStartScreenSetupActions` owns readiness action id dispatch, action result data, message type mapping, optional focus target, ping flag, and refresh/repaint instruction.
 - Static inspection: new Unity `.meta` GUIDs for the setup action Module and focused test file are unique within this repo.
 - `python3 Tools/run-open-unity-tests.py <local-unity-host-project> --mode EditMode --filter GamingCouchStartScreenSetupActionsTests --timeout 300`: passed; Unity accepted the request; 8 passed, 0 failed, 0 skipped, 0 inconclusive.

@@ -4,19 +4,19 @@ This package integrates a Unity game with the Gaming Couch platform.
 
 ## Compatibility
 
-This development line targets Unity 6 (`6000.0`) so clean WebGL export setup can remove Unity splash/logo branding.
+This development line targets Unity 6 (`6000.0`) so Gaming Couch web export settings can remove Unity splash/logo branding.
 
-## Clean WebGL Export
+## Gaming Couch web export settings
 
-Run `GamingCouch/WebGL Build/Preview clean WebGL export setup` or use the WebGL export row in the GamingCouch start screen to configure a project for clean WebGL builds.
+Run `GamingCouch/WebGL Build/Preview web export settings` or use the web export row in the GamingCouch start screen to configure a project for Gaming Couch web builds.
 
-The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned clean template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
+The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned Gaming Couch web export template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
 
 Setup first shows a generated preview of the active build target, template, splash/logo, and release-profile changes it will apply. That preview is the authoritative detailed setting list; skipped setting rows are skipped only for the current apply run and remain reported as readiness drift afterward.
 
 If Unity cannot switch the active build target automatically, setup leaves a warning in the result. Run setup again or switch to WebGL manually before building.
 
-The v1 clean template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
+The v1 web export template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
 
 When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the package writes `gc.runtime-info.json` to the build output root, next to `index.html`. The sidecar contains compact canonical JSON fields: `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; the Unity package name and version come from the package root `package.json`.
 

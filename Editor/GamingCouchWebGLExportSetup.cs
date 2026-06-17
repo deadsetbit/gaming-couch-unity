@@ -217,38 +217,38 @@ internal static class GamingCouchWebGLExportSetup
 
     private static readonly string[] ExpectedTemplateFiles = { "index.html" };
 
-    internal static GCWebGLExportSetupResult EnsureCleanWebGLExportSetup()
+    internal static GCWebGLExportSetupResult EnsureWebGLExportSetup()
     {
         var packageTemplatePath = LocatePackageTemplatePath();
         var destinationPath = AssetPathToFullPath(ProjectTemplateAssetPath);
-        var plan = CreateCleanWebGLExportSetupPlan(packageTemplatePath, destinationPath, true);
-        return ApplyCleanWebGLExportSetupPlan(plan, null);
+        var plan = CreateWebGLExportSetupPlan(packageTemplatePath, destinationPath, true);
+        return ApplyWebGLExportSetupPlan(plan, null);
     }
 
-    internal static GCWebGLExportSetupResult EnsureCleanWebGLExportSetup(
+    internal static GCWebGLExportSetupResult EnsureWebGLExportSetup(
         string sourceTemplateDirectoryFullPath,
         string destinationTemplateDirectoryFullPath,
         bool refreshAssetDatabase
     )
     {
-        var plan = CreateCleanWebGLExportSetupPlan(
+        var plan = CreateWebGLExportSetupPlan(
             sourceTemplateDirectoryFullPath,
             destinationTemplateDirectoryFullPath,
             refreshAssetDatabase
         );
-        return ApplyCleanWebGLExportSetupPlan(plan, null);
+        return ApplyWebGLExportSetupPlan(plan, null);
     }
 
-    internal static GCWebGLExportSetupPlan CreateCleanWebGLExportSetupPlan()
+    internal static GCWebGLExportSetupPlan CreateWebGLExportSetupPlan()
     {
-        return CreateCleanWebGLExportSetupPlan(
+        return CreateWebGLExportSetupPlan(
             LocatePackageTemplatePath(),
             AssetPathToFullPath(ProjectTemplateAssetPath),
             true
         );
     }
 
-    internal static GCWebGLExportSetupPlan CreateCleanWebGLExportSetupPlan(
+    internal static GCWebGLExportSetupPlan CreateWebGLExportSetupPlan(
         string sourceTemplateDirectoryFullPath,
         string destinationTemplateDirectoryFullPath,
         bool refreshAssetDatabase
@@ -273,10 +273,10 @@ internal static class GamingCouchWebGLExportSetup
             : GCWebGLExportSetupStatus.Ready;
         var hasChanges = HasChangedRows(rows);
         var message = status == GCWebGLExportSetupStatus.Blocked
-            ? "Clean WebGL export setup preview is blocked."
+            ? "Gaming Couch web export settings preview is blocked."
             : hasChanges
-                ? "Review clean WebGL export setup changes before applying them."
-                : "Clean WebGL export setup is already configured.";
+                ? "Review Gaming Couch web export settings changes before applying them."
+                : "Gaming Couch web export settings are already configured.";
 
         return new GCWebGLExportSetupPlan(
             status,
@@ -289,7 +289,7 @@ internal static class GamingCouchWebGLExportSetup
         );
     }
 
-    internal static GCWebGLExportSetupResult ApplyCleanWebGLExportSetupPlan(
+    internal static GCWebGLExportSetupResult ApplyWebGLExportSetupPlan(
         GCWebGLExportSetupPlan plan,
         IEnumerable<string> selectedSkippableRowIds
     )
@@ -301,8 +301,8 @@ internal static class GamingCouchWebGLExportSetup
             return new GCWebGLExportSetupResult(
                 GCWebGLExportSetupStatus.Blocked,
                 false,
-                "Clean WebGL export setup is blocked.",
-                new[] { "No clean WebGL export setup plan was provided." },
+                "Gaming Couch web export settings are blocked.",
+                new[] { "No Gaming Couch web export settings plan was provided." },
                 currentReadiness
             );
         }
@@ -312,7 +312,7 @@ internal static class GamingCouchWebGLExportSetup
             return new GCWebGLExportSetupResult(
                 GCWebGLExportSetupStatus.Blocked,
                 false,
-                "Clean WebGL export setup is blocked.",
+                "Gaming Couch web export settings are blocked.",
                 plan.details,
                 InspectReadiness(plan.destinationTemplateDirectoryFullPath)
             );
@@ -333,7 +333,7 @@ internal static class GamingCouchWebGLExportSetup
             return new GCWebGLExportSetupResult(
                 GCWebGLExportSetupStatus.Blocked,
                 installResult.changed,
-                "Clean WebGL export setup is blocked.",
+                "Gaming Couch web export settings are blocked.",
                 details.ToArray(),
                 InspectReadiness(plan.destinationTemplateDirectoryFullPath)
             );
@@ -342,7 +342,7 @@ internal static class GamingCouchWebGLExportSetup
         var selectedIds = CreateSelectedIdSet(selectedSkippableRowIds);
         var changed = installResult.changed;
         changed |= SelectTemplate(details);
-        changed |= ApplyCleanReleaseDefaults(details, selectedIds);
+        changed |= ApplyWebGLExportReleaseDefaults(details, selectedIds);
         changed |= SwitchActiveBuildTargetToWebGL(details);
 
         var readiness = InspectReadiness(plan.destinationTemplateDirectoryFullPath);
@@ -352,7 +352,7 @@ internal static class GamingCouchWebGLExportSetup
             readiness.status,
             changed,
             readiness.IsReady
-                ? "Clean WebGL export setup is ready."
+                ? "Gaming Couch web export settings are ready."
                 : readiness.message,
             details.ToArray(),
             readiness
@@ -373,9 +373,9 @@ internal static class GamingCouchWebGLExportSetup
                 rows,
                 details,
                 new GCWebGLPreviewRow(
-                    "clean-template-source",
+                    "web-export-template-source",
                     GCWebGLPreviewRowKind.Template,
-                    "Package clean WebGL template source",
+                    "Package Gaming Couch web export template source",
                     "Missing",
                     "Available package folder",
                     true,
@@ -394,10 +394,10 @@ internal static class GamingCouchWebGLExportSetup
                 AddPlanRow(
                     rows,
                     details,
-                    new GCWebGLPreviewRow(
-                        "clean-template-source-" + fileName,
+                new GCWebGLPreviewRow(
+                        "web-export-template-source-" + fileName,
                         GCWebGLPreviewRowKind.Template,
-                        "Package clean WebGL template file " + fileName,
+                        "Package Gaming Couch web export template file " + fileName,
                         "Folder",
                         "File",
                         true,
@@ -411,10 +411,10 @@ internal static class GamingCouchWebGLExportSetup
                 AddPlanRow(
                     rows,
                     details,
-                    new GCWebGLPreviewRow(
-                        "clean-template-source-" + fileName,
+                new GCWebGLPreviewRow(
+                        "web-export-template-source-" + fileName,
                         GCWebGLPreviewRowKind.Template,
-                        "Package clean WebGL template file " + fileName,
+                        "Package Gaming Couch web export template file " + fileName,
                         "Missing",
                         "File",
                         true,
@@ -431,9 +431,9 @@ internal static class GamingCouchWebGLExportSetup
                 rows,
                 details,
                 new GCWebGLPreviewRow(
-                    "clean-template-destination",
+                    "web-export-template-destination",
                     GCWebGLPreviewRowKind.Template,
-                    "Project-local clean WebGL template folder",
+                    "Project-local web export template folder",
                     "Missing path",
                     ProjectTemplateAssetPath,
                     true,
@@ -451,9 +451,9 @@ internal static class GamingCouchWebGLExportSetup
                 rows,
                 details,
                 new GCWebGLPreviewRow(
-                    "clean-template-folder",
+                    "web-export-template-folder",
                     GCWebGLPreviewRowKind.Template,
-                    "Project-local clean WebGL template folder",
+                    "Project-local web export template folder",
                     "File",
                     "Folder",
                     true,
@@ -471,9 +471,9 @@ internal static class GamingCouchWebGLExportSetup
                 rows,
                 details,
                 new GCWebGLPreviewRow(
-                    "clean-template-parent-folder",
+                    "web-export-template-parent-folder",
                     GCWebGLPreviewRowKind.Template,
-                    "Project-local clean WebGL template parent folder",
+                    "Project-local web export template parent folder",
                     "File at " + parentCollisionPath,
                     "Folder",
                     true,
@@ -486,7 +486,7 @@ internal static class GamingCouchWebGLExportSetup
 
         if (Directory.Exists(fullDestinationPath))
         {
-            AddDetail(details, "Project-local clean WebGL template folder already exists: " + fullDestinationPath);
+            AddDetail(details, "Project-local web export template folder already exists: " + fullDestinationPath);
         }
         else
         {
@@ -494,9 +494,9 @@ internal static class GamingCouchWebGLExportSetup
                 rows,
                 details,
                 new GCWebGLPreviewRow(
-                    "clean-template-folder",
+                    "web-export-template-folder",
                     GCWebGLPreviewRowKind.Template,
-                    "Project-local clean WebGL template folder",
+                    "Project-local web export template folder",
                     "Missing",
                     "Create folder",
                     true,
@@ -513,10 +513,10 @@ internal static class GamingCouchWebGLExportSetup
                 AddPlanRow(
                     rows,
                     details,
-                    new GCWebGLPreviewRow(
-                        "clean-template-file-" + fileName,
+                new GCWebGLPreviewRow(
+                        "web-export-template-file-" + fileName,
                         GCWebGLPreviewRowKind.Template,
-                        "Project-local clean WebGL template file " + fileName,
+                        "Project-local web export template file " + fileName,
                         "Folder",
                         "File from package",
                         true,
@@ -527,7 +527,7 @@ internal static class GamingCouchWebGLExportSetup
             }
             else if (File.Exists(destinationFilePath))
             {
-                AddDetail(details, "Project-local clean WebGL template file will be reused: " + destinationFilePath);
+                AddDetail(details, "Project-local web export template file will be reused: " + destinationFilePath);
             }
             else
             {
@@ -535,9 +535,9 @@ internal static class GamingCouchWebGLExportSetup
                     rows,
                     details,
                     new GCWebGLPreviewRow(
-                        "clean-template-file-" + fileName,
+                        "web-export-template-file-" + fileName,
                         GCWebGLPreviewRowKind.Template,
-                        "Project-local clean WebGL template file " + fileName,
+                        "Project-local web export template file " + fileName,
                         "Missing",
                         "Install package template file",
                         true,
@@ -556,7 +556,7 @@ internal static class GamingCouchWebGLExportSetup
             new GCWebGLPreviewRow(
                 TemplateSelectionRowId,
                 GCWebGLPreviewRowKind.Template,
-                "WebGL template selection",
+                "Web export template selection",
                 PlayerSettings.WebGL.template,
                 ProjectTemplateIdentifier,
                 !string.Equals(PlayerSettings.WebGL.template, ProjectTemplateIdentifier, StringComparison.Ordinal),
@@ -710,7 +710,7 @@ internal static class GamingCouchWebGLExportSetup
             return CreateInstallResult(
                 GCWebGLExportTemplateInstallStatus.Blocked,
                 false,
-                "Clean WebGL template installation is blocked.",
+                "Gaming Couch web export template installation is blocked.",
                 createdPaths,
                 reusedPaths,
                 blockedReasons
@@ -723,7 +723,7 @@ internal static class GamingCouchWebGLExportSetup
             return CreateInstallResult(
                 GCWebGLExportTemplateInstallStatus.Blocked,
                 false,
-                "Clean WebGL template installation is blocked.",
+                "Gaming Couch web export template installation is blocked.",
                 createdPaths,
                 reusedPaths,
                 blockedReasons
@@ -737,7 +737,7 @@ internal static class GamingCouchWebGLExportSetup
             return CreateInstallResult(
                 GCWebGLExportTemplateInstallStatus.Blocked,
                 false,
-                "Clean WebGL template installation is blocked.",
+                "Gaming Couch web export template installation is blocked.",
                 createdPaths,
                 reusedPaths,
                 blockedReasons
@@ -771,10 +771,10 @@ internal static class GamingCouchWebGLExportSetup
                 : GCWebGLExportTemplateInstallStatus.Ready,
             changed,
             blockedReasons.Count > 0
-                ? "Clean WebGL template installation is blocked."
+                ? "Gaming Couch web export template installation is blocked."
                 : changed
-                    ? "Installed missing clean WebGL template files."
-                    : "Clean WebGL template files already exist; existing files were reused.",
+                    ? "Installed missing Gaming Couch web export template files."
+                    : "Gaming Couch web export template files already exist; existing files were reused.",
             createdPaths,
             reusedPaths,
             blockedReasons
@@ -845,7 +845,7 @@ internal static class GamingCouchWebGLExportSetup
         var activeBuildTargetIsWebGL = activeBuildTarget == BuildTarget.WebGL;
         if (!activeBuildTargetIsWebGL)
         {
-            details.Add("Active build target is " + activeBuildTarget + "; run clean WebGL export setup or switch to WebGL before building.");
+            details.Add("Active build target is " + activeBuildTarget + "; run Gaming Couch web export settings or switch to WebGL before building.");
         }
 
         var blockingReady = templateFolderReady &&
@@ -863,7 +863,7 @@ internal static class GamingCouchWebGLExportSetup
                 releaseSettingsReady,
                 splashSettingsReady,
                 activeBuildTargetIsWebGL,
-                "Clean WebGL export setup is incomplete.",
+                "Gaming Couch web export settings are incomplete.",
                 details.ToArray()
             );
         }
@@ -879,8 +879,8 @@ internal static class GamingCouchWebGLExportSetup
             splashSettingsReady,
             activeBuildTargetIsWebGL,
             activeBuildTargetIsWebGL
-                ? "Clean WebGL export setup is ready."
-                : "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+                ? "Gaming Couch web export settings are ready."
+                : "Gaming Couch web export settings are ready, but the active build target is not WebGL.",
             details.ToArray()
         );
     }
@@ -916,16 +916,16 @@ internal static class GamingCouchWebGLExportSetup
     {
         if (string.Equals(PlayerSettings.WebGL.template, ProjectTemplateIdentifier, StringComparison.Ordinal))
         {
-            details.Add("WebGL template selection already uses " + ProjectTemplateIdentifier + ".");
+            details.Add("Web export template selection already uses " + ProjectTemplateIdentifier + ".");
             return false;
         }
 
         PlayerSettings.WebGL.template = ProjectTemplateIdentifier;
-        details.Add("Selected WebGL template " + ProjectTemplateIdentifier + ".");
+        details.Add("Selected web export template " + ProjectTemplateIdentifier + ".");
         return true;
     }
 
-    private static bool ApplyCleanReleaseDefaults(List<string> details, HashSet<string> selectedIds)
+    private static bool ApplyWebGLExportReleaseDefaults(List<string> details, HashSet<string> selectedIds)
     {
         var changed = false;
         changed |= GamingCouchWebGLBuildSettingsProfiles.ApplyReleaseProfile(details, selectedIds);

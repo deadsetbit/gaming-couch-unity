@@ -24,11 +24,11 @@
 - Added valid platform data gates for Apply and Play, including Unity platform, selected entry, and entry `maxPlayers`.
 - Added editor Play Mode and Gaming Couch restart gates that auto-apply valid non-conflicted drafts and block invalid or conflicted drafts.
 - Added editor-only `com.unity.nuget.newtonsoft-json` dependency for structured JSON parsing and unknown-field-preserving `gc.dev.json` writes.
-- Added clean WebGL export setup documentation for the Unity 6 workflow, project-local template install, release defaults, no-overwrite behavior, warning-only build-target policy, and v1 playtest exclusion.
+- Added Gaming Couch web export settings documentation for the Unity 6 workflow, project-local template install, release defaults, no-overwrite behavior, warning-only build-target policy, and v1 playtest exclusion.
 
 ### Changed
 
-- This development line now targets Unity 6 for clean WebGL export setup and splash/logo removal.
+- This development line now targets Unity 6 for Gaming Couch web export settings and splash/logo removal.
 - Unity editor local play settings now use root `gc.dev.json` as the source of truth instead of old scene-serialized entry/player settings.
 - Unity requires an existing root `gc.dev.json`; it does not create, bootstrap, or repair local project JSON files.
 - Unity editor local playtests may run with one enabled seat even when production platform data declares a higher `minPlayers`.

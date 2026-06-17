@@ -205,7 +205,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
                 false,
                 false,
                 false,
-                "Clean WebGL export setup is incomplete.",
+                "Gaming Couch web export settings are incomplete.",
                 Array.Empty<string>()
             )
         );
@@ -438,7 +438,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
             true,
             true,
             true,
-            "Clean WebGL export setup is ready.",
+            "Gaming Couch web export settings are ready.",
             Array.Empty<string>()
         );
     }

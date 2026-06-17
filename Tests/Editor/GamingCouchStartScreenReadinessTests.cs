@@ -228,7 +228,7 @@ public sealed class GamingCouchStartScreenReadinessTests
                 false,
                 false,
                 true,
-                "Clean WebGL export setup is incomplete.",
+                "Gaming Couch web export settings are incomplete.",
                 Array.Empty<string>()
             )
         );
@@ -248,7 +248,7 @@ public sealed class GamingCouchStartScreenReadinessTests
                 true,
                 true,
                 false,
-                "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+                "Gaming Couch web export settings are ready, but the active build target is not WebGL.",
                 Array.Empty<string>()
             )
         );
@@ -256,12 +256,12 @@ public sealed class GamingCouchStartScreenReadinessTests
         AssertAction(
             blockedReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
             GCStartScreenReadinessActionId.SetUpWebGLExport,
-            "Set Up WebGL Export"
+            "Set Up Web Export"
         );
         AssertAction(
             warningReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
             GCStartScreenReadinessActionId.SetUpWebGLExport,
-            "Set Up WebGL Export"
+            "Set Up Web Export"
         );
         AssertNoAction(readyReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup));
     }
@@ -575,7 +575,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             true,
             true,
             false,
-            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            "Gaming Couch web export settings are ready, but the active build target is not WebGL.",
             Array.Empty<string>()
         );
         var readiness = CreateReadiness(gamingCouch, null, null, webGLExport: warningReadiness);
@@ -618,7 +618,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             true,
             true,
             false,
-            "Clean WebGL export setup is ready, but the active build target is not WebGL.",
+            "Gaming Couch web export settings are ready, but the active build target is not WebGL.",
             Array.Empty<string>()
         );
 
@@ -633,7 +633,7 @@ public sealed class GamingCouchStartScreenReadinessTests
         AssertAction(
             readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup),
             GCStartScreenReadinessActionId.SetUpWebGLExport,
-            "Set Up WebGL Export"
+            "Set Up Web Export"
         );
         Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.False);
         Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
@@ -657,7 +657,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             false,
             false,
             true,
-            "Clean WebGL export setup is incomplete.",
+            "Gaming Couch web export settings are incomplete.",
             Array.Empty<string>()
         );
 
@@ -699,10 +699,10 @@ public sealed class GamingCouchStartScreenReadinessTests
         var uninspectableWebGLCheck = uninspectableReadiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
 
         AssertCheck(readyReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Pass);
-        Assert.That(readyWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(readyWebGLCheck.label, Is.EqualTo("Web export settings configured"));
         Assert.That(readyWebGLCheck.IsSatisfied, Is.True);
         AssertCheck(uninspectableReadiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Fail);
-        Assert.That(uninspectableWebGLCheck.label, Is.EqualTo("WebGL export settings configured"));
+        Assert.That(uninspectableWebGLCheck.label, Is.EqualTo("Web export settings configured"));
         Assert.That(uninspectableWebGLCheck.message, Does.Contain("could not be inspected"));
     }
 
@@ -874,7 +874,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             true,
             true,
             true,
-            "Clean WebGL export setup is ready.",
+            "Gaming Couch web export settings are ready.",
             Array.Empty<string>()
         );
     }

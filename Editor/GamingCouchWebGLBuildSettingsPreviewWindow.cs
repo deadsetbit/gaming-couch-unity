@@ -62,28 +62,28 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         OpenProfileSelector(GCWebGLBuildSettingsProfileId.Dev, null);
     }
 
-    internal static void OpenCleanExport(Action<GCWebGLExportSetupResult> onApplied)
+    internal static void OpenWebGLExportSettings(Action<GCWebGLExportSetupResult> onApplied)
     {
-        var plan = GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan();
-        OpenCleanExport(plan, onApplied);
+        var plan = GamingCouchWebGLExportSetup.CreateWebGLExportSetupPlan();
+        OpenWebGLExportSettings(plan, onApplied);
     }
 
-    internal static void OpenCleanExport(
+    internal static void OpenWebGLExportSettings(
         GCWebGLExportSetupPlan plan,
         Action<GCWebGLExportSetupResult> onApplied
     )
     {
-        var safePlan = plan ?? GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan();
+        var safePlan = plan ?? GamingCouchWebGLExportSetup.CreateWebGLExportSetupPlan();
         OpenWindow(
-            "GamingCouch Clean WebGL Export Setup",
+            "GamingCouch Web Export Settings",
             safePlan.message,
-            "Apply Clean Export Setup",
+            "Apply Web Export Settings",
             safePlan.rows,
             safePlan.GetDefaultSelectedSkippableRowIds(),
             !safePlan.IsBlocked && safePlan.HasChanges,
             selectedIds =>
             {
-                var result = GamingCouchWebGLExportSetup.ApplyCleanWebGLExportSetupPlan(
+                var result = GamingCouchWebGLExportSetup.ApplyWebGLExportSetupPlan(
                     safePlan,
                     selectedIds
                 );
@@ -92,7 +92,7 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
                     onApplied(result);
                 }
 
-                return FromCleanExportResult(result);
+                return FromWebGLExportResult(result);
             }
         );
     }
@@ -371,13 +371,13 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         );
     }
 
-    private static GCWebGLPreviewApplyOutcome FromCleanExportResult(GCWebGLExportSetupResult result)
+    private static GCWebGLPreviewApplyOutcome FromWebGLExportResult(GCWebGLExportSetupResult result)
     {
         if (result == null)
         {
             return new GCWebGLPreviewApplyOutcome(
                 false,
-                "Clean WebGL export setup did not return a result.",
+                "Web export settings did not return a result.",
                 MessageType.Error,
                 null
             );
@@ -386,12 +386,12 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         return new GCWebGLPreviewApplyOutcome(
             result.changed,
             result.message,
-            GetCleanExportMessageType(result),
+            GetWebGLExportMessageType(result),
             result.details
         );
     }
 
-    private static MessageType GetCleanExportMessageType(GCWebGLExportSetupResult result)
+    private static MessageType GetWebGLExportMessageType(GCWebGLExportSetupResult result)
     {
         if (result.IsBlocked)
         {

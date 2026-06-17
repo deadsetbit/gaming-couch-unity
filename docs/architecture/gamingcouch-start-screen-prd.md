@@ -41,7 +41,7 @@ The visible Start Screen checklist contains these rows:
 - `Player prefab is assigned`
 - `Active scene is first Build Settings scene`
 - `Game View uses 16:9 preview`
-- `WebGL export settings configured`
+- `Web export settings configured`
 - `Local play JSON is valid`
 
 The `GamingCouch game object in scene` row presents missing, created, ready, and multiple-instance states cleanly. It should not nag about "exactly one" unless more than one `GamingCouch` object exists in the active scene.
@@ -102,9 +102,9 @@ Each checklist row has a far-right icon-only help button. Hovering the button sh
 - A confirmed non-16:9 Game View is actionable when an existing 16:9 entry can be selected safely.
 - An uninspectable Game View state is a non-blocking warning and must not trigger startup auto-open by itself.
 - Setup must not create custom Game View sizes.
-- The WebGL row is labeled `WebGL export settings configured`.
-- The WebGL row tooltip explains that readiness checks the WebGL active build target, clean template, and generated release settings preview.
-- The WebGL row setup action opens the shared clean WebGL export preview, applies only WebGL export settings when confirmed, and does not run active-scene setup.
+- The web export row is labeled `Web export settings configured`.
+- The web export row tooltip explains that readiness checks the WebGL active build target, web export template, and generated release settings preview.
+- The web export row setup action opens the shared web export settings preview, applies only web export settings when confirmed, and does not run active-scene setup.
 
 ## Auto-open Policy
 
@@ -149,4 +149,4 @@ Available validation in this package-only checkout:
 Pending validation requires a consuming Unity project with package import support:
 
 - Consuming-project Unity edit-mode confirmation that package-local editor tests pass under a real package import, including generated script compile/resume behavior after Unity domain reload.
-- Manual Unity validation for staged compile continuation from newly created `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, `GCPlayerExample.prefab` creation and assignment, `Create & Wire Game` end-to-end success feedback in the Start Screen UI, generated example Play Mode loop with valid local play JSON, missing or invalid local play JSON messaging, Game View 16:9 behavior, and clean WebGL setup interaction from the Start Screen.
+- Manual Unity validation for staged compile continuation from newly created `Assets/GamingCouch/GCExample/GCGameExample.cs` and `Assets/GamingCouch/GCExample/GCPlayerExample.cs`, `GCPlayerExample.prefab` creation and assignment, `Create & Wire Game` end-to-end success feedback in the Start Screen UI, generated example Play Mode loop with valid local play JSON, missing or invalid local play JSON messaging, Game View 16:9 behavior, and web export settings interaction from the Start Screen.

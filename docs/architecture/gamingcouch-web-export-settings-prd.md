@@ -1,29 +1,29 @@
-# GamingCouch Clean WebGL Export Template PRD
+# GamingCouch Web Export Settings PRD
 
 Status: Implemented; package-only validation complete, consuming-project Unity validation pending
 Owner: Gaming Couch Unity package team
 
 ## Summary
 
-The GamingCouch Unity package provides a Unity 6 clean WebGL export setup workflow. It previews and applies a package-owned WebGL template, project-local template selection, release-oriented export settings, and WebGL export readiness through the shared Start Screen readiness system.
+The GamingCouch Unity package provides a Unity 6 web export settings workflow. It previews and applies a package-owned web export template, project-local template selection, release-oriented export settings, and WebGL export readiness through the shared Start Screen readiness system.
 
-The v1 template is a clean production/upload shell only. It provides Unity loading progress and error display without standalone browser playtest behavior, GamingCouch JavaScript callback shims, controller simulation, DevApp communication, PWA assets, service workers, visible chrome, or platform emulation.
+The v1 template is a minimal production/upload shell only. It provides Unity loading progress and error display without standalone browser playtest behavior, GamingCouch JavaScript callback shims, controller simulation, DevApp communication, PWA assets, service workers, visible chrome, or platform emulation.
 
 ## Goals
 
-- Produce clean GamingCouch WebGL export output instead of Unity's default WebGL page.
+- Produce GamingCouch web export output instead of Unity's default WebGL page.
 - Keep template installation no-overwrite and safe for user-edited project files.
 - Make WebGL export readiness visible from the Start Screen without mixing it into scene wiring setup.
 - Apply previewed release defaults that are suitable for upload-oriented builds.
 - Require Unity 6 so splash/logo expectations match the supported editor line.
-- Keep setup explicit while reducing manual build prep: the clean WebGL export setup may switch the active build target to WebGL, and readiness still warns if Unity leaves another target active.
-- Emit package/runtime identity beside clean WebGL builds so upload and hosted-runtime validation can inspect Unity runtime identity before Unity instance creation.
+- Keep setup explicit while reducing manual build prep: the web export settings workflow may switch the active build target to WebGL, and readiness still warns if Unity leaves another target active.
+- Emit package/runtime identity beside web export builds so upload and hosted-runtime validation can inspect Unity runtime identity before Unity instance creation.
 
 ## Requirements
 
 - Package metadata requires Unity `6000.0`.
 - The package root `package.json` is the source of truth for the Unity package name and version.
-- The setup workflow is available from `GamingCouch/WebGL Build/Preview clean WebGL export setup`.
+- The setup workflow is available from `GamingCouch/WebGL Build/Preview web export settings`.
 - The setup workflow shows a generated preview before mutating project or editor settings.
 - The package owns the source template and copies it into the consuming project at `Assets/WebGLTemplates/GamingCouch`.
 - Unity selects the installed custom template as `PROJECT:GamingCouch`.
@@ -35,12 +35,12 @@ The v1 template is a clean production/upload shell only. It provides Unity loadi
 
 ## Release Defaults
 
-Clean WebGL export setup applies generated release-oriented defaults. The preview is the authoritative detailed list of setting labels, current values, and target values; this PRD must not duplicate that list manually.
+Web export settings apply generated release-oriented defaults. The preview is the authoritative detailed list of setting labels, current values, and target values; this PRD must not duplicate that list manually.
 
 ## Template Requirements
 
 - The template uses Unity WebGL build macros for loader, data, framework, code, memory, symbols, company name, product name, and product version where applicable.
-- The template presents only a clean fullscreen canvas, loading progress, and error display.
+- The template presents only a minimal fullscreen canvas, loading progress, and error display.
 - The template has no standalone browser playtest harness.
 - The template defines no GamingCouch JavaScript callback shims.
 - The template includes no controller simulation.
@@ -63,9 +63,9 @@ Clean WebGL export setup applies generated release-oriented defaults. The previe
 
 ## Start Screen Integration
 
-- The Start Screen includes a dedicated checklist row labeled `WebGL export settings configured`.
-- The row's tooltip explains that readiness checks the WebGL target, template, and generated release settings preview.
-- The row setup action opens the shared clean WebGL export preview and runs only clean WebGL export setup when applied.
+- The Start Screen includes a dedicated checklist row labeled `Web export settings configured`.
+- The row's tooltip explains that readiness checks the WebGL target, web export template, and generated release settings preview.
+- The row setup action opens the shared web export settings preview and runs only web export settings when applied.
 - The row does not run active-scene setup, create scene objects, change listener or prefab references, update Build Settings scene order, or change Game View aspect.
 - WebGL export readiness participates in the shared readiness model used by the Start Screen and the GamingCouch inspector.
 - Actionable WebGL setup is not a blocker for active-scene wiring readiness.
@@ -74,9 +74,9 @@ Clean WebGL export setup applies generated release-oriented defaults. The previe
 
 - Making exported WebGL builds playable outside the GamingCouch platform.
 - Adding local browser playtest controls, fake seats, fake controller input, or DevApp communication.
-- Defining browser-side GamingCouch JavaScript callback shims in the clean template.
+- Defining browser-side GamingCouch JavaScript callback shims in the web export template.
 - Adding a PWA template, service worker, install prompt, app manifest, or offline behavior.
-- Switching the active Unity build target outside the explicit clean WebGL export setup action.
+- Switching the active Unity build target outside the explicit web export settings action.
 - Overwriting user-edited project-local WebGL template files.
 - Editing generated `.meta` files as part of this PRD.
 - Editing the Gaming Couch main repo, GC SDK, GC Client, or GC DevApp.
@@ -88,10 +88,10 @@ Available validation in this package-only checkout:
 - `git diff --check`.
 - Parse `package.json` as JSON and confirm it owns the package name/version and declares Unity `6000.0`, with stale Unity release-floor metadata absent.
 - Confirm the Unity binary version declared by package metadata is Unity 6.
-- Static inspection of package-owned WebGL template source for the required clean-shell constraints.
+- Static inspection of package-owned WebGL template source for the required minimal-shell constraints.
 - Focused sidecar checks confirming `gc.runtime-info.json` is written next to `index.html` for `PROJECT:GamingCouch` builds and uses package name/version values sourced from `package.json`.
 
 Pending validation requires a consuming Unity project with package import support:
 
 - Unity edit-mode tests for install, no-overwrite reuse, wrong-kind collision blockers, selected template readiness, release setting drift, splash/logo accepted values, and non-WebGL warning/action behavior.
-- Manual Unity WebGL smoke validation: run setup, inspect selected template, build WebGL output, confirm clean visible shell, confirm loading progress and error display paths, and confirm build instantiation.
+- Manual Unity WebGL smoke validation: run setup, inspect selected template, build WebGL output, confirm minimal visible shell, confirm loading progress and error display paths, and confirm build instantiation.

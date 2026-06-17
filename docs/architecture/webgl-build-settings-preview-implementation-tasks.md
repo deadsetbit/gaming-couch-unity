@@ -19,8 +19,8 @@ Relevant existing entry points:
 
 - `GamingCouch/WebGL Build/Preview dev build settings (fast build)`
 - `GamingCouch/WebGL Build/Preview release build settings (slow build)`
-- `GamingCouch/WebGL Build/Preview clean WebGL export setup`
-- Start Screen checklist row `WebGL export settings configured`
+- `GamingCouch/WebGL Build/Preview web export settings`
+- Start Screen checklist row `Web export settings configured`
 
 Current user decisions:
 
@@ -28,7 +28,7 @@ Current user decisions:
 - Preview rows are diff-only: `Setting: current -> target`.
 - Preview lists changed items by default, with a concise already-configured state when there is no diff.
 - One-time skips are allowed for settings rows only. Skipped settings are not persisted and must still be reported as drift by readiness later.
-- Clean WebGL export preview shows all planned changes, but only profile/settings-style rows are skippable. Template install/selection and active build target switch are visible but not individually skippable.
+- Web export settings preview shows all planned changes, but only profile/settings-style rows are skippable. Web export template install/selection and active build target switch are visible but not individually skippable.
 - Explicit dev/release profile routes remain profile-only and must not switch the active build target.
 - Docs should avoid exact manual setting lists. The preview is the authoritative detailed setting list.
 
@@ -46,11 +46,11 @@ Next action: None.
 | --- | --- | --- | --- | --- | --- |
 | 1 | Refactor WebGL build profiles into generated setting specs | Completed | Dev and release profile settings are represented by one internal spec list per profile; preview diffs, apply behavior, readiness drift, and result details are generated from those specs; existing full-apply wrappers still work. | None | Cover IL2CPP code generation, managed stripping, mesh stripping, data caching, compression, exception support, debug symbols, WebAssembly 2023 when available, development build, and wasm code optimization. |
 | 2 | Add selective apply and one-time skip support | Completed | Profile apply accepts selected setting ids; unchecked/skipped rows are omitted only for that apply call; skipped settings remain detected by readiness afterward; no project preference or persistent skip state is introduced. | 1 | Keep ids stable and internal. If a setting is already matching, it should not need selection. |
-| 3 | Model clean WebGL export as a previewable setup plan | Completed | Clean export can dry-run planned template install/reuse/blockers, template selection, active WebGL target switch, splash/logo changes, and release-profile setting changes before mutating; non-skippable rows are visible but cannot be unchecked. | 1, 2 | Do not overwrite project-local template files. Block wrong-kind template path collisions before apply. |
-| 4 | Build the shared preview popup and route all WebGL menu commands through it | Completed | Dev profile, release profile, and clean export menu items all open the same reusable popup before mutation; changed settings are checked by default; no-change state reports already configured; apply/cancel behavior is explicit. | 2, 3 | Use one shared editor UI implementation. Avoid separate menu-specific copy. |
-| 5 | Wire the Start Screen WebGL action to the shared preview flow | Completed | Clicking `Set Up WebGL Export` from the Start Screen opens the same preview popup and applies through the same plan/apply service; Start Screen does not duplicate WebGL setup logic; warning/error outcomes still render through existing Start Screen feedback patterns. | 4 | Preserve existing active-scene setup behavior and do not fold WebGL export into global scene setup. |
-| 6 | Update docs and architecture notes to make preview authoritative | Completed | README, `Documentation~/README.md`, clean WebGL export PRD, Start Screen PRD, and architecture/context docs no longer maintain stale exact setting lists; they explain that the preview shows the authoritative diff and that skipped settings remain drift. | 4, 5 | Include documentation changes in the same implementation flow. Do not edit external repos. |
-| 7 | Add focused validation for preview, selective apply, and docs drift prevention | Completed | Editor tests cover generated diffs, selected apply, skipped-setting drift, clean export blocker preview, menu/Start Screen routing, and no-change state; static docs checks or focused assertions prevent reintroducing exact manual build-setting lists. | 1, 2, 3, 4, 5, 6 | Prefer the open-Editor bridge against `<local-unity-host-project>` when available. |
+| 3 | Model web export settings as a previewable setup plan | Completed | Web export settings can dry-run planned template install/reuse/blockers, template selection, active WebGL target switch, splash/logo changes, and release-profile setting changes before mutating; non-skippable rows are visible but cannot be unchecked. | 1, 2 | Do not overwrite project-local template files. Block wrong-kind template path collisions before apply. |
+| 4 | Build the shared preview popup and route all WebGL menu commands through it | Completed | Dev profile, release profile, and web export settings menu items all open the same reusable popup before mutation; changed settings are checked by default; no-change state reports already configured; apply/cancel behavior is explicit. | 2, 3 | Use one shared editor UI implementation. Avoid separate menu-specific copy. |
+| 5 | Wire the Start Screen WebGL action to the shared preview flow | Completed | Clicking `Set Up Web Export` from the Start Screen opens the same preview popup and applies through the same plan/apply service; Start Screen does not duplicate WebGL setup logic; warning/error outcomes still render through existing Start Screen feedback patterns. | 4 | Preserve existing active-scene setup behavior and do not fold WebGL export into global scene setup. |
+| 6 | Update docs and architecture notes to make preview authoritative | Completed | README, `Documentation~/README.md`, web export settings PRD, Start Screen PRD, and architecture/context docs no longer maintain stale exact setting lists; they explain that the preview shows the authoritative diff and that skipped settings remain drift. | 4, 5 | Include documentation changes in the same implementation flow. Do not edit external repos. |
+| 7 | Add focused validation for preview, selective apply, and docs drift prevention | Completed | Editor tests cover generated diffs, selected apply, skipped-setting drift, web export blocker preview, menu/Start Screen routing, and no-change state; static docs checks or focused assertions prevent reintroducing exact manual build-setting lists. | 1, 2, 3, 4, 5, 6 | Prefer the open-Editor bridge against `<local-unity-host-project>` when available. |
 
 ## Execution Rules
 

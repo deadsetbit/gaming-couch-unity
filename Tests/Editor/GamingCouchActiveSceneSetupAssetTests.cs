@@ -734,7 +734,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
-    public void CleanWebGLExportPlanReportsTemplateBlockersBeforeMutating()
+    public void WebGLExportPlanReportsTemplateBlockersBeforeMutating()
     {
         var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
         var destinationAsFile = CreateTemporaryPath("WebGLTemplateDestinationFile");
@@ -743,7 +743,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         {
             File.WriteAllText(destinationAsFile, "not a folder");
 
-            var plan = GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan(
+            var plan = GamingCouchWebGLExportSetup.CreateWebGLExportSetupPlan(
                 sourceDirectory,
                 destinationAsFile,
                 false
@@ -752,8 +752,8 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             Assert.That(plan.IsBlocked, Is.True);
             AssertHasPreviewRow(
                 plan.rows,
-                "clean-template-folder",
-                "Project-local clean WebGL template folder: File -> Folder",
+                "web-export-template-folder",
+                "Project-local web export template folder: File -> Folder",
                 false
             );
             Assert.That(File.ReadAllText(destinationAsFile), Is.EqualTo("not a folder"));
@@ -766,20 +766,20 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
-    public void CleanWebGLExportPlanKeepsTemplateAndTargetRowsRequired()
+    public void WebGLExportPlanKeepsTemplateAndTargetRowsRequired()
     {
         var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
         var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
 
         try
         {
-            var plan = GamingCouchWebGLExportSetup.CreateCleanWebGLExportSetupPlan(
+            var plan = GamingCouchWebGLExportSetup.CreateWebGLExportSetupPlan(
                 sourceDirectory,
                 destinationDirectory,
                 false
             );
 
-            Assert.That(FindPreviewRow(plan.rows, "clean-template-folder").isSkippable, Is.False);
+            Assert.That(FindPreviewRow(plan.rows, "web-export-template-folder").isSkippable, Is.False);
             Assert.That(FindPreviewRow(plan.rows, GamingCouchWebGLExportSetup.TemplateSelectionRowId).isSkippable, Is.False);
             Assert.That(FindPreviewRow(plan.rows, GamingCouchWebGLExportSetup.ActiveBuildTargetRowId).isSkippable, Is.False);
             Assert.That(
@@ -801,11 +801,16 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     public void WebGLDocsDoNotDuplicateManualBuildSettingLists()
     {
         var packageRoot = GetPackageRootPath();
+        var webExportPrdDocumentPath = new[]
+        {
+            "docs/architecture/gamingcouch-web-export-settings-prd.md",
+            "docs/architecture/gamingcouch-web-export-template-prd.md",
+        }.FirstOrDefault(relativePath => File.Exists(Path.Combine(packageRoot, relativePath)));
         var documentPaths = new[]
         {
             "README.md",
             "Documentation~/README.md",
-            "docs/architecture/gamingcouch-clean-webgl-export-template-prd.md",
+            webExportPrdDocumentPath,
             "docs/architecture/gamingcouch-start-screen-prd.md",
         };
         var forbiddenExactSettingPhrases = new[]
@@ -825,6 +830,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 
         foreach (var documentPath in documentPaths)
         {
+            Assert.That(documentPath, Is.Not.Null.And.Not.Empty);
             var fullPath = Path.Combine(packageRoot, documentPath);
             var text = File.ReadAllText(fullPath);
             foreach (var phrase in forbiddenExactSettingPhrases)
@@ -845,7 +851,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             PlayerSettings.SplashScreen.show = true;
             PlayerSettings.SplashScreen.showUnityLogo = true;
 
-            var result = GamingCouchWebGLExportSetup.EnsureCleanWebGLExportSetup(sourceDirectory, destinationDirectory, false);
+            var result = GamingCouchWebGLExportSetup.EnsureWebGLExportSetup(sourceDirectory, destinationDirectory, false);
 
             Assert.That(result.IsBlocked, Is.False);
             Assert.That(result.readiness.splashSettingsReady, Is.True);
@@ -873,7 +879,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             Assert.That(readiness.status, Is.EqualTo(GCWebGLExportSetupStatus.Warning));
             Assert.That(readiness.IsBlocked, Is.False);
             Assert.That(readiness.activeBuildTargetIsWebGL, Is.False);
-            AssertHasEntryContaining(readiness.details, "run clean WebGL export setup or switch to WebGL");
+            AssertHasEntryContaining(readiness.details, "run Gaming Couch web export settings or switch to WebGL");
             Assert.That(readiness.templateFolderReady, Is.True);
             Assert.That(readiness.templateFilesReady, Is.True);
             Assert.That(readiness.templateSelected, Is.True);
@@ -1152,7 +1158,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             true,
             true,
             true,
-            "Clean WebGL export setup is ready.",
+            "Gaming Couch web export settings are ready.",
             Array.Empty<string>()
         );
     }

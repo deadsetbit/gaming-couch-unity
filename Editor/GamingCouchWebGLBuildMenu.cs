@@ -15,9 +15,9 @@ public static class GamingCouchWebGLBuildMenu
                 GamingCouchWebGLBuildSettingsPreviewWindow.OpenDevProfile();
         }
 
-        [MenuItem("GamingCouch/WebGL Build/Preview clean WebGL export setup", false, GamingCouchMenuPriorities.WebGLBuild)]
-        public static void PreviewCleanWebGLExportSetup()
+        [MenuItem("GamingCouch/WebGL Build/Preview web export settings", false, GamingCouchMenuPriorities.WebGLBuild)]
+        public static void PreviewWebGLExportSettings()
         {
-                GamingCouchWebGLBuildSettingsPreviewWindow.OpenCleanExport(null);
+                GamingCouchWebGLBuildSettingsPreviewWindow.OpenWebGLExportSettings(null);
         }
 }

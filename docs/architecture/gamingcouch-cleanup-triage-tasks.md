@@ -55,7 +55,7 @@ Scope:
 - Keep the direct WebGL menu routes, but rename labels so users know they open preview flows:
   - `GamingCouch/WebGL Build/Preview release build settings (slow build)`
   - `GamingCouch/WebGL Build/Preview dev build settings (fast build)`
-  - `GamingCouch/WebGL Build/Preview clean WebGL export setup`
+  - `GamingCouch/WebGL Build/Preview web export settings`
 - Update `package.json` URLs:
   - `documentationUrl`: `https://deadsetbit.github.io/gaming-couch-unity/`
   - `changelogUrl`: `https://github.com/deadsetbit/gaming-couch-unity/blob/main/CHANGELOG.md`
@@ -126,7 +126,7 @@ Changed paths:
 - `LICENSE.md`
 - `README.md`
 - `Tests/Editor/GamingCouchStartScreenSetupActionsTests.cs`
-- `docs/architecture/gamingcouch-clean-webgl-export-template-prd.md`
+- `docs/architecture/gamingcouch-web-export-settings-prd.md`
 - `docs/architecture/gamingcouch-cleanup-triage-tasks.md`
 - `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
 - `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`

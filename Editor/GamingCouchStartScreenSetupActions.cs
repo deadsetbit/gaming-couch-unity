@@ -164,7 +164,7 @@ internal static class GamingCouchStartScreenSetupActions
         Action<GCStartScreenSetupActionResult> onApplied
     )
     {
-        GamingCouchWebGLBuildSettingsPreviewWindow.OpenCleanExport(result =>
+        GamingCouchWebGLBuildSettingsPreviewWindow.OpenWebGLExportSettings(result =>
         {
             if (onApplied != null)
             {
@@ -173,7 +173,7 @@ internal static class GamingCouchStartScreenSetupActions
         });
 
         return CreateResult(
-            "Clean WebGL export setup preview opened.",
+            "Web export settings preview opened.",
             MessageType.Info,
             null,
             null,
@@ -392,7 +392,7 @@ internal static class GamingCouchStartScreenSetupActions
         if (result == null)
         {
             return CreateResult(
-                "Clean WebGL export setup did not return a result.",
+                "Web export settings did not return a result.",
                 MessageType.Error,
                 null,
                 null,
