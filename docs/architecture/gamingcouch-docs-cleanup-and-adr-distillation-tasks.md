@@ -130,7 +130,7 @@ independent pass that checks its claims against the code.**
 | 0 | Repo hygiene (gitignore, commit trackers) | ☑ | n/a (mechanical) |
 | 1 | ADRs 0001–0016 in `docs/adr/` | ☑ | ☑ |
 | 2 | Carry-forwards C1–C3 + deletions | ☑ | ☑ |
-| 3 | Survivor updates U1–U8 | ☐ | ☐ |
+| 3 | Survivor updates U1–U8 | ☑ | ☑ |
 | 4 | Doc map + reference sweep + estate sweep | ☐ | ☐ |
 
 ## Audit Basis (2026-07-02)
@@ -293,32 +293,32 @@ Post-delete verification: reference sweep per Protocol rule 4.
 
 ## Phase 3 — Update surviving docs (units U1–U8; parallel except U3)
 
-- [ ] **U1 — CONTEXT.md** (Decision B): merge in `08-domain-glossary.md`; rename
+- [x] **U1 — CONTEXT.md** (Decision B): merge in `08-domain-glossary.md`; rename
       **Active Player** → **Player**, **Active Player Index** → **Player Index**;
       "Local Play Session Seam" → "Local Play Session" (code: `GCLocalPlaySession`);
       "Editor Local Play Contract Adapter" → "Editor Local Play Contract Provider"
       (code: `GCDevJsonLocalPlaySessionProvider`); keep it a pure glossary (no implementation
       detail). Then `git rm` `08-domain-glossary.md` (+ `.meta`). *Verify:* Protocol rule 5.
-- [ ] **U2 — gamingcouch-start-screen-prd.md**: flip header status "In progress" → Implemented
+- [x] **U2 — gamingcouch-start-screen-prd.md**: flip header status "In progress" → Implemented
       (all 6 tasks are Completed). Keep as the feature spec.
-- [ ] **U3 — gamingcouch-cleanup-triage-tasks.md** (serialize behind C1/C2 — edits backlog):
+- [x] **U3 — gamingcouch-cleanup-triage-tasks.md** (serialize behind C1/C2 — edits backlog):
       reconcile Tasks 2/3/5 against later commits (parts of Task 3's deprecation list already
       landed via "Remove legacy HUD update API", "Hide legacy multiplayer toggle",
       "runtime: remove legacy player id routing"); move the still-open remainder into
       `gamingcouch-unity-backlog.md`; then `git rm` the file (+ `.meta`) and prune the
       now-duplicate backlog row B007 if it merges.
-- [ ] **U4 — unity-runtime-contract/07-cross-repo-rollout.md**: mark the completed
+- [x] **U4 — unity-runtime-contract/07-cross-repo-rollout.md**: mark the completed
       branch/release steps done; keep the open legacy-bridge removal checkpoint, Post-Legacy
       Cleanup Ledger, and JS runtime follow-up.
-- [ ] **U5 — Documentation~/README.md**: shrink to a docs-site landing page that links to
+- [x] **U5 — Documentation~/README.md**: shrink to a docs-site landing page that links to
       README/API instead of restating the web-export/local-play/runtime-contract prose
       (~80% duplicate today).
-- [ ] **U6 — VERSIONING_PLAN.md**: replace the runtime-identity/sidecar/protocol prose with
+- [x] **U6 — VERSIONING_PLAN.md**: replace the runtime-identity/sidecar/protocol prose with
       links to ADRs 0008/0009; resolve the stale "Open questions" (CI workflows and
       `.releaserc.json` already exist — semantic-release is in place); keep a lean versioning plan.
-- [ ] **U7 — CHANGELOG.md**: add missing unreleased entries — web-export settings rename
+- [x] **U7 — CHANGELOG.md**: add missing unreleased entries — web-export settings rename
       (`b55004f`) and controller input removals (`106b34c`, `93732d4`).
-- [ ] **U8 — README.md**: clarify that `activeSeats` (line ~85) is a DevApp-repo concept, not a
+- [x] **U8 — README.md**: clarify that `activeSeats` (line ~85) is a DevApp-repo concept, not a
       Unity package field. *(Optional, from remediation D1)*: add a one-line comment at
       `Editor/GamingCouchWebGLBuildSettingsProfiles.cs:292` — "Disabled by design, see
       docs/adr/0013-webgl-compression-disabled.md" — and tick D1's optional doc-note box in
@@ -370,7 +370,14 @@ Commit when all green.
 | C2 | backlog row B010 (Future Metadata fields) | ☑ 2026-07-03 | LANDED (pre-delete check) | all 7 reserved fields + no-raw-bag rule |
 | C3 | web-export PRD (authoritative list + ADR 0013 note) | ☑ 2026-07-03 | LANDED (pre-delete check) | prd:38 rule, prd:40 compression note |
 | D1 | 15 doc+meta deletions + `.scratch/` (11 files) | ☑ 2026-07-03 | Sweep clean 2026-07-03 | dangling refs found in ADR 0002/0012 + remediation tracker → fixed same day; cleanup-triage refs left (file deleted in U3) |
-| U1–U8 | survivor updates | ☐ | — | one row per unit when executing |
+| U1 | CONTEXT.md glossary merge + 08 deletion | ☑ 2026-07-03 | GREEN 2026-07-03 | 24 terms all code-anchored (rule 5); superseded terms only in this plan file; purity pass |
+| U2 | start-screen PRD status flip | ☑ 2026-07-03 | GREEN 2026-07-03 | all 6 tasks Completed; window/setup code confirmed |
+| U3 | cleanup-triage reconcile → B011/B012, B007 merged | ☑ 2026-07-03 | GREEN 2026-07-03 | Task 5 + most of Task 3 landed in code; Task 2 contained via `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` gate; B011/B012 verified genuinely open |
+| U4 | 07-cross-repo-rollout update | ☑ 2026-07-03 | GREEN 2026-07-03 | playersByPlacement fixed (4 places); envelope corrected to v/type/name/seq/ms/data; open steps verified genuinely open |
+| U5 | Documentation~/README.md landing page | ☑ 2026-07-03 | GREEN 2026-07-03 | nothing unique lost; all root-README anchors verified; stale activeSeats sentence gone |
+| U6 | VERSIONING_PLAN.md slim + ADR links | ☑ 2026-07-03 | GREEN 2026-07-03 | found semantic-release NOT wired in CI (releaserc exists, no workflow) — doc records reality; 12 claims verified |
+| U7 | CHANGELOG.md unreleased entries | ☑ 2026-07-03 | GREEN 2026-07-03 | b55004f Changed; 106b04c+93732d4 Removed; all field names diff-verified |
+| U8 | README activeSeats + D1 comment + tick | ☑ 2026-07-03 | GREEN 2026-07-03 | comment at profiles.cs:292 Release spec; D1 Option A marked done; zero activeSeats in C# |
 | Sweep | every remaining `*.md` | ☐ | — | one row per doc when executing |
 
 ## Related Planning Files

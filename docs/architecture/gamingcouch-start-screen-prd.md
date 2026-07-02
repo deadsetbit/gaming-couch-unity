@@ -1,6 +1,6 @@
 # GamingCouch Start Screen PRD
 
-Status: In progress
+Status: Implemented
 Owner: Gaming Couch Unity package team
 
 ## Summary

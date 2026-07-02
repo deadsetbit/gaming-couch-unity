@@ -1,6 +1,6 @@
 ## Cross-Repo Rollout Plan
 
-Status: Core contract decisions captured; implementation-ready for the staged adapter rollout.
+Status: Core contract decisions captured. Unity package-side work (contract docs/fixtures and the package implementation) is done on `feature/standalone-controller`; client/SDK, DevApp, internal-game migration, hosted rollout, the `0.2.0-alpha.1` release, and legacy-bridge removal remain open.
 
 ## Purpose
 
@@ -14,7 +14,7 @@ Define how the Unity package, Gaming Couch client, SDK, DevApp, and internal gam
 - DevApp/local seat concepts (`seatIndex`, `activeSeats`, and `GCSeatIdentity`) remain local routing and source-seat provenance. Current Unity boot/runtime identity is the `players[]` roster and `playerIndex`.
 - Already-built older Unity games still need a short-lived platform/client/SDK runtime bridge during migration.
 - The bridge is a one-off internal migration bridge, not the long-term versioning, deployment, or legacy support strategy.
-- New Unity game-over messages use an object shape rather than a bare array so the result payload can expand later. The initial object carries `playerIndicesByPlacement` only; no one-off version field is introduced for this method.
+- New Unity game-over messages use an object shape rather than a bare array so the result payload can expand later. The initial object carries `playersByPlacement` only; no one-off version field is introduced for this method.
 - During the temporary bridge, adapters distinguish new versus legacy game-over output by shape and message path: a `runtime_messages` `gc.game.game_over` object means new player-index result, while legacy `runtime_game_over.playerIdsByPlacement` or hosted bare array means legacy platform IDs. This avoids ambiguity around `playerIndex: 0` versus old positive platform IDs.
 - The Unity-first migration uses a staged adapter rollout with no immediate `gameProtocolVersion` bump. A future bump remains available as a later public compatibility boundary after internal games and JavaScript runtime semantics are aligned.
 - Launch policy for diagnostics is staged with the runtime output work: Unity log capture is package/runtime-owned and emitted as structured `gc.diagnostic` messages when enabled, while WebGL loader `print`/`printErr` mirroring and browser console capture remain host-owned debug controls outside the Unity runtime contract.
@@ -41,16 +41,15 @@ DevApp/local runtime message:
 ```json
 {
   "type": "runtime_messages",
-  "schemaVersion": 1,
-  "runId": "active run id",
+  "v": 1,
   "messages": [
     {
-      "schemaVersion": 1,
-      "messageType": "gc.game.game_over",
-      "sequence": 12,
-      "runtimeTimeMs": 1234,
-      "payload": {
-        "playerIndicesByPlacement": [0, 1]
+      "type": "gc.game",
+      "name": "game_over",
+      "seq": 12,
+      "ms": 1234,
+      "data": {
+        "playersByPlacement": [0, 1]
       }
     }
   ]
@@ -70,12 +69,12 @@ Hosted/client SDK legacy bridge messages may still send:
 
 Rules:
 
-- `gc.game.game_over.payload.playerIndicesByPlacement` is the new runtime-owned placement field.
+- `gc.game.game_over.data.playersByPlacement` is the new runtime-owned placement field.
 - `runtime_game_over.playerIdsByPlacement` is legacy-only and removal-bound in the hosted client/SDK bridge. DevApp/local Unity must not accept it as a current contract path.
 - Messages containing both new game-over payloads and legacy `playerIdsByPlacement` are malformed.
-- New versus legacy game-over payloads are discriminated by message path and shape: object-wrapped `playerIndicesByPlacement` inside `runtime_messages` is the new player-index result; top-level `playerIdsByPlacement` is the legacy platform-ID result.
+- New versus legacy game-over payloads are discriminated by message path and shape: object-wrapped `playersByPlacement` inside `runtime_messages` is the new player-index result; top-level `playerIdsByPlacement` is the legacy platform-ID result.
 - New game-over payloads must not contain legacy ID fields.
-- Local DevApp and hosted adapters map accepted current `playerIndicesByPlacement` through the player-index mapping before updating platform-facing `LatestGameOverResult.playerIdsByPlacement`.
+- Local DevApp and hosted adapters map accepted current `playersByPlacement` through the player-index mapping before updating platform-facing `LatestGameOverResult.playerIdsByPlacement`.
 - Platform-facing playlist/stats surfaces may keep `playerIdsByPlacement` while platform state still uses platform player IDs.
 - Game-over acceptance is first-accepted-wins per active run. Hosted client/SDK adapters apply this across both the new runtime message path and the temporary legacy bridge. DevApp/local Unity applies it only to the current `runtime_messages` path. After one result is accepted, later duplicate, replayed, or second result messages are rejected, diagnosed, and must not mutate playlist, stats, or platform result state again.
 - Accepting a legacy array/message in the hosted client/SDK bridge emits `gc.api.legacy_runtime_payload`.
@@ -89,10 +88,10 @@ Hosted WebGL bridge:
 
 ## Branch Order
 
-1. Unity package planning/docs and fixtures branch captures the final contracts.
+1. Unity package planning/docs and fixtures branch captures the final contracts. — Done: contracts captured on `feature/standalone-controller` and distilled into `docs/adr` (`ContractFixtures`, this doc set).
 2. Client/SDK adapter branch adds shape-discriminated Unity game-over handling, player-index mapping helpers, platform/session active-run seed resolution and validation before Unity play payload creation, `runtime_messages`/`screen_space` validation, diagnostics callback validation, hosted launch policy for Unity log capture and host-owned console mirroring, and tests while preserving legacy behavior.
 3. DevApp branch adds local `runtime_messages`, `screen_space`, active seat-to-index routing, metadata fallback health, diagnostics UI ingestion, launch-only Unity log capture controls, host-owned console mirroring controls where needed, and tests with no `runtime_game_over` legacy acceptance.
-4. Unity package implementation branch migrates source APIs, state model, runtime output, diagnostics, metadata view, examples, and local runtime messages.
+4. Unity package implementation branch migrates source APIs, state model, runtime output, diagnostics, metadata view, examples, and local runtime messages. — Done on `feature/standalone-controller`: strict index/state source APIs, legacy payload rejection, v1 `runtime_messages` output, diagnostics, platform metadata runtime view, and generated examples.
 5. Internal game migration branches update game source to `Index`, `playerIndex`, explicit state APIs, and object-shaped game-over behavior.
 6. Hosted rollout branch/release enables the new Unity adapter path after client/SDK tests pass.
 7. Cleanup branch removes the legacy bridge after the removal checkpoint is met.

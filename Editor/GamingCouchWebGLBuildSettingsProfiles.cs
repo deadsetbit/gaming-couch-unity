@@ -289,6 +289,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
             CreateManagedStrippingLevelSpec(ManagedStrippingLevel.High),
             CreateStripUnusedMeshComponentsSpec(true),
             CreateWebGLDataCachingSpec(true),
+            // Disabled by design, see docs/adr/0013-webgl-compression-disabled.md
             CreateWebGLCompressionSpec(WebGLCompressionFormat.Disabled),
             CreateWebGLExceptionSupportSpec(WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly),
             CreateWebGLDebugSymbolsSpec(WebGLDebugSymbolMode.Off),

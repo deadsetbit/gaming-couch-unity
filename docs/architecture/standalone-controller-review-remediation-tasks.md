@@ -510,10 +510,10 @@ fly" — is **undocumented** anywhere in this repo (no comment, no doc; the serv
 the platform repo, not here). If that assumption is wrong for any deploy target, this ships
 uncompressed WASM.
 
-**Chosen — Option A (docs only; optional):** keep `Disabled`; add a short comment at the spec
-(`GamingCouchWebGLBuildSettingsProfiles.cs:292`) and a note in the web-export PRD stating
-no-compression is intentional for now (decision now recorded in
-`docs/adr/0013-webgl-compression-disabled.md`). No behavior change; tests stay green.
+**Chosen — Option A (docs only; optional):** ☑ Done — kept `Disabled`; a comment at the spec
+(`GamingCouchWebGLBuildSettingsProfiles.cs:292`) now points to
+`docs/adr/0013-webgl-compression-disabled.md`, which records the decision and serves as the
+doc note. No behavior change; tests stay green.
 
 **Rejected — Option B (switch Release to Brotli):** not wanted. Do not change the compression format.
 

@@ -9,6 +9,12 @@
 - Documented the Unity package as strict-current at its runtime boundary: hosted play payloads must arrive with current active-player identity, runtime input must use `playerIndex`, and legacy `players[]`/`playerId` adaptation belongs in the Gaming Couch client/SDK before Unity is invoked.
 - Clarified that source-seat mapping remains supported for local editor play because seats are local setup, not hosted platform identity.
 - Documented retained obsolete Unity APIs as compile-time errors with migration guidance toward `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
+- Renamed the clean WebGL export workflow to Gaming Couch web export settings across editor setup code, menus, tests, and documentation.
+
+### Removed
+
+- Removed the right stick input API: `GCControllerInputs.rightX`/`rightY` and the underlying `a2`/`a3` axis fields no longer exist.
+- Removed unused controller input fields `b3` and DPad `b12`–`b15`; `leftX`/`leftY` now read the left stick axes only, without DPad fallback.
 
 ### Release Notes
 
