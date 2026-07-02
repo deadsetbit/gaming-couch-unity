@@ -128,7 +128,7 @@ independent pass that checks its claims against the code.**
 | Phase | Scope | Implemented | Verified |
 | --- | --- | --- | --- |
 | 0 | Repo hygiene (gitignore, commit trackers) | ☑ | n/a (mechanical) |
-| 1 | ADRs 0001–0016 in `docs/adr/` | ☐ | ☐ |
+| 1 | ADRs 0001–0016 in `docs/adr/` | ☑ | ☑ |
 | 2 | Carry-forwards C1–C3 + deletions | ☐ | ☐ |
 | 3 | Survivor updates U1–U8 | ☐ | ☐ |
 | 4 | Doc map + reference sweep + estate sweep | ☐ | ☐ |
@@ -170,80 +170,80 @@ agent should trust (re-verify only if something looks off):
 Write each as `docs/adr/NNNN-slug.md`. Briefs give the decision essence and the code/doc anchors.
 Source docs still exist during this phase — writers consult them for nuance.
 
-- [ ] **A01 / 0001-strict-runtime-identity-boundary** — Games address participants only by dense,
+- [x] **A01 / 0001-strict-runtime-identity-boundary** — Games address participants only by dense,
       zero-based `playerIndex` (`GCPlayer.Index`); platform player IDs and player names never
       cross into the game-facing Runtime API. Legacy `playerId`/`players[]` payloads are
       hard-rejected with no fallback, and removed APIs are `[Obsolete(..., true)]` compile
       errors. One-way privacy/fairness boundary; adapters upstream translate instead.
       *Verify:* `Runtime/GCPlayOptions.cs` strict-current rejection; `Runtime/GCPlayer.cs`
       obsolete markers. *Sources:* runtime-contract PRD/01/02, `.scratch/unity-package-legacy-cleanup`.
-- [ ] **A02 / 0002-deterministic-player-index-shuffle** — Player indices assigned by FNV-1a
+- [x] **A02 / 0002-deterministic-player-index-shuffle** — Player indices assigned by FNV-1a
       32-bit hash-sort (unsigned order, captured-order tie-break, per-run seed) so C# and TS
       produce byte-identical assignments without shared code. Must stay bit-exact
       cross-language; change only with cross-language fixtures. *Verify:*
       `Runtime/GCPlayerIndexMapping.cs:67-91`. *Source:* runtime-contract 01.
-- [ ] **A03 / 0003-permanent-revokable-player-state** — Elimination/finish modeled as
+- [x] **A03 / 0003-permanent-revokable-player-state** — Elimination/finish modeled as
       permanent/revokable states (replacing reversible booleans); dual timebase: scaled
       `GameTime` for game logic, unscaled `runtimeTimeMs` for ordering. *Verify:*
       `Runtime/GCPlayer.cs` enums + `GameTime` timestamps. *Source:* runtime-contract 03.
       Consequences note: `SetMeter` payload and elimination `reason` remain deferred follow-ups
       (carried to backlog by C1).
-- [ ] **A04 / 0004-two-path-runtime-output** — `runtime_messages` + `screen_space` are the only
+- [x] **A04 / 0004-two-path-runtime-output** — `runtime_messages` + `screen_space` are the only
       physical output paths; HUD is demoted from data owner to consumer. *Verify:*
       `Runtime/GCRuntimeMessages.cs`, `Runtime/Hud/GCHud.cs`. *Source:* runtime-contract 04.
-- [ ] **A05 / 0005-object-wrapped-game-over** — Game-over result is `{ playerIndicesByPlacement }`;
+- [x] **A05 / 0005-object-wrapped-game-over** — Game-over result is `{ playerIndicesByPlacement }`;
       the object wrapper disambiguates from the legacy bare array (which could not distinguish
       `playerIndex: 0`), and the first accepted result wins and freezes platform state.
       *Verify:* `Runtime/GCRuntimeMessages.cs` + `Tests/Editor/GCRuntimeOutputContractTests.cs`.
       *Sources:* runtime-contract 04/07.
-- [ ] **A06 / 0006-diagnostics-spine** — Structured `gc.*` diagnostic codes emitted as
+- [x] **A06 / 0006-diagnostics-spine** — Structured `gc.*` diagnostic codes emitted as
       first-class runtime messages; stable code taxonomy is contract; bypasses Unity log level;
       carries `playerIndex` only; separate from host console mirroring. *Verify:*
       `Runtime/RuntimeMessages/GCDiagnostics.cs:17-97`. *Source:* runtime-contract 05.
-- [ ] **A07 / 0007-readonly-platform-metadata-notdefined** — Unity reads `gc.platform.json` but
+- [x] **A07 / 0007-readonly-platform-metadata-notdefined** — Unity reads `gc.platform.json` but
       never writes or repairs it; missing/invalid metadata projects as explicit `notdefined`
       (not null/undefined) with persistent warnings. *Verify:* `GCPlatformRuntimeView` usage in
       `Runtime/GCActiveRunProjection.cs`. *Source:* runtime-contract 06 (reserved "Future
       Metadata" fields carried to backlog by C2).
-- [ ] **A08 / 0008-game-protocol-version-stays-1** — `gameProtocolVersion` stays 1:
+- [x] **A08 / 0008-game-protocol-version-stays-1** — `gameProtocolVersion` stays 1:
       adapter-translated changes (incl. sidecar/upload validation) do not bump it; a bump is
       reserved for changes games/SDK cannot adapter-translate. *Verify:*
       `Runtime/Resources/GamingCouchRuntimeInfo.json`. *Sources:* VERSIONING_PLAN, sidecar
       tasks, CHANGELOG release-notes block.
-- [ ] **A09 / 0009-two-sidecar-identity-model** — `gc.runtime-info.json` is the identity gate
+- [x] **A09 / 0009-two-sidecar-identity-model** — `gc.runtime-info.json` is the identity gate
       (hosted SDK hard-rejects startup on identity drift vs the runtime callback; required at
       upload; deliberately not cryptographic proof) while `gc.unity-build-info.json` is
       non-gating, path-redacted build diagnostics; `package.json` is the sole source of package
       name/version — no literals in runtime or template. *Verify:* `Runtime/GCRuntimeInfo.cs`,
       `Editor/GamingCouchWebGLRuntimeInfoSidecar.cs`, `Editor/GCUnityBuildInfoSidecar.cs`.
       *Sources:* webgl-runtime-info-sidecar tasks, VERSIONING_PLAN, `.scratch/unity-build-info-sidecar`.
-- [ ] **A10 / 0010-gc-dev-json-canonical** — Root `gc.dev.json` is the only editor local-play
+- [x] **A10 / 0010-gc-dev-json-canonical** — Root `gc.dev.json` is the only editor local-play
       settings source (`devVersion: 2`, exactly eight seats, fixed seat→color map); old
       serialized inspector fields are hidden and ignored with no migration or fallback; Unity
       never creates or repairs `gc.dev.json`/`gc.platform.json`. *Verify:* `Editor/GCDevJson*.cs`.
       *Source:* unity-dev-json-sync-implementation-tasks Product Rules.
-- [ ] **A11 / 0011-runtime-is-json-free** — All Local Play Contract JSON parsing (Newtonsoft)
+- [x] **A11 / 0011-runtime-is-json-free** — All Local Play Contract JSON parsing (Newtonsoft)
       lives Editor-only behind `IGCLocalPlaySessionProvider`; Runtime consumes neutral capture
       results, so player/WebGL builds carry no JSON dependency. *Verify:* zero Newtonsoft usage
       in `Runtime/`; `Runtime/Dev/GCLocalPlaySession.cs`. *Sources:* then-now doc, dev-json-sync tasks.
-- [ ] **A12 / 0012-defer-cross-engine-extraction** — No shared cross-engine code until a second
+- [x] **A12 / 0012-defer-cross-engine-extraction** — No shared cross-engine code until a second
       engine adapter (e.g. Godot) exists; portability is guaranteed by the Local Play Contract +
       Contract Fixtures, not shared implementation. *Source:* improvement roadmap.
-- [ ] **A13 / 0013-webgl-compression-disabled** — Build profiles force
+- [x] **A13 / 0013-webgl-compression-disabled** — Build profiles force
       `WebGLCompressionFormat.Disabled` for Dev and Release by design (decided 2026-07-02);
       serving-layer compression is the hosting platform's concern. Do not "fix" to Brotli/Gzip;
       tests pin `Disabled`. *Verify:* `Editor/GamingCouchWebGLBuildSettingsProfiles.cs:292`,
       `Tests/Editor/GamingCouchActiveSceneSetupAssetTests.cs:666-733`. *Source:* remediation
       tasks Decision D1.
-- [ ] **A14 / 0014-minimal-shell-web-template** — The package web export template is a minimal
+- [x] **A14 / 0014-minimal-shell-web-template** — The package web export template is a minimal
       production shell: no playtest harness, no JS shims, no PWA/service worker; output is not
       playable outside the hosting platform by design. *Verify:* template under
       `Editor/WebGLTemplates`. *Source:* web-export-settings PRD.
-- [ ] **A15 / 0015-ordered-transitions-never-coalesced** — Semantic player transitions are
+- [x] **A15 / 0015-ordered-transitions-never-coalesced** — Semantic player transitions are
       ordered facts emitted in occurrence order and never coalesced; only latest-state
       projections (snapshots/HUD) may coalesce at frame boundaries. *Verify:*
       `Runtime/GCPlayerTransitions.cs`. *Source:* `.scratch/deepen-player-state-transitions/PRD.md`.
-- [ ] **A16 / 0016-no-generated-example-scene** — There is deliberately no generated example
+- [x] **A16 / 0016-no-generated-example-scene** — There is deliberately no generated example
       scene route; Active Scene Setup applies safe setup to the user's currently active scene,
       and Example Assets are generated editable project files. *Verify:*
       `Editor/GamingCouchActiveSceneSetup.cs`. *Source:* start-screen PRD Task 6.
@@ -255,10 +255,10 @@ Commit when all 16 are green.
 
 Carry-forwards (backlog edits are coordinator-owned; C1 → C2 sequential, C3 independent):
 
-- [ ] **C1** From `unity-runtime-contract/03-player-state-model.md`: copy the "Deferred Contract
+- [x] **C1** From `unity-runtime-contract/03-player-state-model.md`: copy the "Deferred Contract
       Follow-Ups" (`SetMeter`, elimination `reason`) into `gamingcouch-unity-backlog.md` as new
       backlog rows.
-- [ ] **C2** From `unity-runtime-contract/06-platform-metadata-runtime-view.md`: copy the
+- [x] **C2** From `unity-runtime-contract/06-platform-metadata-runtime-view.md`: copy the
       reserved "Future Metadata" fields list into the backlog likewise.
 - [ ] **C3** Per Decision C, move into `gamingcouch-web-export-settings-prd.md`: the rule "the
       preview window's spec-driven setting list is the single authoritative list — docs must not
@@ -350,7 +350,22 @@ Commit when all green.
 
 | Unit | Artifact | Implemented | Verifier verdict | Notes |
 | --- | --- | --- | --- | --- |
-| A01–A16 | `docs/adr/0001`–`0016` | ☐ | — | one row per ADR when executing |
+| A01 | `docs/adr/0001-strict-runtime-identity-boundary.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | rejection targets legacy fields inside `players[]` entries; 13 CONFIRMED, 1 OUT-OF-REPO (properly phrased) |
+| A02 | `docs/adr/0002-deterministic-player-index-shuffle.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | provided-mapping bypass exists (`usesProvidedPlayerIndexMapping`), consistent with decision; hash constants pinned by tests |
+| A03 | `docs/adr/0003-permanent-revokable-player-state.md` | ☑ 2026-07-02 | GREEN 2026-07-03 (after fix) | 1 CONTRADICTED: "tracked in the backlog" was premature → resolved by landing C1/C2 backlog rows (B008–B010) before the Phase 1 commit |
+| A04 | `docs/adr/0004-two-path-runtime-output.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | actual file is `Runtime/RuntimeMessages/GCRuntimeMessages.cs`; lifecycle/setup externs correctly out of scope |
+| A05 | `docs/adr/0005-object-wrapped-game-over.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | code wire key is `playersByPlacement`, not `playerIndicesByPlacement`; ADR records code-true key; fix 07 ref in U4 |
+| A06 | `docs/adr/0006-diagnostics-spine.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | 20 claims checked; identity firewall enforced at field construction |
+| A07 | `docs/adr/0007-readonly-platform-metadata-notdefined.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | no production writes to gc.platform.json anywhere; warnings re-emitted per Play() |
+| A08 | `docs/adr/0008-game-protocol-version-stays-1.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | value still 1 since introduction; minor nit: "upload validation landed" reads slightly local but context clarifies |
+| A09 | `docs/adr/0009-two-sidecar-identity-model.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | identity helper lives at `Runtime/GCEditorPackageIdentity.cs`; CI script enforces no-literals rule |
+| A10 | `docs/adr/0010-gc-dev-json-canonical.md` | ☑ 2026-07-02 | GREEN 2026-07-03 (after fix) | 1 CONTRADICTED: missing-file parenthetical implied error for both files → scoped: gc.dev.json error `MissingFile`, gc.platform.json warning `MissingPlatformDataFile` + fallback (verifier's own evidence) |
+| A11 | `docs/adr/0011-runtime-is-json-free.md` | ☑ 2026-07-02 | GREEN 2026-07-03 (after fix) | title "Runtime is JSON-free" CONTRADICTED (JsonUtility used in Runtime) → retitled to "no JSON library dependency", wording the verifier had already CONFIRMED; filename slug kept per plan |
+| A12 | `docs/adr/0012-defer-cross-engine-extraction.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | fixtures corpus + consuming tests confirmed; strategy claims properly phrased |
+| A13 | `docs/adr/0013-webgl-compression-disabled.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | Disabled forced at profiles 292/312; tests pin it; cross-repo claims properly phrased |
+| A14 | `docs/adr/0014-minimal-shell-web-template.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | single-file template confirmed minimal; platform claims properly cross-repo phrased |
+| A15 | `docs/adr/0015-ordered-transitions-never-coalesced.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | append-only queue + monotonic seq confirmed; batch cap changes timing only |
+| A16 | `docs/adr/0016-no-generated-example-scene.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | never-overwrite guards and move-and-rename header confirmed |
 | C1–C3 | backlog, web-export PRD | ☐ | — | pre-delete destination check |
 | D1 | 16 deletions + `.scratch/` | ☐ | — | post-delete reference sweep |
 | U1–U8 | survivor updates | ☐ | — | one row per unit when executing |

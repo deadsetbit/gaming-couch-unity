@@ -1,0 +1,8 @@
+# 0006: Diagnostics spine — structured gc.* codes as first-class runtime messages
+
+Runtime problems (rejected messages, invalid state transitions, mapping failures, metadata fallbacks, removed-API stubs) used to be reachable only through `Debug.Log` scraping, which is lossy, unstructured, and gated by log levels the game can change. We decided that package code emits structured diagnostics through an internal emitter (`GCDiagnostics.Emit` in `Runtime/RuntimeMessages/GCDiagnostics.cs`) as first-class `gc.diagnostic` runtime messages: the closed, validated `gc.*` code taxonomy (`GCDiagnosticCodes`) plus `severity` and `sourceArea` are the stable contract (human `message` text is not), emission bypasses `GCLog.logLevel` and Unity logging entirely, and payloads carry only a non-negative `playerIndex` — field keys like `playerId`/`platformPlayerId` are hard-rejected at construction so platform identity can never leak (per the cross-repo runtime contract, hosted adapters correlate to platform IDs privately after validation). Unity-console mirroring of warnings/errors is a human-facing copy, not the transport, and optional Unity log capture (`GCUnityLogCapture`, off by default, rate-limited, launch-controlled) is a separate concern from host-owned browser/loader console mirroring.
+
+## Consequences
+
+- New diagnostic conditions require a new code in the closed catalog (unknown codes and mismatched code/sourceArea pairs throw at emit time); field/path specifics go in bounded `details`/`debug`, not new codes.
+- Sinks (DevApp, hosted callbacks — other repos) own deduplication, rate limiting, and display; the Unity emitter stays dumb and unconditional.
