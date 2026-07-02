@@ -129,7 +129,7 @@ independent pass that checks its claims against the code.**
 | --- | --- | --- | --- |
 | 0 | Repo hygiene (gitignore, commit trackers) | ☑ | n/a (mechanical) |
 | 1 | ADRs 0001–0016 in `docs/adr/` | ☑ | ☑ |
-| 2 | Carry-forwards C1–C3 + deletions | ☐ | ☐ |
+| 2 | Carry-forwards C1–C3 + deletions | ☑ | ☑ |
 | 3 | Survivor updates U1–U8 | ☐ | ☐ |
 | 4 | Doc map + reference sweep + estate sweep | ☐ | ☐ |
 
@@ -269,22 +269,22 @@ Pre-delete verification: verifier confirms C1–C3 content landed at destination
 
 Then **D1 deletions** — coordinator runs `git rm` (each doc together with its `.meta`):
 
-- [ ] `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
-- [ ] `docs/architecture/gamingcouch-unity-package-architecture-then-now.md`
-- [ ] `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
-- [ ] `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
-- [ ] `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
-- [ ] `docs/architecture/webgl-build-settings-preview-implementation-tasks.md`
-- [ ] `docs/architecture/webgl-runtime-info-sidecar-implementation-tasks.md`
-- [ ] `docs/architecture/unity-runtime-contract/PRD.md`
-- [ ] `docs/architecture/unity-runtime-contract/01-player-index-mapping.md`
-- [ ] `docs/architecture/unity-runtime-contract/02-unity-api-migration.md`
-- [ ] `docs/architecture/unity-runtime-contract/03-player-state-model.md`
-- [ ] `docs/architecture/unity-runtime-contract/04-runtime-output-contract.md`
-- [ ] `docs/architecture/unity-runtime-contract/05-diagnostics-spine.md`
-- [ ] `docs/architecture/unity-runtime-contract/06-platform-metadata-runtime-view.md`
-- [ ] `docs/architecture/unity-runtime-contract/manual-test-notes.md`
-- [ ] `git rm -r .scratch/` (all 12 files; no `.meta` files there)
+- [x] `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
+- [x] `docs/architecture/gamingcouch-unity-package-architecture-then-now.md`
+- [x] `docs/architecture/unity-dev-json-sync-implementation-tasks.md`
+- [x] `docs/architecture/unity-dev-json-sync-prep-execution-tasks.md`
+- [x] `docs/architecture/unity-dev-json-sync-prep-refactor-roadmap.md`
+- [x] `docs/architecture/webgl-build-settings-preview-implementation-tasks.md`
+- [x] `docs/architecture/webgl-runtime-info-sidecar-implementation-tasks.md`
+- [x] `docs/architecture/unity-runtime-contract/PRD.md`
+- [x] `docs/architecture/unity-runtime-contract/01-player-index-mapping.md`
+- [x] `docs/architecture/unity-runtime-contract/02-unity-api-migration.md`
+- [x] `docs/architecture/unity-runtime-contract/03-player-state-model.md`
+- [x] `docs/architecture/unity-runtime-contract/04-runtime-output-contract.md`
+- [x] `docs/architecture/unity-runtime-contract/05-diagnostics-spine.md`
+- [x] `docs/architecture/unity-runtime-contract/06-platform-metadata-runtime-view.md`
+- [x] `docs/architecture/unity-runtime-contract/manual-test-notes.md`
+- [x] `git rm -r .scratch/` (all 12 files; no `.meta` files there)
 
 Keep in this phase: `07-cross-repo-rollout.md` (live rollout checkpoints) and
 `08-domain-glossary.md` (deleted in Phase 3 after the CONTEXT.md merge).
@@ -369,7 +369,7 @@ Commit when all green.
 | C1 | backlog rows B008/B009 (SetMeter, reason codes) | ☑ 2026-07-03 | LANDED (pre-delete check) | backlog.md:43-44 |
 | C2 | backlog row B010 (Future Metadata fields) | ☑ 2026-07-03 | LANDED (pre-delete check) | all 7 reserved fields + no-raw-bag rule |
 | C3 | web-export PRD (authoritative list + ADR 0013 note) | ☑ 2026-07-03 | LANDED (pre-delete check) | prd:38 rule, prd:40 compression note |
-| D1 | 16 deletions + `.scratch/` | ☐ | — | post-delete reference sweep |
+| D1 | 15 doc+meta deletions + `.scratch/` (11 files) | ☑ 2026-07-03 | Sweep clean 2026-07-03 | dangling refs found in ADR 0002/0012 + remediation tracker → fixed same day; cleanup-triage refs left (file deleted in U3) |
 | U1–U8 | survivor updates | ☐ | — | one row per unit when executing |
 | Sweep | every remaining `*.md` | ☐ | — | one row per doc when executing |
 
