@@ -35,7 +35,9 @@ The v1 template is a minimal production/upload shell only. It provides Unity loa
 
 ## Release Defaults
 
-Web export settings apply generated release-oriented defaults. The preview is the authoritative detailed list of setting labels, current values, and target values; this PRD must not duplicate that list manually.
+Web export settings apply generated release-oriented defaults. The preview window's spec-driven setting list is the single authoritative list of setting labels, current values, and target values; docs, including this PRD, must not maintain a second manual copy of that list.
+
+One decision-level default is noted here rather than in a duplicated settings list: WebGL compression is deliberately `Disabled` for both the Dev and Release profiles (see `docs/adr/0013-webgl-compression-disabled.md`).
 
 ## Template Requirements
 

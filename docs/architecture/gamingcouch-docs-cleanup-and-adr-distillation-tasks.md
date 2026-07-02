@@ -260,7 +260,7 @@ Carry-forwards (backlog edits are coordinator-owned; C1 → C2 sequential, C3 in
       backlog rows.
 - [x] **C2** From `unity-runtime-contract/06-platform-metadata-runtime-view.md`: copy the
       reserved "Future Metadata" fields list into the backlog likewise.
-- [ ] **C3** Per Decision C, move into `gamingcouch-web-export-settings-prd.md`: the rule "the
+- [x] **C3** Per Decision C, move into `gamingcouch-web-export-settings-prd.md`: the rule "the
       preview window's spec-driven setting list is the single authoritative list — docs must not
       maintain a second manual copy" (from webgl-build-settings-preview) and a short compression
       note pointing at ADR 0013.
@@ -366,7 +366,9 @@ Commit when all green.
 | A14 | `docs/adr/0014-minimal-shell-web-template.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | single-file template confirmed minimal; platform claims properly cross-repo phrased |
 | A15 | `docs/adr/0015-ordered-transitions-never-coalesced.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | append-only queue + monotonic seq confirmed; batch cap changes timing only |
 | A16 | `docs/adr/0016-no-generated-example-scene.md` | ☑ 2026-07-02 | GREEN 2026-07-03 | never-overwrite guards and move-and-rename header confirmed |
-| C1–C3 | backlog, web-export PRD | ☐ | — | pre-delete destination check |
+| C1 | backlog rows B008/B009 (SetMeter, reason codes) | ☑ 2026-07-03 | LANDED (pre-delete check) | backlog.md:43-44 |
+| C2 | backlog row B010 (Future Metadata fields) | ☑ 2026-07-03 | LANDED (pre-delete check) | all 7 reserved fields + no-raw-bag rule |
+| C3 | web-export PRD (authoritative list + ADR 0013 note) | ☑ 2026-07-03 | LANDED (pre-delete check) | prd:38 rule, prd:40 compression note |
 | D1 | 16 deletions + `.scratch/` | ☐ | — | post-delete reference sweep |
 | U1–U8 | survivor updates | ☐ | — | one row per unit when executing |
 | Sweep | every remaining `*.md` | ☐ | — | one row per doc when executing |
