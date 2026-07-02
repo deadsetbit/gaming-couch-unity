@@ -1,0 +1,49 @@
+# Gaming Couch Unity Backlog
+
+Status: Idea backlog
+Last updated: 2026-06-12
+Owner: Gaming Couch Unity package team
+
+## Purpose
+
+Track future package ideas that are worth preserving but are not yet approved PRDs, implementation tasks, or roadmap commitments.
+
+This backlog is intentionally lighter than the active architecture roadmap. Items here can be rough, speculative, or waiting for more product/design input. Promote an item into a focused PRD or task file before implementation starts.
+
+## How To Use This File
+
+- Add ideas when they are plausible future work but too early for an implementation plan.
+- Keep entries short enough to scan.
+- Prefer linking to existing PRDs/task files instead of duplicating their details.
+- Do not treat backlog order as priority.
+- Do not implement directly from this file. First promote the item into a scoped PRD, task plan, or existing roadmap row.
+
+## Promotion Checklist
+
+Before promoting a backlog item, answer:
+
+- Which user workflow does this improve?
+- Is the target workflow for ground-up Gaming Couch games, ported Unity games, or both?
+- Does this change public Runtime API, generated Example Assets, editor setup, WebGL output, DevApp behavior, or hosted platform behavior?
+- If package/platform APIs change, does `gameProtocolVersion` need to be bumped, or can legacy support be preserved without a protocol change?
+- What is the smallest useful vertical slice?
+- What docs, generated examples, and tests need to move with the slice?
+
+## Backlog
+
+| ID | Area | Idea | Why | Promotion trigger | Notes |
+| --- | --- | --- | --- | --- | --- |
+| B001 | Game authoring ergonomics | Create a dedicated GC game authoring ergonomics PRD. | The package needs a coherent plan for making new GC-native games and ported Unity games easier to build. | We are ready to define concrete public API, generated example, or editor workflow changes. | Keep this separate from low-level architecture cleanup. |
+| B002 | Player input API | Expose current player inputs directly from `GCPlayer`, for example `player.Inputs` and/or `player.TryGetInputs(out inputs)`. | Current game code must call `GamingCouch.Instance.GetInputsByPlayerIndex(player.Index)` and manually route input into player logic. | We decide the canonical convenience API shape. | Keep `GamingCouch` as the likely source of truth unless a PRD proves ownership should move. |
+| B003 | Porting input adapter | Explore a Unity-friendly adapter for existing controllers that currently use `Input.GetAxis`, `Input.GetButton`, or Unity Input System actions. | Ported games should not need a full controller rewrite before they can run on Gaming Couch. | We identify the first legacy input pattern to support. | Make clear whether this is a migration bridge, a supported long-term API, or both. |
+| B004 | Generated examples | Improve generated Example Assets and docs so they demonstrate a small playable loop, not only setup wiring. | Ground-up users learn the intended architecture from generated code. | A concrete ergonomics slice needs sample code to show the happy path. | Existing runtime-contract Task 11 expanded examples; avoid duplicating already-completed scope. |
+| B005 | Porting guide | Add a porting guide for adapting an existing Unity local multiplayer game to Gaming Couch. | Ported projects need different guidance than clean new projects. | We have one or two real migrated games to extract patterns from. | Include input, players, GameOver, HUD/state, WebGL export, and unsupported multiplayer caveats. |
+| B006 | Start Screen authoring guidance | Consider Start Screen affordances that distinguish "new game setup" from "port existing game setup." | The editor should guide different user paths without hiding important GC concepts. | The authoring ergonomics PRD chooses concrete editor workflow changes. | Coordinate with Start Screen Readiness work instead of expanding the window opportunistically. |
+| B007 | Runtime API cleanup | Review public Runtime surfaces that feel internal, deprecated, or awkward for game authors. | A cleaner API improves both new-game and porting workflows. | Cleanup requires compatibility decisions beyond existing triage tasks. | Existing cleanup task file already tracks Runtime API deprecation cleanup; link or merge when promoted. |
+
+## Related Planning Files
+
+- `docs/architecture/gamingcouch-cleanup-triage-tasks.md`
+- `docs/architecture/gamingcouch-unity-architecture-improvement-roadmap.md`
+- `docs/architecture/gamingcouch-start-screen-prd.md`
+- `docs/architecture/unity-runtime-contract/PRD.md`
