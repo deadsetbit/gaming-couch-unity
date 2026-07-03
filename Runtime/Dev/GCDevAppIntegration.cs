@@ -577,43 +577,4 @@ namespace DSB.GC.Dev
         }
 #endif
     }
-
-#if UNITY_EDITOR
-    [Serializable]
-    public class WebSocketInputData
-    {
-        public float a0;
-        public float a1;
-        public float b0;
-        public float b1;
-        public float b2;
-    }
-
-    [Serializable]
-    public class WebSocketDevToolMessage
-    {
-        public string type;
-        public string action;
-        public WebSocketDevToolPayload payload;
-        public long timestamp;
-    }
-
-    [Serializable]
-    public class WebSocketDevToolPayload
-    {
-        public float timescale;
-        public bool paused;
-        public int playerIndex = -1;
-        public int playerId;
-        public WebSocketInputData inputs;
-        public WebSocketRuntimeOutputOptions runtimeOutput;
-    }
-
-    [Serializable]
-    public class WebSocketRuntimeOutputOptions
-    {
-        public string runtimeLogCapture;
-    }
-
-#endif
 }

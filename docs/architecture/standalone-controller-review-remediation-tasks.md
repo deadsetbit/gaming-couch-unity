@@ -70,7 +70,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Min and max length use the same (trimmed) measure. | None |
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Fix+tests applied — live run pending | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
 | 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
-| 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Not started | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
+| 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Dead code removed — live compile pending | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
 | 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Dead code removed — ⚠ public-API removal, owner-confirm | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
 | D1 | Release profile forces WebGL compression `Disabled` | Decision → Docs (P3) | ⚠️ Deliberate* | Decided | **Decided 2026-07-02: no compression by design (for now).** Optional: add a code comment + doc note so it isn't mistaken for a bug. | None |
 | C1 | NGO elimination/finish sync is lossy | Confirm-only | n/a | Not started | Confirmed intentional/temporary; no code change. | None |
@@ -507,7 +507,9 @@ each other). The live inbound path uses the parallel `GCDevAppRuntime*` types
 **Red/green testing:** No red/green needed — pure dead-code removal. A compile check (editor asmdef)
 is sufficient; existing `GCDevAppRuntimeInbound`/`GCDevAppRuntimeMessages` tests cover the live path.
 
-**Checklist:** ☐ Classes deleted ☐ Editor asmdef compiles ☐ Live-path tests still green ☐ Review
+**Checklist:** ☑ Classes deleted ◐ Compiles (compile-plausible; live-Editor/CI compile pending) ◐ Live-path tests still green (existing `GCDevAppRuntime*` tests cover the live path; live run pending) ☑ Review
+
+**Progress (2026-07-03):** Deleted the four dead classes (`WebSocketInputData`, `WebSocketDevToolMessage`, `WebSocketDevToolPayload`, `WebSocketRuntimeOutputOptions`) and their now-empty enclosing `#if UNITY_EDITOR`/`#endif` wrapper from `Runtime/Dev/GCDevAppIntegration.cs`. Independent verification: repo-wide grep confirms **zero** remaining references to the four types; preprocessor directives balanced (3 `#if` / 3 `#endif`), braces balanced (110/110); the live `GCDevAppRuntime*` inbound path is untouched. No behavior change. Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 
