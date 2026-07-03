@@ -795,14 +795,49 @@ public sealed class GCRuntimeOutputContractTests
             y = 0.5f,
             isOffScreen = false,
         });
+        hud.QueuePointData(new GCScreenPointDataPoint
+        {
+            type = "playerOverhead",
+            playerIndex = 0,
+            x = 0.5f,
+            y = 0.5f,
+            isOffScreen = false,
+        });
         hud.HandleQueue();
 
         Assert.That(emitted, Has.Count.EqualTo(2));
         Assert.That(emitted[0], Does.Contain("\"name\":\"gc.mapping.invalid_player_index\""));
         Assert.That(emitted[1], Does.Contain("\"type\":\"screen_space\""));
-        Assert.That(emitted[1], Does.Contain("\"anchors\":[]"));
+        Assert.That(emitted[1], Does.Contain("\"playerIndex\":0"));
         Assert.That(emitted[1], Does.Not.Contain("\"playerIndex\":1"));
         LogAssert.NoUnexpectedReceived();
+    }
+
+    [Test]
+    public void HandleQueueEmitsScreenSpaceOnlyWhenQueueHasAnchors()
+    {
+        CreateRuntimeGame(1);
+        var emitted = new List<string>();
+        GCRuntimeOutput.ScreenSpaceEmitted += emitted.Add;
+        var hud = new GCHud();
+
+        // An empty queue must not emit a per-frame heartbeat envelope.
+        hud.HandleQueue();
+        Assert.That(emitted, Is.Empty);
+
+        // A non-empty queue still emits (guards against over-suppression).
+        hud.QueuePointData(new GCScreenPointDataPoint
+        {
+            type = "playerOverhead",
+            playerIndex = 0,
+            x = 0.5f,
+            y = 0.5f,
+            isOffScreen = false,
+        });
+        hud.HandleQueue();
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        Assert.That(emitted[0], Does.Contain("\"type\":\"screen_space\""));
     }
 
     [Test]

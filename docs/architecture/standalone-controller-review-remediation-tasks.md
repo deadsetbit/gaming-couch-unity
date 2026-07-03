@@ -66,7 +66,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Fix+tests applied — live run pending | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Fix+tests applied — live run pending | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
-| 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Not started | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
+| 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Not started | Min and max length use the same (trimmed) measure. | None |
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Not started | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
 | 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
@@ -417,7 +417,9 @@ clear guarded).
     does, confirm suppression is intended before turning it red.
   - RED: emit fires today. GREEN: suppressed.
 
-**Checklist:** ☐ Existing-heartbeat check ☐ RED written & failing ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ Existing-heartbeat check ☑ RED written ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Added an early `return` at the top of `GCHud.HandleQueue()` when `screenSpaceQueue.Count == 0`; skipping the `finally { screenSpaceQueue.Clear(); }` is safe (`Clear()` on an empty list is a no-op) and the only other empty-case effect — the implicit `EnsureActiveRun`/`BeginActiveRun` triggered by the emit — is exactly what the fix intends to suppress. `Runtime/GamingCouch.cs` untouched. Heartbeat-check: exactly one existing test (`ScreenSpaceRejectsOutOfRangePlayerIndexBeforeQueueingAnchor`) asserted the empty `anchors:[]` heartbeat; it was adjusted to queue a valid anchor (index 0) so an emit still occurs and its true intent (out-of-range index rejected before queueing) is preserved and strengthened — verifier confirmed no coverage weakened and no other test relied on the heartbeat. New test `HandleQueueEmitsScreenSpaceOnlyWhenQueueHasAnchors` (empty→no emit; valid anchor→one emit) added to `Tests/Editor/GCRuntimeOutputContractTests.cs`. Overlaps quick-wins item 1. Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 

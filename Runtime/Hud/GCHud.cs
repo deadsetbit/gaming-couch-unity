@@ -203,6 +203,11 @@ namespace DSB.GC.Hud
 
         public void HandleQueue()
         {
+            if (screenSpaceQueue.Count == 0)
+            {
+                return;
+            }
+
             try
             {
                 GCRuntimeOutput.EmitScreenSpace(Time.frameCount, screenSpaceQueue.ToArray());
