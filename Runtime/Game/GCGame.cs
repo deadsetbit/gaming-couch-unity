@@ -220,15 +220,15 @@ namespace DSB.GC.Game
                 case GCPlayerTransitionKind.PlayerEliminationStateChanged:
                     return GCRuntimeTransitionPayload.BuildStringJson(
                         transition.PlayerIndex,
-                        transition.PreviousEliminationState.ToString(),
-                        transition.EliminationState.ToString(),
+                        GCPlayerEnumNames.EliminationState(transition.PreviousEliminationState),
+                        GCPlayerEnumNames.EliminationState(transition.EliminationState),
                         transition.ReasonText
                     );
                 case GCPlayerTransitionKind.PlayerFinishStateChanged:
                     return GCRuntimeTransitionPayload.BuildStringJson(
                         transition.PlayerIndex,
-                        transition.PreviousFinishState.ToString(),
-                        transition.FinishState.ToString(),
+                        GCPlayerEnumNames.FinishState(transition.PreviousFinishState),
+                        GCPlayerEnumNames.FinishState(transition.FinishState),
                         transition.ReasonText
                     );
                 case GCPlayerTransitionKind.PlayerScoreChanged:
@@ -310,7 +310,7 @@ namespace DSB.GC.Game
                         statusText = playerState.statusText,
                         eliminationState = playerState.eliminationState,
                         finishState = playerState.finishState,
-                        eliminated = playerState.eliminationState != GCPlayerEliminationState.None.ToString(),
+                        eliminated = playerState.eliminationState != GCPlayerEnumNames.EliminationState(GCPlayerEliminationState.None),
                         placement = playerState.placement,
                         value = GetPlayerHudValue(player),
                         meter = playerState.meter,

@@ -358,12 +358,12 @@ namespace DSB.GC.RuntimeMessages
                     playerIndex = player.Index,
                     score = player.Score,
                     lives = player.Lives,
-                    status = player.Status.ToString(),
+                    status = GCPlayerEnumNames.Status(player.Status),
                     statusText = GCRuntimePayloadBounds.Truncate(player.StatusText ?? ""),
                     meter = player.Meter,
                     placement = placement,
-                    eliminationState = player.EliminationState.ToString(),
-                    finishState = player.FinishState.ToString(),
+                    eliminationState = GCPlayerEnumNames.EliminationState(player.EliminationState),
+                    finishState = GCPlayerEnumNames.FinishState(player.FinishState),
                 };
             }
 
@@ -505,7 +505,7 @@ namespace DSB.GC.RuntimeMessages
         private static void AppendStatusValue(StringBuilder builder, GCPlayerStatus status, string statusText)
         {
             builder.Append("{\"status\":");
-            GCRuntimeJson.AppendString(builder, status.ToString());
+            GCRuntimeJson.AppendString(builder, GCPlayerEnumNames.Status(status));
             builder.Append(",\"text\":");
             GCRuntimeJson.AppendString(builder, GCRuntimePayloadBounds.Truncate(statusText ?? ""));
             builder.Append("}");
