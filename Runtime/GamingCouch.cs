@@ -673,9 +673,12 @@ namespace DSB.GC
             GCRuntimeOutput.QueuePlayerTransition(name, playerIndex, dataJson);
         }
 
+        private Func<string> _flushSnapshotPayload;
+
         internal void FlushRuntimeOutput()
         {
-            GCRuntimeOutput.FlushFrameOutput(() => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson());
+            _flushSnapshotPayload ??= () => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson();
+            GCRuntimeOutput.FlushFrameOutput(_flushSnapshotPayload);
         }
         #endregion
 
