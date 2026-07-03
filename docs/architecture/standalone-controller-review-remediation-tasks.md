@@ -62,7 +62,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Not started | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
 | 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Not started | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
-| 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Not started | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
+| 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Not started | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Not started | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Not started | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
@@ -285,7 +285,9 @@ explicit context (no Unity dep); tests exist in `Tests/Editor/`.
   (redacted / not leaking a raw absolute segment).
 - **RED (guard):** a malformed input string does not throw out of `Normalize`.
 
-**Checklist:** ☐ RED (under-root) ☐ RED (redaction) ☐ RED (malformed) ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ RED (under-root) ☑ RED (redaction) ☑ RED (malformed guard) ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** `GCUnityBuildInfoPathNormalizer.Normalize` now `Path.GetFullPath`-canonicalizes the input **before** classification, but only when `!IsAbsolutePath(input)` (already-absolute Win/Unix paths keep the manual separator/drive handling), wrapped in a try/catch mirroring `ResolveOutputRootPath`'s exception set with graceful `Relative`/`UnknownAbsolute` fallback; CWD-anchoring is commented as intentional. New `Tests/Editor/GCUnityBuildInfoPathNormalizerRelativePathTests.cs` (under-root→`BuildOutputRelative`, equal-root→`"."`, outside-all-roots→redacted, malformed→no-throw; all CWD-independent). One existing sub-case in `GCUnityBuildInfoSidecarWriterTests.cs` that pinned the old raw-relative leak was updated to the corrected `UnknownAbsolute`/redacted expectation (verifier confirmed only that hunk changed, coverage not weakened). Not executed here (no local `Library/`); verifier GREEN by claims-vs-code.
 
 ---
 

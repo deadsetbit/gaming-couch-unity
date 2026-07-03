@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 internal enum GCUnityBuildInfoNormalizedPathKind
 {
@@ -76,6 +77,36 @@ internal static class GCUnityBuildInfoPathNormalizer
         }
 
         var normalizedPath = NormalizeSeparators(path.Trim());
+
+        // Unity normally hands us absolute build output paths, but a relative outputPath would
+        // fail IsAbsolutePath, match none of the (already-absolute) comparison roots, and fall
+        // through to the Relative branch emitting its raw value with outputPathRedacted=false —
+        // weakening the redaction guarantee. Canonicalize relative inputs to an absolute path up
+        // front so classification (and redaction) can see them. Path.GetFullPath resolves a
+        // relative input against the current working directory, which during a build is the Unity
+        // project root — the intended anchor for a relative build path. We only canonicalize
+        // inputs our cross-platform check does not already treat as absolute so Windows-style
+        // paths evaluated on a non-Windows host keep their manual separator/drive handling and
+        // stay deterministic. Path.GetFullPath throws on malformed input (mirrors
+        // GCWebGLBuildSidecarOutputPaths.ResolveOutputRootPath); on failure we fall back to the
+        // existing Relative/UnknownAbsolute handling below.
+        if (!IsAbsolutePath(normalizedPath))
+        {
+            try
+            {
+                normalizedPath = NormalizeSeparators(Path.GetFullPath(normalizedPath));
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (PathTooLongException)
+            {
+            }
+        }
+
         if (TryNormalizeUnderRoot(
                 normalizedPath,
                 context != null ? context.buildOutputRootPath : null,

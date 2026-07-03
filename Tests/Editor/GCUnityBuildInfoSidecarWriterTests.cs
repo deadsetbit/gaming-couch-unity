@@ -293,12 +293,13 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
             GCUnityBuildInfoNormalizedPathKind.UserHomeRelative,
             GCUnityBuildInfoPathNormalizer.UserHomeToken + "/Library/Unity/cache"
         );
-        AssertNormalized(
-            "Build/game.framework.js",
-            context,
-            GCUnityBuildInfoNormalizedPathKind.Relative,
-            "Build/game.framework.js"
-        );
+        // A relative path is canonicalized against the current working directory before
+        // classification; resolving outside every configured root, it is redacted rather
+        // than emitted raw so no absolute segment can leak.
+        var relativeOutsideRoots = GCUnityBuildInfoPathNormalizer.Normalize("Build/game.framework.js", context);
+        Assert.That(relativeOutsideRoots.kind, Is.EqualTo(GCUnityBuildInfoNormalizedPathKind.UnknownAbsolute));
+        Assert.That(relativeOutsideRoots.WasRedacted, Is.True);
+        Assert.That(relativeOutsideRoots.value, Is.Null);
     }
 
     [Test]
