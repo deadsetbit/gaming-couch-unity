@@ -22,6 +22,7 @@ internal static class GamingCouchCodexTestBridge
     private const double PollIntervalSeconds = 0.5d;
     private const uint PrivateDirectoryMode = 448; // 0700
     private const uint PrivateFileMode = 384; // 0600
+    private const int MaxRetainedOutputFiles = 40;
 
     internal static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
     private static readonly string LocalAppDataDirectory = GetLocalAppDataDirectory();
@@ -70,6 +71,7 @@ internal static class GamingCouchCodexTestBridge
                 JsonUtility.ToJson(session, true),
                 BridgeRootDirectory
             );
+            TryPruneOutputs();
             bridgeSessionReady = true;
             Debug.Log("Gaming Couch Codex test bridge session ready at " + RequestFilePath + ".");
         }
@@ -133,6 +135,7 @@ internal static class GamingCouchCodexTestBridge
         }
 
         MarkHandledRequest(request.requestId);
+        TryDeleteRequestFile();
 
         if (activeCallbacks != null)
         {
@@ -348,6 +351,7 @@ internal static class GamingCouchCodexTestBridge
 
             var status = CodexTestStatus.Finished(request, callbacks.JobId, result, resultsPath);
             WriteStatus(status);
+            TryPruneOutputs();
             Debug.Log("Gaming Couch Codex test bridge finished " + request.GetDisplayMode() + " tests with " + status.state + ".");
         }
         catch (Exception exception)
@@ -636,6 +640,75 @@ internal static class GamingCouchCodexTestBridge
             {
                 File.Delete(tempPath);
             }
+        }
+    }
+
+    private static void TryDeleteRequestFile()
+    {
+        try
+        {
+            DeleteBridgeFile(RequestFilePath, SessionDirectory);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning("Gaming Couch Codex test bridge could not delete a handled request file: " + exception.Message);
+        }
+    }
+
+    private static void TryPruneOutputs()
+    {
+        try
+        {
+            PruneOutputs(OutputDirectory, MaxRetainedOutputFiles);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning("Gaming Couch Codex test bridge could not prune old output files: " + exception.Message);
+        }
+    }
+
+    // Deletes a single bridge-owned file after re-confirming it stays inside the confining
+    // directory and that no path segment (including the leaf) is a symlink. Mirrors the
+    // symlink-safe deletion WriteFileAtomically performs before File.Move, so cleanup never
+    // follows an attacker-planted link out of the session tree.
+    private static void DeleteBridgeFile(string path, string containingDirectory)
+    {
+        var fullPath = NormalizeProjectPath(path);
+        if (!IsPathInsideDirectory(fullPath, containingDirectory))
+        {
+            throw new ArgumentException("File path must stay inside the bridge session directory.");
+        }
+
+        if (!File.Exists(fullPath))
+        {
+            return;
+        }
+
+        RejectExistingSymlinksInPath(fullPath, containingDirectory, true);
+        File.Delete(fullPath);
+    }
+
+    // Bounds the number of files retained directly inside a bridge output directory, keeping the
+    // most recently written ones and deleting the rest through the symlink-safe, confined
+    // DeleteBridgeFile helper. Extracted so the retention policy is unit-testable without a live
+    // Editor session. See remediation Task 8.
+    internal static void PruneOutputs(string directory, int maxCount)
+    {
+        if (maxCount < 0 || string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+        {
+            return;
+        }
+
+        var files = new DirectoryInfo(directory).GetFiles();
+        if (files.Length <= maxCount)
+        {
+            return;
+        }
+
+        Array.Sort(files, (left, right) => right.LastWriteTimeUtc.CompareTo(left.LastWriteTimeUtc));
+        for (var index = maxCount; index < files.Length; index++)
+        {
+            DeleteBridgeFile(files[index].FullName, directory);
         }
     }
 

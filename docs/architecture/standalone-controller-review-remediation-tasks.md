@@ -65,7 +65,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Fix+tests applied — live run pending | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Fix+tests applied — live run pending | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
-| 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Not started | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
+| 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Not started | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Not started | Min and max length use the same (trimmed) measure. | None |
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Not started | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
@@ -389,7 +389,9 @@ bounded/zero remaining.
   logic is `private static` and I/O-bound.
 - RED: files remain today. GREEN: pruned to bound.
 
-**Checklist:** ☐ Helper extracted ☐ RED written & failing ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ Helper extracted (`PruneOutputs`) ☑ RED written ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Added a symlink-safe `DeleteBridgeFile` that reuses the bridge's existing `IsPathInsideDirectory` (confinement) + `RejectExistingSymlinksInPath` (per-segment symlink rejection) guards before `File.Delete` — the same hardening `WriteFileAtomically` runs. The handled request file is now deleted after `MarkHandledRequest`, and `internal static void PruneOutputs(string dir, int maxCount)` (keeps the `maxCount` newest by mtime, deletes the rest via `DeleteBridgeFile`) is invoked on `PrepareBridgeSession` + `CompleteRun`. All cleanup call sites are wrapped swallow-and-log so a cleanup failure can never disable the bridge or fail a run; the diff is additive only (no change to the request-processing/security path). Independent security review confirmed no unguarded deletion path. New `Tests/Editor/GamingCouchCodexTestBridgeCleanupTests.cs` (6 staggered files → prune-to-2, plus under-limit no-op). **Scope note:** stale *session-directory* GC was deliberately left out as minimal-safe scope — per-run files are now bounded, but session dirs still accumulate across domain reloads (low impact; a follow-up if desired). Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 
