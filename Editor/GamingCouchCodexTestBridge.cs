@@ -974,7 +974,7 @@ internal static class GamingCouchCodexTestBridge
     }
 
     [Serializable]
-    private sealed class CodexTestFailure
+    internal sealed class CodexTestFailure
     {
         public string fullName;
         public string message;
