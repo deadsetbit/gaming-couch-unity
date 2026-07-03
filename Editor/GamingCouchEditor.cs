@@ -2,6 +2,7 @@ using DSB.GC;
 using DSB.GC.Dev;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 
@@ -507,9 +508,14 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
             return true;
         }
 
-        return int.TryParse(seed, out value) &&
+        return TryParseSeed(seed, out value) &&
                value >= GCDevJsonFile.MinSeed &&
                value <= GCDevJsonFile.MaxSeed;
+    }
+
+    internal static bool TryParseSeed(string seed, out int value)
+    {
+        return int.TryParse(seed, NumberStyles.None, CultureInfo.InvariantCulture, out value);
     }
 
     private static string GetPath(GCDevJsonReadResult readResult)

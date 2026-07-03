@@ -68,7 +68,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Min and max length use the same (trimmed) measure. | None |
-| 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Not started | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
+| 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Fix+tests applied — live run pending | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
 | 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
 | 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Not started | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
 | 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Dead code removed — ⚠ public-API removal, owner-confirm | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
@@ -466,7 +466,10 @@ path or lift the parse into a testable helper.
   separator/whitespace the invariant `NumberStyles.None` rejects); assert invariant behavior.
   - RED: culture-dependent today. GREEN: invariant, matches `GCDevJsonDraft`.
 
-**Checklist:** ☐ RED written & failing ☐ GREEN (`:510`) ☐ Other sites audited/scoped ☐ Regression ☐ Review
+**Checklist:** ☑ RED written ◐ GREEN (`:510`; implemented; independent verifier GREEN — live-Editor/CI run pending) ☑ Other sites audited/scoped ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Lifted the seed parse into `internal static bool GCDevJsonLocalPlaySessionProvider.TryParseSeed(string, out int)` using `int.TryParse(seed, NumberStyles.None, CultureInfo.InvariantCulture, out value)` (matches `GCDevJsonDraft`); `TryResolveSeed` calls it; range check unchanged; added `using System.Globalization;`. Scope-locked to `GamingCouchEditor.cs` only. New `Tests/Editor/GamingCouchEditorSeedParseTests.cs` pins the invariant contract (plain `"12345"` accepted; thousands separator, surrounding whitespace, and leading `+`/`-` rejected — ambient-culture-independent). One independent-verification RED (test qualified the helper on the wrong class → CS0117) was fixed by re-qualifying to `GCDevJsonLocalPlaySessionProvider`; re-checked resolving. Not executed here (no local `Library/`); verifier GREEN post-fix.
+> **Audit recommendation (scoped, not changed here):** `Runtime/GamingCouch.cs:473` (`int.Parse` of a host-supplied player index feeding input routing) is contract-relevant — worth an invariant parse + guard in a follow-up. The `GamingCouchGameViewAspect` `Convert.ToInt32`/`int.TryParse` sites are editor-only GameView sizing/aspect display — benign. (Review line numbers for the GameView sites have drifted; re-locate by content.)
 
 ---
 
