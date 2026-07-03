@@ -63,7 +63,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Fix+tests applied — live run pending | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
-| 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Not started | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
+| 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Fix+tests applied — live run pending | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Not started | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Not started | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Not started | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
@@ -322,7 +322,9 @@ internals with no injection seam.
   the current inline logic effectively hardcodes the stale `-1`.
   - RED: `true` today. GREEN: `false` when the window already shows 16:9.
 
-**Checklist:** ☐ Helper extracted ☐ RED written & failing ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ Helper extracted ☑ RED (unit on `ComputeChanged`) ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Extracted a pure `internal static bool ComputeChanged(int currentSelectedIndex, int targetIndex)` and a `ReadSelectedSizeIndex(window, prop)` that re-reads the selected index via reflection inside try/catch (degrades to `-1` → conservative `changed=true`; target indices are always ≥0). `SelectExisting16By9Size` now computes `changed` from a **fresh** re-read of the actually-used `gameViewWindow` taken immediately **before** `SetValue`, in both the already-open and freshly-opened branches — the stale `context.selectedSizeIndex` (`-1` when no window was open) is no longer used. Callers use `changed` for messaging only (verified). Only `ComputeChanged` is unit-testable (reflection flow has no seam), so the new `Tests/Editor/GamingCouchGameViewAspectComputeChangedTests.cs` characterizes it; the re-read wiring is verified by review. Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 

@@ -209,6 +209,11 @@ internal static class GamingCouchGameViewAspect
             );
         }
 
+        // Re-read the selected index from the window we are about to mutate (which may be a
+        // freshly opened window that already defaults to 16:9) so `changed` reflects that
+        // window's real pre-set state rather than the stale context value read earlier.
+        var currentSelectedIndex = ReadSelectedSizeIndex(gameViewWindow, context.selectedSizeIndexProperty);
+
         try
         {
             context.selectedSizeIndexProperty.SetValue(gameViewWindow, targetEntry.index, null);
@@ -224,10 +229,37 @@ internal static class GamingCouchGameViewAspect
 
         return new GCGameViewAspectSetupResult(
             GCGameViewAspectSetupStatus.Ready,
-            context.selectedSizeIndex != targetEntry.index,
+            ComputeChanged(currentSelectedIndex, targetEntry.index),
             "Selected an existing 16:9 Game View entry.",
             new[] { "Selected: " + targetEntry.DisplayName }
         );
+    }
+
+    internal static bool ComputeChanged(int currentSelectedIndex, int targetIndex)
+    {
+        return currentSelectedIndex != targetIndex;
+    }
+
+    private static int ReadSelectedSizeIndex(
+        EditorWindow gameViewWindow,
+        PropertyInfo selectedSizeIndexProperty
+    )
+    {
+        if (gameViewWindow == null || selectedSizeIndexProperty == null)
+        {
+            return -1;
+        }
+
+        try
+        {
+            return Convert.ToInt32(selectedSizeIndexProperty.GetValue(gameViewWindow, null));
+        }
+        catch (Exception)
+        {
+            // Conservative fallback: if the pre-set index cannot be read, treat the selection
+            // as a change (target entry indices are always >= 0, so -1 never matches).
+            return -1;
+        }
     }
 
     internal static bool Is16By9(GCGameViewSizeEntry entry)
