@@ -61,7 +61,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 1 | Codex `--sync` run reports false timeout | P0 (High, blocks merge) | ✅ Confirmed | Fix applied — live-Editor/CI run pending | A synchronously-completed EditMode run reports its true terminal status; Python harness exits 0 on success. | None |
 | 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Not started | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
 | 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Not started | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
-| 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Not started | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
+| 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Not started | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Not started | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Not started | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
@@ -249,7 +249,9 @@ early-return is not turned into an exception. Document the not-found semantics o
 - **Testability note:** `GCPlayerStore<T>` is plain C#, but `AddPlayer` may need a Unity test
   context for `GCPlayer` construction; existing tests live under `Tests/Editor/`.
 
-**Checklist:** ☐ RED written & failing ☐ GREEN ☐ Interface doc updated ☐ Regression ☐ Review
+**Checklist:** ☑ RED authored ◐ GREEN (dict-miss → documented null; independent verifier GREEN — live-Editor/CI run pending) ☑ Interface doc updated ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** `GCPlayerStore.GetPlayerByIndex` now returns a documented null on a `playerByIndex` miss instead of the wrong list-position player (removed `return players[playerIndex];`); not-found=null documented on `IGCPlayerStore` + the method. Both callers confirmed null-safe (`GamingCouch.cs:631` unused local; `:1080` null-guarded). New `Tests/Editor/GCPlayerStoreLookupTests.cs` (present-index, index-gap→null, index-99→null; reuses the `GCPlayerStateModelTests` player factory). Not executed here (no local `Library/`); independent verifier GREEN by claims-vs-code. Close Regression/Review with the EditMode suite on live Editor/CI.
 
 ---
 

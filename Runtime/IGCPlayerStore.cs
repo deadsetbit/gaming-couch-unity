@@ -41,6 +41,10 @@ public interface GCPlayerStoreOutput<T> where T : GCPlayer
     int EliminatedPlayerCount { get; }
     [System.Obsolete("GetPlayerById has been removed from the game-facing runtime contract. Use GetPlayerByIndex.", true)]
     T GetPlayerById(int playerId);
+    /// <summary>
+    /// Returns the player with the given index, or <c>null</c> when no player has that index.
+    /// The lookup never falls back to list position, so an unknown index returns <c>null</c>.
+    /// </summary>
     T GetPlayerByIndex(int playerIndex);
     void Clear();
 }

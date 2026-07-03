@@ -97,6 +97,11 @@ namespace DSB.GC
             throw new InvalidOperationException("GetPlayerById has been removed. Use GetPlayerByIndex.");
         }
 
+        /// <summary>
+        /// Returns the player registered under <paramref name="playerIndex"/>, or <c>null</c> when no
+        /// player has that index. Lookup is keyed strictly by player index; it never falls back to list
+        /// position, so an unknown index yields <c>null</c> rather than an unrelated player or an exception.
+        /// </summary>
         public T GetPlayerByIndex(int playerIndex)
         {
             if (playerByIndex.TryGetValue(playerIndex, out var player))
@@ -104,7 +109,7 @@ namespace DSB.GC
                 return player;
             }
 
-            return players[playerIndex];
+            return null;
         }
 
         public void AddPlayer(T player)
