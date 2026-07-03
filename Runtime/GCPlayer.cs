@@ -138,11 +138,6 @@ namespace DSB.GC
         private string colorName;
         public string ColorName => colorName;
         /// <summary>
-        /// GamingCouch player color in hex format.
-        /// </summary>
-        private string colorHex;
-        public string ColorHex => colorHex;
-        /// <summary>
         /// Player status.
         /// This can be utilized in different ways to indicate the player's status in the game.
         /// If Players HUD is set to display status text, this will be reflected there as well.

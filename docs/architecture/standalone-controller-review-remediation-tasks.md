@@ -71,7 +71,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Not started | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
 | 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
 | 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Not started | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
-| 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Not started | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
+| 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Dead code removed — ⚠ public-API removal, owner-confirm | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
 | D1 | Release profile forces WebGL compression `Disabled` | Decision → Docs (P3) | ⚠️ Deliberate* | Decided | **Decided 2026-07-02: no compression by design (for now).** Optional: add a code comment + doc note so it isn't mistaken for a bug. | None |
 | C1 | NGO elimination/finish sync is lossy | Confirm-only | n/a | Not started | Confirmed intentional/temporary; no code change. | None |
 | C2 | DPad / right-stick removed from `leftX/Y` | Confirm-only | n/a | Not started | Confirmed intentional (matches "remove unused input fields" commits). | None |
@@ -518,7 +518,10 @@ is sufficient; existing `GCDevAppRuntimeInbound`/`GCDevAppRuntimeMessages` tests
 **Red/green testing:** If deleting → compile check only (+ external-API grep). If wiring up → a test
 asserting `ColorHex` matches the resolved color's hex.
 
-**Checklist:** ☐ External-API check ☐ Decision (delete vs wire) ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ External-API check (in-repo) ☑ Decision (delete) ◐ GREEN (compile-only; live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Deleted the dead `private string colorHex;` field and `public string ColorHex => colorHex;` property (and the orphaned doc comment) from `Runtime/GCPlayer.cs`. Repo-wide grep (independently re-run by the verifier) confirms **zero** remaining references to `ColorHex`/`colorHex` in any `.cs`/jslib/json — no callers, no `[DllImport]`, no serialization key. `ColorEnum`/`ColorName`/`ColorOffWhite` untouched. Removal is consistent with the branch's hard-removal style (ADR 0001).
+> ⚠ **OWNER CONFIRM before merge:** `ColorHex` was a *public* property on the game-facing `GCPlayer` type. It was always null and unreferenced in this repo, but external game code in **other repos** could theoretically read `player.ColorHex` — which cannot be checked from here. Confirm no external consumer depends on it (if one does, prefer wiring `ColorHex` to the resolved color instead of deleting).
 
 ---
 
