@@ -353,6 +353,6 @@ The old multiplayer path can only be enabled with the `GC_ENABLE_UNSUPPORTED_MUL
 
 # Documentation map
 
-- **Living references:** this README, [`Documentation~/README.md`](Documentation~/README.md) (docs-site landing page), [`CONTEXT.md`](CONTEXT.md) (domain glossary), [web export settings PRD](docs/architecture/gamingcouch-web-export-settings-prd.md), [Start Screen PRD](docs/architecture/gamingcouch-start-screen-prd.md).
+- **Living references:** this README, [`Documentation~/README.md`](Documentation~/README.md) (docs-site landing page), [`CONTEXT.md`](CONTEXT.md) (domain glossary).
 - **Decisions:** [`docs/adr/`](docs/adr/) — one-paragraph architecture decision records (0001–0016).
 - **Active trackers:** [review remediation tasks](docs/architecture/standalone-controller-review-remediation-tasks.md), [backlog](docs/architecture/gamingcouch-unity-backlog.md), [cross-repo rollout checkpoints](docs/architecture/unity-runtime-contract/07-cross-repo-rollout.md), [docs cleanup tasks](docs/architecture/gamingcouch-docs-cleanup-and-adr-distillation-tasks.md).

@@ -801,17 +801,10 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     public void WebGLDocsDoNotDuplicateManualBuildSettingLists()
     {
         var packageRoot = GetPackageRootPath();
-        var webExportPrdDocumentPath = new[]
-        {
-            "docs/architecture/gamingcouch-web-export-settings-prd.md",
-            "docs/architecture/gamingcouch-web-export-template-prd.md",
-        }.FirstOrDefault(relativePath => File.Exists(Path.Combine(packageRoot, relativePath)));
         var documentPaths = new[]
         {
             "README.md",
             "Documentation~/README.md",
-            webExportPrdDocumentPath,
-            "docs/architecture/gamingcouch-start-screen-prd.md",
         };
         var forbiddenExactSettingPhrases = new[]
         {
