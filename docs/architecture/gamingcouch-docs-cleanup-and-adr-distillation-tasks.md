@@ -131,7 +131,7 @@ independent pass that checks its claims against the code.**
 | 1 | ADRs 0001–0016 in `docs/adr/` | ☑ | ☑ |
 | 2 | Carry-forwards C1–C3 + deletions | ☑ | ☑ |
 | 3 | Survivor updates U1–U8 | ☑ | ☑ |
-| 4 | Doc map + reference sweep + estate sweep | ☐ | ☐ |
+| 4 | Doc map + reference sweep + estate sweep | ☑ | ☑ |
 
 ## Audit Basis (2026-07-02)
 
@@ -329,22 +329,27 @@ Commit when all green.
 
 ## Phase 4 — Documentation map + sweeps (coordinator + parallel sweep verifiers)
 
-- [ ] Add a short "Documentation map" section to README.md: living references (README,
+- [x] Add a short "Documentation map" section to README.md: living references (README,
       Documentation~, CONTEXT.md, web-export PRD, start-screen PRD), decisions (`docs/adr/`),
       active trackers (remediation tasks, backlog, 07-cross-repo-rollout, this file).
-- [ ] Reference sweep: `grep -rn` every deleted filename across all remaining `*.md` (and
+- [x] Reference sweep: `grep -rn` every deleted filename across all remaining `*.md` (and
       `AGENTS.md`) and fix or drop dangling links — known: backlog "Related Planning Files"
       lists the improvement roadmap and cleanup-triage; backlog row B004 references
-      "runtime-contract Task 11".
-- [ ] **Final estate sweep** (Protocol rule 6): one verifier per remaining markdown doc —
+      "runtime-contract Task 11". *(Done: both fixed in commit `af507fd`; 2026-07-03 sweep found
+      zero dangling refs in any surviving doc — only this plan file retains historical
+      deletion-list/citation strings, which Protocol rule 5 permits.)*
+- [x] **Final estate sweep** (Protocol rule 6): one verifier per remaining markdown doc —
       including untouched keepers (README.md, AGENTS.md, AGENTS.local.example.md, CHANGELOG.md,
       web-export PRD, start-screen PRD, 07-cross-repo-rollout, backlog, remediation tracker,
       all 16 ADRs if not already re-verified post-edit) — claims-vs-code pass; record verdicts
-      in the Verification Matrix.
-- [ ] Final check: `git status` clean of stray `.meta` (no orphan `.meta` without its file, no
+      in the Verification Matrix. *(Done: README + web-export PRD GREEN; remediation tracker RED→GREEN
+      after 4 factual-accuracy fixes; all others covered by post-edit unit verifications.)*
+- [x] Final check: `git status` clean of stray `.meta` (no orphan `.meta` without its file, no
       file without `.meta` under `docs/`); Phase Tracker and Verification Matrix updated.
       Then either delete this file (it becomes a completed planning log) or keep it until the
-      branch merges — owner's call at that point.
+      branch merges — owner's call at that point. *(Meta hygiene clean for all plan-tracked docs;
+      the only meta-less `.md` is the untracked, out-of-scope `gamingcouch-runtime-gc-quick-wins.md`.
+      Plan file kept per owner's-call default until branch merges.)*
 
 ## Verification Matrix (audit trail — fill during execution)
 
@@ -378,7 +383,15 @@ Commit when all green.
 | U6 | VERSIONING_PLAN.md slim + ADR links | ☑ 2026-07-03 | GREEN 2026-07-03 | found semantic-release NOT wired in CI (releaserc exists, no workflow) — doc records reality; 12 claims verified |
 | U7 | CHANGELOG.md unreleased entries | ☑ 2026-07-03 | GREEN 2026-07-03 | b55004f Changed; 106b04c+93732d4 Removed; all field names diff-verified |
 | U8 | README activeSeats + D1 comment + tick | ☑ 2026-07-03 | GREEN 2026-07-03 | comment at profiles.cs:292 Release spec; D1 Option A marked done; zero activeSeats in C# |
-| Sweep | every remaining `*.md` | ☐ | — | one row per doc when executing |
+| Sweep | AGENTS.local.example.md | ☑ | GREEN 2026-07-03 | placeholder template; keys match AGENTS.md contract |
+| Sweep | ADR 0002 + 0012 post-edit recheck | ☑ | GREEN 2026-07-03 | fixture pins confirmed; roadmap item 9 verified in git history (2c1da92^) |
+| Sweep | AGENTS.md | ☑ | GREEN 2026-07-03 | bridge runner flags all confirmed; no stale terms or deleted-doc refs |
+| Sweep | backlog (full) | ☑ | GREEN 2026-07-03 | all embedded factual assertions in B001–B012 code-confirmed |
+| Sweep | CHANGELOG.md (full) | ☑ | GREEN 2026-07-03 (after fix) | 1 CONTRADICTED: "[0.1.0-alpha.3] - Unreleased" vs existing origin tag unity-0.1.0-alpha.3 (e6c8aee; changelog had no alpha.3 section at tag time) → section retitled "[Unreleased]"; next version number is a release-owner call (rollout doc suggests 0.2.0-alpha.1) |
+| Sweep | CONTEXT.md, start-screen PRD, 07-rollout, Documentation~/README, VERSIONING_PLAN, CHANGELOG-U7, 14 ADRs | ☑ | covered by post-edit unit verifications (see rows above) | estate invariant satisfied by U1/U2/U4/U5/U6/U7 + A-rows |
+| Sweep | README.md (full estate) | ☑ | GREEN 2026-07-03 | all doc-map links resolve; 16 ADRs on disk; `activeSeats` framed as DevApp concept (zero in C#); OnlineMultiplayer + `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` claims match `Runtime/GamingCouch.cs`; all body API/paths resolve; 2 OUT-OF-REPO properly cross-repo phrased |
+| Sweep | gamingcouch-web-export-settings-prd.md (full estate) | ☑ | GREEN 2026-07-03 | C3 rule holds (spec-driven `ReleaseProfileSpecs`/`DevProfileSpecs`→preview is authoritative; no manual copy); compression `Disabled` at profiles 293/313; ADR 0013 note present; sidecar/template/menu claims confirmed; upload-layer claims cross-repo phrased |
+| Sweep | standalone-controller-review-remediation-tasks.md (full estate) | ☑ | GREEN 2026-07-03 (after fix) | all 14 task statuses + D1 decision + C1/C2 behaviors code-accurate; 4 CONTRADICTED embedded facts fixed: Task 9 path→`Runtime/RuntimeMessages/`, C1 path→`Runtime/Unity/NGO/`, Task 7 "no callers"→"no production-reachable caller (wrapper uncalled; tests hit mapping directly)", Task 4 rationale (`:1080` null-checks, `:631` ignores fetched player) |
 
 ## Related Planning Files
 

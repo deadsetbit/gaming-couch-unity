@@ -212,10 +212,13 @@ indexing the insertion-ordered `List<T>` by index — returning the wrong player
 throwing a misleading `ArgumentOutOfRangeException` if not. Latent because `AddPlayer` keeps both
 collections in lockstep and rejects duplicate indices.
 
-**Fix (GREEN):** Drop the fallback. Throw a clear index-keyed error (e.g.
-`KeyNotFoundException`/`ArgumentException` naming `playerIndex`) — callers assume presence and
-do not null-check (`:631` uses the result immediately), so a loud, correctly-attributed failure
-beats returning null. Document the not-found semantics on `IGCPlayerStore.cs:44`.
+**Fix (GREEN):** Drop the list-position fallback. On a dictionary miss, either throw a clear
+index-keyed error (e.g. `KeyNotFoundException`/`ArgumentException` naming `playerIndex`) or return
+a documented null — never a wrong list-position player. Caller check: both callers pass a real
+player `.Index` so both hit the dictionary today; `:631` does not use the fetched player (it logs
+`playerIndex`), and `:1080` already null-checks (`if (player == null) return;`). A documented null
+therefore stays compatible with both; if you throw instead, update `:1080` so its graceful
+early-return is not turned into an exception. Document the not-found semantics on `IGCPlayerStore.cs:44`.
 
 **Red/green testing:**
 
@@ -309,7 +312,9 @@ review said "currently unreachable, no callers". In fact the private ctor is rea
 (`Runtime/GCActiveRunProjection.cs:43`, stored/used at `Runtime/GamingCouch.cs:57,898`) plus many
 tests. Line `:30` uses `dict[key]=value`, so a duplicate `sourceSeatIndex > 0` is silently
 last-wins. What is **actually** latent: the *reader* `TryGetPlayerIndexForSourceSeat` has **no
-callers**, so the wrong overwrite has no observable downstream effect *today*. (Also note: entries
+production-reachable caller** — the only production reference is the `GamingCouch.cs:892-895`
+wrapper, which is itself uncalled; only tests exercise the reader, directly on the mapping — so
+the wrong overwrite has no observable downstream effect *today*. (Also note: entries
 with `sourceSeatIndex <= 0` are silently dropped by the `> 0` guard — clarify whether seat 0 is
 valid.)
 
@@ -361,7 +366,7 @@ bounded/zero remaining.
 
 **Files:** `Runtime/GamingCouch.cs:185-192` (`LateUpdate → hud.HandleQueue()` every frame);
 `Runtime/Hud/GCHud.cs:204-224` (unconditional `EmitScreenSpace`, no empty-queue early return);
-emit chain `Runtime/GCRuntimeMessages.cs:919-930`, implicit `EnsureActiveRun`/`BeginActiveRun`
+emit chain `Runtime/RuntimeMessages/GCRuntimeMessages.cs:919-930`, implicit `EnsureActiveRun`/`BeginActiveRun`
 `:849/837`, default `screenSpaceEnabled=true` `:51`.
 
 **Verified:** ✅ Confirmed. `HandleQueue` emits an empty `anchors:[]` envelope every frame; pre-`Play()`
@@ -525,7 +530,7 @@ that assert `Disabled` (`GamingCouchActiveSceneSetupAssetTests.cs:666-733`,
 
 ## Confirm-only (deliberate changes — no code)
 
-- **C1 — NGO elimination/finish sync is lossy** (`Runtime/GCNetworkPlayer.cs:55-71`): server
+- **C1 — NGO elimination/finish sync is lossy** (`Runtime/Unity/NGO/GCNetworkPlayer.cs:55-71`): server
   `Permanent` collapses to `Revokable` on clients via the bool NetworkVariable. Gated behind
   `GC_UNITY_NETCODE_GAMEOBJECTS`, explicitly framed as an unsupported temporary surface, pre-existing.
   Confirm it stays framed that way; no change.

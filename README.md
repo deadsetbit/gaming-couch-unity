@@ -350,3 +350,9 @@ you can create project from scratch by following these steps:
 Gaming Couch online multiplayer is not a supported Unity runtime contract. Default package builds keep `GamingCouch.OnlineMultiplayerSupport` as a false-returning compatibility probe, make `OnlineMultiplayerServerReady()` and `OnlineMultiplayerClientReady()` throw unsupported API errors, and do not compile the Netcode for GameObjects helper assembly.
 
 The old multiplayer path can only be enabled with the `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` scripting define. That define is reserved for temporary internal migration of legacy games that already used the old unsupported multiplayer implementation. Do not use it for new multiplayer feature work.
+
+# Documentation map
+
+- **Living references:** this README, [`Documentation~/README.md`](Documentation~/README.md) (docs-site landing page), [`CONTEXT.md`](CONTEXT.md) (domain glossary), [web export settings PRD](docs/architecture/gamingcouch-web-export-settings-prd.md), [Start Screen PRD](docs/architecture/gamingcouch-start-screen-prd.md).
+- **Decisions:** [`docs/adr/`](docs/adr/) — one-paragraph architecture decision records (0001–0016).
+- **Active trackers:** [review remediation tasks](docs/architecture/standalone-controller-review-remediation-tasks.md), [backlog](docs/architecture/gamingcouch-unity-backlog.md), [cross-repo rollout checkpoints](docs/architecture/unity-runtime-contract/07-cross-repo-rollout.md), [docs cleanup tasks](docs/architecture/gamingcouch-docs-cleanup-and-adr-distillation-tasks.md).
