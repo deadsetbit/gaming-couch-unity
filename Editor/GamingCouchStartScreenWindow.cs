@@ -411,6 +411,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
+        using (new EditorGUI.DisabledScope(GamingCouchActiveSceneSetup.HasPendingSetup()))
+        {
+            if (GUILayout.Button("Create New Example Scene"))
+            {
+                RunCreateNewExampleScene();
+            }
+        }
+
         if (GUILayout.Button("Configure WebGL Build Settings"))
         {
             RunWebGLBuildSettingsProfilePreview();
@@ -470,6 +478,22 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void RunActiveSceneSetup()
     {
         ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunActiveSceneSetup());
+    }
+
+    private void RunCreateNewExampleScene()
+    {
+        var creation = GamingCouchExampleSceneCreation.CreateExampleScene();
+        if (creation.IsCancelled)
+        {
+            return;
+        }
+
+        ApplySetupActionResult(GamingCouchStartScreenSetupActions.FromExampleSceneCreationResult(creation));
+    }
+
+    internal void ApplyExternalSetupActionResult(GCStartScreenSetupActionResult result)
+    {
+        ApplySetupActionResult(result);
     }
 
     private void RunWebGLBuildSettingsProfilePreview()

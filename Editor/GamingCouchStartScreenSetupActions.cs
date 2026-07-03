@@ -233,6 +233,32 @@ internal static class GamingCouchStartScreenSetupActions
         );
     }
 
+    internal static GCStartScreenSetupActionResult FromExampleSceneCreationResult(
+        GCExampleSceneCreationResult result
+    )
+    {
+        if (result == null)
+        {
+            return CreateResult(
+                "Create New Example Scene did not return a result.",
+                MessageType.Error,
+                null,
+                null,
+                false,
+                true
+            );
+        }
+
+        return CreateResult(
+            result.message,
+            GetExampleSceneCreationMessageType(result),
+            result.details,
+            null,
+            false,
+            true
+        );
+    }
+
     internal static bool ShouldDisplayActionResult(MessageType messageType)
     {
         return messageType == MessageType.Warning || messageType == MessageType.Error;
@@ -442,6 +468,21 @@ internal static class GamingCouchStartScreenSetupActions
         if (result.IsBlocked)
         {
             return MessageType.Error;
+        }
+
+        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static MessageType GetExampleSceneCreationMessageType(GCExampleSceneCreationResult result)
+    {
+        if (result.IsBlocked)
+        {
+            return MessageType.Error;
+        }
+
+        if (result.IsCancelled)
+        {
+            return MessageType.Warning;
         }
 
         return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;

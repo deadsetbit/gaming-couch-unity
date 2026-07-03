@@ -94,6 +94,10 @@ When `gc.platform.json` is missing or invalid in local development, runtime code
 
 # Basic integration
 
+The fastest way to get a working scene is `GamingCouch > Create New Example Scene` (also available from the GamingCouch Start Screen). It offers to save your current scene, creates a fresh scene, wires the `GamingCouch` object, generates the example `Game` listener and player prefab, and opens the Start Screen so you can see what was set up. Existing example scenes under `Assets/GamingCouch/GCExample` are kept and a new one is created alongside them. This does not change your Build Settings startup scene; use the Start Screen's "Set up missing pieces" action if you want the example scene to become the first Build Settings scene.
+
+The manual steps below describe the same wiring for when you want to set up an existing scene yourself.
+
 ## 1) Add GamingCouch game object
 
 Add GamingCouch game object to your main scene by right clicking the scene hierarchy and selecting "GamingCouch" from the menu.

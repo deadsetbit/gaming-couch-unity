@@ -3,6 +3,7 @@ using UnityEditor;
 internal static class GamingCouchMenuPriorities
 {
   internal const int StartScreen = 0;
+  internal const int CreateExampleScene = 1;
   internal const int WebGLBuild = 20;
   internal const int CreateGamingCouchGameObject = 21;
 }
@@ -13,6 +14,21 @@ public class GamingCouchMenuItems
   static void OpenStartScreen()
   {
     GamingCouchStartScreenWindow.Open();
+  }
+
+  [MenuItem("GamingCouch/Create New Example Scene", false, GamingCouchMenuPriorities.CreateExampleScene)]
+  static void CreateNewExampleScene()
+  {
+    var result = GamingCouchExampleSceneCreation.CreateExampleScene();
+    if (result.IsCancelled)
+    {
+      return;
+    }
+
+    var window = GamingCouchStartScreenWindow.Open();
+    window.ApplyExternalSetupActionResult(
+      GamingCouchStartScreenSetupActions.FromExampleSceneCreationResult(result)
+    );
   }
 
   [MenuItem("GameObject/GamingCouch", false, 0)]

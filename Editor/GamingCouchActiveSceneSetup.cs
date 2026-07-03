@@ -582,13 +582,23 @@ internal static class GamingCouchActiveSceneSetup
 
     internal static GCActiveSceneSetupResult EnsureActiveSceneSetup()
     {
+        return EnsureActiveSceneSetup(true);
+    }
+
+    // setFirstBuildSettingsScene lets the create-new-example-scene flow skip promoting the new
+    // scene to the first Build Settings scene, so creating an example never silently changes which
+    // scene a build boots into. The user can still opt in later via "Set up missing pieces".
+    internal static GCActiveSceneSetupResult EnsureActiveSceneSetup(bool setFirstBuildSettingsScene)
+    {
         var details = new List<string>();
         var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
         details.Add(gamingCouchResult.message);
 
         var changed = gamingCouchResult.changed;
-        var buildSettingsResult = EnsureActiveSceneFirstBuildSettingsScene(details);
-        changed |= buildSettingsResult.changed;
+        var buildSettingsResult = setFirstBuildSettingsScene
+            ? EnsureActiveSceneFirstBuildSettingsScene(details)
+            : null;
+        changed |= buildSettingsResult != null && buildSettingsResult.changed;
         var gameViewResult = EnsureGameView16By9IfSafe(details);
         changed |= gameViewResult.changed;
 
@@ -602,7 +612,7 @@ internal static class GamingCouchActiveSceneSetup
             );
         }
 
-        if (buildSettingsResult.IsBlocked)
+        if (buildSettingsResult != null && buildSettingsResult.IsBlocked)
         {
             return CreateActiveSceneResult(
                 GCActiveSceneSetupStatus.Blocked,
