@@ -156,7 +156,9 @@ namespace DSB.GC.Dev
 
             if (sendTask.IsFaulted)
             {
-                LogWebSocket("Send faulted.");
+                // Read sendTask.Exception so the faulted Task's AggregateException is observed by the
+                // TPL (otherwise it can resurface via TaskScheduler.UnobservedTaskException on finalization).
+                LogWebSocket($"Send faulted: {sendTask.Exception}");
             }
         }
 

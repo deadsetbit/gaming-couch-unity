@@ -69,7 +69,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Min and max length use the same (trimmed) measure. | None |
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Fix+tests applied — live run pending | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
-| 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
+| 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Fix applied — live compile pending | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
 | 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Dead code removed — live compile pending | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
 | 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Dead code removed — ⚠ public-API removal, owner-confirm | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
 | D1 | Release profile forces WebGL compression `Disabled` | Decision → Docs (P3) | ⚠️ Deliberate* | Decided | **Decided 2026-07-02: no compression by design (for now).** Optional: add a code comment + doc note so it isn't mistaken for a bug. | None |
@@ -488,7 +488,9 @@ so the `AggregateException` is technically still unobserved by the TPL and can s
 **Red/green testing:** Not worth a dedicated test (Unity coroutine + live websocket) — a no-op
 compile check suffices. If a test is desired, it would need a websocket seam.
 
-**Checklist:** ☐ GREEN (observe `Exception`) ☐ Compiles ☐ Review
+**Checklist:** ☑ GREEN (observe `Exception`) ◐ Compiles (compile-plausible; live-Editor/CI compile pending) ☑ Review
+
+**Progress (2026-07-03):** In the `IsFaulted` branch of `GCDevAppIntegration.SendJsonMessage` (`:157-160`), the log now includes `sendTask.Exception` (`LogWebSocket($"Send faulted: {sendTask.Exception}")`). Reading the `.Exception` property observes the faulted Task's `AggregateException`, so it can no longer resurface via `TaskScheduler.UnobservedTaskException` on finalization. Per the task, no dedicated test is warranted (Unity coroutine + live websocket); a compile check suffices. Trivial one-line change; coordinator-authored + reviewed. Editor-only (`#if UNITY_EDITOR`). Not compiled here (no local `Library/`).
 
 ---
 
