@@ -52,13 +52,13 @@ This file tracks implementation work only. Creating this plan does not implement
 
 Overall status: Not started — verification complete, awaiting implementation.
 
-Current task: None (start with Task 1).
+Current task: Task 1 — fix + tests applied; awaiting a live-Editor/CI run to close GREEN/Regression/Review.
 
 Decision D1 (WebGL compression) is **decided**: no compression by design — see **Decision D1**.
 
 | ID | Task | Priority | Verified? | Status | Done when | Deps |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Codex `--sync` run reports false timeout | P0 (High, blocks merge) | ✅ Confirmed | Not started | A synchronously-completed EditMode run reports its true terminal status; Python harness exits 0 on success. | None |
+| 1 | Codex `--sync` run reports false timeout | P0 (High, blocks merge) | ✅ Confirmed | Fix applied — live-Editor/CI run pending | A synchronously-completed EditMode run reports its true terminal status; Python harness exits 0 on success. | None |
 | 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Not started | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
 | 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Not started | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Not started | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
@@ -120,11 +120,30 @@ Both fix the reported bug; the "write-before-Execute" form is more robust.
   - RED: exits 2 "timeout: no completed Unity test status", status file stuck at `started`.
   - GREEN: exits 0, status file `state:"completed"`.
 
-**Checklist:** ☐ RED written & failing ☐ Seam added (if unit path) ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ RED written (Python contract passing; C# ordering test authored) ☑ Seam added
+(`RunAndTrackStatus`) ◐ GREEN (Python verified; C# EditMode test pending live-Editor/CI run)
+☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Fix applied in `Editor/GamingCouchCodexTestBridge.cs` — `"started"` is
+now written *before* `Execute`, and the post-`Execute` job-id + `"started"` write is guarded by
+`activeCallbacks != null`, so a synchronous run's terminal status is never clobbered (this also
+removes the secondary `SetJobId`-after-cleanup NRE). Ordering extracted behind a seam
+`RunAndTrackStatus(request, execute, writeStatus, isRunActive, setJobId)`; `CodexTestRequest` and
+`CodexTestStatus` widened to `internal` (already exposed to `GamingCouch.Editor.Tests` via
+`InternalsVisibleTo`). New `Tests/Editor/GamingCouchCodexTestBridgeStatusOrderingTests.cs` asserts
+sync → last write `"completed"`, async → last write `"started"` + job id recorded. New
+`Tools/test_run_open_unity_tests.py` (6 tests, **passing locally**) pins the harness exit-code
+contract (0/1/2). The C# tests are **not yet executed** here — this project has no local `Library/`,
+so a batchmode run would need a full first-time import. To close the last three boxes, run the
+EditMode suite in the Editor/CI and the end-to-end
+`Tools/run-open-unity-tests.py <project> --mode EditMode --sync --timeout 30` against passing tests
+(expect exit 0, status file `state:"completed"`).
 
 **Edge cases:** async EditMode/PlayMode runs must still write `Started` (there `activeCallbacks`
-is live / `Execute` returns before completion) — verify the fix does not suppress those.
-Optionally fix the `jobId==null`-in-sync-status symptom while here.
+is live / `Execute` returns before completion) — the guarded fix preserves this (async writes
+`Started` before Execute and again with the job id after). The `jobId==null`-in-sync-status symptom
+is left as-is (cosmetic): a synchronous run's job id is unknown until Execute returns, by which
+point the terminal status is already written.
 
 ---
 

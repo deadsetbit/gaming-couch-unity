@@ -221,10 +221,13 @@ internal static class GamingCouchCodexTestBridge
             activeCallbacks.Initialize(request);
 
             activeTestRunnerApi.RegisterCallbacks(activeCallbacks);
-            var jobId = activeTestRunnerApi.Execute(settings);
-            activeCallbacks.SetJobId(jobId);
-
-            WriteStatus(CodexTestStatus.Started(request, jobId));
+            RunAndTrackStatus(
+                request,
+                () => activeTestRunnerApi.Execute(settings),
+                WriteStatus,
+                () => activeCallbacks != null,
+                jobId => activeCallbacks.SetJobId(jobId)
+            );
             Debug.Log("Gaming Couch Codex test bridge started " + request.GetDisplayMode() + " tests.");
         }
         catch (Exception exception)
@@ -232,6 +235,34 @@ internal static class GamingCouchCodexTestBridge
             WriteStatus(CodexTestStatus.Error(request, exception.Message));
             CleanupActiveRun();
             Debug.LogError("Gaming Couch Codex test bridge failed to start tests: " + exception);
+        }
+    }
+
+    // Orchestrates the status writes around Execute. A synchronous EditMode run
+    // (ExecutionSettings.runSynchronously) fires RunFinished -> CompleteRun, which writes the
+    // terminal status and clears the active run, all *before* Execute returns. Writing "started"
+    // BEFORE Execute means that terminal write lands last and is never clobbered back to
+    // "started" (which made the Python harness time out on a successful run). The job id is only
+    // known after Execute returns, so it is filled in afterwards for asynchronous runs; a
+    // synchronous run has already completed and cleaned up (isRunActive == false) by then, so its
+    // terminal status is left as the last write. Extracted behind delegates so tests can simulate
+    // a synchronous Execute without a live Editor. See remediation Task 1.
+    internal static void RunAndTrackStatus(
+        CodexTestRequest request,
+        Func<string> execute,
+        Action<CodexTestStatus> writeStatus,
+        Func<bool> isRunActive,
+        Action<string> setJobId
+    )
+    {
+        writeStatus(CodexTestStatus.Started(request, null));
+
+        var jobId = execute();
+
+        if (isRunActive())
+        {
+            setJobId(jobId);
+            writeStatus(CodexTestStatus.Started(request, jobId));
         }
     }
 
@@ -673,7 +704,7 @@ internal static class GamingCouchCodexTestBridge
     }
 
     [Serializable]
-    private sealed class CodexTestRequest
+    internal sealed class CodexTestRequest
     {
         public string requestId;
         public string token;
@@ -741,7 +772,7 @@ internal static class GamingCouchCodexTestBridge
     }
 
     [Serializable]
-    private sealed class CodexTestStatus
+    internal sealed class CodexTestStatus
     {
         public string requestId;
         public string projectPath;
