@@ -79,6 +79,26 @@ namespace DSB.GC.Dev
                    string.Equals(readError, other.readError, StringComparison.Ordinal);
         }
 
+        internal bool IsExternalChangeFrom(GCRootJsonFileStamp previous)
+        {
+            // A transient read failure yields an "unknown" stamp (readError != null); treat it as
+            // no change so an in-progress dirty draft is not falsely flagged as conflicted. The
+            // last-known-good baseline is retained until a healthy stamp is read again. A genuine
+            // deletion (exists == false, readError == null) is not a read error and still reports
+            // as changed.
+            if (readError != null)
+            {
+                return false;
+            }
+
+            return !IsSameAs(previous);
+        }
+
+        internal static GCRootJsonFileStamp CreateReadErrorStampForTests(string path, string readError)
+        {
+            return new GCRootJsonFileStamp(path, true, 0, -1, null, readError);
+        }
+
         private static string ComputeHash(byte[] bytes)
         {
             using (var sha256 = SHA256.Create())

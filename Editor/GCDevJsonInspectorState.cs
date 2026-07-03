@@ -8,6 +8,8 @@ internal sealed class GCDevJsonInspectorState
 
     private readonly GCDevJsonStore devStore;
     private readonly GCPlatformDataStore platformDataStore;
+    private readonly Func<GCRootJsonFileStamp> devFileStampReader;
+    private readonly Func<GCRootJsonFileStamp> platformDataFileStampReader;
 
     private GCDevJsonFile cleanData;
     private GCDevJsonReadResult devReadResult;
@@ -26,6 +28,31 @@ internal sealed class GCDevJsonInspectorState
         var projectRootResolver = new GCUnityLocalProjectRootResolver();
         devStore = new GCDevJsonStore(projectRootResolver);
         platformDataStore = new GCPlatformDataStore(projectRootResolver);
+        devFileStampReader = devStore.ReadFileStamp;
+        platformDataFileStampReader = platformDataStore.ReadFileStamp;
+        Reload();
+    }
+
+    internal GCDevJsonInspectorState(
+        GCDevJsonStore devStore,
+        GCPlatformDataStore platformDataStore,
+        Func<GCRootJsonFileStamp> devFileStampReader,
+        Func<GCRootJsonFileStamp> platformDataFileStampReader)
+    {
+        if (devStore == null)
+        {
+            throw new ArgumentNullException(nameof(devStore));
+        }
+
+        if (platformDataStore == null)
+        {
+            throw new ArgumentNullException(nameof(platformDataStore));
+        }
+
+        this.devStore = devStore;
+        this.platformDataStore = platformDataStore;
+        this.devFileStampReader = devFileStampReader ?? devStore.ReadFileStamp;
+        this.platformDataFileStampReader = platformDataFileStampReader ?? platformDataStore.ReadFileStamp;
         Reload();
     }
 
@@ -119,10 +146,10 @@ internal sealed class GCDevJsonInspectorState
 
         nextPollTime = now + PollIntervalSeconds;
 
-        var nextPlatformDataFileStamp = platformDataStore.ReadFileStamp();
-        var nextDevFileStamp = devStore.ReadFileStamp();
-        var platformDataChanged = !nextPlatformDataFileStamp.IsSameAs(platformDataFileStamp);
-        var devChanged = !nextDevFileStamp.IsSameAs(devFileStamp);
+        var nextPlatformDataFileStamp = platformDataFileStampReader();
+        var nextDevFileStamp = devFileStampReader();
+        var platformDataChanged = nextPlatformDataFileStamp.IsExternalChangeFrom(platformDataFileStamp);
+        var devChanged = nextDevFileStamp.IsExternalChangeFrom(devFileStamp);
         if (!platformDataChanged && !devChanged)
         {
             return false;
@@ -385,8 +412,8 @@ internal sealed class GCDevJsonInspectorState
 
     private void UpdateFileStamps()
     {
-        platformDataFileStamp = platformDataStore.ReadFileStamp();
-        devFileStamp = devStore.ReadFileStamp();
+        platformDataFileStamp = platformDataFileStampReader();
+        devFileStamp = devFileStampReader();
     }
 
     private void ValidateDraft()

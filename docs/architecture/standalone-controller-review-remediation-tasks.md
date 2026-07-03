@@ -60,7 +60,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Codex `--sync` run reports false timeout | P0 (High, blocks merge) | ✅ Confirmed | Fix applied — live-Editor/CI run pending | A synchronously-completed EditMode run reports its true terminal status; Python harness exits 0 on success. | None |
 | 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Not started | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
-| 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Not started | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
+| 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Fix+tests applied — live run pending | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Not started | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
@@ -216,7 +216,9 @@ The optional length+mtime pre-check before SHA-256 is a separate perf change —
     add a constructor overload taking the stores/reader so the failure can be injected
     deterministically (OS file-locking is not portable enough to rely on).
 
-**Checklist:** ☐ RED (unit) ☐ RED (integration) ☐ Seam(s) added ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ RED (unit) ☑ RED (integration) ☑ Seam(s) added ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Chose the poller-policy placement (task's preferred option): added a pure predicate `GCRootJsonFileStamp.IsExternalChangeFrom(previous)` that returns `false` when the *new* stamp carries `readError != null`, else `!IsSameAs` — `IsSameAs` stays untouched/pure. The poller (`GCDevJsonInspectorState`) now computes `devChanged`/`platformDataChanged` via `IsExternalChangeFrom`, so a transient read error yields no change → the `if (devChanged)`/`if (platformDataChanged)` blocks are skipped and the last-known-good baseline is retained on **both** paths (never overwritten by the error stamp). Genuine deletion (`exists=false, readError=null`) still reports changed. Seams: an internal error-stamp test factory + a store/reader-injecting ctor overload (default ctor wires readers to `store.ReadFileStamp`, so production is unchanged — sole caller `GamingCouchEditor.cs` uses the parameterless ctor). New `Tests/Editor/GCDevJsonInspectorReadErrorConflictTests.cs` (unit: error→no-change, IsSameAs still differs, different-content changed, deletion changed, recovery changed; integration: dirty draft + forced error read → no conflict, then recovers clean). Verifier GREEN by claims-vs-code; not executed here (no local `Library/`).
 
 ---
 
