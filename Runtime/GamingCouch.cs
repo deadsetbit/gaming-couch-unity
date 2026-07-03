@@ -677,7 +677,11 @@ namespace DSB.GC
 
         internal void FlushRuntimeOutput()
         {
-            _flushSnapshotPayload ??= () => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson();
+            if (_flushSnapshotPayload == null)
+            {
+                _flushSnapshotPayload = () => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson();
+            }
+
             GCRuntimeOutput.FlushFrameOutput(_flushSnapshotPayload);
         }
         #endregion
