@@ -103,6 +103,37 @@ public sealed class GCPlayerIndexMappingTests
     }
 
     [Test]
+    public void MappingRejectsDuplicateSourceSeatIndex()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => GCPlayerIndexMapping.Create(
+                CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player),
+                CreateSeatIdentities(
+                    (1, "a", GCPlayerType.player, GCPlayerColor.blue),
+                    (1, "b", GCPlayerType.player, GCPlayerColor.red)
+                )
+            )
+        );
+
+        Assert.That(exception.Message, Does.Contain("Seat identities must not contain duplicate sourceSeatIndex values"));
+    }
+
+    [Test]
+    public void MappingAcceptsDistinctSourceSeatIndices()
+    {
+        var mapping = GCPlayerIndexMapping.Create(
+            CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player),
+            CreateSeatIdentities(
+                (1, "a", GCPlayerType.player, GCPlayerColor.blue),
+                (2, "b", GCPlayerType.player, GCPlayerColor.red)
+            )
+        );
+
+        Assert.That(mapping.TryGetPlayerIndexForSourceSeat(1, out _), Is.True);
+        Assert.That(mapping.TryGetPlayerIndexForSourceSeat(2, out _), Is.True);
+    }
+
+    [Test]
     public void MappingPreservesBlueCapturedColorWhenUnderlyingEnumValueIsZero()
     {
         var playOptions = CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.player, GCPlayerType.player);

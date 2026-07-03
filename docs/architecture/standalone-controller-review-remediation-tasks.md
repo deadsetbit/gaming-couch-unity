@@ -64,7 +64,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
 | 6 | Game View "Select 16:9" misreports `changed` | P2 (Medium, cosmetic) | ✅ Confirmed | Fix+tests applied — live run pending | `changed` reflects the window's actual pre-set selection, not the stale `-1`. | None |
-| 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Not started | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
+| 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Fix+tests applied — live run pending | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Not started | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Not started | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
 | 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Not started | Min and max length use the same (trimmed) measure. | None |
@@ -362,7 +362,9 @@ Decide the `sourceSeatIndex <= 0` policy explicitly.
 - Optional characterization test pins the current last-wins behavior; note this test would be the
   first real consumer of `TryGetPlayerIndexForSourceSeat`.
 
-**Checklist:** ☐ Invariant confirmed ☐ RED written & failing ☐ GREEN ☐ seat-0 policy decided ☐ Regression ☐ Review
+**Checklist:** ☑ Invariant confirmed ☑ RED written ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☑ seat-0 policy decided ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Added a `ContainsKey` guard in the private ctor (the choke point both `Create` and `CreateFromProvidedPlayerIndices` flow through) that throws `ArgumentException` before the `dict[key]=value` overwrite, matching the existing duplicate-`playerIndex` guard style. Invariant confirmed by tracing every production `sourceSeatIndex` writer (`GamingCouchEditor.cs` = distinct `seatIndex+1`; `GCActiveRunProjection.cs` = distinct `index+1` or `0`) — no legitimate path produces a duplicate `>0`, so a duplicate is a true invariant violation. seat-0 policy: the existing `>0` filter (seats `<=0` not indexed) is intentional — left unchanged, only documented with a comment. Verifier ran the critical regression hunt: **no** existing test or production path passes a duplicate `sourceSeatIndex>0` that would now throw. New tests in `Tests/Editor/GCPlayerIndexMappingTests.cs` (reject-duplicate + accept-distinct). Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 

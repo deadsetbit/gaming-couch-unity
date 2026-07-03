@@ -25,8 +25,15 @@ namespace DSB.GC
             for (var index = 0; index < this.entriesByIndex.Length; index++)
             {
                 var entry = this.entriesByIndex[index];
+                // Seats with sourceSeatIndex <= 0 carry no local seat identity (e.g. hosted
+                // player-index mappings) and are intentionally not indexed for reverse lookup.
                 if (entry.SourceSeatIndex > 0)
                 {
+                    if (playerIndexBySourceSeatIndex.ContainsKey(entry.SourceSeatIndex))
+                    {
+                        throw new ArgumentException("[GamingCouch] Seat identities must not contain duplicate sourceSeatIndex values.", nameof(entriesByIndex));
+                    }
+
                     playerIndexBySourceSeatIndex[entry.SourceSeatIndex] = entry.PlayerIndex;
                 }
             }
