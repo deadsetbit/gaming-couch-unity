@@ -67,7 +67,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 7 | `GCPlayerIndexMapping` silently overwrites duplicate source seat | P2 (latent) | ⚠️ Partial* | Fix+tests applied — live run pending | A duplicate `sourceSeatIndex` is rejected/diagnosed rather than silently last-wins. | None |
 | 8 | Codex bridge request/output files never cleaned up | P2 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Handled request files and stale outputs are bounded (deleted or retention-swept) per session. | None |
 | 9 | Empty `screen_space` envelope emitted every frame | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | No per-frame emit / implicit active-run start when the screen-space queue is empty. | None |
-| 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Not started | Min and max length use the same (trimmed) measure. | None |
+| 10 | `IsValidPlayerName` trim asymmetry | P3 (Low) | ✅ Confirmed | Fix+tests applied — live run pending | Min and max length use the same (trimmed) measure. | None |
 | 11 | Culture-sensitive seed parse | P3 (Low) | ⚠️ Partial* | Not started | Seed parse uses `NumberStyles.None` + `InvariantCulture` to match the sibling parser; other culture-sensitive numeric parses audited. | None |
 | 12 | Unobserved faulted `SendAsync` exception | P3 (Low) | ⚠️ Partial* | Not started | The faulted send Task's `Exception` is observed (read/logged), not just its `IsFaulted` flag. | None |
 | 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Not started | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
@@ -438,7 +438,9 @@ max on `trimmed.Length`.
 - **RED:** whitespace-padded names at the min and max boundaries; assert consistent accept/reject.
   - RED: asymmetric today. GREEN: consistent.
 
-**Checklist:** ☐ Policy chosen ☐ RED written & failing ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ Policy chosen (trim both) ☑ RED written ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** `IsValidPlayerName` now null-guards, then bounds **both** min and max on `name.Trim().Length` (previously min trimmed, max used raw `name.Length`) — constants `PlayerNameMinLength=1`/`PlayerNameMaxLength=8`. Made the method `internal` for the direct test seam (internals already visible to `GamingCouch.Editor.Tests`); both callers (`:395`, `:434`) are unaffected for normal unpadded names (trimmed==raw). New `Tests/Editor/GCDevJsonPlayerNameValidationTests.cs`: padded `"  12345678  "` (trimmed 8, raw 12) accepted post-fix (was rejected by the raw-max pre-fix); over-length, whitespace-only, null rejected; plain name accepted. Not executed here (no local `Library/`); verifier GREEN.
 
 ---
 

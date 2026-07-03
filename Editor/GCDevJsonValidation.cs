@@ -580,11 +580,16 @@ namespace DSB.GC.Dev
             );
         }
 
-        private static bool IsValidPlayerName(string name)
+        internal static bool IsValidPlayerName(string name)
         {
-            return name != null &&
-                   name.Trim().Length >= GCDevJsonFile.PlayerNameMinLength &&
-                   name.Length <= GCDevJsonFile.PlayerNameMaxLength;
+            if (name == null)
+            {
+                return false;
+            }
+
+            var trimmed = name.Trim();
+            return trimmed.Length >= GCDevJsonFile.PlayerNameMinLength &&
+                   trimmed.Length <= GCDevJsonFile.PlayerNameMaxLength;
         }
 
         private static bool IsValidEntryKey(string entryKey)
