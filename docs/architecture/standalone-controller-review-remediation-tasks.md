@@ -59,7 +59,7 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | ID | Task | Priority | Verified? | Status | Done when | Deps |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Codex `--sync` run reports false timeout | P0 (High, blocks merge) | ✅ Confirmed | Fix applied — live-Editor/CI run pending | A synchronously-completed EditMode run reports its true terminal status; Python harness exits 0 on success. | None |
-| 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Not started | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
+| 2 | Postprocess build sidecar throw fails a completed build | P1 (Low prob / High blast) | ✅ Confirmed | Fix+tests applied — live run pending | A package-identity/sidecar failure in `OnPostprocessBuild` logs an error instead of turning a completed build into "build failed". | None |
 | 3 | Transient read error trips a false dirty-draft conflict | P1 (Medium) | ✅ Confirmed | Fix+tests applied — live run pending | A momentary file read error no longer reports a "change" / pushes a dirty draft into conflict; real changes and deletions still detected. | None |
 | 4 | `GetPlayerByIndex` list-position fallback | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A dictionary miss yields a clear index-keyed error (or documented null), never a wrong-player-by-list-position. | None |
 | 5 | Build-info `outputPath` silently downgrades to relative | P1 (Medium, latent) | ✅ Confirmed | Fix+tests applied — live run pending | A relative `outputPath` is canonicalized before classification so it maps to `buildOutputRelative`/`"."` and the redaction guarantee holds. | None |
@@ -175,7 +175,9 @@ identity resolution and does not propagate.
 - RED: test asserts "no exception propagates" — fails today (throws). GREEN: passes; assert an
   error was logged.
 
-**Checklist:** ☐ RED written & failing ☐ Seam added ☐ GREEN ☐ Regression ☐ Review
+**Checklist:** ☑ RED written ☑ Seam added ◐ GREEN (implemented; independent verifier GREEN — live-Editor/CI run pending) ☐ Regression ☐ Review
+
+**Progress (2026-07-03):** Two-layer guard in the report-based postprocess entry (`GCWebGLBuildSidecarPostprocessWriter.WriteForBuild(BuildReport,...)`). Inner seam: a new injectable-resolver overload `WriteForBuild(BuildTarget, ..., Func<GCPackageIdentity> resolvePackageIdentity, ...)` wraps `resolvePackageIdentity()` + the write in a try/catch that `Debug.LogError`s and does not rethrow — this covers the reported P1 (`GCEditorPackageIdentity.Resolve` throwing on bad package metadata) and is unit-testable in isolation. Outer guard: after independent verification found `ResolveOutputRootPath` + the two `Capture(...)` evaluations ran *before* the seam and could still throw out of the callback, the whole post-gate sidecar body was additionally wrapped in a try/catch that logs+returns. Net: no sidecar work can fail an otherwise-completed build (only a `null` report — a programmer-error precondition — still surfaces). New `Tests/Editor/GCWebGLBuildSidecarPostprocessWriterTests.cs` drives the seam with a throwing resolver and asserts `DoesNotThrow` + the logged error + no file written. Nothing widened to public; no asmdef/InternalsVisibleTo edits. Authored red/green; not executed here (no local `Library/`).
 
 ---
 

@@ -281,22 +281,79 @@ internal static class GCWebGLBuildSidecarPostprocessWriter
             return;
         }
 
-        var outputRootPath = GCWebGLBuildSidecarOutputPaths.ResolveOutputRootPath(
-            summary.outputPath,
-            "WebGL sidecar"
-        );
-        var packageIdentity = GCEditorPackageIdentity.Resolve();
+        // The build has already completed, so no sidecar work may throw out of this postprocess
+        // callback and fail an otherwise-successful build. The inner resolve-then-write seam guards
+        // identity resolution and the sidecar write; this outer guard additionally covers the
+        // output-path resolution and build-info capture that run before the seam is reached.
+        try
+        {
+            var outputRootPath = GCWebGLBuildSidecarOutputPaths.ResolveOutputRootPath(
+                summary.outputPath,
+                "WebGL sidecar"
+            );
 
-        WriteResolvedWebGLSidecars(
-            summary.platform,
-            outputRootPath,
-            webGLTemplate,
-            packageIdentity,
-            GCUnityBuildInfoBuildSummaryCapture.Capture(report, outputRootPath),
-            GCUnityBuildInfoWebGLSettingsCapture.Capture(),
-            Application.unityVersion,
-            GCUnityBuildInfoCaptureClock.CaptureUtcNow()
-        );
+            WriteForBuild(
+                summary.platform,
+                summary.outputPath,
+                webGLTemplate,
+                GCEditorPackageIdentity.Resolve,
+                GCUnityBuildInfoBuildSummaryCapture.Capture(report, outputRootPath),
+                GCUnityBuildInfoWebGLSettingsCapture.Capture(),
+                Application.unityVersion,
+                GCUnityBuildInfoCaptureClock.CaptureUtcNow()
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "Gaming Couch WebGL build sidecar emission failed after the build completed; "
+                    + "the build output is unaffected. "
+                    + exception
+            );
+        }
+    }
+
+    // Sidecar emission runs after the build has already completed. Identity resolution or the
+    // sidecar write throwing here must never turn an otherwise-successful build into a failed one,
+    // so this resolve-then-write entry point swallows (and logs) any failure without rethrowing.
+    // Identity resolution is injectable so the swallow can be exercised in isolation.
+    internal static void WriteForBuild(
+        BuildTarget buildTarget,
+        string buildOutputPath,
+        string webGLTemplate,
+        Func<GCPackageIdentity> resolvePackageIdentity,
+        GCUnityBuildInfoBuildSummary buildSummary,
+        GCUnityBuildInfoWebGLSettings webGLSettings,
+        string unityVersion,
+        string capturedAtUtc
+    )
+    {
+        if (resolvePackageIdentity == null)
+        {
+            throw new ArgumentNullException(nameof(resolvePackageIdentity));
+        }
+
+        try
+        {
+            WriteForBuild(
+                buildTarget,
+                buildOutputPath,
+                webGLTemplate,
+                resolvePackageIdentity(),
+                buildSummary,
+                webGLSettings,
+                unityVersion,
+                capturedAtUtc
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "Gaming Couch WebGL build sidecar emission failed after the build completed; "
+                    + "the build output is unaffected. "
+                    + exception
+            );
+        }
     }
 
     internal static void WriteForBuild(
