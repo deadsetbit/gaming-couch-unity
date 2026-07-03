@@ -198,6 +198,11 @@ namespace DSB.GC.Hud
 
         public void QueuePointData(GCScreenPointDataPoint pointData)
         {
+            if (!GCRuntimeOutput.IsScreenSpaceEnabled)
+            {
+                return;
+            }
+
             QueueScreenSpaceAnchor(pointData);
         }
 
