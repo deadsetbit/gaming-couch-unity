@@ -50,9 +50,16 @@ This file tracks implementation work only. Creating this plan does not implement
 
 ## Status
 
-Overall status: Not started — verification complete, awaiting implementation.
+Overall status (2026-07-03): **All tasks 1–14 have fix + tests applied and passed independent
+claims-vs-code verification (GREEN)**; each landed as one focused commit. What remains for every
+task is the live-Editor/CI run to close the GREEN/Regression/Review boxes — deferred because this
+project has no local `Library/` (a batchmode run triggers a slow full first-time import, and the
+interactive Editor is on another project). Confirm-only C1/C2 verified against code (no change).
 
-Current task: Task 1 — fix + tests applied; awaiting a live-Editor/CI run to close GREEN/Regression/Review.
+To close: run the EditMode suite (the new `Tests/Editor/*` files added per task) and
+`Tools/run-open-unity-tests.py <project> --mode EditMode --sync --timeout 30`, then tick
+Regression/Review per task. **Task 14 needs an owner call before merge** (public-API removal — see
+its row). Task 11 logged one follow-up (`GamingCouch.cs:473` invariant parse).
 
 Decision D1 (WebGL compression) is **decided**: no compression by design — see **Decision D1**.
 
@@ -73,8 +80,8 @@ Decision D1 (WebGL compression) is **decided**: no compression by design — see
 | 13 | Dead duplicate `WebSocket*` DTO block | P3 (Cleanup) | ✅ Confirmed | Dead code removed — live compile pending | The unused `WebSocket*` message classes are removed; live path unaffected. | None |
 | 14 | `ColorHex` always null | P3 (Cleanup) | ✅ Confirmed | Dead code removed — ⚠ public-API removal, owner-confirm | `ColorHex` is either wired to the resolved color or removed (with public-API check). | None |
 | D1 | Release profile forces WebGL compression `Disabled` | Decision → Docs (P3) | ⚠️ Deliberate* | Decided | **Decided 2026-07-02: no compression by design (for now).** Optional: add a code comment + doc note so it isn't mistaken for a bug. | None |
-| C1 | NGO elimination/finish sync is lossy | Confirm-only | n/a | Not started | Confirmed intentional/temporary; no code change. | None |
-| C2 | DPad / right-stick removed from `leftX/Y` | Confirm-only | n/a | Not started | Confirmed intentional (matches "remove unused input fields" commits). | None |
+| C1 | NGO elimination/finish sync is lossy | Confirm-only | n/a | Confirmed — no change | Confirmed intentional/temporary; no code change. | None |
+| C2 | DPad / right-stick removed from `leftX/Y` | Confirm-only | n/a | Confirmed — no change | Confirmed intentional (matches "remove unused input fields" commits). | None |
 
 \* **Partial / Deliberate** = the underlying code behavior is real, but the original review's
 framing was imprecise. See the task detail for the correction.
@@ -584,6 +591,13 @@ that assert `Disabled` (`GamingCouchActiveSceneSetupAssetTests.cs:666-733`,
 - **C2 — DPad / right-stick removed from `leftX/Y`** (`Runtime/GCControllerInputs.cs`): matches the
   "remove unused input fields" commits. Any source relying on DPad-only movement now produces none.
   Confirm intentional; no change.
+
+_Both confirmed 2026-07-03 against current code. C1: `GCNetworkPlayer.cs` is wholly
+`#if GC_UNITY_NETCODE_GAMEOBJECTS`-gated and client sync uses `SetEliminatedRevokable`/
+`SetFinishedRevokable` with `TEMP_REASON_NOT_SYNCED` (+ a `TODO` status reason), so the lossy
+server-`Permanent` → client-`Revokable` collapse remains explicitly framed as a temporary,
+unsupported surface. C2: `GCControllerInputs` exposes only `leftX`/`leftY`/`primary`/`secondary`/
+`alt` — no DPad or right-stick surface remains. No code change for either._
 
 ---
 
