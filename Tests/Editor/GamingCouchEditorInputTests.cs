@@ -199,6 +199,36 @@ public sealed class GamingCouchEditorInputTests
         }
     }
 
+    [Test]
+    public void TryParsePlayerInputMessageParsesIndexAndJson()
+    {
+        var parsed = GamingCouch.TryParsePlayerInputMessage("2|{\"a0\":1}", out var playerIndex, out var inputsJson);
+
+        Assert.That(parsed, Is.True);
+        Assert.That(playerIndex, Is.EqualTo(2));
+        Assert.That(inputsJson, Is.EqualTo("{\"a0\":1}"));
+    }
+
+    [Test]
+    public void TryParsePlayerInputMessageRejectsCultureSensitiveIndex()
+    {
+        // NumberStyles.None + InvariantCulture: no thousands separators, whitespace, or sign,
+        // so a host locale can never change how the index is read.
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("1,000|{}", out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage(" 1|{}", out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("+1|{}", out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("-1|{}", out _, out _), Is.False);
+    }
+
+    [Test]
+    public void TryParsePlayerInputMessageRejectsMalformedMessageInsteadOfThrowing()
+    {
+        Assert.That(GamingCouch.TryParsePlayerInputMessage(null, out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("", out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("2", out _, out _), Is.False);
+        Assert.That(GamingCouch.TryParsePlayerInputMessage("abc|{}", out _, out _), Is.False);
+    }
+
     private static void SetPrivateField(object target, string fieldName, object value)
     {
         target

@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Globalization;
 using DSB.GC.Hud;
 using DSB.GC.Game;
 using DSB.GC.Log;
@@ -468,11 +469,46 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchInputs(string playerIndexAndInputs)
         {
-            string[] playerIndexAndInputsArray = playerIndexAndInputs.Split('|');
-            var inputsData = GCControllerInputsData.CreateFromJSON(playerIndexAndInputsArray[1]);
-            var playerIndex = int.Parse(playerIndexAndInputsArray[0]);
+            if (!TryParsePlayerInputMessage(playerIndexAndInputs, out var playerIndex, out var inputsJson))
+            {
+                Debug.LogWarning("[GamingCouch] Ignoring malformed player input message.");
+                return;
+            }
+
+            var inputsData = GCControllerInputsData.CreateFromJSON(inputsJson);
 
             ApplyDevAppInput(playerIndex, inputsData);
+        }
+
+        /// <summary>
+        /// Parses a platform "playerIndex|inputsJson" message. The player index is parsed with
+        /// invariant culture and <see cref="NumberStyles.None"/> so a host locale can never change
+        /// how it is read (matching the seed parse in GCDevJsonDraft), and a null/empty, unsplittable,
+        /// or non-numeric message returns false instead of throwing so the caller can drop it.
+        /// </summary>
+        internal static bool TryParsePlayerInputMessage(string playerIndexAndInputs, out int playerIndex, out string inputsJson)
+        {
+            playerIndex = -1;
+            inputsJson = null;
+
+            if (string.IsNullOrEmpty(playerIndexAndInputs))
+            {
+                return false;
+            }
+
+            string[] parts = playerIndexAndInputs.Split('|');
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out playerIndex))
+            {
+                return false;
+            }
+
+            inputsJson = parts[1];
+            return true;
         }
         #endregion
 
