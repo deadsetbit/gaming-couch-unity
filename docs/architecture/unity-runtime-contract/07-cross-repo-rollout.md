@@ -34,38 +34,12 @@ Chosen path: staged adapter rollout.
 
 ## Runtime Message Ownership
 
-DevApp/local runtime message:
-
-- New Unity contract sends:
-
-```json
-{
-  "type": "runtime_messages",
-  "v": 1,
-  "messages": [
-    {
-      "type": "gc.game",
-      "name": "game_over",
-      "seq": 12,
-      "ms": 1234,
-      "data": {
-        "playersByPlacement": [0, 1]
-      }
-    }
-  ]
-}
-```
-
-Hosted/client SDK legacy bridge messages may still send:
-
-```json
-{
-  "type": "runtime_game_over",
-  "timestamp": 1760000000000,
-  "runId": "active run id",
-  "playerIdsByPlacement": [2, 1]
-}
-```
+> Wire shapes moved out of this tracker (D9). The current Unity `game_over` envelope and payload
+> (`runtime_messages` → `gc.game` / `game_over` → `{ playersByPlacement }`) are owned by the
+> [platform runtime contract](../../contracts/platform-runtime-contract.md#73-game-over-gcgame--game_over).
+> The legacy hosted/client bridge shape (`runtime_game_over.playerIdsByPlacement`) is a client/SDK-repo
+> concept, not part of this package's wire. This tracker keeps only the rollout rules that discriminate
+> the two during migration.
 
 Rules:
 
