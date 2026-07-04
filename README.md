@@ -354,13 +354,12 @@ Online multiplayer is not currently supported.
 
 ## What next?
 
-- Explore the example template project: [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template)
-- Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api)
+- Grow the generated example: after [Quick Setup](#quick-setup), read and extend `GCGameExample`/`GCPlayerExample` under `Assets/GamingCouch/GCExample`.
+- Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api).
 
 ## Creating a Unity project from scratch
 
-If you do not want to start from the [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template),
-create a project from scratch:
+To set up a new project from scratch:
 
 - Create a new Unity project with the "Universal 3D" (URP) template, or optionally "Universal 2D" (URP).
 - Follow [Install](#install) and [Quick Setup](#quick-setup).
@@ -371,7 +370,7 @@ create a project from scratch:
 
 - This README — the integration guide.
 - [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api) — generated per-member reference.
-- [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template) — example project.
+- Example project — generate one inside the Unity editor with `GamingCouch → Create New Example Scene`; it creates an editable `GCGameExample`/`GCPlayerExample` under `Assets/GamingCouch/GCExample`.
 
 **Internal (platform & DevApp maintainers)**
 
