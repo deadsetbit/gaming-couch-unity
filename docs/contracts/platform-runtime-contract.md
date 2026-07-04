@@ -92,12 +92,13 @@ Deserialized by `GCSetupOptions.CreateFromJSON` (`Runtime/GCSetupOptions.cs:6-16
 
 ## 3. `GCPlayOptions` (play payload)
 
-Deserialized by `GCPlayOptions.CreateFromJSON` (`Runtime/GCPlayOptions.cs`, class `GCPlayOptions`
-L495–572). Parsing goes through the internal `GCPlayOptionsTransport` (L931–938).
+Deserialized by `GCPlayOptions.CreateFromJSON` (`Runtime/GCPlayOptions.cs`; class `GCPlayOptions`
+fields at L512–529, `CreateFromJSON` at L534–572). Parsing goes through the internal
+`GCPlayOptionsTransport` (L931–938).
 
 | Field | Type | Notes |
 |---|---|---|
-| `players` | `GCPlayerOptions[]` | Round roster. Required and non-empty (see §4) |
+| `players` | `GCPlayerOptions[]` | Round roster. Required: the `players` field must be present and non-null (see §4). Note: `CreateFromJSON` does **not** reject an empty `[]` — an empty array parses and skips index validation (`GCPlayOptions.cs:553-562`); the platform is expected to send at least one player |
 | `seed` | int | Round seed, `1`–`999999`; deterministic level/FX generation (L513–527) |
 | `runtimeOutput` | `GCRuntimeOutputOptions` | Output toggles; defaults applied if omitted |
 | `platformData` | `GCPlatformRuntimeView` | Platform metadata view; falls back to a "missing" view if absent (see §5) |
@@ -108,7 +109,7 @@ L495–572). Parsing goes through the internal `GCPlayOptionsTransport` (L931–
 |---|---|---|
 | `playerIndex` | int | Zero-based, dense, run-scoped participant index (the only public player identity) |
 | `playerSeed` | int | Deterministic per-player seed |
-| `type` | string | Parsed to `GCPlayerType` (`player`, `bot`) |
+| `type` | string | Parsed to `GCPlayerType` (`player`, `bot`; the enum also has a default `unset`, `GamingCouch.cs:29`) |
 | `color` | string | Parsed to `GCPlayerColor` (`blue red green yellow purple pink cyan brown`, `GamingCouch.cs:27`) |
 
 **`GCRuntimeOutputOptions`** (`GCPlayOptions.cs:19-25`):
@@ -117,7 +118,7 @@ L495–572). Parsing goes through the internal `GCPlayOptionsTransport` (L931–
 |---|---|---|---|
 | `stateSnapshots` | bool | `true` | Enables `runtime_messages` state output |
 | `screenSpace` | bool | `true` | Enables `screen_space` output |
-| `runtimeLogCapture` | string | `"off"` | One of `off`, `error_only`, `warning_and_error`, `full` (`GCRuntimeUnityLogCaptureMode`, L27-34) |
+| `runtimeLogCapture` | string | `"off"` | One of `off`, `error_only`, `warning_and_error`, `full` (`GCRuntimeUnityLogCaptureMode`, L27-34). The parser also accepts the legacy aliases `error` → `error_only` and `warningAndError` → `warning_and_error` (`GCUnityLogCapture.NormalizeMode`) |
 
 ```json
 {
@@ -288,7 +289,8 @@ flush immediately (`EmitDiagnosticPayload`, L117-122).
 
 ### 7.1 State snapshot (`gc.state` / `snapshot`)
 
-`GCRuntimeStateSnapshotPayload.ToJson` (L256-317). **Note the JSON keys differ from field names**:
+`GCRuntimeStateSnapshotPayload.ToJson` (L256-280), player entries via
+`GCRuntimeStateSnapshotPlayer.AppendJson` (L300-316). **Note the JSON keys differ from field names**:
 `statusText → text`, `eliminationState → elimination`, `finishState → finish`.
 
 ```json
@@ -347,16 +349,23 @@ the `data` payload is (`BuildPayloadJson`, L573-608):
 ```
 
 The code catalog is **closed** — `Emit` throws on an unknown code, an unknown source area, or a
-code/source-area mismatch (`ValidateDiagnostic`, L535-571). Codes (`GCDiagnosticCodes`, L44-69):
+code/source-area mismatch (`ValidateDiagnostic`, L535-571). The left column below is the **code
+prefix** (the record `name`); each prefix maps 1:1 to the matching `sourceArea` string
+(`gc.api.*` → `api`, `gc.state.*` → `state`, `gc.runtime.*` → `runtime_messages`, `gc.log.*` →
+`runtime_log`, etc.). Codes (`GCDiagnosticCodes`, L44-69):
 
-| Source area | Codes |
+| Code prefix | Codes |
 |---|---|
 | `gc.api.*` | `removed_identity_api`, `removed_player_name_api`, `removed_state_api`, `removed_store_api`, `unsupported_multiplayer_api`, `legacy_runtime_payload` |
 | `gc.mapping.*` | `invalid_player_index`, `unmapped_participant` |
 | `gc.state.*` | `duplicate_elimination`, `duplicate_finish`, `invalid_revoke`, `invalid_transition`, `post_game_over_mutation`, `clamped_value` |
-| `gc.runtime.*` | `malformed_message`, `unknown_message`, `invalid_game_over_placement`, `malformed_screen_space` |
+| `gc.runtime.*` | `malformed_message`, `unknown_message`, `invalid_game_over_placement`, `malformed_screen_space`¹ |
 | `gc.metadata.*` | `missing_platform_data`, `invalid_platform_data`, `fallback_active` |
 | `gc.log.*` | `runtime_log`, `runtime_warning`, `runtime_error` |
+
+¹ **Exception to the prefix→area mapping:** `gc.runtime.malformed_screen_space` is emitted with
+`sourceArea: "screen_space"`, not `runtime_messages` — special-cased in
+`GCDiagnosticCodes.IsValidSourceArea` (`GCDiagnostics.cs:111-114`).
 
 **Platform-player-id keys are hard-rejected.** Context field keys `playerId`, `playerIds`,
 `platformPlayerId`, `platformPlayerIds` throw (`ValidateKey`, L207-213) — public diagnostics must

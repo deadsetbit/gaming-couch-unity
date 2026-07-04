@@ -45,7 +45,7 @@ bootstraps, or repairs it** — create/update it through the DevApp (ADR
 | `seed` | string | `"random"` or an integer `1`–`999999` (as a string) | `GCDevJsonFile.cs:13-15`, check `:258` |
 | `seats` | array | Exactly `8` seat records | `GCDevJsonFile.cs:10`, check `GCDevJsonValidation.cs:418-420` |
 
-Seat record (`GCDevJsonSeat`, `GCDevJsonFile.cs:53-57`):
+Seat record (`GCDevJsonSeat`, `GCDevJsonFile.cs:82-99`; fields at `:84-86`):
 
 | Field | Type | Rule |
 |---|---|---|
@@ -169,8 +169,8 @@ capture at `:455-501`):
   `playerIndex` (capture order).
 - **Fixed seat → color map by seat position** (`SeatColors`, `:262-272`): seat 1 → `blue`, 2 → `red`,
   3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`.
-- `playerSeed` = FNV-1a32 of the normalized seat name (`GCPlayerSeed.FromPlayerName`,
-  `Runtime/GCPlayerSeed.cs:11`).
+- `playerSeed` is derived from the normalized seat name — FNV-1a32 of the name mapped into the
+  `1`–`999999` seed range (`GCPlayerSeed.FromPlayerName` → `ToSeed`, `Runtime/GCPlayerSeed.cs:11, 34-36`).
 - Each captured player gets a parallel **`GCSeatIdentity`** carrying **1-based** seat provenance
   (`Runtime/Dev/GCSeatIdentity.cs`; built at `GamingCouchEditor.cs:488-495`):
 
