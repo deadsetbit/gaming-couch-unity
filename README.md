@@ -1,279 +1,213 @@
-Unity integration for Gaming Couch platform.
+Unity integration for the Gaming Couch platform.
 
----
+This is the guide for **game developers** building a Unity game for Gaming Couch. It takes you from
+install to a playable example and then documents each topic you need as your game grows.
 
-# Installation
+## Contents
 
-You can import this package by using Unity's _Package manager's_ import from git URL.
+- [How your game runs](#how-your-game-runs)
+- [Install](#install)
+- [Quick Setup](#quick-setup)
+- [The game script](#the-game-script)
+- [Players and colors](#players-and-colors)
+- [Player inputs](#player-inputs)
+- [Player placement](#player-placement)
+- [The HUD](#the-hud)
+- [Game flow](#game-flow)
+- [Build and upload](#build-and-upload)
+- [Multiplayer](#multiplayer)
+- [What next?](#what-next)
+- [Creating a Unity project from scratch](#creating-a-unity-project-from-scratch)
+- [Documentation](#documentation)
 
-Follow the integration steps below to get started.
+## How your game runs
 
-# Compatibility
+Gaming Couch runs your game as a WebGL build inside the platform. You do not build any menus, lobby,
+controller UI, or scoreboard yourself — the platform provides them and hands your game everything it
+needs:
 
-This development line targets Unity 6 (`6000.0`) so Gaming Couch web export settings can remove Unity splash/logo branding.
+- **Players and their inputs.** The platform decides who is playing and streams each player's
+  controller state to your game. Your game reads players and inputs; it never manages joining,
+  leaving, or names.
+- **The hosted HUD.** Player nametags, the scoreboard, off-screen indicators, points, and meters are
+  rendered by the platform. Your game feeds it values through the `GCPlayer` state calls (`SetScore`,
+  `SetLives`, and so on); it does not draw any of it.
+- **Colors.** Each player has an assigned color your game uses to draw that player.
 
-## Platform compatibility
+The lifecycle your game participates in:
 
-The package exposes its package version and runtime protocol version to the Gaming Couch platform through DevApp Editor registration, the WebGL runtime-info sidecar, and an early WebGL runtime callback. `packageVersion` is used for diagnostics, while `gameProtocolVersion` identifies the integration contract the platform should support. The package root `package.json` owns the Unity package name and version; do not duplicate those values in runtime constants or documentation examples.
+1. **Setup** — the platform tells your game to prepare (load your level/mode). You configure the game
+   and HUD, then signal you are done.
+2. **Play** — the platform hands you the round's players and a seed. You spawn the players and start
+   the round.
+3. **Playing** — you read inputs each frame and report state changes (score, elimination, finish) so
+   the hosted HUD stays in sync.
+4. **Game over** — you tell the platform the final placement.
 
-`gameProtocolVersion` is not bumped for package metadata, sidecar generation, or upload validation changes. Bump it only when the platform/game integration contract itself changes.
+The rest of this guide shows how to do each step.
 
-For this strict package behavior, the current recommendation is no `gameProtocolVersion` bump if the Gaming Couch client/SDK already translates legacy hosted payloads into current Unity runtime payloads before invoking the package. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
+## Install
 
-# Configure the Editor
+Import this package with Unity's _Package Manager_ → _Add package from git URL_, then follow
+[Quick Setup](#quick-setup).
 
-- From _Build Settings_, switch the platform to "WebGL"
-- fix the game window to 16:9 (from top of the Game window), as the platform is fixed to 16:9 aspect ratio
+**Requirements:**
 
-# Gaming Couch web export settings
+- **Unity 6 (`6000.0`).** This development line targets Unity 6 so Gaming Couch web export can remove
+  the Unity splash/logo branding.
+- **WebGL build target.** From _Build Settings_, switch the platform to WebGL.
+- **16:9 aspect ratio.** Fix the Game window to 16:9 (top of the Game window) — the platform is fixed
+  to a 16:9 aspect ratio.
 
-Use `GamingCouch/WebGL Build/Preview web export settings` or the web export row in the GamingCouch start screen to prepare a project for Gaming Couch web builds.
+## Quick Setup
 
-The setup workflow requires Unity 6 (`6000.0`). It installs the package-owned Gaming Couch web export template into the project-local `Assets/WebGLTemplates/GamingCouch` folder and selects it as `PROJECT:GamingCouch`. The installer is no-overwrite: rerunning setup creates missing template files but preserves existing project-local template edits. If a destination path is blocked by the wrong asset kind, setup reports a blocker instead of replacing it.
+The fastest way to a working scene is the tooling — you do not need to wire anything by hand:
 
-Setup first shows a generated preview of the active build target, template, splash/logo, and release-profile changes it will apply. That preview is the authoritative detailed setting list; skipped setting rows are skipped only for the current apply run and remain reported as readiness drift afterward.
+1. Open **`GamingCouch → Start Screen`**.
+2. Choose **`Create New Example Scene`** (also on the `GamingCouch` menu directly).
+3. Press **Play**.
 
-If Unity cannot switch the active build target automatically, setup leaves a warning in the result. Run setup again or switch to WebGL manually before building.
+`Create New Example Scene` offers to save your current scene, creates a fresh scene, wires the
+`GamingCouch` object, and generates an example `Game` listener and player prefab. The new scene shows
+an on-screen note in Game View (and logs a clickable console message) pointing to the generated
+`GCGameExample` and `GCPlayerExample` files under `Assets/GamingCouch/GCExample` — read those to see
+the whole contract in action, then grow them into your own game. Players spawn only at runtime, so the
+Game View is otherwise empty until you press Play.
 
-The v1 web export template is a production/upload shell only. It shows loading progress and errors, but it does not provide a standalone browser playtest harness, GamingCouch JavaScript callback shims, local player fixtures, controller simulation, or DevApp communication.
+> **New here? Start from the generated example.** The example scene is a complete, working game. Read
+> `GCGameExample`/`GCPlayerExample` first; the snippets below are the same wiring, isolated topic by
+> topic, for when you set up your own scene.
 
-When a WebGL build uses the Gaming Couch template (`PROJECT:GamingCouch`), the package writes `gc.runtime-info.json` to the build output root, next to `index.html`. The sidecar records compact canonical JSON fields: `platform`, `packageName`, `packageVersion`, and `gameProtocolVersion`; `packageName` and `packageVersion` come from `package.json`.
+Other menu entries you will use:
 
-The same canonical payload is baked into the WebGL runtime resource. A package-owned static bootstrap runs with `RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)`, calls the `.jslib` bridge, and forwards the parsed metadata to `window.gamingCouchRegisterRuntimeInfo(metadata)`. `GamingCouchInstanceStarted()` remains a payload-free lifecycle startup signal.
+- `GamingCouch → Create GamingCouch GameObject` — add just the `GamingCouch` object to an existing
+  scene.
+- `GamingCouch → WebGL Build → …` — the web export and build helpers (see [Build and upload](#build-and-upload)).
 
-The Gaming Couch hosted SDK reads `gc.runtime-info.json` before `createUnityInstance`. If the sidecar is missing, transitional legacy behavior remains. If the sidecar exists, the hosted SDK stores the normalized identity and rejects startup if the subsequent runtime callback identity differs.
+## The game script
 
-Gaming Couch upload processing in the main repo preserves root `gc.runtime-info.json`; upload validation requires it for Unity uploads and validates `platform: "unity"`, non-empty `packageName`, SemVer `packageVersion`, and `gameProtocolVersion: 1`.
+Your game is driven by one listener script (the "Game" object wired into the `GamingCouch` object's
+`Listener` field) plus a player script that extends `GCPlayer`.
 
-Any WebGL build also writes `gc.unity-build-info.json` next to `index.html`, even when another WebGL template is selected. This separate diagnostic sidecar has runtime identity, build environment, host OS diagnostics, and build result sections for generator metadata, Unity editor/build/WebGL settings, and selected BuildReport values. It is not part of the runtime identity contract, and it does not change `gc.runtime-info.json`.
-
-If a WebGL build later includes a baked `Resources/GamingCouchUnityBuildInfo` payload, the package bootstrap forwards it to optional `window.gamingCouchRegisterUnityBuildInfo(metadata)`. That optional baked diagnostics path does not gate runtime startup; the root `gc.unity-build-info.json` sidecar remains the authoritative complete build diagnostic.
-
-Gaming Couch upload processing preserves root `gc.unity-build-info.json` for diagnostics when present, but upload validation does not require or validate it in this slice. A later main-repo policy may use it to warn or reject builds with the wrong template or WebGL settings, while `gc.runtime-info.json` remains the Gaming Couch template runtime identity contract.
-
-Build diagnostic paths are normalized before JSON serialization. Build-output paths are written relative to the build output, project paths are written relative to the Unity project, user-home paths use a `${USER_HOME}` prefix, and unknown absolute paths are redacted instead of emitted verbatim.
-
-Adding or changing these sidecars does not require a `gameProtocolVersion` bump unless the platform/game integration contract itself changes.
-
-These sidecars and runtime callbacks are drift detection and diagnostics, not cryptographic proof that the WebGL data or wasm was built with the declared package or settings.
-
-# Configure local editor play settings
-
-Unity editor play settings are read from the root `gc.dev.json` file in your Unity project. The package uses this file as the source of truth for local play entry, seed, and the eight-seat player roster, matching the Gaming Couch DevApp local project format.
-
-The root `gc.dev.json` file must already exist. Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.platform.json`; create or update those files through DevApp before using editor play. The `GamingCouch` inspector edits only the canonical `gc.dev.json` fields:
-
-- `entryKey`
-- `seed`
-- `seats`
-
-`devVersion` is not inspector-editable: the package pins it to the supported version and writes that value on save. Inspector writes preserve unrelated top-level `gc.dev.json` fields. Local play settings are no longer stored in scene-serialized editor fields, so changing entry, seed, or seats should not dirty the scene.
-
-When `gc.platform.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When platform data is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must not exceed the selected entry's `maxPlayers`. (At least one enabled seat is a structural `gc.dev.json` requirement enforced regardless of platform data, not a platform-data gate.) Production `minPlayers` platform data is still displayed and exported unchanged, but local editor playtests may run with one enabled seat. Enabled bot seats on an entry without bot support are warning-only.
-
-Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a valid, non-conflicted draft before capture. Invalid or conflicted drafts block Play Mode or restart until you apply, revert, reload from disk, or fix validation errors. Changes made to root JSON files during active Play Mode apply after a Gaming Couch restart or the next Play Mode entry.
-
-The package declares `com.unity.nuget.newtonsoft-json` for editor-only JSON sync and unknown-field-preserving `gc.dev.json` writes. Runtime and WebGL play behavior do not depend on this editor sync path.
-
-# Runtime contract
-
-Unity game code uses player indices only. `GCPlayer.Index`, `GCPlayerOptions.playerIndex`, input polling by `playerIndex`, runtime messages, screen-space anchors, diagnostics, and game-over placement payloads all refer to the same zero-based run-scoped participant index.
-
-DevApp seats are one-based local development slots for controller assignment and display. Hosted platform player IDs are private adapter/platform bookkeeping. Neither seats nor platform player IDs are public Unity runtime identity, and structured diagnostics must not expose platform player IDs.
-
-The package accepts only current runtime identity at its boundary. Current private transport boot payloads provide the player roster as `players[]` records with `playerIndex`, which Unity exposes through `GCPlayOptions.players`; runtime input addresses players by `playerIndex`. Legacy hosted roster and input payloads are not adapted inside the Unity package; client/SDK adapters own that translation before Unity is invoked. DevApp/local editor play may keep `seatIndex`, `activeSeats` (a DevApp-repo concept written by the DevApp, not a field of this Unity package), and `GCSeatIdentity` for controller routing and source-seat mapping, but those seat-domain values are separate from the game-facing `players[]` roster.
-
-Legacy Unity source APIs retained for migration guidance are hard obsolete and fail at compile time. Follow the compiler messages to move old ID/name, input, timestamp, HUD helper, and ambiguous state calls to `GCPlayer.Index`, `playerIndex`, current player-state APIs, and current HUD/runtime-state paths.
-
-Player state APIs distinguish permanent and revokable state. Use `SetEliminatedPermanent`, `SetEliminatedRevokable`, and `SetRevokeEliminated` for elimination, and `SetFinishedPermanent`, `SetFinishedRevokable`, and `SetRevokeFinished` for finish. Revokable state counts while active and can be revoked; permanent state cannot be revoked.
-
-Runtime state and diagnostics flow through `runtime_messages`. Screen-coordinate presentation anchors flow through `screen_space` as `playerOverhead` and `playerPosition` anchors keyed by `playerIndex`. HUD rendering consumes runtime state and screen-space anchors; HUD payloads are not the semantic source of truth.
-
-When `gc.platform.json` is missing or invalid in local development, runtime code receives a read-only fallback platform metadata view with `fallbackActive: true` and exact `notdefined` game/entry values. Unity reports warning diagnostics for the fallback and never writes or repairs `gc.platform.json`.
-
-# Basic integration
-
-The fastest way to get a working scene is `GamingCouch > Create New Example Scene` (also available from the GamingCouch Start Screen). It offers to save your current scene, creates a fresh scene, wires the `GamingCouch` object, generates the example `Game` listener and player prefab, and opens the Start Screen so you can see what was set up. The new scene shows an on-screen note in Game View (and logs a clickable console message) pointing to the generated `GCGameExample` and `GCPlayerExample` files under `Assets/GamingCouch/GCExample`, which you can browse and grow into your own game. Players themselves only spawn at runtime, so the Game View is otherwise empty. Existing example scenes under `Assets/GamingCouch/GCExample` are kept and a new one is created alongside them. This does not change your Build Settings startup scene; use the Start Screen's "Set up missing pieces" action if you want the example scene to become the first Build Settings scene.
-
-The manual steps below describe the same wiring for when you want to set up an existing scene yourself.
-
-## 1) Add GamingCouch game object
-
-Add GamingCouch game object to your main scene by right clicking the scene hierarchy and selecting "GamingCouch" from the menu.
-
-## 2) Create and link game script
-
-- (for new game project) create "Game" game object to the main scene and create and add "Game.cs" main game script to it
-- link your main game object to the "Listener" field in the GamingCouch game object (via inspector)
-  - now the game script will be able hook up to GamingCouch specific messages (we will get back to this)
-
-## 3) Create and link player prefab
-
-- (for new game project) create "Player" prefab and create and add "Player.cs" script to it
-- make your player script extend DSB.GC.GCPlayer (instead of MonoBehaviour)
-- link the player prefab to the "Player Prefab" field in GamingCouch game object (via inspector)
-
-## 4) Hook up your main game script
-
-### Define player store in your main game script
+Declare a player store, typed to your player script, to hold the round's players:
 
 ```C#
 using DSB.GC;
 using DSB.GC.Game;
 using DSB.GC.Hud;
 
-// Add new field for playerStore. Replace the "Player" with your player script name, if it differs:
+// Replace "Player" with your player script name if it differs.
 private GCPlayerStore<Player> playerStore = new GCPlayerStore<Player>();
 ```
 
-### Listen for GamingCouchSetup message
-
-This is the place where you can start to load levels and what not based on the GCSetupOptions:
+**Setup** — the platform calls `GamingCouchSetup` when it is time to prepare your game. Load your
+level/mode, configure the game and HUD, then call `SetupDone()`:
 
 ```C#
 private void GamingCouchSetup(GCSetupOptions options)
 {
-    // do stuff based on the options. Eg. load level based on game mode etc.
+    // Load your level / mode based on the options here.
 
-    // Setup the game and HUD based on the game/game mode
     GamingCouch.Instance.SetupGameVersus(
         new GCGameVersusSetupOptions()
         {
-            // Adjust the placement sorting criteria to fit your game.
-            // You can add/remove or change the order of the components.
-            // NOTE: In order for the placement criteria to work, you need
-            // to use the GCPlayer methods, such as SetEliminatedPermanent,
-            // SetEliminatedRevokable, SetScore/AddScore, SetFinishedPermanent,
-            // or SetFinishedRevokable.
+            // How players are ranked — see "Player placement".
             placementCriteria = new GCPlacementSortCriteria[] {
                 GCPlacementSortCriteria.EliminatedDescending,
                 GCPlacementSortCriteria.ScoreDescending,
                 GCPlacementSortCriteria.Finished
             },
 
-            // configure the HUD, see more on the HUD section
+            // Configure the hosted HUD — see "The HUD".
             hud = new GCGameHudOptions()
             {
                 players = new GCHudPlayersConfig(),
-                // this is by default true, but can be set to false if Players HUD needs to be controlled manually
-                isPlayersAutoUpdateEnabled = true,
+                isPlayersAutoUpdateEnabled = true, // default true
             }
         }
     );
 
-    // after setup is done call:
-    GamingCouch.Instance.SetupDone();
+    GamingCouch.Instance.SetupDone(); // required when setup is finished
 }
 ```
 
-Next we need to listen when GC and all the players are ready to play:
+**Play** — the platform calls `GamingCouchPlay` with the round's players. Spawn them and start:
 
 ```C#
 private void GamingCouchPlay(GCPlayOptions options)
 {
-    // we now have all the successfully loaded players so we can instantiate them.
-    // This will instantiate and config the players by using the player prefab linked to GamingCouch game object
+    // Instantiates and configures players from the player prefab linked to the GamingCouch object.
     GamingCouch.Instance.SetupPlayers<Player>(options.players, (player) =>
     {
         playerStore.AddPlayer(player);
     });
 
-    // next we can set the game to play mode and or play intro
     StartMyGameNow();
 }
 ```
 
-When the game ends, simply call:
+**Game over** — when the round ends:
 
 ```C#
 GamingCouch.Instance.GameOver();
 ```
 
-# HUD
+> If you prefer to wire an existing scene by hand instead of using [Quick Setup](#quick-setup): add the
+> `GamingCouch` object (`GamingCouch → Create GamingCouch GameObject`), create a "Game" object with your
+> listener script and link it to the `Listener` field, and create a player prefab whose script extends
+> `DSB.GC.GCPlayer` and link it to the `Player Prefab` field.
 
-NOTE: All HUD related features are only rendered in the Gaming Couch platform and cant be tested in the editor or unity build alone.
+## Players and colors
 
-## Player position
-
-Tracks players position and enables features such as:
-
-- displaying an offscreen indicator for the player in the HUD when they move off screen.
-- dimming/fading away the left hand player's HUD if the player is positioned "underneath" the HUD.
-
-You should add this to a transform that indicates the player's position in the world.
-
-## Overhead HUD (screen-space anchors, points, meter bar)
-
-To emit an overhead screen-space anchor for a player, add the GCPlayerOverhead component to your player game object.
-Usually you want to position the overhead anchor above the player, so you can also add the GCPlayerOverhead component
-to a child object of the player game object and offset it above the player's head, for example.
-
-In case you need to place the overhead anchor outside the player game object, manually define the anchor's player with `GCPlayerOverhead.SetPlayer`.
-
-Adding GCPlayerOverhead emits `playerOverhead` screen-space data keyed by `playerIndex`. Hosted HUD rendering can use that anchor with canonical runtime state for related player elements such as points or meter bar.
-
-NOTE: Currently, there is no way to show hosted overhead HUD rendering in the editor or Unity build alone.
-The only way to see if the hosted overhead HUD rendering is working correctly is to test it in the Gaming Couch platform.
-
-## Configure Players HUD to display score, lives etc.
-
-### Display score
-
-```C#
-GamingCouch.Instance.SetupGameVersus(
-    new GCGameVersusSetupOptions()
-    {
-        maxScore = 10, // required to display the score in HUD
-        hud = new GCGameHudOptions()
-        {
-            players = new GCHudPlayersConfig()
-            {
-                valueTypeEnum = PlayersHudValueType.PointsSmall
-                ...
-            }
-            ...
-        }
-        ...
-    }
-);
-```
-
-Now the hud is set to reflect the player score that is set by GCPlayer.SetScore or GCPlayer.AddScore.
-
-To see other HUD value types, see [API documentation for GCHudPlayersConfig](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.Hud.GCHudPlayersConfig.html#DSB_GC_Hud_GCHudPlayersConfig_valueTypeEnum).
-
-## Players HUD updates
-
-The hosted Players HUD reads canonical runtime state from `runtime_messages`. Update player-facing HUD values by calling the `GCPlayer` state APIs, such as `SetScore`, `AddScore`, `SetLives`, `SetStatus`, and `SetMeter`.
-
-# Player integration
-
-## Configure player
-
-When the player is instantiated by GamingCouch, game-facing runtime properties are available, such as player index, color, and player type.
-Platform player IDs and player names are not available to Unity game code.
-
-For all available properties, see the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_value).
-
-The values are available on your player script instance from `Awake` onward. Gaming Couch instantiates the player while it is inactive, sets these properties, and only then activates the object, so `Awake` (and `Start`) already see the final values:
+When a player is instantiated, its game-facing properties are already set. They are available from
+`Awake` onward: Gaming Couch instantiates the player while it is inactive, sets the properties, and
+only then activates the object, so both `Awake` and `Start` see the final values.
 
 ```C#
 public class Player : GCPlayer
 {
-    ...
-
     private void Start()
     {
         GetComponent<SpriteRenderer>().color = ColorBase;
     }
-
-    ...
 }
 ```
 
+Key player properties (see the full list in the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html)):
+
+| Member | Type | Notes |
+|---|---|---|
+| `Index` | `int` | Zero-based player index for this round — the identity you use everywhere (inputs, lookups). Platform IDs and player names are **not** available to game code |
+| `PlayerType` / `IsBot` | enum / `bool` | Whether the player is a bot |
+| `PlayerSeed` | `int` | Per-player deterministic seed |
+| `ColorBase` / `ColorDark` / `ColorLight` / `ColorOffWhite` | `Color` | Color variants for this player — access on the instance |
+| `Score` / `Lives` / `Meter` | `int` | Current values |
+| `Status` / `StatusText` | enum / `string` | Player status |
+| `EliminationState` / `FinishState`, `IsEliminated`, `IsFinished`, … | | Read-only state flags |
+
+Access color variants on the player instance:
+
+```C#
+player.ColorBase
+player.ColorDark
+player.ColorLight
+player.ColorOffWhite
+```
+
+**The player store** gives you filtered views of the round's players. `playerStore.Players` is all of
+them; convenience collections narrow by bot/non-bot and by eliminated/finished (permanent vs
+revokable) state — e.g. `PlayersUneliminated`, `PlayersBot`, `PlayersFinishedPermanent`. Look one up by
+index with `playerStore.GetPlayerByIndex(index)` (returns `null` if there is no such player). See the
+[API documentation for GCPlayerStore](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayerStore-1.html)
+for the complete set.
+
+`GCPlayer` also exposes change events (`OnScoreChanged`, `OnLivesChanged`, `OnMeterChanged`,
+`OnStatusChanged`, `OnEliminationStateChanged`, `OnFinishStateChanged`) if you want to react to state
+changes.
+
 ## Player inputs
 
-Read and apply the player inputs in your main game script Update method:
+Read each player's inputs in your `Update` loop, addressing players by `Index`:
 
 ```C#
 private void Update()
@@ -283,79 +217,169 @@ private void Update()
         var inputs = GamingCouch.Instance.GetInputsByPlayerIndex(player.Index);
         if (inputs == null) continue;
 
-        player.PlayerController.Move(inputs.leftX);
-        player.PlayerController.Jump(inputs.primary);
+        // Move the player with the left stick and act on the primary button.
+        MyMove(player, inputs.leftX, inputs.leftY);
+        if (inputs.primary) MyJump(player);
     }
 }
 ```
 
-# Player placement
+`GCControllerInputs` members:
 
-You do not need to sort the players, just define correct placement criteria in the SetupGameVersus call (see above)
-and use the GCPlayer methods to set score, elimination state, and finish state:
+| Member | Type | Notes |
+|---|---|---|
+| `leftX` / `leftY` | `float` | Left stick axes, `-1.0`–`1.0` |
+| `primary` | `bool` | Primary action button (A on an Xbox-style layout) |
+| `secondary` | `bool` | Secondary action button (B on an Xbox-style layout) |
+| `alt` | `bool` | Special/accessibility button — see below |
+
+> **Design for `primary`/`secondary` first.** `alt` is a special button that should not be used for
+> core mechanics (such as combat) because it is less accessible on touch-screen controllers. Use it for
+> occasional actions like "reset player" when stuck. It also has **no keyboard mapping in the editor**,
+> so you cannot exercise it during local editor play — design your game to work without it.
+
+## Player placement
+
+You do not sort players yourself. Define the ranking in `SetupGameVersus` via `placementCriteria`, then
+drive it by calling the `GCPlayer` state methods. Placement is evaluated by each criterion in order:
+
+| `GCPlacementSortCriteria` | Ranks by |
+|---|---|
+| `Score` / `ScoreDescending` | Score, ascending / descending |
+| `Eliminated` / `EliminatedDescending` | Elimination, ascending / descending |
+| `Finished` / `FinishedDescending` | Finish, ascending / descending |
+
+Set state with the `GCPlayer` methods:
 
 ```C#
-// Set player permanently eliminated
-player.SetEliminatedPermanent("Out of bounds");
+// Score
+player.SetScore(0, "Dropped all coins");
+player.AddScore(1, "Collected a coin");
+player.SubtractScore(2, "Pushed off the edge");
 
-// Set player temporarily eliminated, then revoke that state if they recover.
+// Elimination — permanent, or revokable when the player can recover.
+player.SetEliminatedPermanent("Out of bounds");
 player.SetEliminatedRevokable("Tagged");
 player.SetRevokeEliminated("Respawned");
 
-// Set player score
-player.SetScore(0, "Dropped all coins");
-// ...or add score
-player.AddScore(1, "Collected a coin");
-// ...or subtract score
-player.SubtractScore(2, "Pushed off the edge");
-
-// Set player finished
-// Set player permanently finished, or use revokable finish when finish can be rolled back.
+// Finish — permanent, or revokable when finish can be rolled back.
 player.SetFinishedPermanent("Finish line");
 player.SetFinishedRevokable("Checkpoint finish");
 player.SetRevokeFinished("Checkpoint invalidated");
 ```
 
-# Player colors
+Revokable state counts while active and can be revoked; permanent state cannot.
 
-Access different player color variants directly via the GCPlayer instance:
+## The HUD
+
+The HUD is rendered by the hosted platform from the values you set. You configure it in
+`SetupGameVersus` and keep it in sync by calling `GCPlayer` state methods during play.
+
+> **The HUD only renders inside the Gaming Couch platform.** You cannot see it in the editor or in a
+> plain Unity/WebGL build — the only way to verify HUD behavior is to run in the platform.
+
+**Configure the Players HUD.** `GCHudPlayersConfig` chooses how each player's value and meter are
+shown:
+
+| Field | Type | Values |
+|---|---|---|
+| `valueTypeEnum` | `PlayersHudValueType` | `None`, `PointsSmall`, `Status`, `Text`, `Lives` |
+| `meterTypeEnum` | `PlayersHudMeterType` | `None`, `Bar` |
 
 ```C#
-player.ColorBase
-player.ColorDark
-player.ColorLight
-player.ColorOffWhite
+GamingCouch.Instance.SetupGameVersus(
+    new GCGameVersusSetupOptions()
+    {
+        maxScore = 10, // required when showing points
+        hud = new GCGameHudOptions()
+        {
+            players = new GCHudPlayersConfig()
+            {
+                valueTypeEnum = PlayersHudValueType.PointsSmall,
+            }
+        }
+    }
+);
 ```
 
-# Build your project for Gaming Couch
+- With `PointsSmall`, the HUD reflects the score you set via `SetScore`/`AddScore`.
+- With `Lives`, it reflects `SetLives`; with `Status`, it reflects `SetStatus`.
+- With `Text`, override `GetHudValueText()` on your `GCPlayer` subclass to return the string to show.
+- A `Bar` meter reflects `SetMeter` (`0`–`100`).
 
-When you are ready to build your project for Gaming Couch, run the Gaming Couch web export settings before creating the build. Review the generated preview, then apply the target, template, splash/logo, and release-profile changes needed for a web export.
+> **`PointsSmall` requires `maxScore`.** Setting `valueTypeEnum = PlayersHudValueType.PointsSmall`
+> without a `maxScore` greater than `0` throws at setup. Set `maxScore` (or `SetGameMaxScore`) when you
+> show points.
 
-If setup warns that the active build target is still not WebGL, run setup again or switch the project to WebGL manually before building.
+**Player position and overhead anchors.** So the HUD can place per-player overlays, attach small
+components to your player objects that report where each player is on screen:
 
-WebGL builds produce `gc.unity-build-info.json` for privacy-preserving Unity build diagnostics; upload processing preserves it when present, but upload validation does not require or validate it. Builds that use the Gaming Couch template also produce `gc.runtime-info.json` for narrow runtime identity; current Gaming Couch upload validation requires and validates that runtime sidecar for Unity uploads.
+- **`GCPlayerPosition`** — add it to a transform that marks the player's world position. It drives the
+  off-screen indicator (when a player leaves the view) and lets the HUD dim a player's elements when
+  they are underneath the HUD. Options: `disableWhenEliminated` (default on), `disableWhenOutOfScreen`.
+  If it is not on the player itself, set the player with `GCPlayerPosition.SetPlayer(player)`.
+- **`GCPlayerOverhead`** — add it (often to a child object offset above the player's head) to anchor
+  the player's overhead HUD such as nametag, points, and meter. If it is not on the player itself, set
+  the player with `GCPlayerOverhead.SetPlayer(player)`.
 
-# What next?
+## Game flow
 
-- Explore our example template game project: [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template)
-- Dive into the [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api)
+The platform calls your listener in this order: `GamingCouchSetup` (prepare) → you call `SetupDone()`
+→ `GamingCouchPlay` (spawn players, start) → you call `GameOver()` when the round ends. The platform
+also pauses/resumes your game on its own; you do not draw the pause UI.
 
-# Creating Unity project from scratch
+`GamingCouch.Instance` exposes the run-level helpers you need along the way — for example `SetupPlayers`
+(with an optional spawn-position/rotation overload via `GCPlayerSpawnProperties`), `SetGameMaxScore`,
+`GameSeed`, and `Restart`. See the
+[API documentation](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GamingCouch.html) for the
+full surface.
 
-If you do not want to use our [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template),
-you can create project from scratch by following these steps:
+## Build and upload
 
-- create new unity project with the "Universal 3D" template (URP) or optionally "Universal 2D" (URP)
-- follow the [installation and integration steps](#installation)
+When you are ready to build for Gaming Couch:
 
-# Unsupported online multiplayer migration surface
+1. Run **`GamingCouch → WebGL Build → Preview web export settings`** (or the web export row on the Start
+   Screen). It shows a preview of the build-target, template, splash/logo, and release-profile changes
+   it will apply, then applies them. The installer is no-overwrite: it fills in missing template files
+   but keeps your local template edits. If it cannot switch the build target to WebGL automatically, it
+   leaves a warning — run it again or switch to WebGL manually before building.
+2. Build your WebGL project. For quick iteration, `Preview dev build settings (fast build)` and
+   `Preview release build settings (slow build)` prepare fast/production profiles.
+3. Upload the build output. Alongside `index.html`, a Gaming Couch build writes the small metadata
+   files the platform needs at upload — they are generated for you; you do not edit them by hand.
 
-Gaming Couch online multiplayer is not a supported Unity runtime contract. Default package builds keep `GamingCouch.OnlineMultiplayerSupport` as a false-returning compatibility probe, make `OnlineMultiplayerServerReady()` and `OnlineMultiplayerClientReady()` throw unsupported API errors, and do not compile the Netcode for GameObjects helper assembly.
+## Multiplayer
 
-The old multiplayer path can only be enabled with the `GC_ENABLE_UNSUPPORTED_MULTIPLAYER` scripting define. That define is reserved for temporary internal migration of legacy games that already used the old unsupported multiplayer implementation. Do not use it for new multiplayer feature work.
+Online multiplayer is not currently supported.
 
-# Documentation map
+## What next?
 
-- **Living references:** this README, [`Documentation~/README.md`](Documentation~/README.md) (docs-site landing page), [`CONTEXT.md`](CONTEXT.md) (domain glossary).
-- **Decisions:** [`docs/adr/`](docs/adr/) — one-paragraph architecture decision records (0001–0016).
-- **Active trackers:** [backlog](docs/architecture/gamingcouch-unity-backlog.md), [cross-repo rollout checkpoints](docs/architecture/unity-runtime-contract/07-cross-repo-rollout.md).
+- Explore the example template project: [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template)
+- Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api)
+
+## Creating a Unity project from scratch
+
+If you do not want to start from the [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template),
+create a project from scratch:
+
+- Create a new Unity project with the "Universal 3D" (URP) template, or optionally "Universal 2D" (URP).
+- Follow [Install](#install) and [Quick Setup](#quick-setup).
+
+## Documentation
+
+**For game developers**
+
+- This README — the integration guide.
+- [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api) — generated per-member reference.
+- [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template) — example project.
+
+**Internal (platform & DevApp maintainers)**
+
+- [Platform runtime contract](https://github.com/deadsetbit/gaming-couch-unity/blob/main/docs/contracts/platform-runtime-contract.md) — the JS↔Unity wire spec.
+- [DevApp / local-play contract](https://github.com/deadsetbit/gaming-couch-unity/blob/main/docs/contracts/devapp-local-play-contract.md) — `gc.dev.json`/`gc.platform.json` schemas and the DevApp protocol.
+- [Domain glossary (CONTEXT.md)](https://github.com/deadsetbit/gaming-couch-unity/blob/main/CONTEXT.md).
+
+**Decisions & trackers**
+
+- [Architecture decision records](https://github.com/deadsetbit/gaming-couch-unity/tree/main/docs/adr).
+- [Backlog](https://github.com/deadsetbit/gaming-couch-unity/blob/main/docs/architecture/gamingcouch-unity-backlog.md) and [cross-repo rollout checkpoints](https://github.com/deadsetbit/gaming-couch-unity/blob/main/docs/architecture/unity-runtime-contract/07-cross-repo-rollout.md).
