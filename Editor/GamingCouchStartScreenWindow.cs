@@ -1,3 +1,4 @@
+using System.Reflection;
 using DSB.GC.Dev;
 using UnityEditor;
 using UnityEngine;
@@ -5,6 +6,10 @@ using UnityEngine;
 internal sealed class GamingCouchStartScreenWindow : EditorWindow
 {
     internal const string WindowTitle = "GamingCouch Start Screen";
+    private const float MinWindowWidth = 420f;
+    private const float MinWindowHeight = 360f;
+    private const float PopupWindowWidth = 460f;
+    private const float PopupWindowHeight = 560f;
     private const float ChecklistRowHeight = 28f;
     private const float ChecklistRowPaddingX = 8f;
     private const float ChecklistStatusWidth = 28f;
@@ -12,8 +17,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private const float ChecklistButtonWidth = 148f;
     private const float ChecklistHelpButtonWidth = 22f;
     private const float ChecklistColumnSpacing = 6f;
-    private const float ChecklistMessageExtraIndent = 16f;
-    private const float ChecklistMessageIndent = ChecklistRowPaddingX + ChecklistStatusWidth + ChecklistColumnSpacing + ChecklistMessageExtraIndent;
+    // Indent messages to the label's left edge: past the row padding, the status-indicator
+    // column, and the spacing after it. This aligns the message with the item text above it.
+    private const float ChecklistMessageIndent = ChecklistRowPaddingX + ChecklistStatusWidth + ChecklistColumnSpacing;
     private const float ChecklistStatusIndicatorSize = 10f;
 
     private GCStartScreenReadiness readiness;
@@ -24,18 +30,82 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private bool hasSelectedChecklistHelp;
     private GCStartScreenReadinessCheckId selectedChecklistHelpId;
 
+    // EditorWindow.docked is internal to UnityEditor; cache the reflection lookup since
+    // IsDocked() runs every OnGUI frame.
+    private static readonly PropertyInfo EditorWindowDockedProperty = typeof(EditorWindow).GetProperty(
+        "docked",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+    );
+
     internal static GamingCouchStartScreenWindow Open()
     {
+        // Detect a fresh open before GetWindow (which returns an existing instance
+        // when one is already present) so we only reposition newly created windows.
+        var isNewWindow = !HasOpenWindow();
+
         var window = GetWindow<GamingCouchStartScreenWindow>(false, WindowTitle);
         window.Refresh();
         window.Show();
+
+        if (isNewWindow)
+        {
+            window.CenterOnMainWindowIfFloating();
+        }
+
         return window;
+    }
+
+    private static bool HasOpenWindow()
+    {
+        var windows = Resources.FindObjectsOfTypeAll<GamingCouchStartScreenWindow>();
+        return windows != null && windows.Length > 0;
+    }
+
+    // Presents the window like a popup on first open: centered over the Unity main
+    // window at a comfortable size. Skipped when docked so we never yank a window the
+    // user has intentionally placed in their layout.
+    private void CenterOnMainWindowIfFloating()
+    {
+        if (IsDocked())
+        {
+            return;
+        }
+
+        var mainWindow = EditorGUIUtility.GetMainWindowPosition();
+        if (mainWindow.width <= 0f || mainWindow.height <= 0f)
+        {
+            return;
+        }
+
+        // Never let the popup exceed the editor window; a larger rect would spill off-screen.
+        var size = new Vector2(
+            Mathf.Min(Mathf.Max(PopupWindowWidth, minSize.x), mainWindow.width),
+            Mathf.Min(Mathf.Max(PopupWindowHeight, minSize.y), mainWindow.height)
+        );
+        var centered = new Rect(Vector2.zero, size)
+        {
+            center = mainWindow.center
+        };
+
+        // Clamp fully inside the editor window so the title bar always stays reachable,
+        // even if GetMainWindowPosition reports an unexpected rect during early startup.
+        centered.x = Mathf.Clamp(centered.x, mainWindow.xMin, mainWindow.xMax - centered.width);
+        centered.y = Mathf.Clamp(centered.y, mainWindow.yMin, mainWindow.yMax - centered.height);
+        position = centered;
+    }
+
+    private bool IsDocked()
+    {
+        // Treat an unreadable value as "floating" so a fresh window still centers.
+        return EditorWindowDockedProperty != null
+            && EditorWindowDockedProperty.GetValue(this, null) is bool docked
+            && docked;
     }
 
     private void OnEnable()
     {
         titleContent = new GUIContent(WindowTitle);
-        minSize = new Vector2(420f, 360f);
+        minSize = new Vector2(MinWindowWidth, MinWindowHeight);
         Refresh();
     }
 
@@ -75,7 +145,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             DrawActionResult();
             EditorGUILayout.EndScrollView();
 
-            DrawAutoOpenSettings();
+            // The auto-open toggle only governs the floating startup popup. A docked window
+            // is restored by Unity's layout regardless, so the toggle is irrelevant there.
+            if (!IsDocked())
+            {
+                DrawAutoOpenSettings();
+            }
         }
     }
 

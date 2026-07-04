@@ -86,12 +86,9 @@ internal static class GCStartScreenStartupLauncher
             return;
         }
 
-        var readiness = GCStartScreenReadinessService.InspectActiveScene();
-        if (readiness == null || !readiness.HasBlockingVisibleChecklistIssues)
-        {
-            return;
-        }
-
+        // Greet on every launch until the user opts out via
+        // "Never open this again on startup" (GCStartScreenSettings.SuppressAutoOpen).
+        // Readiness is no longer gated here; the window inspects and reports it on open.
         GamingCouchStartScreenWindow.Open();
     }
 
