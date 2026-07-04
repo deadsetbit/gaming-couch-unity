@@ -5,6 +5,9 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if GC_HAS_UGUI
+using UnityEngine.UI;
+#endif
 
 internal enum GCExampleSceneCreationStatus
 {
@@ -118,6 +121,10 @@ internal static class GamingCouchExampleSceneCreation
 
         var setupResult = GamingCouchActiveSceneSetup.EnsureActiveSceneSetup(false);
 
+        // Add an on-screen label so the otherwise-empty Game View (players only spawn at runtime)
+        // points the user at the generated example scripts.
+        CreateSceneInfoOverlay(newScene);
+
         // Persist the GamingCouch object (and any synchronously wired references) so they survive
         // the domain reload that first-run example-script generation triggers. The listener and
         // player-prefab references are wired by the post-compilation continuation and left for the
@@ -145,7 +152,10 @@ internal static class GamingCouchExampleSceneCreation
             ? "Created " + scenePath + ". Active Scene Setup will finish wiring the scene after Unity compiles the generated example scripts."
             : "Created " + scenePath + " and completed Active Scene Setup.";
 
-        Debug.Log("GamingCouch: " + message);
+        Debug.Log(
+            BuildGeneratedFilesGuidance(message),
+            AssetDatabase.LoadMainAssetAtPath(GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath)
+        );
 
         return new GCExampleSceneCreationResult(
             GCExampleSceneCreationStatus.Created,
@@ -240,6 +250,85 @@ internal static class GamingCouchExampleSceneCreation
         {
             target.Add(source[i]);
         }
+    }
+
+    private static void CreateSceneInfoOverlay(Scene scene)
+    {
+#if GC_HAS_UGUI
+        var root = new GameObject("GamingCouch Example Info", typeof(Canvas), typeof(CanvasScaler));
+
+        var canvas = root.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = short.MaxValue;
+
+        var scaler = root.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        var panel = new GameObject("Panel", typeof(Image));
+        panel.transform.SetParent(root.transform, false);
+        var panelImage = panel.GetComponent<Image>();
+        panelImage.color = new Color(0f, 0f, 0f, 0.6f);
+        panelImage.raycastTarget = false;
+        var panelRect = panel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 1f);
+        panelRect.anchorMax = new Vector2(0.5f, 1f);
+        panelRect.pivot = new Vector2(0.5f, 1f);
+        panelRect.anchoredPosition = new Vector2(0f, -24f);
+        panelRect.sizeDelta = new Vector2(1040f, 210f);
+
+        var textObject = new GameObject("Text", typeof(Text));
+        textObject.transform.SetParent(panel.transform, false);
+        var text = textObject.GetComponent<Text>();
+        text.font = GetBuiltinFont();
+        text.text = BuildSceneInfoText();
+        text.color = Color.white;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.fontSize = 28;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        text.raycastTarget = false;
+        var textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(24f, 16f);
+        textRect.offsetMax = new Vector2(-24f, -16f);
+
+        if (root.scene != scene)
+        {
+            SceneManager.MoveGameObjectToScene(root, scene);
+        }
+#endif
+    }
+
+#if GC_HAS_UGUI
+    private static Font GetBuiltinFont()
+    {
+        return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+            ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+    }
+#endif
+
+    internal static string BuildSceneInfoText()
+    {
+        return
+            "GamingCouch example scene\n" +
+            "Example scripts: " + GamingCouchActiveSceneSetup.ExampleFolderAssetPath + "\n" +
+            "GCGameExample.cs (game) and GCPlayerExample.cs (player)\n" +
+            "Players spawn at runtime on the Gaming Couch platform.\n" +
+            "(You can delete this label.)";
+    }
+
+    internal static string BuildGeneratedFilesGuidance(string headline)
+    {
+        return
+            "GamingCouch: " + headline + "\n" +
+            "Browse the generated example files and grow them into your game:\n" +
+            "  - " + GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath + "  (game listener)\n" +
+            "  - " + GamingCouchActiveSceneSetup.ExamplePlayerScriptAssetPath + "  (player)\n" +
+            "  - " + GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath + "  (player prefab)";
     }
 
     private static GCExampleSceneCreationResult Cancelled(string[] existingScenePaths)

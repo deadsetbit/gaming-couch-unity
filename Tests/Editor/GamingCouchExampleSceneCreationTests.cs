@@ -82,4 +82,24 @@ public sealed class GamingCouchExampleSceneCreationTests
 
         Assert.That(actionResult.messageType, Is.EqualTo(MessageType.Error));
     }
+
+    [Test]
+    public void SceneInfoTextPointsToExampleFolder()
+    {
+        var text = GamingCouchExampleSceneCreation.BuildSceneInfoText();
+
+        Assert.That(text, Does.Contain("GamingCouch example scene"));
+        Assert.That(text, Does.Contain("Assets/GamingCouch/GCExample"));
+    }
+
+    [Test]
+    public void GeneratedFilesGuidanceListsExampleAssetsAndHeadline()
+    {
+        var guidance = GamingCouchExampleSceneCreation.BuildGeneratedFilesGuidance("Created it.");
+
+        Assert.That(guidance, Does.Contain("Created it."));
+        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCGameExample.cs"));
+        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
+        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
+    }
 }

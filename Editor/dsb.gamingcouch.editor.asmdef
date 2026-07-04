@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "GUID:277ccca428f76479b82ed36f333abb18",
-        "Unity.Newtonsoft.Json"
+        "Unity.Newtonsoft.Json",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,6 +15,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "",
+            "define": "GC_HAS_UGUI"
+        }
+    ],
     "noEngineReferences": false
 }
