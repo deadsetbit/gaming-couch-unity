@@ -143,9 +143,57 @@ namespace DSB.GC
             }
 
 #if UNITY_EDITOR
+            WarnIfBuildTargetNotWebGL();
             CaptureEditorPlaySettings();
 #endif
         }
+
+#if UNITY_EDITOR
+        // Runs on editor load and after every domain reload. Switching the active build target
+        // changes scripting defines and triggers a domain reload, so this also fires on platform switch.
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void WarnIfBuildTargetNotWebGLOnLoad()
+        {
+            // Entering play mode is covered by the instance check in Awake; avoid a duplicate warning.
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            var message = GetBuildTargetWarningOrNull();
+            if (message == null)
+            {
+                return;
+            }
+
+            // GCLog respects the runtime log level, which is None until a GamingCouch instance runs,
+            // so this edit-time setup warning is logged directly to make sure it always surfaces.
+            Debug.LogWarning($"[GC] {message}");
+        }
+
+        private void WarnIfBuildTargetNotWebGL()
+        {
+            var message = GetBuildTargetWarningOrNull();
+            if (message != null)
+            {
+                GCLog.LogWarning(message);
+            }
+        }
+
+        private static string GetBuildTargetWarningOrNull()
+        {
+            if (UnityEditor.EditorUserBuildSettings.activeBuildTarget == UnityEditor.BuildTarget.WebGL)
+            {
+                return null;
+            }
+
+            return $"Active build target is '{UnityEditor.EditorUserBuildSettings.activeBuildTarget}', not WebGL. " +
+                "Gaming Couch games are exported for the Web, so the active platform should be WebGL " +
+                "(File > Build Settings > WebGL > Switch Platform). " +
+                "Play mode compiles with the active platform's scripting defines, so other targets can behave " +
+                "differently from the shipped Web build.";
+        }
+#endif
 
         private void Start()
         {
