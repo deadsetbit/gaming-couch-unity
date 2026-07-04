@@ -668,7 +668,7 @@ namespace DSB.GC
         {
             if (game == null)
             {
-                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGame() before calling '" + source + "'.");
+                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGameVersus() before calling '" + source + "'.");
             }
         }
 

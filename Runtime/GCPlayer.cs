@@ -198,7 +198,7 @@ namespace DSB.GC
         public int Score => score;
         private int lives = 0;
         /// <summary>
-        /// Set the player's lives. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// Set the player's lives. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
         public int Lives => lives;
@@ -297,7 +297,7 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Set the player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// Set the player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
         public void SetScore(int newScore, string reason)
@@ -312,7 +312,7 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Add to player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// Add to player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
         public void AddScore(int score, string reason)
@@ -321,7 +321,7 @@ namespace DSB.GC
         }
 
         /// <summary>
-        /// Subtract from player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+        /// Subtract from player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
         /// If hudAutoUpdate is true, the changes will be reflected in the HUD.
         /// </summary>
         public void SubtractScore(int score, string reason)

@@ -29,7 +29,8 @@ namespace DSB.GC
         /// </summary>
         public int b1;
         /// <summary>
-        /// Button index 2 - Would match X on Xbox controller
+        /// Button index 2. Exposed to games as <see cref="GCControllerInputs.alt"/> — see that
+        /// property for the intended (accessibility) semantics.
         /// </summary>
         public int b2;
 

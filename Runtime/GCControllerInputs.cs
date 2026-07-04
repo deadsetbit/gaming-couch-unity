@@ -38,8 +38,8 @@ namespace DSB.GC
          **/
         public bool secondary => data.b1 == 1;
         /**
-         * A special button that should not be used for basic game mechanics,
-         * (8such as combat) due to it's accessibility in touch screen controller.
+         * A special button that should not be used for basic game mechanics
+         * (such as combat) due to its limited accessibility on touch-screen controllers.
          *
          * This button can instead be used for actions such as "reset player" in case player is stuck,
          * or something else that is not commonly required in the heat of the moment.
