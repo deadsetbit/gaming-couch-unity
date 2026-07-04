@@ -63,14 +63,13 @@ Unity editor play settings are read from the root `gc.dev.json` file in your Uni
 
 The root `gc.dev.json` file must already exist. Unity does not create, bootstrap, or repair `gc.dev.json` or `gc.platform.json`; create or update those files through DevApp before using editor play. The `GamingCouch` inspector edits only the canonical `gc.dev.json` fields:
 
-- `devVersion`
 - `entryKey`
 - `seed`
 - `seats`
 
-Inspector writes preserve unrelated top-level `gc.dev.json` fields. Local play settings are no longer stored in scene-serialized editor fields, so changing entry, seed, or seats should not dirty the scene.
+`devVersion` is not inspector-editable: the package pins it to the supported version and writes that value on save. Inspector writes preserve unrelated top-level `gc.dev.json` fields. Local play settings are no longer stored in scene-serialized editor fields, so changing entry, seed, or seats should not dirty the scene.
 
-When `gc.platform.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When platform data is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must be at least one and no more than the selected entry's `maxPlayers`. Production `minPlayers` platform data is still displayed and exported unchanged, but local editor playtests may run with one enabled seat. Enabled bot seats on an entry without bot support are warning-only.
+When `gc.platform.json` is missing or invalid, Unity shows a warning and keeps raw `gc.dev.json` editing available for structurally valid files. When platform data is valid, it gates Apply and Play: `platform.id` must be `unity`, the selected `entryKey` must exist, and the enabled seat count must not exceed the selected entry's `maxPlayers`. (At least one enabled seat is a structural `gc.dev.json` requirement enforced regardless of platform data, not a platform-data gate.) Production `minPlayers` platform data is still displayed and exported unchanged, but local editor playtests may run with one enabled seat. Enabled bot seats on an entry without bot support are warning-only.
 
 Entering Play Mode or restarting Gaming Couch from Play Mode auto-applies a valid, non-conflicted draft before capture. Invalid or conflicted drafts block Play Mode or restart until you apply, revert, reload from disk, or fix validation errors. Changes made to root JSON files during active Play Mode apply after a Gaming Couch restart or the next Play Mode entry.
 
@@ -256,7 +255,7 @@ Platform player IDs and player names are not available to Unity game code.
 
 For all available properties, see the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html#DSB_GC_GCPlayer_value).
 
-The values are available on your player script instance on Start (note that they are not yet available on Awake!):
+The values are available on your player script instance from `Awake` onward. Gaming Couch instantiates the player while it is inactive, sets these properties, and only then activates the object, so `Awake` (and `Start`) already see the final values:
 
 ```C#
 public class Player : GCPlayer
@@ -292,7 +291,7 @@ private void Update()
 
 # Player placement
 
-You do not need to sort the players, just define correct placement criteria in the SetupGame call (see above)
+You do not need to sort the players, just define correct placement criteria in the SetupGameVersus call (see above)
 and use the GCPlayer methods to set score, elimination state, and finish state:
 
 ```C#
@@ -322,10 +321,10 @@ player.SetRevokeFinished("Checkpoint invalidated");
 Access different player color variants directly via the GCPlayer instance:
 
 ```C#
-GCPlayer.ColorBase
-GCPlayer.ColorDark
-GCPlayer.ColorLight
-GCPlayer.ColorOffWhite
+player.ColorBase
+player.ColorDark
+player.ColorLight
+player.ColorOffWhite
 ```
 
 # Build your project for Gaming Couch

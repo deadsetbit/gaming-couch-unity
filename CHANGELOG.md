@@ -20,6 +20,19 @@
 
 - Protocol-version decision: the current recommendation is no `gameProtocolVersion` bump if client/SDK adapters already translate legacy payloads and send current payloads to this package. Any bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
 
+## [0.1.0-alpha.3] - 2026-05-26
+
+### Added
+
+- Added the Gaming Couch Start Screen with quick-start setup actions that scaffold a working example scene from scratch: the `GamingCouch` object, an example game listener, an example player prefab, generated example scripts, and the scene wiring between them.
+- Added Start Screen project-readiness reporting so setup surfaces which pieces are still missing.
+
+### Fixed
+
+- Fixed editor keyboard input priority during local editor play.
+- Fixed DevApp runtime game-over and reconnect handling.
+- Fixed a WebGL export preview compile error.
+
 ## [0.1.0-alpha.2] - 2026-05-09
 
 ### Added
