@@ -15,7 +15,7 @@ install to a playable example and then documents each topic you need as your gam
 - [The HUD](#the-hud)
 - [Game flow](#game-flow)
 - [Build and upload](#build-and-upload)
-- [Multiplayer](#multiplayer)
+- [FAQ](#faq)
 - [What next?](#what-next)
 - [Creating a Unity project from scratch](#creating-a-unity-project-from-scratch)
 - [Documentation](#documentation)
@@ -175,15 +175,15 @@ public class Player : GCPlayer
 
 Key player properties (see the full list in the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity/api/DSB.GC.GCPlayer.html)):
 
-| Member | Type | Notes |
-|---|---|---|
-| `Index` | `int` | Zero-based player index for this round — the identity you use everywhere (inputs, lookups). Platform IDs and player names are **not** available to game code |
-| `PlayerType` / `IsBot` | enum / `bool` | Whether the player is a bot |
-| `PlayerSeed` | `int` | Per-player deterministic seed |
-| `ColorBase` / `ColorDark` / `ColorLight` / `ColorOffWhite` | `Color` | Color variants for this player — access on the instance |
-| `Score` / `Lives` / `Meter` | `int` | Current values |
-| `Status` / `StatusText` | enum / `string` | Player status |
-| `EliminationState` / `FinishState`, `IsEliminated`, `IsFinished`, … | | Read-only state flags |
+| Member                                                              | Type            | Notes                                                                                                                                                        |
+| ------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Index`                                                             | `int`           | Zero-based player index for this round — the identity you use everywhere (inputs, lookups). Platform IDs and player names are **not** available to game code |
+| `PlayerType` / `IsBot`                                              | enum / `bool`   | Whether the player is a bot                                                                                                                                  |
+| `PlayerSeed`                                                        | `int`           | Per-player deterministic seed                                                                                                                                |
+| `ColorBase` / `ColorDark` / `ColorLight` / `ColorOffWhite`          | `Color`         | Color variants for this player — access on the instance                                                                                                      |
+| `Score` / `Lives` / `Meter`                                         | `int`           | Current values                                                                                                                                               |
+| `Status` / `StatusText`                                             | enum / `string` | Player status                                                                                                                                                |
+| `EliminationState` / `FinishState`, `IsEliminated`, `IsFinished`, … |                 | Read-only state flags                                                                                                                                        |
 
 Access color variants on the player instance:
 
@@ -226,12 +226,12 @@ private void Update()
 
 `GCControllerInputs` members:
 
-| Member | Type | Notes |
-|---|---|---|
-| `leftX` / `leftY` | `float` | Left stick axes, `-1.0`–`1.0` |
-| `primary` | `bool` | Primary action button (A on an Xbox-style layout) |
-| `secondary` | `bool` | Secondary action button (B on an Xbox-style layout) |
-| `alt` | `bool` | Special/accessibility button — see below |
+| Member            | Type    | Notes                                               |
+| ----------------- | ------- | --------------------------------------------------- |
+| `leftX` / `leftY` | `float` | Left stick axes, `-1.0`–`1.0`                       |
+| `primary`         | `bool`  | Primary action button (A on an Xbox-style layout)   |
+| `secondary`       | `bool`  | Secondary action button (B on an Xbox-style layout) |
+| `alt`             | `bool`  | Special/accessibility button — see below            |
 
 > **Design for `primary`/`secondary` first.** `alt` is a special button that should not be used for
 > core mechanics (such as combat) because it is less accessible on touch-screen controllers. Use it for
@@ -243,11 +243,11 @@ private void Update()
 You do not sort players yourself. Define the ranking in `SetupGameVersus` via `placementCriteria`, then
 drive it by calling the `GCPlayer` state methods. Placement is evaluated by each criterion in order:
 
-| `GCPlacementSortCriteria` | Ranks by |
-|---|---|
-| `Score` / `ScoreDescending` | Score, ascending / descending |
+| `GCPlacementSortCriteria`             | Ranks by                            |
+| ------------------------------------- | ----------------------------------- |
+| `Score` / `ScoreDescending`           | Score, ascending / descending       |
 | `Eliminated` / `EliminatedDescending` | Elimination, ascending / descending |
-| `Finished` / `FinishedDescending` | Finish, ascending / descending |
+| `Finished` / `FinishedDescending`     | Finish, ascending / descending      |
 
 Set state with the `GCPlayer` methods:
 
@@ -281,10 +281,10 @@ The HUD is rendered by the hosted platform from the values you set. You configur
 **Configure the Players HUD.** `GCHudPlayersConfig` chooses how each player's value and meter are
 shown:
 
-| Field | Type | Values |
-|---|---|---|
+| Field           | Type                  | Values                                           |
+| --------------- | --------------------- | ------------------------------------------------ |
 | `valueTypeEnum` | `PlayersHudValueType` | `None`, `PointsSmall`, `Status`, `Text`, `Lives` |
-| `meterTypeEnum` | `PlayersHudMeterType` | `None`, `Bar` |
+| `meterTypeEnum` | `PlayersHudMeterType` | `None`, `Bar`                                    |
 
 ```C#
 GamingCouch.Instance.SetupGameVersus(
@@ -348,9 +348,18 @@ When you are ready to build for Gaming Couch:
 3. Upload the build output. Alongside `index.html`, a Gaming Couch build writes the small metadata
    files the platform needs at upload — they are generated for you; you do not edit them by hand.
 
-## Multiplayer
+## FAQ
 
-Online multiplayer is not currently supported.
+**Is online multiplayer supported?**
+Online multiplayer is not supported feature.
+
+To test online it can be feasible over screen sharing in discord, google meet, etc. for this, you can share the mobile controller from the Gaming Couch DevApp or upload the build to gaming couch.
+
+**Can I test the HUD in the editor?**
+Currently no. The HUD is rendered by the hosted platform, so it only appears when your game runs inside Gaming
+Couch — not in the editor or a plain WebGL build. See [The HUD](#the-hud).
+
+This is planned for the near future to be able to visualize the HUD in the editor as well.
 
 ## What next?
 
