@@ -232,9 +232,15 @@ internal static class GamingCouchSceneWiring
             return GamingCouchObjectReferenceState.Assigned;
         }
 
+#if UNITY_6000_3_OR_NEWER
+        return property.objectReferenceEntityIdValue.IsValid()
+            ? GamingCouchObjectReferenceState.Missing
+            : GamingCouchObjectReferenceState.Empty;
+#else
         return property.objectReferenceInstanceIDValue != 0
             ? GamingCouchObjectReferenceState.Missing
             : GamingCouchObjectReferenceState.Empty;
+#endif
     }
 
     internal static bool HasObjectReferenceSlot(GamingCouch gamingCouch, string propertyName)
@@ -353,8 +359,14 @@ internal static class GamingCouchSceneWiring
             return GamingCouchObjectReferenceState.Assigned;
         }
 
+#if UNITY_6000_3_OR_NEWER
+        return property.objectReferenceEntityIdValue.IsValid()
+            ? GamingCouchObjectReferenceState.Missing
+            : GamingCouchObjectReferenceState.Empty;
+#else
         return property.objectReferenceInstanceIDValue != 0
             ? GamingCouchObjectReferenceState.Missing
             : GamingCouchObjectReferenceState.Empty;
+#endif
     }
 }
