@@ -89,7 +89,9 @@ namespace DSB.GC
         /// </summary>
         public bool OnlineMultiplayerSupport => false;
 #endif
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
         private bool onlineMultiplayerReadyCalled = false;
+#endif
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         public int GameSeed
@@ -115,6 +117,9 @@ namespace DSB.GC
             GCLog.logLevel = LogLevel;
 
             GCLog.LogDebug("Awake");
+            // Keep the FindObjectsSortMode overload: the parameterless FindObjectsByType<T>()
+            // only exists from Unity 6000.5+, and the package targets Unity 6+. The
+            // deprecation warning on newer editors is harmless.
             if (FindObjectsByType<GamingCouch>(FindObjectsSortMode.None).Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
@@ -191,7 +196,9 @@ namespace DSB.GC
                 "Gaming Couch games are exported for the Web, so the active platform should be WebGL " +
                 "(File > Build Settings > WebGL > Switch Platform). " +
                 "Play mode compiles with the active platform's scripting defines, so other targets can behave " +
-                "differently from the shipped Web build.";
+                "differently from the shipped Web build: features gated to the Web build (for example online " +
+                "multiplayer / Netcode) are not compiled here, so their components can appear as 'missing script' " +
+                "in the scene. Open GamingCouch > Start Screen for full readiness.";
         }
 #endif
 
@@ -1322,6 +1329,7 @@ namespace DSB.GC
                 Scene dontDestroyScene = temp.scene;
                 DestroyImmediate(temp);
 
+                // Sort-mode overload kept for Unity 6.0-6.1 compatibility (see Awake).
                 GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
                 List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
 
