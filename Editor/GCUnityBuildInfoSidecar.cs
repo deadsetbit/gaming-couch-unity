@@ -433,7 +433,7 @@ internal static class GCUnityBuildInfoWebGLSettingsCapture
             webAssembly2023 = PlayerSettings.WebGL.wasm2023,
 #endif
             developmentBuild = EditorUserBuildSettings.development,
-            codeOptimization = UnityEditor.WebGL.UserBuildSettings.codeOptimization.ToString(),
+            codeOptimization = GCWebGLBuildSupport.GetCodeOptimizationString() ?? "(WebGL module not installed)",
         };
     }
 }

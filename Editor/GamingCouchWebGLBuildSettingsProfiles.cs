@@ -298,7 +298,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         specs.Add(CreateWebAssembly2023Spec(true));
 #endif
         specs.Add(CreateDevelopmentBuildSpec(false));
-        specs.Add(CreateWebGLCodeOptimizationSpec(UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO));
+        AddSpecIfPresent(specs, CreateWebGLCodeOptimizationSpec("DiskSizeLTO"));
         return specs.ToArray();
     }
 
@@ -318,7 +318,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         specs.Add(CreateWebAssembly2023Spec(true));
 #endif
         specs.Add(CreateDevelopmentBuildSpec(true));
-        specs.Add(CreateWebGLCodeOptimizationSpec(UnityEditor.WebGL.WasmCodeOptimization.BuildTimes));
+        AddSpecIfPresent(specs, CreateWebGLCodeOptimizationSpec("BuildTimes"));
         return specs.ToArray();
     }
 
@@ -432,17 +432,44 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         );
     }
 
-    private static GCWebGLBuildSettingSpec CreateWebGLCodeOptimizationSpec(
-        UnityEditor.WebGL.WasmCodeOptimization expected
+    private static void AddSpecIfPresent(
+        List<GCWebGLBuildSettingSpec> specs,
+        GCWebGLBuildSettingSpec spec
     )
     {
+        if (spec != null)
+        {
+            specs.Add(spec);
+        }
+    }
+
+    // WebGL code optimization lives in the optional WebGL Build Support module, so it is
+    // read/written through GCWebGLBuildSupport (reflection). When the module is not
+    // installed this spec is skipped entirely; the dedicated "Web Build Support
+    // installed" blocker is the single source of truth for that situation.
+    private static GCWebGLBuildSettingSpec CreateWebGLCodeOptimizationSpec(string expectedValueName)
+    {
+        if (!GCWebGLBuildSupport.IsModuleInstalled)
+        {
+            return null;
+        }
+
+        var expected = (Enum)GCWebGLBuildSupport.ParseCodeOptimization(expectedValueName);
         return new GCWebGLBuildSettingSpec(
             WebGLCodeOptimizationSettingId,
             "WebGL code optimization",
-            () => FormatEnum(UnityEditor.WebGL.UserBuildSettings.codeOptimization),
+            () =>
+            {
+                GCWebGLBuildSupport.TryGetCodeOptimization(out var current);
+                return FormatEnum((Enum)current);
+            },
             FormatEnum(expected),
-            () => UnityEditor.WebGL.UserBuildSettings.codeOptimization == expected,
-            () => UnityEditor.WebGL.UserBuildSettings.codeOptimization = expected
+            () =>
+            {
+                GCWebGLBuildSupport.TryGetCodeOptimization(out var current);
+                return Equals(current, expected);
+            },
+            () => GCWebGLBuildSupport.SetCodeOptimization(expected)
         );
     }
 

@@ -33,7 +33,10 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 #if UNITY_2023_1_OR_NEWER
     private bool previousWebGLWasm2023;
 #endif
-    private UnityEditor.WebGL.WasmCodeOptimization previousWebGLCodeOptimization;
+    // Held as object because UnityEditor.WebGL.WasmCodeOptimization ships with the
+    // optional WebGL Build Support module; GCWebGLBuildSupport reads/writes it via
+    // reflection so this test assembly compiles with or without the module.
+    private object previousWebGLCodeOptimization;
     private bool previousDevelopmentBuild;
     private Il2CppCodeGeneration previousIl2CppCodeGeneration;
     private ManagedStrippingLevel previousManagedStrippingLevel;
@@ -1672,7 +1675,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 #if UNITY_2023_1_OR_NEWER
         previousWebGLWasm2023 = PlayerSettings.WebGL.wasm2023;
 #endif
-        previousWebGLCodeOptimization = UnityEditor.WebGL.UserBuildSettings.codeOptimization;
+        GCWebGLBuildSupport.TryGetCodeOptimization(out previousWebGLCodeOptimization);
         previousDevelopmentBuild = EditorUserBuildSettings.development;
         previousIl2CppCodeGeneration = PlayerSettings.GetIl2CppCodeGeneration(webGLTarget);
         previousManagedStrippingLevel = PlayerSettings.GetManagedStrippingLevel(webGLTarget);
@@ -1692,7 +1695,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 #if UNITY_2023_1_OR_NEWER
         PlayerSettings.WebGL.wasm2023 = previousWebGLWasm2023;
 #endif
-        UnityEditor.WebGL.UserBuildSettings.codeOptimization = previousWebGLCodeOptimization;
+        GCWebGLBuildSupport.SetCodeOptimization(previousWebGLCodeOptimization);
         EditorUserBuildSettings.development = previousDevelopmentBuild;
         PlayerSettings.SetIl2CppCodeGeneration(webGLTarget, previousIl2CppCodeGeneration);
         PlayerSettings.SetManagedStrippingLevel(webGLTarget, previousManagedStrippingLevel);
