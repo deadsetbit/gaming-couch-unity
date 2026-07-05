@@ -336,6 +336,31 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         );
     }
 
+    [Test]
+    public void WebGLModuleInstallStepsIncludeVersionModuleAndCliCommand()
+    {
+        var steps = GamingCouchStartScreenSetupActions.BuildWebGLModuleInstallSteps("6000.0.42f1");
+
+        Assert.That(steps, Does.Contain("6000.0.42f1"));
+        Assert.That(steps, Does.Contain("Web Build Support"));
+        Assert.That(steps, Does.Contain("Add modules"));
+        Assert.That(steps, Does.Contain("Reopen this project"));
+        Assert.That(steps, Does.Contain("unity install-modules -e 6000.0.42f1 -m webgl"));
+    }
+
+    [Test]
+    public void WebGLModuleInstallActionIsAlwaysEnabledEvenWithoutActiveScene()
+    {
+        var readiness = CreateReadinessForScene(default(Scene));
+        var moduleCheck = readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLModuleInstalled);
+
+        Assert.That(moduleCheck.HasExternalAction, Is.True);
+        Assert.That(
+            GamingCouchStartScreenSetupActions.IsChecklistActionDisabled(moduleCheck, readiness),
+            Is.False
+        );
+    }
+
     private GCStartScreenReadiness CreateReadiness(
         GamingCouch gamingCouch,
         UnityEngine.Object listener,

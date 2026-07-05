@@ -55,7 +55,10 @@ Import this package with Unity's _Package Manager_ → _Add package from git URL
 
 - **Unity 6 (`6000.0`).** This development line targets Unity 6 so Gaming Couch web export can remove
   the Unity splash/logo branding.
-- **WebGL build target.** From _Build Settings_, switch the platform to WebGL.
+- **Web Build Support module** (formerly _WebGL Build Support_). Not installed by default — add it
+  from _Unity Hub → (gear on your Unity version) → Add modules → Web Build Support_, then reopen the
+  project. The Start Screen flags this and links to Unity Hub if the module is missing. Then, from
+  _Build Settings_, switch the platform to Web.
 - **16:9 aspect ratio.** Fix the Game window to 16:9 (top of the Game window) — the platform is fixed
   to a 16:9 aspect ratio.
 

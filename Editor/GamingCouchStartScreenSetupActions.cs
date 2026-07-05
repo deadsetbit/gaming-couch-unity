@@ -77,6 +77,13 @@ internal static class GamingCouchStartScreenSetupActions
             return check.action.target == null;
         }
 
+        // External actions (e.g. opening Unity Hub) are always available; they never depend on
+        // scene state or a pending setup, so they must not be gated like setup actions.
+        if (check.HasExternalAction)
+        {
+            return false;
+        }
+
         return IsChecklistSetupActionBlocked(check, readiness);
     }
 
@@ -116,6 +123,11 @@ internal static class GamingCouchStartScreenSetupActions
             return RunFocusAction(action);
         }
 
+        if (action.isExternalAction)
+        {
+            return RunExternalAction(action.id);
+        }
+
         return RunSetupAction(action.id);
     }
 
@@ -153,6 +165,54 @@ internal static class GamingCouchStartScreenSetupActions
                     false
                 );
         }
+    }
+
+    internal static GCStartScreenSetupActionResult RunExternalAction(GCStartScreenReadinessActionId actionId)
+    {
+        switch (actionId)
+        {
+            case GCStartScreenReadinessActionId.OpenWebGLModuleInstallHelp:
+                return OpenWebGLModuleInstallHelp();
+            default:
+                return CreateResult(
+                    "No external action is available for this checklist item.",
+                    MessageType.Info,
+                    null,
+                    null,
+                    false,
+                    false
+                );
+        }
+    }
+
+    // We cannot install a Hub module from the editor (no API) or deep-link to the module screen
+    // (unityhub:// only supports editor-version installs and opening projects). Best we can do:
+    // surface the Hub and hand the developer the exact, version-filled steps to paste/follow.
+    internal static GCStartScreenSetupActionResult OpenWebGLModuleInstallHelp()
+    {
+        var steps = BuildWebGLModuleInstallSteps(Application.unityVersion);
+        EditorGUIUtility.systemCopyBuffer = steps;
+        Application.OpenURL("unityhub://");
+
+        return CreateResult(
+            "Opened Unity Hub and copied WebGL Build Support install steps to the clipboard.",
+            MessageType.Info,
+            new[] { steps },
+            null,
+            false,
+            false
+        );
+    }
+
+    internal static string BuildWebGLModuleInstallSteps(string unityVersion)
+    {
+        return
+            "Install Web Build Support for Unity " + unityVersion + ":\n" +
+            "1. In Unity Hub, open the Installs tab.\n" +
+            "2. Click the gear icon on Unity " + unityVersion + " and choose \"Add modules\".\n" +
+            "3. Enable \"Web Build Support\" (formerly \"WebGL Build Support\") and select Install.\n" +
+            "4. Reopen this project after the install completes.\n" +
+            "CLI alternative: unity install-modules -e " + unityVersion + " -m webgl";
     }
 
     internal static GCStartScreenSetupActionResult RunActiveSceneSetup()

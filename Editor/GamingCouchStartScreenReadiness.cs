@@ -32,6 +32,7 @@ internal enum GCStartScreenReadinessCheckId
     PlayerPrefabAssigned,
     ActiveSceneFirstBuildSettingsScene,
     GameViewAspect16By9,
+    WebGLModuleInstalled,
     WebGLExportSetup,
     LocalPlayJsonValid,
 }
@@ -48,6 +49,7 @@ internal enum GCStartScreenReadinessActionId
     SetFirstBuildSettingsScene,
     Select16By9GameView,
     SetUpWebGLExport,
+    OpenWebGLModuleInstallHelp,
 }
 
 internal sealed class GCStartScreenReadinessAction
@@ -58,6 +60,7 @@ internal sealed class GCStartScreenReadinessAction
         false,
         false,
         false,
+        false,
         null
     );
 
@@ -65,6 +68,10 @@ internal sealed class GCStartScreenReadinessAction
     internal readonly string label;
     internal readonly bool isSetupAction;
     internal readonly bool isFocusAction;
+    // External actions hand off to something outside the editor (e.g. opening Unity Hub) and are
+    // never automatable fixes: they are excluded from setup-action counts so an unmet check they
+    // belong to still registers as a blocker rather than an "actionable setup" item.
+    internal readonly bool isExternalAction;
     internal readonly bool requiresLoadedActiveScene;
     internal readonly UnityEngine.Object target;
 
@@ -73,6 +80,7 @@ internal sealed class GCStartScreenReadinessAction
         string label,
         bool isSetupAction,
         bool isFocusAction,
+        bool isExternalAction,
         bool requiresLoadedActiveScene,
         UnityEngine.Object target
     )
@@ -81,6 +89,7 @@ internal sealed class GCStartScreenReadinessAction
         this.label = label;
         this.isSetupAction = isSetupAction;
         this.isFocusAction = isFocusAction;
+        this.isExternalAction = isExternalAction;
         this.requiresLoadedActiveScene = requiresLoadedActiveScene;
         this.target = target;
     }
@@ -96,7 +105,7 @@ internal sealed class GCStartScreenReadinessAction
         bool requiresLoadedActiveScene = true
     )
     {
-        return new GCStartScreenReadinessAction(id, label, true, false, requiresLoadedActiveScene, null);
+        return new GCStartScreenReadinessAction(id, label, true, false, false, requiresLoadedActiveScene, null);
     }
 
     internal static GCStartScreenReadinessAction CreateFocusAction(
@@ -107,7 +116,15 @@ internal sealed class GCStartScreenReadinessAction
     {
         return target == null
             ? NoAction
-            : new GCStartScreenReadinessAction(id, label, false, true, false, target);
+            : new GCStartScreenReadinessAction(id, label, false, true, false, false, target);
+    }
+
+    internal static GCStartScreenReadinessAction CreateExternalAction(
+        GCStartScreenReadinessActionId id,
+        string label
+    )
+    {
+        return new GCStartScreenReadinessAction(id, label, false, false, true, false, null);
     }
 }
 
@@ -155,6 +172,11 @@ internal sealed class GCStartScreenReadinessCheck
     internal bool HasFocusAction
     {
         get { return action != null && action.isFocusAction; }
+    }
+
+    internal bool HasExternalAction
+    {
+        get { return action != null && action.isExternalAction; }
     }
 }
 
@@ -448,6 +470,8 @@ internal sealed class GCStartScreenReadiness
     private const string BuildSettingsHelpText = "Keeps the active scene first among enabled scenes loaded by WebGL builds.";
     private const string GameViewAspectHelpText = "Keeps the Unity Game View preview on a 16:9 aspect ratio.";
     private const string WebGLExportSetupHelpText = "Checks the WebGL target, template, and release settings for web export readiness.";
+    private const string WebGLModuleInstalledCheckLabel = "Web Build Support installed";
+    private const string WebGLModuleInstalledHelpText = "Web Build Support (WebGL) must be installed for this Unity Editor to build for the web.";
     private const string FocusSceneObjectActionLabel = "Focus Scene Object";
     private const string FocusGameScriptActionLabel = "Focus Game Script";
     private const string FocusPrefabActionLabel = "Focus Prefab";
@@ -457,6 +481,7 @@ internal sealed class GCStartScreenReadiness
     private const string SetFirstBuildSettingsSceneActionLabel = "Set First Build Scene";
     private const string Select16By9GameViewActionLabel = "Select 16:9";
     private const string SetUpWebGLExportActionLabel = "Set Up Web Export";
+    private const string OpenWebGLModuleInstallHelpActionLabel = "Open Unity Hub";
 
     internal readonly Scene scene;
     internal readonly string sceneName;
@@ -642,6 +667,7 @@ internal sealed class GCStartScreenReadiness
             BuildPlayerPrefabAssignedCheck(),
             BuildActiveSceneFirstBuildSettingsSceneCheck(),
             BuildGameViewAspect16By9Check(),
+            BuildWebGLModuleInstalledCheck(),
             BuildWebGLExportSetupCheck(),
             BuildLocalPlayJsonValidCheck(),
         };
@@ -965,6 +991,34 @@ internal sealed class GCStartScreenReadiness
         );
     }
 
+    private GCStartScreenReadinessCheck BuildWebGLModuleInstalledCheck()
+    {
+        if (webGLExport != null && webGLExport.webGLModuleInstalled)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.WebGLModuleInstalled,
+                WebGLModuleInstalledCheckLabel,
+                GCStartScreenReadinessCheckState.Pass,
+                "Web Build Support is installed for this Unity Editor.",
+                WebGLModuleInstalledHelpText
+            );
+        }
+
+        // No editor API can install a Hub module, so this is a manual, non-automatable fix: the
+        // action opens Unity Hub and copies the exact steps, but the check stays a hard blocker.
+        return new GCStartScreenReadinessCheck(
+            GCStartScreenReadinessCheckId.WebGLModuleInstalled,
+            WebGLModuleInstalledCheckLabel,
+            GCStartScreenReadinessCheckState.Fail,
+            "Web Build Support (the WebGL platform) is not installed for this Unity Editor. GamingCouch games run on the web, so it is required. Install it from Unity Hub (Add modules), then reopen this project.",
+            WebGLModuleInstalledHelpText,
+            GCStartScreenReadinessAction.CreateExternalAction(
+                GCStartScreenReadinessActionId.OpenWebGLModuleInstallHelp,
+                OpenWebGLModuleInstallHelpActionLabel
+            )
+        );
+    }
+
     private GCStartScreenReadinessCheck BuildWebGLExportSetupCheck()
     {
         if (webGLExport == null)
@@ -974,6 +1028,19 @@ internal sealed class GCStartScreenReadiness
                 "Web export settings configured",
                 GCStartScreenReadinessCheckState.Fail,
                 "Web export settings readiness could not be inspected.",
+                WebGLExportSetupHelpText
+            );
+        }
+
+        // The WebGL module check above owns this problem; defer here (no misleading "switch to
+        // WebGL" fix) so the developer acts on the real blocker first.
+        if (!webGLExport.webGLModuleInstalled)
+        {
+            return new GCStartScreenReadinessCheck(
+                GCStartScreenReadinessCheckId.WebGLExportSetup,
+                "Web export settings configured",
+                GCStartScreenReadinessCheckState.Blocked,
+                "Install Web Build Support before configuring web export settings.",
                 WebGLExportSetupHelpText
             );
         }

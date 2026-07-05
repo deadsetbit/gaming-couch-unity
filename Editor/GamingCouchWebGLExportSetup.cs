@@ -54,6 +54,7 @@ internal sealed class GCWebGLExportTemplateInstallResult
 internal sealed class GCWebGLExportReadiness
 {
     internal readonly GCWebGLExportSetupStatus status;
+    internal readonly bool webGLModuleInstalled;
     internal readonly bool templateFolderReady;
     internal readonly bool templateFilesReady;
     internal readonly bool templateSelected;
@@ -63,6 +64,8 @@ internal sealed class GCWebGLExportReadiness
     internal readonly string message;
     internal readonly string[] details;
 
+    // Backward-compatible overload for callers (mostly tests) that assume the WebGL Build
+    // Support module is installed. Production inspection always sets the flag explicitly.
     internal GCWebGLExportReadiness(
         GCWebGLExportSetupStatus status,
         bool templateFolderReady,
@@ -74,8 +77,36 @@ internal sealed class GCWebGLExportReadiness
         string message,
         string[] details
     )
+        : this(
+            status,
+            true,
+            templateFolderReady,
+            templateFilesReady,
+            templateSelected,
+            releaseSettingsReady,
+            splashSettingsReady,
+            activeBuildTargetIsWebGL,
+            message,
+            details
+        )
+    {
+    }
+
+    internal GCWebGLExportReadiness(
+        GCWebGLExportSetupStatus status,
+        bool webGLModuleInstalled,
+        bool templateFolderReady,
+        bool templateFilesReady,
+        bool templateSelected,
+        bool releaseSettingsReady,
+        bool splashSettingsReady,
+        bool activeBuildTargetIsWebGL,
+        string message,
+        string[] details
+    )
     {
         this.status = status;
+        this.webGLModuleInstalled = webGLModuleInstalled;
         this.templateFolderReady = templateFolderReady;
         this.templateFilesReady = templateFilesReady;
         this.templateSelected = templateSelected;
@@ -797,6 +828,7 @@ internal static class GamingCouchWebGLExportSetup
     )
     {
         var details = new List<string>();
+        var webGLModuleInstalled = IsWebGLModuleInstalled();
         var templateFolderPathIsEmpty = string.IsNullOrEmpty(destinationTemplateDirectoryFullPath);
         var templateFolderIsWrongKind = !templateFolderPathIsEmpty &&
                                         File.Exists(destinationTemplateDirectoryFullPath);
@@ -857,6 +889,7 @@ internal static class GamingCouchWebGLExportSetup
         {
             return new GCWebGLExportReadiness(
                 GCWebGLExportSetupStatus.Blocked,
+                webGLModuleInstalled,
                 templateFolderReady,
                 templateFilesReady,
                 templateSelected,
@@ -872,6 +905,7 @@ internal static class GamingCouchWebGLExportSetup
             activeBuildTargetIsWebGL
                 ? GCWebGLExportSetupStatus.Ready
                 : GCWebGLExportSetupStatus.Warning,
+            webGLModuleInstalled,
             templateFolderReady,
             templateFilesReady,
             templateSelected,
@@ -883,6 +917,14 @@ internal static class GamingCouchWebGLExportSetup
                 : "Gaming Couch web export settings are ready, but the active build target is not WebGL.",
             details.ToArray()
         );
+    }
+
+    // WebGL Build Support is an optional Unity Hub module and is not installed by default.
+    // Without it the WebGL build target is unavailable: switching to it fails and builds error
+    // out with "Build Target WebGL not supported". Public API since Unity 2021.2 (Unity 6 here).
+    internal static bool IsWebGLModuleInstalled()
+    {
+        return BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL, BuildTarget.WebGL);
     }
 
     internal static string LocatePackageTemplatePath()
@@ -939,6 +981,12 @@ internal static class GamingCouchWebGLExportSetup
         if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
         {
             details.Add("Active build target already uses WebGL.");
+            return false;
+        }
+
+        if (!IsWebGLModuleInstalled())
+        {
+            details.Add("Cannot switch to Web (WebGL) because Web Build Support is not installed. Install it from Unity Hub (Add modules) and reopen the project.");
             return false;
         }
 

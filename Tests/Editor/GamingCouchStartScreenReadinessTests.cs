@@ -764,6 +764,91 @@ public sealed class GamingCouchStartScreenReadinessTests
     }
 
 
+    [Test]
+    public void PresentWebGLModuleReportsPassWithoutAction()
+    {
+        var readiness = CreateReadySceneReadiness(
+            CreateReadyBuildSettingsReadiness(),
+            CreateReadyGameViewAspectReadiness(),
+            CreateReadyWebGLExportReadiness()
+        );
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLModuleInstalled, GCStartScreenReadinessCheckState.Pass);
+        AssertNoAction(readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLModuleInstalled));
+    }
+
+    [Test]
+    public void MissingWebGLModuleReportsBlockerWithExternalOpenHubAction()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var readiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateMissingModuleWebGLExportReadiness()
+        );
+        var moduleCheck = readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLModuleInstalled);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLModuleInstalled, GCStartScreenReadinessCheckState.Fail);
+        AssertAction(moduleCheck, GCStartScreenReadinessActionId.OpenWebGLModuleInstallHelp, "Open Unity Hub");
+        Assert.That(moduleCheck.HasExternalAction, Is.True);
+        Assert.That(moduleCheck.message, Does.Contain("Web Build Support"));
+        Assert.That(moduleCheck.message, Does.Contain("is not installed"));
+        Assert.That(readiness.HasBlockingVisibleChecklistIssues, Is.True);
+        // External actions are not automatable setup, so this row is a real blocker, not a "fix me".
+        Assert.That(readiness.HasSafeAutomatableSetupActions, Is.False);
+        Assert.That(readiness.IsChecklistSetupActionAvailable(GCStartScreenReadinessCheckId.WebGLModuleInstalled), Is.False);
+    }
+
+    [Test]
+    public void WebGLExportRowDefersToModuleInstallWhenModuleMissing()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var readiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateMissingModuleWebGLExportReadiness()
+        );
+        var exportCheck = readiness.GetCheck(GCStartScreenReadinessCheckId.WebGLExportSetup);
+
+        AssertCheck(readiness, GCStartScreenReadinessCheckId.WebGLExportSetup, GCStartScreenReadinessCheckState.Blocked);
+        AssertNoAction(exportCheck);
+        Assert.That(exportCheck.message, Does.Contain("Install Web Build Support"));
+    }
+
+    [Test]
+    public void MissingWebGLModuleMakesSummaryBlocked()
+    {
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = CreateCompatibleListener("Existing Listener");
+        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener);
+        GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, playerPrefab);
+
+        var readiness = CreateStartScreenReadinessWithWebGL(
+            gamingCouch,
+            listener,
+            playerPrefab,
+            CreateMissingModuleWebGLExportReadiness()
+        );
+
+        var summary = GCStartScreenReadinessSummary.Create(readiness, false);
+
+        Assert.That(summary.state, Is.EqualTo(GCStartScreenReadinessSummaryState.Blocked));
+        Assert.That(summary.blockerCount, Is.GreaterThanOrEqualTo(1));
+    }
+
     private GCStartScreenReadiness CreateReadySceneReadiness(
         GCActiveSceneBuildSettingsReadiness buildSettings,
         GCGameViewAspectReadiness gameViewAspect,
@@ -875,6 +960,22 @@ public sealed class GamingCouchStartScreenReadinessTests
             true,
             true,
             "Gaming Couch web export settings are ready.",
+            Array.Empty<string>()
+        );
+    }
+
+    private static GCWebGLExportReadiness CreateMissingModuleWebGLExportReadiness()
+    {
+        return new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Blocked,
+            false, // webGLModuleInstalled
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            "WebGL Build Support is not installed.",
             Array.Empty<string>()
         );
     }
