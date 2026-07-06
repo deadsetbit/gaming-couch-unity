@@ -25,18 +25,21 @@ Legend: `[x]` done · `[ ]` open · **Type** = *Clear-cut* (do directly) or *Nee
   (`GamingCouch → Create New Example Scene` → `GCGameExample`/`GCPlayerExample`), which every user can
   generate from the package.
 
+- [x] **C1 — Add an FAQ section to the README.** *(Clear-cut, done 2026-07-05)*
+  Replaced the standalone `## Multiplayer` section with a `## FAQ` section (and updated the Contents TOC
+  entry from `Multiplayer` to `FAQ`). Seeded three EXT-vocabulary questions, each with exactly one
+  authoritative answer and no internal-doc pointer: **"Is online multiplayer supported?"** ("not
+  currently supported"), **"Why is the Game View empty until I press Play?"** (players spawn only at
+  runtime; links to Quick Setup), and **"Can I test the HUD in the editor?"** (no — the HUD only renders
+  inside the hosted platform; links to The HUD). Verified: FAQ present, no `Multiplayer` section or
+  `#multiplayer` anchor remains, all TOC anchors resolve, and the WS-VERIFY banned-token grep is still
+  zero.
+
 ---
 
 ## Clear-cut — ready to implement
 
-- [ ] **C1 — Add an FAQ section to the README.** *(Clear-cut)*
-  - Add a `## FAQ` section to the EXT README seeded with **"Online multiplayer?"** → "Online multiplayer
-    is not currently supported." Fold the current standalone one-line `## Multiplayer` note into it (keep
-    exactly one authoritative answer; no pointer to internal docs).
-  - EXT vocabulary only; the FAQ can grow with other common questions (e.g. "Why is the Game View empty
-    until Play?", "Can I test the HUD in the editor?" — both already answered in-body, restated concisely).
-  - **Acceptance:** FAQ present; `Multiplayer` no longer a separate section; WS-VERIFY banned-token grep
-    still zero.
+_(None currently open — C1 completed, see Done above.)_
 
 ---
 
