@@ -22,7 +22,7 @@ namespace DSB.GC.Dev
 #else
         [Header("WebSocket Configuration")]
         [SerializeField]
-        private string serverUrl = "ws://localhost:3100/ws";
+        private string serverUrl = "ws://localhost:3167/ws";
         private float reconnectDelay = 2f;
         private bool autoConnectOnPlay = true;
 

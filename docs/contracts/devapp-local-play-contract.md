@@ -226,7 +226,7 @@ To map a game-facing player back to its seat, use the mapping's `sourceSeatIndex
 > against this repository. (Backlog: optionally upstream a canonical protocol spec to the DevApp repo,
 > after which this doc would defer to it.)
 
-**Connection:** the editor integration connects to `ws://localhost:3100/ws` and appends
+**Connection:** the editor integration connects to `ws://localhost:3167/ws` and appends
 `identity=runtime` (`Runtime/Dev/GCDevAppIntegration.cs:25, 91`).
 
 ### 8.1 Outbound: `runtime_register`
