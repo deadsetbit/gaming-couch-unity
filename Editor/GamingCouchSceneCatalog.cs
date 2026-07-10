@@ -28,6 +28,9 @@ internal static class GamingCouchSceneCatalog
 {
     private const string AssetsPathPrefix = "Assets/";
     private const string SceneAssetExtension = ".unity";
+    // Unity writes crash-recovery scene backups under an "_Recovery" folder; they are not real
+    // starting points, so keep them out of the list.
+    private const string RecoveryFolderSegment = "/_Recovery/";
 
     internal static GCGamingCouchSceneEntry[] FindGamingCouchScenes()
     {
@@ -49,7 +52,8 @@ internal static class GamingCouchSceneCatalog
             var path = AssetDatabase.GUIDToAssetPath(sceneGuids[i]);
             if (string.IsNullOrEmpty(path) ||
                 !path.StartsWith(AssetsPathPrefix, StringComparison.Ordinal) ||
-                !path.EndsWith(SceneAssetExtension, StringComparison.Ordinal))
+                !path.EndsWith(SceneAssetExtension, StringComparison.Ordinal) ||
+                path.IndexOf(RecoveryFolderSegment, StringComparison.Ordinal) >= 0)
             {
                 continue;
             }
