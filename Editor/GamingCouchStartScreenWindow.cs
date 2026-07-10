@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using DSB.GC.Dev;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 internal sealed class GamingCouchStartScreenWindow : EditorWindow
@@ -21,8 +24,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     // column, and the spacing after it. This aligns the message with the item text above it.
     private const float ChecklistMessageIndent = ChecklistRowPaddingX + ChecklistStatusWidth + ChecklistColumnSpacing;
     private const float ChecklistStatusIndicatorSize = 10f;
+    private const float SceneRowHeight = 26f;
+    private const float SceneRowButtonWidth = 74f;
+    private const float SceneRowActiveTagWidth = 64f;
+    private const float SceneRowAccentWidth = 2f;
 
     private GCStartScreenReadiness readiness;
+    private GCGamingCouchSceneEntry[] gamingCouchScenes = new GCGamingCouchSceneEntry[0];
     private Vector2 scrollPosition;
     private string actionMessage;
     private string[] actionDetails = new string[0];
@@ -107,6 +115,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         titleContent = new GUIContent(WindowTitle);
         minSize = new Vector2(MinWindowWidth, MinWindowHeight);
         Refresh();
+        RefreshSceneCatalog();
     }
 
     private void OnFocus()
@@ -122,6 +131,9 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void OnProjectChange()
     {
+        // Saving, adding, or deleting a scene reimports assets and lands here; rescan so the
+        // Gaming Couch scenes list reflects which scene files now hold a GamingCouch component.
+        RefreshSceneCatalog();
         Refresh();
         Repaint();
     }
@@ -136,6 +148,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         using (new EditorGUILayout.VerticalScope())
         {
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
+            DrawGamingCouchScenesSection();
             DrawActiveSceneIssue();
             DrawSceneSummary();
             DrawChecklist();
@@ -157,6 +170,249 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void Refresh()
     {
         readiness = GCStartScreenReadinessService.InspectActiveScene();
+    }
+
+    private void RefreshSceneCatalog()
+    {
+        gamingCouchScenes = GamingCouchSceneCatalog.FindGamingCouchScenes();
+    }
+
+    private void DrawGamingCouchScenesSection()
+    {
+        EditorGUILayout.LabelField("Gaming Couch scenes", EditorStyles.boldLabel);
+
+        var scenes = GetDisplayedScenes();
+        if (scenes.Count == 0)
+        {
+            EditorGUILayout.HelpBox(
+                "No scenes with a GamingCouch component were found yet. Create a new example scene to get started.",
+                MessageType.Info
+            );
+        }
+        else
+        {
+            var activeScenePath = GetActiveScenePath();
+            for (var index = 0; index < scenes.Count; index++)
+            {
+                DrawGamingCouchSceneRow(scenes[index], index, activeScenePath);
+            }
+        }
+
+        EditorGUILayout.Space();
+
+        using (new EditorGUI.DisabledScope(GamingCouchActiveSceneSetup.HasPendingSetup()))
+        {
+            if (GUILayout.Button("Create New Example Scene"))
+            {
+                RunCreateNewExampleScene();
+            }
+        }
+
+        EditorGUILayout.Space();
+    }
+
+    // The catalog is scanned from saved scene files. Overlay the active scene from the live
+    // readiness state so a GamingCouch just added to (or a scene just opened in) the editor shows
+    // up immediately, even before it is saved.
+    private List<GCGamingCouchSceneEntry> GetDisplayedScenes()
+    {
+        var scenes = new List<GCGamingCouchSceneEntry>();
+        if (gamingCouchScenes != null)
+        {
+            scenes.AddRange(gamingCouchScenes);
+        }
+
+        var activeScenePath = GetActiveScenePath();
+        if (!string.IsNullOrEmpty(activeScenePath) &&
+            ActiveSceneHasGamingCouch() &&
+            !ContainsScenePath(scenes, activeScenePath))
+        {
+            scenes.Add(new GCGamingCouchSceneEntry(readiness.sceneName, activeScenePath));
+            scenes.Sort((a, b) => string.Compare(a.path, b.path, StringComparison.Ordinal));
+        }
+
+        return scenes;
+    }
+
+    private static bool ContainsScenePath(List<GCGamingCouchSceneEntry> scenes, string path)
+    {
+        for (var index = 0; index < scenes.Count; index++)
+        {
+            var entry = scenes[index];
+            if (entry != null && string.Equals(entry.path, path, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string GetActiveScenePath()
+    {
+        return readiness != null ? readiness.scenePath : null;
+    }
+
+    private bool ActiveSceneHasGamingCouch()
+    {
+        return readiness != null && readiness.gamingCouches != null && readiness.gamingCouches.Length > 0;
+    }
+
+    private void DrawGamingCouchSceneRow(GCGamingCouchSceneEntry entry, int index, string activeScenePath)
+    {
+        if (entry == null)
+        {
+            return;
+        }
+
+        var isActive = !string.IsNullOrEmpty(entry.path) &&
+            !string.IsNullOrEmpty(activeScenePath) &&
+            string.Equals(entry.path, activeScenePath, StringComparison.Ordinal);
+
+        var rowRect = EditorGUILayout.GetControlRect(false, SceneRowHeight);
+        DrawSceneRowBackground(rowRect, index, isActive);
+
+        var lineHeight = EditorGUIUtility.singleLineHeight;
+        var lineY = rowRect.y + (rowRect.height - lineHeight) * 0.5f;
+        var contentLeft = rowRect.x + ChecklistRowPaddingX + SceneRowAccentWidth;
+        var contentRight = rowRect.xMax - ChecklistRowPaddingX;
+
+        // Right-hand control: an "Active" tag on the current scene, an "Open" button on the rest.
+        if (isActive)
+        {
+            var tagRect = new Rect(contentRight - SceneRowActiveTagWidth, lineY, SceneRowActiveTagWidth, lineHeight);
+            GUI.Label(tagRect, "Active", GetSceneActiveTagStyle());
+            contentRight = tagRect.x - ChecklistColumnSpacing;
+        }
+        else
+        {
+            var buttonRect = new Rect(contentRight - SceneRowButtonWidth, lineY, SceneRowButtonWidth, lineHeight);
+            using (new EditorGUI.DisabledScope(
+                GamingCouchActiveSceneSetup.HasPendingSetup() || EditorApplication.isPlayingOrWillChangePlaymode))
+            {
+                if (GUI.Button(buttonRect, "Open"))
+                {
+                    OpenGamingCouchScene(entry);
+                }
+            }
+
+            contentRight = buttonRect.x - ChecklistColumnSpacing;
+        }
+
+        // Scene name, then a dimmed project path filling any remaining space.
+        var nameStyle = GetSceneNameStyle(isActive);
+        var nameContent = new GUIContent(entry.name, entry.path);
+        var nameWidth = Mathf.Min(nameStyle.CalcSize(nameContent).x, Mathf.Max(0f, contentRight - contentLeft));
+        var nameRect = new Rect(contentLeft, lineY, nameWidth, lineHeight);
+        if (HasVisibleRect(nameRect))
+        {
+            GUI.Label(nameRect, nameContent, nameStyle);
+        }
+
+        var pathLeft = nameRect.xMax + ChecklistColumnSpacing;
+        if (pathLeft < contentRight)
+        {
+            var pathRect = new Rect(pathLeft, lineY, contentRight - pathLeft, lineHeight);
+            GUI.Label(pathRect, new GUIContent(entry.path, entry.path), GetScenePathStyle());
+        }
+    }
+
+    private void OpenGamingCouchScene(GCGamingCouchSceneEntry entry)
+    {
+        if (entry == null || string.IsNullOrEmpty(entry.path))
+        {
+            return;
+        }
+
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            SetActionResult("Exit Play Mode before switching scenes.", MessageType.Warning, null);
+            Repaint();
+            return;
+        }
+
+        // Already open: nothing to load, just make sure the checks reflect the current state.
+        if (string.Equals(entry.path, GetActiveScenePath(), StringComparison.Ordinal))
+        {
+            Refresh();
+            Repaint();
+            return;
+        }
+
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
+            return;
+        }
+
+        try
+        {
+            EditorSceneManager.OpenScene(entry.path, OpenSceneMode.Single);
+        }
+        catch (Exception exception)
+        {
+            SetActionResult("Could not open " + entry.path + ".", MessageType.Error, new[] { exception.Message });
+            Repaint();
+            return;
+        }
+
+        // The active scene changed: rescan the catalog and re-run the readiness checks so the
+        // checklist immediately reflects the newly opened scene.
+        RefreshSceneCatalog();
+        Refresh();
+        Repaint();
+    }
+
+    private static void DrawSceneRowBackground(Rect rowRect, int index, bool isActive)
+    {
+        var rowColor = isActive
+            ? (EditorGUIUtility.isProSkin
+                ? new Color(0.24f, 0.55f, 0.32f, 0.22f)
+                : new Color(0.30f, 0.66f, 0.38f, 0.20f))
+            : GetChecklistRowColor(index);
+        EditorGUI.DrawRect(rowRect, rowColor);
+
+        var dividerColor = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, 0.06f)
+            : new Color(0f, 0f, 0f, 0.08f);
+        EditorGUI.DrawRect(new Rect(rowRect.x, rowRect.yMax - 1f, rowRect.width, 1f), dividerColor);
+
+        if (isActive)
+        {
+            EditorGUI.DrawRect(
+                new Rect(rowRect.x, rowRect.y, SceneRowAccentWidth, rowRect.height),
+                new Color(0.22f, 0.72f, 0.34f, 1f)
+            );
+        }
+    }
+
+    private static GUIStyle GetSceneNameStyle(bool isActive)
+    {
+        return new GUIStyle(EditorStyles.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontStyle = isActive ? FontStyle.Bold : FontStyle.Normal
+        };
+    }
+
+    private static GUIStyle GetScenePathStyle()
+    {
+        var style = new GUIStyle(EditorStyles.miniLabel)
+        {
+            alignment = TextAnchor.MiddleLeft
+        };
+        var color = style.normal.textColor;
+        color.a = 0.6f;
+        style.normal.textColor = color;
+        return style;
+    }
+
+    private static GUIStyle GetSceneActiveTagStyle()
+    {
+        return new GUIStyle(EditorStyles.miniBoldLabel)
+        {
+            alignment = TextAnchor.MiddleRight,
+            normal = { textColor = new Color(0.35f, 0.8f, 0.45f, 1f) }
+        };
     }
 
     private void DrawActiveSceneIssue()
@@ -486,14 +742,6 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             }
         }
 
-        using (new EditorGUI.DisabledScope(GamingCouchActiveSceneSetup.HasPendingSetup()))
-        {
-            if (GUILayout.Button("Create New Example Scene"))
-            {
-                RunCreateNewExampleScene();
-            }
-        }
-
         if (GUILayout.Button("Configure WebGL Build Settings"))
         {
             RunWebGLBuildSettingsProfilePreview();
@@ -597,6 +845,8 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         SetActionResult(result.message, result.messageType, result.details);
         if (result.shouldRefreshAndRepaint)
         {
+            // Creating an example scene adds a new GamingCouch scene, so keep the list in sync.
+            RefreshSceneCatalog();
             Refresh();
             Repaint();
         }
