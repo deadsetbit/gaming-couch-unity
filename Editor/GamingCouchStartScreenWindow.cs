@@ -253,6 +253,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         return readiness != null ? readiness.scenePath : null;
     }
 
+    private bool IsActiveSceneInScenesList()
+    {
+        var activeScenePath = GetActiveScenePath();
+        return !string.IsNullOrEmpty(activeScenePath) &&
+            ContainsScenePath(GetDisplayedScenes(), activeScenePath);
+    }
+
     private bool ActiveSceneHasGamingCouch()
     {
         return readiness != null && readiness.gamingCouches != null && readiness.gamingCouches.Length > 0;
@@ -453,6 +460,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         if (readiness == null)
         {
             EditorGUILayout.HelpBox("Readiness state is unavailable.", MessageType.Error);
+            return;
+        }
+
+        // The Gaming Couch scenes list already shows and highlights the active scene when it holds a
+        // GamingCouch component; only fall back to an explicit summary when it is not in that list.
+        if (IsActiveSceneInScenesList())
+        {
             return;
         }
 
