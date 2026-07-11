@@ -234,7 +234,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
-    public void ActiveScenePlayerPrefabSetupCreatesGCPlayerExamplePrefab()
+    public void ActiveScenePlayerPrefabSetupCreatesPlayerPrefabForCompiledPlayerType()
     {
         // Generate into the per-test temp folder (cleaned up by DeleteTestAssetFolder) so the test
         // never creates assets in the real Assets/GamingCouch/GCExample.

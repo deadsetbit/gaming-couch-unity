@@ -328,6 +328,8 @@ internal static class GamingCouchActiveSceneSetup
         " * Move this script into your project's own scripts folder, then rename the file and class to fit your project.\n" +
         " * For example: Game.cs/Game for your game script and Player.cs/Player for your player script.\n" +
         " */\n\n";
+    private const string BlockingFolderRemediationHint =
+        " Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
     private static readonly GCExampleScriptSetupSpec ExampleScriptSetupSpec =
@@ -565,16 +567,24 @@ internal static class GamingCouchActiveSceneSetup
             return false;
         }
 
-        // Prefer MoveAssetToTrash so the removal is recoverable from the OS trash. Fall back to a
-        // direct delete only for a raw directory Unity never imported as an asset folder.
+        // Prefer MoveAssetToTrash so the removal is recoverable from the OS trash.
         if (AssetDatabase.IsValidFolder(assetPath) && AssetDatabase.MoveAssetToTrash(assetPath))
         {
             return true;
         }
 
+        // Fallback for a raw directory Unity never imported as an asset folder (MoveAssetToTrash can't
+        // recover it). Only remove it when empty — the stray ".cs"-named folder case. Refusing a
+        // non-empty folder keeps the "moved to the Trash" promise honest and never destroys content.
+        if (Directory.GetFileSystemEntries(fullPath).Length > 0)
+        {
+            blockedReasons.Add("Cannot safely remove " + assetPath + " because it is a non-empty folder Unity did not import as an asset. Remove it manually.");
+            return false;
+        }
+
         try
         {
-            Directory.Delete(fullPath, true);
+            Directory.Delete(fullPath, false);
             var metaPath = fullPath + ".meta";
             if (File.Exists(metaPath))
             {
@@ -1597,7 +1607,7 @@ internal static class GamingCouchActiveSceneSetup
         var fullPath = AssetPathToFullPath(assetPath);
         if (Directory.Exists(fullPath))
         {
-            blockedReasons.Add("Cannot create the example script " + assetPath + " because a folder (not a script file) already exists at that path. Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.");
+            blockedReasons.Add("Cannot create the example script " + assetPath + " because a folder (not a script file) already exists at that path." + BlockingFolderRemediationHint);
             return;
         }
 
@@ -1835,7 +1845,7 @@ internal static class GamingCouchActiveSceneSetup
         var fullPath = AssetPathToFullPath(playerPrefabAssetPath);
         if (Directory.Exists(fullPath))
         {
-            blockedReasons.Add("Cannot create the example player prefab " + playerPrefabAssetPath + " because a folder (not a prefab file) already exists at that path. Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.");
+            blockedReasons.Add("Cannot create the example player prefab " + playerPrefabAssetPath + " because a folder (not a prefab file) already exists at that path." + BlockingFolderRemediationHint);
             return null;
         }
 
