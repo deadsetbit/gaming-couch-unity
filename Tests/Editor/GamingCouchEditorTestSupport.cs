@@ -58,16 +58,16 @@ internal sealed class InheritedCompatibleGameScriptReceiver : CompatibleGameScri
 {
 }
 
-internal sealed class ColorPlaceholderPrefabPlayer : GCPlayer
-{
-    [SerializeField]
-    private Renderer colorRenderer;
-}
-
-// Fixture stand-ins for the generated example types. They intentionally do NOT reuse the real
-// generated type names (GCGameExample/GCPlayerExample): the generator's FindTypeByName guard matches
-// by simple type name across every loaded assembly, so a fixture sharing that name would make the
-// test assembly permanently block example-script generation in any project that loads these tests.
+// Fixture stand-in for the generated example game type. It intentionally does NOT reuse the real
+// generated type name (GCGameExample): the generator's FindTypeByName guard matches by simple type
+// name across every loaded assembly, so a fixture sharing that name would make the test assembly
+// permanently block example-script generation in any project that loads these tests.
+//
+// GCExampleGameFixture stays in this editor test assembly because it is only ever added to an
+// in-scene GameObject (the game listener), never serialized onto a saved prefab. The matching player
+// fixtures (GCExamplePlayerFixture, ColorPlaceholderPrefabPlayer) instead live in the runtime
+// GamingCouch.Tests.Fixtures assembly because they ARE baked into real prefabs, and an editor-assembly
+// MonoBehaviour cannot be attached to a prefab.
 internal sealed class GCExampleGameFixture : MonoBehaviour
 {
     private void GamingCouchSetup(GCSetupOptions options)
@@ -77,10 +77,6 @@ internal sealed class GCExampleGameFixture : MonoBehaviour
     private void GamingCouchPlay(GCPlayOptions options)
     {
     }
-}
-
-internal sealed class GCExamplePlayerFixture : GCPlayer
-{
 }
 
 internal sealed class WrongSignatureGameScriptReceiver : MonoBehaviour
