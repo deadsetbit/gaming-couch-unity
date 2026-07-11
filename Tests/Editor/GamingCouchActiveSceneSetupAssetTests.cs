@@ -43,9 +43,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     private bool previousStripUnusedMeshComponents;
     private bool previousSplashScreenShow;
     private bool previousSplashScreenShowUnityLogo;
-    private bool createdExampleProjectFolderForPrefabTest;
-    private bool createdExampleFolderForPrefabTest;
-    private bool createdUnifiedPlayerPrefabForPrefabTest;
     private bool createdExampleProjectFolderForCollisionTest;
     private bool createdExampleFolderForCollisionTest;
     private bool createdExampleGameScriptPathCollisionForTest;
@@ -82,7 +79,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 
         RunCleanup(RestoreActiveSceneAndCloseTestScene, cleanupErrors);
         RunCleanup(DeleteGeneratedScriptPathCollisionTestAssets, cleanupErrors);
-        RunCleanup(DeleteExamplePrefabTestAssets, cleanupErrors);
         RunCleanup(DeleteTestAssetFolder, cleanupErrors);
         RunCleanup(RestoreBuildSettings, cleanupErrors);
         RunCleanup(RestoreSuppressAutoOpenSetting, cleanupErrors);
@@ -196,15 +192,19 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void ExamplePlayerPrefabWiresVisiblePlaceholderRendererToPlayerColorField()
     {
-        ReserveExamplePlayerPrefabPathForTest();
+        // Generate into the per-test temp folder (cleaned up by DeleteTestAssetFolder) so the test
+        // never creates assets in the real Assets/GamingCouch/GCExample and cannot corrupt or reuse a
+        // real example prefab.
+        EnsureTestAssetFolder();
+        var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(ColorPlaceholderPrefabPlayer) + ".prefab";
         var context = new GCExampleAssetSetupContinuationContext(
             GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
-            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
-            GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath,
-            GamingCouchActiveSceneSetup.ExamplePlayerScriptAssetPath,
-            GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath,
+            testFolderAssetPath,
+            testFolderAssetPath + "/GameScript.cs",
+            testFolderAssetPath + "/PlayerScript.cs",
+            playerPrefabAssetPath,
             nameof(CompatibleGameScriptReceiver),
             nameof(ColorPlaceholderPrefabPlayer),
             "Game",
@@ -213,7 +213,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         );
 
         var result = GamingCouchActiveSceneSetup.EnsureExamplePlayerPrefab(context);
-        createdUnifiedPlayerPrefabForPrefabTest = result.changed;
 
         Assert.That(result.IsBlocked, Is.False, string.Join("\n", result.blockedReasons));
         Assert.That(result.changed, Is.True);
@@ -237,30 +236,32 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void ActiveScenePlayerPrefabSetupCreatesGCPlayerExamplePrefab()
     {
-        ReserveActiveScenePlayerPrefabPathForTest();
+        // Generate into the per-test temp folder (cleaned up by DeleteTestAssetFolder) so the test
+        // never creates assets in the real Assets/GamingCouch/GCExample.
+        EnsureTestAssetFolder();
+        var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(GCExamplePlayerFixture) + ".prefab";
         var context = new GCExampleAssetSetupContinuationContext(
             GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
-            GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
-            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
-            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
-            GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath,
-            nameof(GCGameExample),
-            nameof(GCPlayerExample),
+            testFolderAssetPath,
+            testFolderAssetPath + "/GameScript.cs",
+            testFolderAssetPath + "/PlayerScript.cs",
+            playerPrefabAssetPath,
+            nameof(GCExampleGameFixture),
+            nameof(GCExamplePlayerFixture),
             "Game",
-            typeof(GCGameExample),
-            typeof(GCPlayerExample)
+            typeof(GCExampleGameFixture),
+            typeof(GCExamplePlayerFixture)
         );
 
         var result = GamingCouchActiveSceneSetup.EnsureExamplePlayerPrefab(context);
-        createdUnifiedPlayerPrefabForPrefabTest = result.changed;
 
         Assert.That(result.IsBlocked, Is.False, string.Join("\n", result.blockedReasons));
         Assert.That(result.changed, Is.True);
         Assert.That(result.prefab, Is.Not.Null);
-        Assert.That(AssetDatabase.GetAssetPath(result.prefab), Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
-        Assert.That(result.prefab.GetComponent<GCPlayerExample>(), Is.Not.Null);
+        Assert.That(AssetDatabase.GetAssetPath(result.prefab), Is.EqualTo(playerPrefabAssetPath));
+        Assert.That(result.prefab.GetComponent<GCExamplePlayerFixture>(), Is.Not.Null);
     }
 
     [Test]
@@ -381,7 +382,9 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
             GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
             ref createdExamplePlayerScriptPathCollisionForTest
         );
-        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        // Deliberately not imported into the AssetDatabase: a folder whose name ends in ".cs" sends
+        // Unity's script importer into a re-import loop. The generator blocks on a raw Directory.Exists
+        // check, so importing the collision folders is unnecessary.
         CreateGamingCouch("GamingCouch");
 
         var result = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListenerReference();
@@ -389,9 +392,50 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         Assert.That(result.IsBlocked, Is.True);
         Assert.That(result.changed, Is.False);
         Assert.That(result.status, Is.EqualTo(GCActiveSceneSetupStatus.Blocked));
-        AssertHasEntryContaining(result.details, "Cannot create script Assets/GamingCouch/GCExample/GCGameExample.cs because a folder exists at that path.");
-        AssertHasEntryContaining(result.details, "Cannot create script Assets/GamingCouch/GCExample/GCPlayerExample.cs because a folder exists at that path.");
+        AssertHasEntryContaining(result.details, "Cannot create the example script Assets/GamingCouch/GCExample/GCGameExample.cs because a folder (not a script file) already exists at that path.");
+        AssertHasEntryContaining(result.details, "Cannot create the example script Assets/GamingCouch/GCExample/GCPlayerExample.cs because a folder (not a script file) already exists at that path.");
         Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void RemoveBlockingExampleAssetFoldersClearsScriptPathCollisions()
+    {
+        ReserveGCExampleGameAndPlayerScriptPathsForCollisionTest();
+        CreateScriptPathCollisionDirectory(
+            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
+            ref createdExampleGameScriptPathCollisionForTest
+        );
+        CreateScriptPathCollisionDirectory(
+            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
+            ref createdExamplePlayerScriptPathCollisionForTest
+        );
+        // Deliberately not imported into the AssetDatabase (a ".cs"-named folder loops Unity's
+        // importer); detection and removal both operate on the raw filesystem.
+
+        Assert.That(
+            GamingCouchActiveSceneSetup.FindBlockingExampleAssetFolders(),
+            Is.EquivalentTo(new[]
+            {
+                GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
+                GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
+            })
+        );
+
+        var cleanup = GamingCouchActiveSceneSetup.RemoveBlockingExampleAssetFolders();
+
+        Assert.That(cleanup.IsBlocked, Is.False);
+        Assert.That(cleanup.changed, Is.True);
+        Assert.That(
+            cleanup.removedAssetPaths,
+            Is.EquivalentTo(new[]
+            {
+                GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
+                GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
+            })
+        );
+        Assert.That(GamingCouchActiveSceneSetup.FindBlockingExampleAssetFolders(), Is.Empty);
+        Assert.That(Directory.Exists(AssetPathToFullPath(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath)), Is.False);
+        Assert.That(Directory.Exists(AssetPathToFullPath(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath)), Is.False);
     }
 
     [Test]
@@ -1401,35 +1445,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         }
     }
 
-    private void ReserveExamplePlayerPrefabPathForTest()
-    {
-        ReservePlayerPrefabPathForTest(GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath);
-    }
-
-    private void ReserveActiveScenePlayerPrefabPathForTest()
-    {
-        ReservePlayerPrefabPathForTest(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath);
-    }
-
-    private void ReservePlayerPrefabPathForTest(string playerPrefabAssetPath)
-    {
-        var playerPrefabFullPath = AssetPathToFullPathUnchecked(playerPrefabAssetPath);
-        if (Directory.Exists(playerPrefabFullPath) || File.Exists(playerPrefabFullPath))
-        {
-            Assert.Ignore("Skipping legacy prefab creation test because " + playerPrefabAssetPath + " already exists on disk.");
-        }
-
-        if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(playerPrefabAssetPath) != null)
-        {
-            Assert.Ignore("Skipping legacy prefab creation test because " + playerPrefabAssetPath + " already exists.");
-        }
-
-        EnsureGCExampleFolderForTest(
-            ref createdExampleProjectFolderForPrefabTest,
-            ref createdExampleFolderForPrefabTest
-        );
-    }
-
     private static void EnsureGCExampleFolderForTest(
         ref bool createdProjectFolder,
         ref bool createdExampleFolder
@@ -1498,51 +1513,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         }
 
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-    }
-
-    private void DeleteExamplePrefabTestAssets()
-    {
-        DeleteCreatedAssetFileForTest(
-            GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath,
-            ref createdUnifiedPlayerPrefabForPrefabTest
-        );
-        DeleteCreatedGCExampleFolders(
-            ref createdExampleProjectFolderForPrefabTest,
-            ref createdExampleFolderForPrefabTest
-        );
-
-        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-    }
-
-    private static void DeleteCreatedAssetFileForTest(string assetPath, ref bool created)
-    {
-        if (!created)
-        {
-            return;
-        }
-
-        var fullPath = AssetPathToFullPath(assetPath);
-        if (Directory.Exists(fullPath))
-        {
-            return;
-        }
-
-        var deletedThroughAssetDatabase = AssetDatabase.DeleteAsset(assetPath);
-        if (!deletedThroughAssetDatabase && File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
-
-        var metaPath = fullPath + ".meta";
-        if (!File.Exists(fullPath) && !Directory.Exists(fullPath) && File.Exists(metaPath))
-        {
-            File.Delete(metaPath);
-        }
-
-        if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
-        {
-            created = false;
-        }
     }
 
     private void DeleteGeneratedScriptPathCollisionTestAssets()

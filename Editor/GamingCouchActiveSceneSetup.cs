@@ -141,6 +141,29 @@ internal sealed class GCActiveSceneGameListenerSetupResult
     }
 }
 
+internal sealed class GCExampleAssetFolderCleanupResult
+{
+    internal readonly bool changed;
+    internal readonly string[] removedAssetPaths;
+    internal readonly string[] blockedReasons;
+
+    internal GCExampleAssetFolderCleanupResult(
+        bool changed,
+        string[] removedAssetPaths,
+        string[] blockedReasons
+    )
+    {
+        this.changed = changed;
+        this.removedAssetPaths = removedAssetPaths ?? new string[0];
+        this.blockedReasons = blockedReasons ?? new string[0];
+    }
+
+    internal bool IsBlocked
+    {
+        get { return blockedReasons.Length > 0; }
+    }
+}
+
 internal sealed class GCActiveSceneSetupResult
 {
     internal readonly GCActiveSceneSetupStatus status;
@@ -478,6 +501,93 @@ internal static class GamingCouchActiveSceneSetup
     )
     {
         return ExampleScriptSetupSpec;
+    }
+
+    // A directory sitting where an example script or the player prefab file is expected (for example
+    // a folder literally named "GCGameExample.cs") blocks generation, because the SDK never
+    // overwrites anything at those paths. These helpers let the Create New Example Scene flow detect
+    // and clear such folders up front, turning a cryptic mid-setup block into an explicit,
+    // recoverable cleanup step.
+    internal static string[] FindBlockingExampleAssetFolders()
+    {
+        var candidatePaths = new[]
+        {
+            ExampleGameScriptAssetPath,
+            ExamplePlayerScriptAssetPath,
+            ExamplePlayerPrefabAssetPath,
+        };
+
+        var blockingFolders = new List<string>();
+        for (var index = 0; index < candidatePaths.Length; index++)
+        {
+            if (Directory.Exists(AssetPathToFullPath(candidatePaths[index])))
+            {
+                blockingFolders.Add(candidatePaths[index]);
+            }
+        }
+
+        return blockingFolders.ToArray();
+    }
+
+    internal static GCExampleAssetFolderCleanupResult RemoveBlockingExampleAssetFolders()
+    {
+        var removedAssetPaths = new List<string>();
+        var blockedReasons = new List<string>();
+        var blockingFolders = FindBlockingExampleAssetFolders();
+
+        for (var index = 0; index < blockingFolders.Length; index++)
+        {
+            if (TryRemoveBlockingAssetFolder(blockingFolders[index], blockedReasons))
+            {
+                removedAssetPaths.Add(blockingFolders[index]);
+            }
+        }
+
+        if (removedAssetPaths.Count > 0)
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+        }
+
+        return new GCExampleAssetFolderCleanupResult(
+            removedAssetPaths.Count > 0,
+            removedAssetPaths.ToArray(),
+            blockedReasons.ToArray()
+        );
+    }
+
+    private static bool TryRemoveBlockingAssetFolder(string assetPath, List<string> blockedReasons)
+    {
+        var fullPath = AssetPathToFullPath(assetPath);
+        if (!Directory.Exists(fullPath))
+        {
+            // Only ever remove a directory here; a file at the path is left untouched so user
+            // content is never deleted by the cleanup.
+            return false;
+        }
+
+        // Prefer MoveAssetToTrash so the removal is recoverable from the OS trash. Fall back to a
+        // direct delete only for a raw directory Unity never imported as an asset folder.
+        if (AssetDatabase.IsValidFolder(assetPath) && AssetDatabase.MoveAssetToTrash(assetPath))
+        {
+            return true;
+        }
+
+        try
+        {
+            Directory.Delete(fullPath, true);
+            var metaPath = fullPath + ".meta";
+            if (File.Exists(metaPath))
+            {
+                File.Delete(metaPath);
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            blockedReasons.Add("Could not remove the folder " + assetPath + ": " + exception.Message);
+            return false;
+        }
     }
 
     internal static bool IsActiveSceneGeneratedPlayerPrefabCompatible(
@@ -1487,7 +1597,7 @@ internal static class GamingCouchActiveSceneSetup
         var fullPath = AssetPathToFullPath(assetPath);
         if (Directory.Exists(fullPath))
         {
-            blockedReasons.Add("Cannot create script " + assetPath + " because a folder exists at that path.");
+            blockedReasons.Add("Cannot create the example script " + assetPath + " because a folder (not a script file) already exists at that path. Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.");
             return;
         }
 
@@ -1725,7 +1835,7 @@ internal static class GamingCouchActiveSceneSetup
         var fullPath = AssetPathToFullPath(playerPrefabAssetPath);
         if (Directory.Exists(fullPath))
         {
-            blockedReasons.Add("Cannot create player prefab " + playerPrefabAssetPath + " because a folder exists at that path.");
+            blockedReasons.Add("Cannot create the example player prefab " + playerPrefabAssetPath + " because a folder (not a prefab file) already exists at that path. Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.");
             return null;
         }
 

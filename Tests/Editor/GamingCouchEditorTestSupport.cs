@@ -64,7 +64,11 @@ internal sealed class ColorPlaceholderPrefabPlayer : GCPlayer
     private Renderer colorRenderer;
 }
 
-internal sealed class GCGameExample : MonoBehaviour
+// Fixture stand-ins for the generated example types. They intentionally do NOT reuse the real
+// generated type names (GCGameExample/GCPlayerExample): the generator's FindTypeByName guard matches
+// by simple type name across every loaded assembly, so a fixture sharing that name would make the
+// test assembly permanently block example-script generation in any project that loads these tests.
+internal sealed class GCExampleGameFixture : MonoBehaviour
 {
     private void GamingCouchSetup(GCSetupOptions options)
     {
@@ -75,7 +79,7 @@ internal sealed class GCGameExample : MonoBehaviour
     }
 }
 
-internal sealed class GCPlayerExample : GCPlayer
+internal sealed class GCExamplePlayerFixture : GCPlayer
 {
 }
 
