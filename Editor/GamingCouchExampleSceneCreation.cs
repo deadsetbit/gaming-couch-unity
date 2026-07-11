@@ -48,13 +48,15 @@ internal sealed class GCExampleSceneCreationResult
     internal bool IsPendingCompilation { get { return isPendingCompilation; } }
 }
 
-// Creates a brand new example scene (unlike Active Scene Setup, which wires the scene the
-// user already has open). It saves the current scene first, opens a fresh scene with the
-// default camera + light, saves it under the GCExample folder, and then reuses Active Scene
-// Setup to wire the GamingCouch object and generate/link the example Game listener and player
-// prefab. Making the new scene the first Build Settings scene is intentionally left to the
-// existing "Set up missing pieces" action so creating an example scene never silently changes
-// which scene a build boots into.
+// Resets the GamingCouch example to a single clean scene (unlike Active Scene Setup, which wires the
+// scene the user already has open). It saves modified scenes, opens a fresh scene with the default
+// camera + light, moves any previous example scenes and leftover blocking folders to the Trash, then
+// reuses Active Scene Setup to wire the GamingCouch object and generate/link the example Game
+// listener and player prefab. Existing example scripts and the player prefab are reused when valid,
+// so a reset never deletes a compiled script only to immediately regenerate it (which would trip the
+// generator's "a compiled type already exists" guard before the domain reloads). Making the new
+// scene the first Build Settings scene is intentionally left to the existing "Set up missing pieces"
+// action so resetting the example never silently changes which scene a build boots into.
 internal static class GamingCouchExampleSceneCreation
 {
     internal const string ExampleSceneBaseName = "GCExampleScene";
@@ -79,15 +81,18 @@ internal static class GamingCouchExampleSceneCreation
         }
 
         var existingScenePaths = FindExistingExampleScenePaths();
-        if (existingScenePaths.Length > 0 && !Application.isBatchMode)
+        var blockingFolders = GamingCouchActiveSceneSetup.FindBlockingExampleAssetFolders();
+        var hasSomethingToReplace = existingScenePaths.Length > 0 || blockingFolders.Length > 0;
+        if (hasSomethingToReplace && !Application.isBatchMode)
         {
             var confirmed = EditorUtility.DisplayDialog(
                 "Create New Example Scene",
-                "This project already has " + existingScenePaths.Length +
-                    " example scene(s) under " + GamingCouchActiveSceneSetup.ExampleFolderAssetPath +
-                    ". A new example scene will be created alongside them.\n\n" +
-                    DescribeExistingScenes(existingScenePaths),
-                "Create New Scene",
+                "This replaces the current GamingCouch example under " +
+                    GamingCouchActiveSceneSetup.ExampleFolderAssetPath + " with one clean scene.\n\n" +
+                    DescribeResetActions(existingScenePaths, blockingFolders) +
+                    "\n\nRemoved items are moved to the Trash (recoverable). Existing example scripts " +
+                    "and the player prefab are reused when valid.",
+                "Create Clean Scene",
                 "Cancel"
             );
             if (!confirmed)
@@ -101,6 +106,30 @@ internal static class GamingCouchExampleSceneCreation
             return Cancelled(existingScenePaths);
         }
 
+        // Switch to a fresh scene BEFORE removing the old example scenes, so we never delete the
+        // scene that is currently open. In Single mode this closes any open example scene.
+        var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+
+        // Remove the previous example scenes and any leftover blocking folders (e.g. a directory
+        // literally named "GCGameExample.cs"). Valid example scripts and the player prefab are
+        // intentionally kept and reused: deleting a compiled script here only to regenerate it in the
+        // same pass would trip the generator's "a compiled type already exists" guard before Unity
+        // reloads the domain.
+        var removalReasons = new List<string>();
+        var removedScenes = RemoveExampleScenes(existingScenePaths, removalReasons);
+        var cleanup = GamingCouchActiveSceneSetup.RemoveBlockingExampleAssetFolders();
+        AppendRange(removalReasons, cleanup.blockedReasons);
+        if (removalReasons.Count > 0 ||
+            GamingCouchActiveSceneSetup.FindBlockingExampleAssetFolders().Length > 0)
+        {
+            return Blocked(
+                null,
+                "Could not remove the previous example before creating a clean one. Remove the listed items manually, then try again.",
+                removalReasons.ToArray(),
+                existingScenePaths
+            );
+        }
+
         var blockedReasons = new List<string>();
         if (!EnsureFolder(GamingCouchActiveSceneSetup.ExampleFolderAssetPath, blockedReasons))
         {
@@ -112,8 +141,11 @@ internal static class GamingCouchExampleSceneCreation
             );
         }
 
-        var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-        var scenePath = AssetDatabase.GenerateUniqueAssetPath(ExampleSceneAssetPath);
+        // The canonical scene path is normally free now that the old scenes are trashed; fall back to
+        // a unique name only if something still occupies it, rather than overwriting.
+        var scenePath = AssetExistsAtPath(ExampleSceneAssetPath)
+            ? AssetDatabase.GenerateUniqueAssetPath(ExampleSceneAssetPath)
+            : ExampleSceneAssetPath;
         if (!EditorSceneManager.SaveScene(newScene, scenePath))
         {
             return Blocked(scenePath, "Could not save the new example scene to " + scenePath + ".", null, existingScenePaths);
@@ -132,7 +164,7 @@ internal static class GamingCouchExampleSceneCreation
         EditorSceneManager.SaveScene(newScene);
 
         var details = new List<string>();
-        AddExistingSceneDetail(details, existingScenePaths);
+        AddRemovedExampleDetail(details, removedScenes, cleanup.removedAssetPaths);
         AppendRange(details, setupResult != null ? setupResult.details : null);
 
         if (setupResult != null && setupResult.IsBlocked)
@@ -149,8 +181,8 @@ internal static class GamingCouchExampleSceneCreation
 
         var pending = setupResult != null && setupResult.IsPendingCompilation;
         var message = pending
-            ? "Created " + scenePath + ". Active Scene Setup will finish wiring the scene after Unity compiles the generated example scripts."
-            : "Created " + scenePath + " and completed Active Scene Setup.";
+            ? "Created a clean " + scenePath + ". Active Scene Setup will finish wiring it after Unity compiles the generated example scripts."
+            : "Created a clean " + scenePath + " and completed Active Scene Setup.";
 
         Debug.Log(
             BuildGeneratedFilesGuidance(message),
@@ -165,6 +197,38 @@ internal static class GamingCouchExampleSceneCreation
             details.ToArray(),
             existingScenePaths
         );
+    }
+
+    // Moves the previous example scenes to the Trash (recoverable). Returns the scenes actually
+    // removed; any failure is recorded in blockedReasons so the caller can surface it.
+    private static string[] RemoveExampleScenes(string[] scenePaths, List<string> blockedReasons)
+    {
+        var removed = new List<string>();
+        for (var i = 0; i < scenePaths.Length; i++)
+        {
+            var path = scenePaths[i];
+            if (!AssetExistsAtPath(path))
+            {
+                continue;
+            }
+
+            if (AssetDatabase.MoveAssetToTrash(path))
+            {
+                removed.Add(path);
+            }
+            else
+            {
+                blockedReasons.Add("Could not remove the existing example scene " + path + ".");
+            }
+        }
+
+        return removed.ToArray();
+    }
+
+    private static bool AssetExistsAtPath(string assetPath)
+    {
+        return !string.IsNullOrEmpty(assetPath) &&
+               AssetDatabase.LoadMainAssetAtPath(assetPath) != null;
     }
 
     internal static string[] FindExistingExampleScenePaths()
@@ -216,27 +280,41 @@ internal static class GamingCouchExampleSceneCreation
         return true;
     }
 
-    private static string DescribeExistingScenes(string[] existingScenePaths)
+    private static string DescribeResetActions(string[] existingScenePaths, string[] blockingFolders)
     {
-        var text = "Existing:";
-        for (var i = 0; i < existingScenePaths.Length; i++)
-        {
-            text += "\n- " + existingScenePaths[i];
-        }
-
-        return text;
+        var lines = new List<string>();
+        AppendDescribedPaths(lines, "Remove " + existingScenePaths.Length + " existing example scene(s):", existingScenePaths);
+        AppendDescribedPaths(lines, "Remove " + blockingFolders.Length + " leftover folder(s) blocking the example scripts:", blockingFolders);
+        return lines.Count > 0
+            ? string.Join("\n", lines)
+            : "A fresh example scene will be created.";
     }
 
-    private static void AddExistingSceneDetail(List<string> details, string[] existingScenePaths)
+    private static void AppendDescribedPaths(List<string> lines, string heading, string[] paths)
     {
-        if (existingScenePaths == null || existingScenePaths.Length == 0)
+        if (paths == null || paths.Length == 0)
         {
             return;
         }
 
-        details.Add(
-            "Kept " + existingScenePaths.Length + " existing example scene(s); created a new one alongside them."
-        );
+        lines.Add(heading);
+        for (var i = 0; i < paths.Length; i++)
+        {
+            lines.Add("  - " + paths[i]);
+        }
+    }
+
+    private static void AddRemovedExampleDetail(List<string> details, string[] removedScenes, string[] removedFolders)
+    {
+        if (removedScenes != null && removedScenes.Length > 0)
+        {
+            details.Add("Moved " + removedScenes.Length + " previous example scene(s) to the Trash.");
+        }
+
+        if (removedFolders != null && removedFolders.Length > 0)
+        {
+            details.Add("Moved " + removedFolders.Length + " leftover blocking folder(s) to the Trash.");
+        }
     }
 
     private static void AppendRange(List<string> target, string[] source)
