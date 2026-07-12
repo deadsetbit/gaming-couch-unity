@@ -5,7 +5,13 @@ Owner: Gaming Couch Unity package team
 Created: 2026-07-11
 Related: CONTEXT.md (`:138` portability doctrine), `docs/contracts/platform-runtime-contract.md`,
 ADR 0008 (`gameProtocolVersion` stays 1), ADR 0009 (two-sidecar identity), `VERSIONING_PLAN.md`,
-`example-adapter-refactor-plan.md` (sibling seam work), `ContractFixtures/` + `GCDevJsonContractFixtureTests`.
+`example-adapter-refactor-plan.md` (sibling — **landed COMPLETE**, two self-contained example scripts), `ContractFixtures/` + `GCDevJsonContractFixtureTests`.
+
+Reconciled: 2026-07-12 against changes landed after the doc commit (`6574dfe`) — refreshed the
+`GamingCouch.cs` line citations (all +1 from the new `GamingCouch.Tests.PlayMode` InternalsVisibleTo entry
+at `:20`), updated the `example-adapter-refactor-plan.md` cross-references (now COMPLETE; ADR 0017; **no
+adapter**), pinned the new ADR to **0018** (0017 is taken), and named the existing
+`GamingCouch.Tests.PlayMode` Play-mode smoke-test home. No wire/protocol claims changed.
 
 > Written to be torn apart in a grill session. It states a recommended direction plus the open
 > decisions that must be settled before any code changes. Everything is grounded in the current
@@ -54,7 +60,7 @@ rehoming the headless tests; ADR + docs.
 - Inbound parsing/inputs (`GCSetupOptions`/`GCPlayOptions`/`GCControllerInputs*`) — stays in runtime.
 - The Godot/JS implementations and the full cross-language corpus/runner (deferred; seams only).
 - Any change to the platform ↔ `GamingCouch` **wire bytes** or `gameProtocolVersion` (stays 1, ADR 0008).
-- The example-adapter refactor (`example-adapter-refactor-plan.md`) — sibling effort; must not collide.
+- The example refactor (`example-adapter-refactor-plan.md`) — sibling effort, **now landed (COMPLETE 2026-07-12, ADR 0017); confirmed non-colliding** (listener-side, two self-contained scripts — no adapter).
 
 ---
 
@@ -79,8 +85,8 @@ rehoming the headless tests; ADR + docs.
   `GamingCouch.Instance` singleton. The post-game-over mutation guard `TryAllowMutation` (`:739-754`) emits
   `gc.state.post_game_over_mutation`.
 - **Game phase** is a bare enum inside the orchestrator: `GCStatus { PendingSetup, SetupDone, Playing,
-  GameOver }` (`GamingCouch.cs:25`), advanced imperatively — `SetupDone` sets it (`:667`), `Play` sets
-  `Playing` (`:442`), the game-over callback sets `GameOver` (`:746`). **No guard rejects out-of-order
+  GameOver }` (`GamingCouch.cs:26`), advanced imperatively — `SetupDone` sets it (`:668`), `Play` sets
+  `Playing` (`:443`), the game-over callback sets `GameOver` (`:747`). **No guard rejects out-of-order
   calls** (e.g. `Play` before `SetupDone`).
 - **Snapshot + placement read the concrete `GCPlayer`.** `GCRuntimeStateSnapshotBuilder.BuildPayload`
   takes `IReadOnlyList<GCPlayer>` (`GCRuntimeMessages.cs:321`); placement sorting reads `GCPlayer`
@@ -167,13 +173,13 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
 | ID | Task | Artifact / acceptance | Status |
 |----|------|-----------------------|--------|
 | P0-T1 | Run this plan through a grill; resolve every §9 decision | §9 all marked resolved | [ ] |
-| P0-T2 | Draft **ADR 00XX — Portable state kernel + lifecycle guardrails** (core seam, D-GUARD stance, protocol stays 1) | ADR merged; supersedes nothing, references ADR 0008/0009 | [ ] |
+| P0-T2 | Draft **ADR 0018 — Portable state kernel + lifecycle guardrails** (next free number; 0017 is taken — bump if another ADR lands first) (core seam, D-GUARD stance, protocol stays 1) | ADR merged; supersedes nothing, references ADR 0008/0009 | [ ] |
 | P0-T3 | Confirm `gameProtocolVersion` stays 1 with the wire-bytes-unchanged argument | Recorded in ADR (D7) | [ ] |
 
 ### Phase 1 — Extract `dsb.gamingcouch.core` (behavior-preserving)
 | ID | Task | Artifact / acceptance | Status |
 |----|------|-----------------------|--------|
-| P1-T1 | Create `Runtime/Core/dsb.gamingcouch.core.asmdef` — netstandard2.1, **no `UnityEngine`/Unity refs**; runtime asmdef references it | asmdef compiles with zero Unity refs; `dsb.gamingcouch.runtime` depends on core | [ ] |
+| P1-T1 | Create `Runtime/Core/dsb.gamingcouch.core.asmdef` (file name) with **assembly name `GamingCouch.Core`** — netstandard2.1, **no `UnityEngine`/Unity refs**; the runtime assembly (file `dsb.gamingcouch.runtime.asmdef`, **name `GamingCouch`** — the identifier used in `references`/`InternalsVisibleTo`) references it | asmdef compiles with zero Unity refs; `GamingCouch` depends on `GamingCouch.Core` | [ ] |
 | P1-T2 | Define **`IGCPlayerStateView`** in core (fields per §4.1); `GCPlayer` implements it | Interface compiles in core; `GCPlayer : … , IGCPlayerStateView` | [ ] |
 | P1-T3 | Move **transition rules + result/accepted structs + enums** (`GCPlayerTransitions`, `GCPlayerTransitionResult`, `GCPlayerAcceptedTransition`, `GCPlayerStatusValue`, `GCStatus`, `GCPlayerStatus`, elim/finish/kind/reason/outcome enums, `GCPlayerEnumNames`) to core | Files under `Runtime/Core/`; runtime still compiles | [ ] |
 | P1-T4 | **Make transitions deterministic** — replace internal `Time.time` with a `float gameTimeSeconds` parameter; callers in `GCPlayer`/`GCGame` pass `Time.time` | No `Time` reference in core; behavior identical | [ ] |
@@ -182,17 +188,17 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
 | P1-T7 | Replace `Mathf.Clamp/Clamp01` → `Math.Clamp` in moved code | No `Mathf` in core | [ ] |
 | P1-T8 | **Split `GCDiagnostics`** — record model + codes + validation + emit-event in core; `Debug.Log` mirror + `logMessageReceived` capture stay runtime | Core emits structured diagnostics with no `Debug`/`Application` refs | [ ] |
 | P1-T9 | Move **pure POCOs** `GCActiveRunProjection`, `GCRuntimeInfo`, `GCPlayerIndexMapping` to core | Compiles; runtime references them via core | [ ] |
-| P1-T10 | Fix `[assembly: InternalsVisibleTo]` (`GamingCouch.cs:17-19`) + `internal` visibility across the new assembly boundary (promote to `public` in core only where the boundary requires) | No accidental new public API beyond the boundary; documented | [ ] |
-| P1-T11 | **Rehome headless tests** into a `dsb.gamingcouch.core.tests` edit-mode assembly (`GCPlayerStateModelTests`, `GCRuntimeOutputContractTests`, `GCRuntimeDiagnosticsTests`, `GCActiveRunProjectionTests`); they pass **unchanged** | All green on `--mode EditMode` | [ ] |
-| P1-T12 | Rebake `Runtime/Resources/GamingCouchRuntimeInfo.json` if identity moved (per project memory) + full Play-mode smoke | Play-mode run behaves identically to pre-refactor | [ ] |
+| P1-T10 | Fix `[assembly: InternalsVisibleTo]` (`GamingCouch.cs:17-20` — the block now includes `GamingCouch.Tests.PlayMode` at `:20`; preserve it and add the core/core-tests grants) + `internal` visibility across the new assembly boundary (promote to `public` in core only where the boundary requires) | No accidental new public API beyond the boundary; documented | [ ] |
+| P1-T11 | **Rehome headless tests** into a new edit-mode assembly — file `dsb.gamingcouch.core.tests.asmdef`, **assembly name `GamingCouch.Core.Tests`** (package convention: cf. `dsb.gamingcouch.editor.tests.asmdef` → name `GamingCouch.Editor.Tests`; the example-refactor suites instead use `GamingCouch.Tests.*`) — moving `GCPlayerStateModelTests`, `GCRuntimeOutputContractTests`, `GCRuntimeDiagnosticsTests`, `GCActiveRunProjectionTests`; they pass **unchanged** | All green on `--mode EditMode` | [ ] |
+| P1-T12 | Rebake `Runtime/Resources/GamingCouchRuntimeInfo.json` if identity moved (per project memory) + full Play-mode smoke in the existing `Tests/PlayMode/GamingCouch.Tests.PlayMode` assembly (`GCExampleGamePlayModeSmokeTests`, ADR 0017) | Play-mode run behaves identically to pre-refactor | [ ] |
 
 ### Phase 2 — Lifecycle guardrails (the new correctness)
 | ID | Task | Artifact / acceptance | Status |
 |----|------|-----------------------|--------|
 | P2-T1 | Add **`GCGameLifecycle`** to core: owns `GCStatus`, exposes `TryTransition(requested) → outcome + rejection reason`; legal edges only (`PendingSetup→SetupDone→Playing→GameOver`) | Pure, deterministic, no Unity refs | [ ] |
-| P2-T2 | Route `GamingCouch` phase changes through it — `SetupDone`/`Play`/game-over set status **only on Accepted** (`GamingCouch.cs:442,:667,:746`) | Status never advances on a rejected transition | [ ] |
+| P2-T2 | Route `GamingCouch` phase changes through it — `SetupDone`/`Play`/game-over set status **only on Accepted** (`GamingCouch.cs:443,:668,:747`) | Status never advances on a rejected transition | [ ] |
 | P2-T3 | Illegal transition → **ignore + emit** new diagnostic `gc.state.invalid_lifecycle_transition` (from/to in context); add to `KnownCodes` | Diagnostic emitted, no throw, no state change (D-GUARD) | [ ] |
-| P2-T4 | Reconcile the existing hard-throws (`RequireGameSetupDone`, "Game already set" `:692`, snapshot null/dup player) — decide keep-as-throw (programmer contract) vs harmonize to ignore+emit | Decision D-RECONCILE recorded; code matches it | [ ] |
+| P2-T4 | Reconcile the existing hard-throws (`RequireGameSetupDone`, "Game already set" `:693`, snapshot null/dup player) — decide keep-as-throw (programmer contract) vs harmonize to ignore+emit | Decision D-RECONCILE recorded; code matches it | [ ] |
 | P2-T5 | Fold the two existing guards into the lifecycle model conceptually (game-over-twice, post-game-over mutation) so the spec has one place | Spec + code cross-reference the same codes | [ ] |
 | P2-T6 | Core unit tests: **every** illegal lifecycle edge + each existing guard = one test each | Full transition matrix covered, green | [ ] |
 
@@ -208,15 +214,15 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
 |----|------|-----------------------|--------|
 | P4-T1 | Add a **vector-emit hook**: a core-driven harness that runs an ordered op list and dumps `{ops, expected: {outcomes, emittedMessages}}` as deterministic JSON | Runs headless; output stable across runs | [ ] |
 | P4-T2 | Author **3–5 sample vectors** under `ContractFixtures/runtime-state/`: one accept, one no-op, one reject (transition); game-over-twice; post-game-over mutation; one illegal lifecycle edge | Files checked in; human-readable | [ ] |
-| P4-T3 | Unity test runs the sample vectors against core and asserts equality (reusing `ContractFixtures` + `GCDevJsonContractFixtureTests` case-discovery plumbing) | Green; proves the format + reference impl agree | [ ] |
+| P4-T3 | Unity test runs the sample vectors against core and asserts equality (reusing `ContractFixtures` + `GCDevJsonContractFixtureTests` case-discovery plumbing — note its corpus root is a hardcoded const `CorpusRelativePath = "ContractFixtures/LocalPlay"`, so the new `runtime-state/` corpus needs that const parameterized or a parallel resolver; it will **not** auto-discover) | Green; proves the format + reference impl agree | [ ] |
 | P4-T4 | **Document the deferred work** in the contract doc: full versioned corpus + cross-language runner, with the seam described so a second engine is turnkey. Log explicitly that the corpus is *not* exhaustive yet (no silent "covered everything") | "Deferred / Conformance" section present | [ ] |
 
 ### Phase 5 — Docs & alignment
 | ID | Task | Artifact / acceptance | Status |
 |----|------|-----------------------|--------|
-| P5-T1 | Finalize ADR 00XX (P0-T2) with the resolved decisions | ADR merged | [ ] |
+| P5-T1 | Finalize ADR 0018 (P0-T2) with the resolved decisions | ADR merged | [ ] |
 | P5-T2 | Update README + VERSIONING_PLAN.md (core assembly, contract doc, protocol-vs-package version) | Docs consistent, no contradictions | [ ] |
-| P5-T3 | Backlog alignment note; confirm no collision with `example-adapter-refactor-plan.md` (that plan's adapter seam is listener-side; this is package-internal) | Relationship recorded in both docs | [ ] |
+| P5-T3 | Backlog alignment note; `example-adapter-refactor-plan.md` has **landed** (COMPLETE 2026-07-12, ADR 0017) with **no adapter** — two self-contained listener-side scripts; confirm the (now demonstrated) non-collision, this being package-internal | Relationship recorded in both docs | [ ] |
 
 ---
 
@@ -228,7 +234,10 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
 3. **Vector self-conformance (Phase 4):** the reference impl reproduces its own sample vectors exactly.
 4. **Play-mode smoke (Phase 1/2):** one scripted run through `SetupDone → Play → transitions → GameOver`
    asserting identical observable output to pre-refactor, plus one deliberate illegal call asserting
-   "ignored + diagnostic emitted."
+   "ignored + diagnostic emitted." The home already exists — `Tests/PlayMode/GamingCouch.Tests.PlayMode`
+   (`GCExampleGamePlayModeSmokeTests`, ADR 0017) already drives `SetupDone → Play → input → GameOver`; add
+   the illegal-call assertion there (guard with `#if UNITY_EDITOR`, per project gotcha) rather than
+   standing up a new assembly.
 
 ---
 
@@ -274,17 +283,18 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
   that it reuses the `ContractFixtures` corpus conventions rather than a new one.
 - **D-LIFECYCLE-EDGES.** Confirm the exact legal edge set — notably whether `Restart` / dev re-entry needs
   a legal `GameOver → PendingSetup` (or `Playing → PendingSetup`) edge, given `Restart()` (`GamingCouch.cs
-  :1268`) resets state.
+  :1269`) resets state.
 - **D-DIAG-CODE.** Confirm the new code name `gc.state.invalid_lifecycle_transition` (vs per-edge codes).
 
 ---
 
 ## 10. Alignment: ADRs, backlog, docs
-- **ADR 00XX (new)** — records the core seam, D-GUARD, protocol-stays-1, and the four §4 seams. References
+- **ADR 0018 (new)** — records the core seam, D-GUARD, protocol-stays-1, and the four §4 seams. References
   ADR 0008/0009; supersedes nothing.
 - **CONTEXT.md** — add *Runtime State Kernel*, *Game Lifecycle*, *State View*; reuse *Runtime Messages*,
   *Diagnostics*, *Permanent/Revokable* states; the doctrine at `:138` is the north star.
-- **`example-adapter-refactor-plan.md`** — sibling, non-colliding: that plan splits the *listener-side*
-  example (adapter + swappable game); this plan is *package-internal* (the state kernel behind the
-  runtime API). Neither changes the wire contract. Cross-link both.
+- **`example-adapter-refactor-plan.md`** — sibling, **landed COMPLETE 2026-07-12 (ADR 0017); confirmed
+  non-colliding**: that plan splits the *listener-side* example into **two self-contained swappable game
+  scripts (no adapter, no shared base class)**; this plan is *package-internal* (the state kernel behind
+  the runtime API). Neither changes the wire contract. Cross-link both.
 - **Backlog** — relates to the broader portability/authoring theme; this plan is the state-kernel slice.
