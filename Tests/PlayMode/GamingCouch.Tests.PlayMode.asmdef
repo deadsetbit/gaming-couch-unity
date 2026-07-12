@@ -4,7 +4,9 @@
         "GamingCouch",
         "GamingCouch.Tests.ExampleCanonical"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

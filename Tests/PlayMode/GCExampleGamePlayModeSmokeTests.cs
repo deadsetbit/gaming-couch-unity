@@ -15,6 +15,10 @@ using UnityEngine.TestTools;
 // observable state: the example spawns its players (setup + play ran), primary input scores a player
 // (input ran while Playing), and the round ends at GCStatus.GameOver (game-over ran). This is the
 // only PlayMode test; all others are EditMode. See plan §6.4 / ADR 0017.
+//
+// Editor-only: this drives the #if UNITY_EDITOR _EditorPlay capture lifecycle (GCLocalPlaySession et
+// al.), so its asmdef is pinned to "includePlatforms": ["Editor"]. Do not widen it — building this
+// PlayMode assembly into a standalone Player strips those types and the "Player" run fails to compile.
 public sealed class GCExampleGamePlayModeSmokeTests
 {
     private GamingCouch gamingCouch;
