@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Linq;
@@ -16,9 +17,12 @@ using UnityEngine.TestTools;
 // (input ran while Playing), and the round ends at GCStatus.GameOver (game-over ran). This is the
 // only PlayMode test; all others are EditMode. See plan §6.4 / ADR 0017.
 //
-// Editor-only: this drives the #if UNITY_EDITOR _EditorPlay capture lifecycle (GCLocalPlaySession et
-// al.), so its asmdef is pinned to "includePlatforms": ["Editor"]. Do not widen it — building this
-// PlayMode assembly into a standalone Player strips those types and the "Player" run fails to compile.
+// Editor-only, guarded with #if UNITY_EDITOR: it drives the editor-play capture lifecycle
+// (GCLocalPlaySession et al., all #if UNITY_EDITOR), so a standalone build strips those types. We
+// guard the *file* rather than pin the asmdef to the Editor platform on purpose — an Editor-only
+// includePlatforms reclassifies this assembly as EditMode and empties the PlayMode/Player tabs. With
+// the guard, it stays a PlayMode test in the Editor, and the "Player" run compiles it to nothing
+// instead of failing on the stripped types. Do NOT remove the guard.
 public sealed class GCExampleGamePlayModeSmokeTests
 {
     private GamingCouch gamingCouch;
@@ -205,3 +209,4 @@ public sealed class GCExampleGamePlayModeSmokeTests
         }
     }
 }
+#endif

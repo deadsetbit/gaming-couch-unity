@@ -26,7 +26,19 @@ public sealed class GamingCouchStartScreenEditorSmokeTests
     public void SetUp()
     {
         previousSuppressAutoOpenConfigValue = EditorUserSettings.GetConfigValue(SuppressAutoOpenKey);
-        previousBuildSettingsScenes = EditorBuildSettings.scenes;
+
+        // Snapshot build settings WITHOUT any scenes leaked by an interrupted prior run of this test.
+        // EditorBuildSettings.scenes persists to disk the moment it is set, so a run killed before
+        // TearDown leaves its temp scene paths in ProjectSettings/EditorBuildSettings.asset. Those
+        // dangling paths then break Player builds (the scene file is gone) and have been committed to
+        // the template before. Sanitizing the snapshot restores clean state in TearDown and, when a
+        // leak is already present, heals it here so it cannot reach a built player or a commit.
+        previousBuildSettingsScenes = WithoutLeakedTestScenes(EditorBuildSettings.scenes);
+        if (previousBuildSettingsScenes.Length != EditorBuildSettings.scenes.Length)
+        {
+            EditorBuildSettings.scenes = previousBuildSettingsScenes;
+        }
+
         testFolderAssetPath = TestFolderAssetPathPrefix + Guid.NewGuid().ToString("N");
         previousActiveScene = SceneManager.GetActiveScene();
 
@@ -291,6 +303,32 @@ public sealed class GamingCouchStartScreenEditorSmokeTests
     private void RestoreBuildSettings()
     {
         EditorBuildSettings.scenes = previousBuildSettingsScenes ?? Array.Empty<EditorBuildSettingsScene>();
+    }
+
+    // Drops any scene entries this test owns (its temp folder plus the two fixed test-only paths) so a
+    // leak from an interrupted run cannot survive in the project's persisted build settings.
+    private static EditorBuildSettingsScene[] WithoutLeakedTestScenes(EditorBuildSettingsScene[] scenes)
+    {
+        if (scenes == null)
+        {
+            return Array.Empty<EditorBuildSettingsScene>();
+        }
+
+        return scenes
+            .Where(scene => scene != null && !IsTestOwnedScenePath(scene.path))
+            .ToArray();
+    }
+
+    private static bool IsTestOwnedScenePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        return path.StartsWith(TestFolderAssetPathPrefix, StringComparison.Ordinal) ||
+               string.Equals(path, ExistingSceneBuildPath, StringComparison.Ordinal) ||
+               string.Equals(path, OtherSceneBuildPath, StringComparison.Ordinal);
     }
 
     private void RestoreSuppressAutoOpenSetting()
