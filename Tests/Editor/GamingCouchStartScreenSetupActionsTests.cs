@@ -264,8 +264,8 @@ public sealed class GamingCouchStartScreenSetupActionsTests
             "Active Scene Setup created missing example scripts and queued setup continuation after Unity compiles them.",
             new[]
             {
-                "Created: Assets/GamingCouch/GCExample/GCGameExample.cs",
-                "Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs",
+                "Created: Assets/GamingCouch/GCExample/GCExampleGame.cs",
+                "Created: Assets/GamingCouch/GCExample/GCExamplePlayer.cs",
             }
         );
 
@@ -274,11 +274,40 @@ public sealed class GamingCouchStartScreenSetupActionsTests
 
         Assert.That(result.messageType, Is.EqualTo(MessageType.Warning));
         Assert.That(GamingCouchStartScreenSetupActions.ShouldDisplayActionResult(result.messageType), Is.True);
-        AssertHasEntryContaining(result.details, "Created: Assets/GamingCouch/GCExample/GCGameExample.cs");
-        AssertHasEntryContaining(result.details, "Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs");
+        AssertHasEntryContaining(result.details, "Created: Assets/GamingCouch/GCExample/GCExampleGame.cs");
+        AssertHasEntryContaining(result.details, "Created: Assets/GamingCouch/GCExample/GCExamplePlayer.cs");
         Assert.That(formatted, Does.Contain("queued setup continuation"));
-        Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCGameExample.cs"));
-        Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
+        Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCExampleGame.cs"));
+        Assert.That(formatted, Does.Contain("- Created: Assets/GamingCouch/GCExample/GCExamplePlayer.cs"));
+    }
+
+    [Test]
+    public void WireExampleGameResultMapsStatusesAndPreservesDetails()
+    {
+        var blocked = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+            new GCWireExampleGameResult(
+                GCWireExampleGameStatus.Blocked,
+                false,
+                false,
+                "Wire example game is blocked.",
+                new[] { "Created: Assets/GamingCouch/GCExample/GCExampleGame.cs" }
+            )
+        );
+        Assert.That(blocked.messageType, Is.EqualTo(MessageType.Error));
+        AssertHasEntryContaining(blocked.details, "Created: Assets/GamingCouch/GCExample/GCExampleGame.cs");
+
+        var pending = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+            new GCWireExampleGameResult(GCWireExampleGameStatus.Wired, true, true, "Generating…", null)
+        );
+        Assert.That(pending.messageType, Is.EqualTo(MessageType.Warning));
+
+        var wired = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+            new GCWireExampleGameResult(GCWireExampleGameStatus.Wired, false, true, "Wired the example game.", null)
+        );
+        Assert.That(wired.messageType, Is.EqualTo(MessageType.Info));
+
+        var nullResult = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(null);
+        Assert.That(nullResult.messageType, Is.EqualTo(MessageType.Error));
     }
 
     [Test]

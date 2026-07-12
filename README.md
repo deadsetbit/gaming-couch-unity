@@ -71,15 +71,18 @@ The fastest way to a working scene is the tooling — you do not need to wire an
 3. Press **Play**.
 
 `Create New Example Scene` offers to save your current scene, creates a fresh scene, wires the
-`GamingCouch` object, and generates an example `Game` listener and player prefab. The new scene shows
-an on-screen note in Game View (and logs a clickable console message) pointing to the generated
-`GCGameExample` and `GCPlayerExample` files under `Assets/GamingCouch/GCExample` — read those to see
-the whole contract in action, then grow them into your own game. Players spawn only at runtime, so the
-Game View is otherwise empty until you press Play.
+`GamingCouch` object, and generates a barebones example `Game` listener (`GCExampleTemplate`) plus a
+stock player prefab. The new scene shows an on-screen note in Game View (and logs a clickable console
+message) pointing to the generated `GCExampleTemplate` file under `Assets/GamingCouch/GCExample` —
+read it to see the whole platform contract in one file, then grow it into your own game. Players spawn
+only at runtime, so the Game View is otherwise empty until you press Play.
 
-> **New here? Start from the generated example.** The example scene is a complete, working game. Read
-> `GCGameExample`/`GCPlayerExample` first; the snippets below are the same wiring, isolated topic by
-> topic, for when you set up your own scene.
+> **New here? Start from the generated example.** `Create New Example Scene` gives you
+> `GCExampleTemplate`: a barebones *wiring demo* — the minimum a listener does to complete the platform
+> loop, which you copy and grow into your own game. Want a fuller reference? Run `Wire Example Game` to
+> swap in `GCExampleGame` + `GCExamplePlayer`, a small but complete *playable loop* (scoring, rounds,
+> per-player input). The snippets below are the same wiring, isolated topic by topic, for when you set
+> up your own scene.
 
 Other menu entries you will use:
 
@@ -366,7 +369,7 @@ This is planned for the near future to be able to visualize the HUD in the edito
 
 ## What next?
 
-- Grow the generated example: after [Quick Setup](#quick-setup), read and extend `GCGameExample`/`GCPlayerExample` under `Assets/GamingCouch/GCExample`.
+- Grow the generated example: after [Quick Setup](#quick-setup), read and extend `GCExampleTemplate` under `Assets/GamingCouch/GCExample` (or run `Wire Example Game` for the fuller `GCExampleGame` + `GCExamplePlayer`).
 - Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api).
 
 ## Creating a Unity project from scratch
@@ -382,7 +385,7 @@ To set up a new project from scratch:
 
 - This README — the integration guide.
 - [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api) — generated per-member reference.
-- Example project — generate one inside the Unity editor with `GamingCouch → Create New Example Scene`; it creates an editable `GCGameExample`/`GCPlayerExample` under `Assets/GamingCouch/GCExample`.
+- Example project — generate one inside the Unity editor with `GamingCouch → Create New Example Scene`; it creates an editable `GCExampleTemplate` under `Assets/GamingCouch/GCExample` (run `GamingCouch → Wire Example Game` for the full `GCExampleGame` + `GCExamplePlayer`).
 
 **Internal (platform & DevApp maintainers)**
 

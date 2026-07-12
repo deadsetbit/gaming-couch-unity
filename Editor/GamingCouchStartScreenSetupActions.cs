@@ -145,6 +145,8 @@ internal static class GamingCouchStartScreenSetupActions
                 return FromActiveSceneSetupResult(
                     GamingCouchActiveSceneSetup.EnsureActiveScenePlayerPrefabReference()
                 );
+            case GCStartScreenReadinessActionId.WireExampleGame:
+                return FromWireExampleGameResult(GamingCouchActiveSceneSetup.WireExampleGame());
             case GCStartScreenReadinessActionId.SetFirstBuildSettingsScene:
                 return FromBuildSettingsSetupResult(
                     GamingCouchBuildSettingsReadiness.EnsureActiveSceneFirstEnabled()
@@ -312,6 +314,32 @@ internal static class GamingCouchStartScreenSetupActions
         return CreateResult(
             result.message,
             GetExampleSceneCreationMessageType(result),
+            result.details,
+            null,
+            false,
+            true
+        );
+    }
+
+    internal static GCStartScreenSetupActionResult FromWireExampleGameResult(
+        GCWireExampleGameResult result
+    )
+    {
+        if (result == null)
+        {
+            return CreateResult(
+                "Wire example game did not return a result.",
+                MessageType.Error,
+                null,
+                null,
+                false,
+                true
+            );
+        }
+
+        return CreateResult(
+            result.message,
+            GetWireExampleGameMessageType(result),
             result.details,
             null,
             false,
@@ -543,6 +571,16 @@ internal static class GamingCouchStartScreenSetupActions
         if (result.IsCancelled)
         {
             return MessageType.Warning;
+        }
+
+        return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
+    }
+
+    private static MessageType GetWireExampleGameMessageType(GCWireExampleGameResult result)
+    {
+        if (result.IsBlocked)
+        {
+            return MessageType.Error;
         }
 
         return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;

@@ -18,6 +18,9 @@ internal enum GCActiveSceneSetupAction
     ActiveSceneMissingPieces,
     ActiveScenePlayerPrefab,
     ActiveSceneGameListener,
+    // Additive upgrade: swaps the wired template for the full example game (GCExampleGame +
+    // GCExamplePlayer). Selects the game-flavor spec in GetScriptSetupSpec.
+    ActiveSceneWireExampleGame,
 }
 
 internal enum GCExampleScriptSetupStatus
@@ -294,13 +297,50 @@ internal sealed class GCExampleAssetSetupContinuationContext
     }
 }
 
+internal enum GCWireExampleGameStatus
+{
+    Wired,
+    Blocked,
+}
+
+// Result of the additive "Wire example game" action, which upgrades a template scene in place to
+// the full example game. Mirrors GCExampleSceneCreationResult so the Start Screen message mapping
+// can treat both scene actions the same way.
+internal sealed class GCWireExampleGameResult
+{
+    internal readonly GCWireExampleGameStatus status;
+    internal readonly bool isPendingCompilation;
+    internal readonly bool changed;
+    internal readonly string message;
+    internal readonly string[] details;
+
+    internal GCWireExampleGameResult(
+        GCWireExampleGameStatus status,
+        bool isPendingCompilation,
+        bool changed,
+        string message,
+        string[] details
+    )
+    {
+        this.status = status;
+        this.isPendingCompilation = isPendingCompilation;
+        this.changed = changed;
+        this.message = message;
+        this.details = details ?? new string[0];
+    }
+
+    internal bool IsWired { get { return status == GCWireExampleGameStatus.Wired; } }
+    internal bool IsBlocked { get { return status == GCWireExampleGameStatus.Blocked; } }
+    internal bool IsPendingCompilation { get { return isPendingCompilation; } }
+}
+
 [InitializeOnLoad]
 internal static class GamingCouchActiveSceneSetup
 {
     internal const string ProjectFolderAssetPath = "Assets/GamingCouch";
     internal const string ExampleFolderAssetPath = ProjectFolderAssetPath + "/GCExample";
-    internal const string ExampleGameTypeName = "GCGameExample";
-    internal const string ExamplePlayerTypeName = "GCPlayerExample";
+    internal const string ExampleGameTypeName = "GCExampleGame";
+    internal const string ExamplePlayerTypeName = "GCExamplePlayer";
     internal const string ExampleGameScriptAssetPath = ExampleFolderAssetPath + "/" + ExampleGameTypeName + ".cs";
     internal const string ExamplePlayerScriptAssetPath = ExampleFolderAssetPath + "/" + ExamplePlayerTypeName + ".cs";
     internal const string ExamplePlayerPrefabAssetPath = ExampleFolderAssetPath + "/" + ExamplePlayerTypeName + ".prefab";
@@ -309,6 +349,24 @@ internal static class GamingCouchActiveSceneSetup
     internal const string ActiveSceneGameScriptAssetPath = ExampleGameScriptAssetPath;
     internal const string ActiveScenePlayerScriptAssetPath = ExamplePlayerScriptAssetPath;
     internal const string ActiveScenePlayerPrefabAssetPath = ExamplePlayerPrefabAssetPath;
+
+    // The generated example is copied from canonical master source that compiles against the real
+    // runtime in the UNITY_INCLUDE_TESTS-gated GamingCouch.Tests.ExampleCanonical assembly (ADR
+    // 0017). The generator copies each master, strips the "Source" type-name suffix and the
+    // DSB.GC.ExampleCanonical namespace, and injects ExampleTemplateHeader. The barebones template
+    // (GCExampleTemplate, stock GCPlayer) is wired by "Create example scene"; the full game
+    // (GCExampleGame + GCExamplePlayer) is wired by "Wire example game".
+    internal const string ExampleCanonicalSourceRelativeDir = "Tests/ExampleCanonical";
+    internal const string ExampleTemplateTypeName = "GCExampleTemplate";
+    internal const string ExampleTemplateMasterTypeName = "GCExampleTemplateSource";
+    internal const string ExampleGameMasterTypeName = "GCExampleGameSource";
+    internal const string ExamplePlayerMasterTypeName = "GCExamplePlayerSource";
+    internal const string ExampleTemplateScriptAssetPath = ExampleFolderAssetPath + "/" + ExampleTemplateTypeName + ".cs";
+    // The template flavor spawns the stock GCPlayer (no generated player script) from a generated
+    // capsule prefab. "Create example scene" wires this; "Wire example game" swaps it for
+    // GCExamplePlayer.prefab.
+    internal const string StockPlayerTypeName = "GCPlayer";
+    internal const string StockPlayerPrefabAssetPath = ExampleFolderAssetPath + "/" + StockPlayerTypeName + ".prefab";
 
     private const string PendingSetupSessionKey = "DSB.GC.ActiveSceneSetup.PendingSetup.v1";
     private const string PendingIntentSessionKey = "DSB.GC.ActiveSceneSetup.PendingIntent.v1";
@@ -332,7 +390,28 @@ internal static class GamingCouchActiveSceneSetup
         " Use Create New Example Scene to move blocking folders to the Trash, or remove the folder manually, then run setup again.";
 
     private static readonly UTF8Encoding Utf8WithoutBom = new UTF8Encoding(false);
-    private static readonly GCExampleScriptSetupSpec ExampleScriptSetupSpec =
+
+    // Template flavor (the "Create example scene" / active-scene default): generates only the
+    // barebones GCExampleTemplate listener and wires the stock GCPlayer spawned from a generated
+    // capsule prefab. It has no generated player script (playerScriptAssetPath == null); the player
+    // type is the compiled stock GCPlayer, resolved directly in CreateContinuationContext.
+    private static readonly GCExampleScriptSetupSpec TemplateScriptSetupSpec =
+        new GCExampleScriptSetupSpec(
+            ExampleFolderAssetPath,
+            ExampleTemplateScriptAssetPath,
+            null,
+            StockPlayerPrefabAssetPath,
+            ExampleTemplateTypeName,
+            StockPlayerTypeName,
+            ListenerObjectName,
+            true,
+            GenerateExampleTemplateSource,
+            null
+        );
+
+    // Game flavor (the additive "Wire example game" action): the full playable example, generating
+    // GCExampleGame + the custom GCExamplePlayer and its prefab.
+    private static readonly GCExampleScriptSetupSpec GameScriptSetupSpec =
         new GCExampleScriptSetupSpec(
             ExampleFolderAssetPath,
             ExampleGameScriptAssetPath,
@@ -342,8 +421,8 @@ internal static class GamingCouchActiveSceneSetup
             ExamplePlayerTypeName,
             ListenerObjectName,
             true,
-            () => BuildGameScriptSource(ExampleGameTypeName, ExamplePlayerTypeName, true),
-            () => BuildPlayerScriptSource(ExamplePlayerTypeName, true)
+            GenerateExampleGameSource,
+            GenerateExamplePlayerSource
         );
     private static Action<GCExampleAssetSetupContinuationContext> scriptsReadyHandlers;
 
@@ -351,6 +430,7 @@ internal static class GamingCouchActiveSceneSetup
     {
         RegisterScriptsReadyHandler(EnsureActiveSceneGameListenerOnScriptsReady);
         RegisterScriptsReadyHandler(EnsureExamplePlayerPrefabOnScriptsReady);
+        RegisterScriptsReadyHandler(SwapListenerToExampleGameOnScriptsReady);
 
         if (HasPendingSetup())
         {
@@ -419,7 +499,12 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         EnsureScriptAsset(spec.gameScriptAssetPath, spec.gameTypeName, spec.BuildGameScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
-        EnsureScriptAsset(spec.playerScriptAssetPath, spec.playerTypeName, spec.BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        // The template flavor has no generated player script (playerScriptAssetPath == null); it
+        // spawns the stock GCPlayer, so only the listener script is generated here.
+        if (spec.playerScriptAssetPath != null)
+        {
+            EnsureScriptAsset(spec.playerScriptAssetPath, spec.playerTypeName, spec.BuildPlayerScriptSource(), createdAssetPaths, reusedAssetPaths, blockedReasons);
+        }
         if (blockedReasons.Count > 0)
         {
             if (createdAssetPaths.Count > 0)
@@ -502,18 +587,26 @@ internal static class GamingCouchActiveSceneSetup
         GCActiveSceneSetupAction action
     )
     {
-        return ExampleScriptSetupSpec;
+        // The default active-scene setup (including "Create example scene") wires the barebones
+        // template; only the additive "Wire example game" action selects the full game flavor.
+        return action == GCActiveSceneSetupAction.ActiveSceneWireExampleGame
+            ? GameScriptSetupSpec
+            : TemplateScriptSetupSpec;
     }
 
     // A directory sitting where an example script or the player prefab file is expected (for example
-    // a folder literally named "GCGameExample.cs") blocks generation, because the SDK never
+    // a folder literally named "GCExampleGame.cs") blocks generation, because the SDK never
     // overwrites anything at those paths. These helpers let the Create New Example Scene flow detect
     // and clear such folders up front, turning a cryptic mid-setup block into an explicit,
     // recoverable cleanup step.
     internal static string[] FindBlockingExampleAssetFolders()
     {
+        // Cover both flavors' generated paths so a reset clears a folder blocking either the template
+        // (GCExampleTemplate.cs + GCPlayer.prefab) or the full game (GCExampleGame/GCExamplePlayer).
         var candidatePaths = new[]
         {
+            ExampleTemplateScriptAssetPath,
+            StockPlayerPrefabAssetPath,
             ExampleGameScriptAssetPath,
             ExamplePlayerScriptAssetPath,
             ExamplePlayerPrefabAssetPath,
@@ -2044,6 +2137,217 @@ internal static class GamingCouchActiveSceneSetup
         Debug.Log(listenerResult.message + " " + assignResult.message);
     }
 
+    // ── "Wire example game": additive upgrade of a template scene to the full example game ──────
+
+    // Upgrades the open template scene in place: generates GCExampleGame + GCExamplePlayer, swaps the
+    // "Game" listener component from GCExampleTemplate to GCExampleGame, and swaps the wired player
+    // prefab from the stock GCPlayer to GCExamplePlayer. Never overwrites existing scripts or the
+    // player prefab (ADR 0016). Two-phase like Active Scene Setup: the swap completes in the
+    // scripts-ready continuation after Unity compiles the generated scripts.
+    internal static GCWireExampleGameResult WireExampleGame()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return WireExampleGameBlocked("Exit Play Mode before wiring the example game.", null);
+        }
+
+        if (HasPendingSetup())
+        {
+            return WireExampleGameBlocked(
+                "Setup is still finishing after generating example scripts. Wait for it to complete, then wire the example game.",
+                null
+            );
+        }
+
+        if (!TryGetTemplateSceneGamingCouch(out _, out var guardMessage))
+        {
+            return WireExampleGameBlocked(guardMessage, null);
+        }
+
+        var details = new List<string>();
+
+        // Clear any folder sitting where a generated game/player asset must go (moved to Trash,
+        // recoverable), mirroring the reset action; existing script/prefab files are still reused,
+        // never overwritten.
+        var cleanup = RemoveBlockingExampleAssetFolders();
+        if (cleanup.removedAssetPaths.Length > 0)
+        {
+            details.Add("Moved " + cleanup.removedAssetPaths.Length + " leftover blocking folder(s) to the Trash.");
+        }
+
+        var scriptsResult = EnsureExampleScripts(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneWireExampleGame,
+            true
+        );
+        for (var index = 0; index < scriptsResult.createdAssetPaths.Length; index++)
+        {
+            details.Add("Created: " + scriptsResult.createdAssetPaths[index]);
+        }
+        for (var index = 0; index < scriptsResult.blockedReasons.Length; index++)
+        {
+            details.Add(scriptsResult.blockedReasons[index]);
+        }
+
+        if (scriptsResult.IsBlocked)
+        {
+            return new GCWireExampleGameResult(
+                GCWireExampleGameStatus.Blocked,
+                false,
+                scriptsResult.changed,
+                "Wire example game is blocked.",
+                details.ToArray()
+            );
+        }
+
+        if (scriptsResult.IsPendingCompilation)
+        {
+            return new GCWireExampleGameResult(
+                GCWireExampleGameStatus.Wired,
+                true,
+                scriptsResult.changed,
+                "Generating the example game scripts. The template is swapped for the full game after Unity compiles them.",
+                details.ToArray()
+            );
+        }
+
+        // Scripts already existed and compiled: the scripts-ready dispatch above performed the swap
+        // synchronously.
+        return new GCWireExampleGameResult(
+            GCWireExampleGameStatus.Wired,
+            false,
+            scriptsResult.changed,
+            "Wired the example game (GCExampleGame + GCExamplePlayer) into the scene.",
+            details.ToArray()
+        );
+    }
+
+    private static GCWireExampleGameResult WireExampleGameBlocked(string message, string[] details)
+    {
+        return new GCWireExampleGameResult(GCWireExampleGameStatus.Blocked, false, false, message, details);
+    }
+
+    // Template-first guard: the open scene must have exactly one GamingCouch whose listener is a
+    // "Game" object carrying a GCExampleTemplate component.
+    internal static bool TryGetTemplateSceneGamingCouch(out GamingCouch gamingCouch, out string message)
+    {
+        gamingCouch = null;
+        message = null;
+
+        var gamingCouches = GamingCouchSceneWiring.FindActiveSceneGamingCouches();
+        if (gamingCouches.Length == 0)
+        {
+            message = "Wire example game needs the example template scene. Run \"Create New Example Scene\" first.";
+            return false;
+        }
+
+        if (gamingCouches.Length > 1)
+        {
+            message = "The active scene contains multiple GamingCouch components. Remove duplicates before wiring the example game.";
+            return false;
+        }
+
+        var candidate = gamingCouches[0];
+        var listener = GamingCouchSceneWiring.ReadObjectReference(candidate, GamingCouchSceneWiring.ListenerPropertyName) as GameObject;
+        if (listener == null ||
+            FindComponentByTypeName(listener, ExampleTemplateTypeName, typeof(MonoBehaviour)) == null)
+        {
+            message = "Wire example game needs the example template scene (a \"" + ListenerObjectName + "\" object with " + ExampleTemplateTypeName + "). Run \"Create New Example Scene\" first.";
+            return false;
+        }
+
+        gamingCouch = candidate;
+        return true;
+    }
+
+    // internal (not private) so the EditMode suite can drive the post-compile swap directly with
+    // compiled fixture stand-ins; a real domain-reload dispatch cannot be awaited inside one test.
+    internal static void SwapListenerToExampleGameOnScriptsReady(
+        GCExampleAssetSetupContinuationContext context
+    )
+    {
+        if (context.intent != GCActiveSceneSetupIntent.ActiveScene ||
+            context.action != GCActiveSceneSetupAction.ActiveSceneWireExampleGame)
+        {
+            return;
+        }
+
+        var gamingCouch = GetGamingCouchForScriptsReadyAction(context.action);
+        if (gamingCouch == null)
+        {
+            return;
+        }
+
+        if (!SwapActiveSceneListenerComponentToExampleGame(gamingCouch, context, out var swapMessage))
+        {
+            Debug.LogWarning(swapMessage);
+            return;
+        }
+
+        var prefabResult = EnsureExamplePlayerPrefab(context);
+        if (prefabResult.IsBlocked)
+        {
+            Debug.LogWarning(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
+            return;
+        }
+
+        var replaceResult = GamingCouchSceneWiring.ReplacePlayerPrefab(gamingCouch, prefabResult.prefab);
+        if (replaceResult.IsBlocked)
+        {
+            Debug.LogWarning(replaceResult.message);
+            return;
+        }
+
+        Debug.Log(swapMessage + " " + prefabResult.message + " " + replaceResult.message);
+    }
+
+    // Removes the GCExampleTemplate component from the wired "Game" object and adds GCExampleGame in
+    // its place. The GamingCouch.listener reference keeps pointing at the same "Game" object.
+    private static bool SwapActiveSceneListenerComponentToExampleGame(
+        GamingCouch gamingCouch,
+        GCExampleAssetSetupContinuationContext context,
+        out string message
+    )
+    {
+        message = null;
+
+        if (context.gameType == null || context.gameType.Name != context.gameTypeName)
+        {
+            message = "Wire example game requires the compiled " + context.gameTypeName + " type.";
+            return false;
+        }
+
+        var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName) as GameObject;
+        if (listener == null)
+        {
+            message = "Wire example game could not find the wired \"" + ListenerObjectName + "\" object to upgrade.";
+            return false;
+        }
+
+        var templateComponent = FindComponentByTypeName(listener, ExampleTemplateTypeName, typeof(MonoBehaviour));
+        if (templateComponent != null)
+        {
+            Undo.DestroyObjectImmediate(templateComponent);
+        }
+
+        if (FindComponentByTypeName(listener, context.gameTypeName, typeof(MonoBehaviour)) == null)
+        {
+            var gameComponent = Undo.AddComponent(listener, context.gameType);
+            if (gameComponent == null)
+            {
+                message = "Unity did not add " + context.gameTypeName + " to the \"" + ListenerObjectName + "\" object.";
+                return false;
+            }
+
+            EditorUtility.SetDirty(gameComponent);
+        }
+
+        EditorUtility.SetDirty(listener);
+        GamingCouchSceneWiring.MarkSceneDirty(listener);
+        message = "Swapped the " + ListenerObjectName + " listener from " + ExampleTemplateTypeName + " to " + context.gameTypeName + ".";
+        return true;
+    }
+
     private static GamingCouch GetGamingCouchForScriptsReadyAction(GCActiveSceneSetupAction action)
     {
         if (action == GCActiveSceneSetupAction.ActiveSceneMissingPieces)
@@ -2170,7 +2474,8 @@ internal static class GamingCouchActiveSceneSetup
     {
         return action == GCActiveSceneSetupAction.ActiveSceneMissingPieces ||
                action == GCActiveSceneSetupAction.ActiveScenePlayerPrefab ||
-               action == GCActiveSceneSetupAction.ActiveSceneGameListener;
+               action == GCActiveSceneSetupAction.ActiveSceneGameListener ||
+               action == GCActiveSceneSetupAction.ActiveSceneWireExampleGame;
     }
 
     private static GCExampleAssetSetupContinuationContext CreateContinuationContext(
@@ -2192,8 +2497,24 @@ internal static class GamingCouchActiveSceneSetup
             spec.playerTypeName,
             spec.listenerObjectName,
             FindScriptType(spec.gameScriptAssetPath, spec.gameTypeName, typeof(MonoBehaviour)),
-            FindScriptType(spec.playerScriptAssetPath, spec.playerTypeName, typeof(GCPlayer))
+            ResolvePlayerType(spec)
         );
+    }
+
+    // The game flavor's player type comes from its generated script; the template flavor has no
+    // generated player script and spawns the stock GCPlayer, so resolve it from the loaded runtime
+    // assembly instead.
+    private static Type ResolvePlayerType(GCExampleScriptSetupSpec spec)
+    {
+        if (spec.playerScriptAssetPath == null)
+        {
+            var stockPlayerType = FindTypeByName(spec.playerTypeName);
+            return stockPlayerType != null && typeof(GCPlayer).IsAssignableFrom(stockPlayerType)
+                ? stockPlayerType
+                : null;
+        }
+
+        return FindScriptType(spec.playerScriptAssetPath, spec.playerTypeName, typeof(GCPlayer));
     }
 
     private static void DispatchScriptsReady(GCExampleAssetSetupContinuationContext context)
@@ -2283,232 +2604,178 @@ internal static class GamingCouchActiveSceneSetup
         return null;
     }
 
-    private static string BuildGameScriptSource(
-        string gameTypeName,
-        string playerTypeName,
+    private static string GenerateExampleTemplateSource()
+    {
+        return ReadAndRewriteMasterSource(
+            ExampleTemplateMasterTypeName,
+            new Dictionary<string, string>
+            {
+                { ExampleTemplateMasterTypeName, ExampleTemplateTypeName },
+            });
+    }
+
+    private static string GenerateExampleGameSource()
+    {
+        return ReadAndRewriteMasterSource(
+            ExampleGameMasterTypeName,
+            new Dictionary<string, string>
+            {
+                { ExampleGameMasterTypeName, ExampleGameTypeName },
+                { ExamplePlayerMasterTypeName, ExamplePlayerTypeName },
+            });
+    }
+
+    private static string GenerateExamplePlayerSource()
+    {
+        return ReadAndRewriteMasterSource(
+            ExamplePlayerMasterTypeName,
+            new Dictionary<string, string>
+            {
+                { ExamplePlayerMasterTypeName, ExamplePlayerTypeName },
+            });
+    }
+
+    private static string ReadAndRewriteMasterSource(
+        string masterTypeName,
+        IReadOnlyDictionary<string, string> typeNameReplacements
+    )
+    {
+        var masterText = ReadCanonicalMasterSource(masterTypeName);
+        return RewriteCanonicalMasterToGeneratedSource(masterText, typeNameReplacements, true);
+    }
+
+    // Reads a canonical example master (Tests/ExampleCanonical/<masterTypeName>.cs). Resolves the
+    // file whether the SDK is an embedded/registry package or the in-repo working copy, mirroring
+    // the package-vs-in-repo resolution the contract-fixture tests use.
+    internal static string ReadCanonicalMasterSource(string masterTypeName)
+    {
+        var fullPath = ResolveCanonicalMasterFullPath(masterTypeName + ".cs");
+        if (fullPath == null)
+        {
+            throw new FileNotFoundException(
+                "Could not locate canonical example master " + masterTypeName + ".cs under " + ExampleCanonicalSourceRelativeDir + "."
+            );
+        }
+
+        return File.ReadAllText(fullPath);
+    }
+
+    private static string ResolveCanonicalMasterFullPath(string fileName)
+    {
+        var relativePath = ExampleCanonicalSourceRelativeDir + "/" + fileName;
+
+        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(
+            typeof(GamingCouchActiveSceneSetup).Assembly
+        );
+        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+        {
+            var packageCandidate = Path.Combine(packageInfo.resolvedPath, relativePath);
+            if (File.Exists(packageCandidate))
+            {
+                return packageCandidate;
+            }
+        }
+
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (directory != null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return null;
+    }
+
+    // Turns a canonical master's text into the source generated into the user's project: drops the
+    // leading maintainer comment (everything before the first using directive), strips the
+    // DSB.GC.ExampleCanonical namespace wrapper and de-indents its body one level, applies the
+    // "Source" -> generated type-name replacements, and (optionally) prepends ExampleTemplateHeader.
+    // The generator and the golden test share this single method so generation cannot drift from the
+    // compiled master.
+    internal static string RewriteCanonicalMasterToGeneratedSource(
+        string masterText,
+        IReadOnlyDictionary<string, string> typeNameReplacements,
         bool includeExampleTemplateHeader
     )
     {
-        return (includeExampleTemplateHeader ? ExampleTemplateHeader : string.Empty) + @"using System.Collections;
-using DSB.GC;
-using DSB.GC.Game;
-using DSB.GC.Hud;
-using UnityEngine;
-
-public class " + gameTypeName + @" : MonoBehaviour
-{
-    [SerializeField]
-    private float roundSeconds = 10.0f;
-
-    [SerializeField]
-    private int maxScore = 100;
-
-    private readonly GCPlayerStore<" + playerTypeName + @"> players = new GCPlayerStore<" + playerTypeName + @">();
-    private Coroutine roundCoroutine;
-    private bool emittedExampleDiagnostic;
-
-    private void GamingCouchSetup(GCSetupOptions options)
-    {
-        var clampedMaxScore = Mathf.Max(1, maxScore);
-        Debug.Log(""GamingCouch setup received. Configure game mode and HUD before SetupDone."");
-
-        GamingCouch.Instance.SetupGameVersus(new GCGameVersusSetupOptions
+        if (masterText == null)
         {
-            maxScore = clampedMaxScore,
-            placementCriteria = new[]
+            throw new ArgumentNullException(nameof(masterText));
+        }
+
+        var normalized = masterText.Replace("\r\n", "\n").Replace("\r", "\n");
+        var lines = new List<string>(normalized.Split('\n'));
+
+        var firstUsingIndex = lines.FindIndex(
+            line => line.TrimStart().StartsWith("using ", StringComparison.Ordinal)
+        );
+        if (firstUsingIndex < 0)
+        {
+            throw new InvalidOperationException("Canonical master source has no using directive.");
+        }
+        lines.RemoveRange(0, firstUsingIndex);
+
+        var namespaceIndex = lines.FindIndex(
+            line => line.TrimStart().StartsWith("namespace ", StringComparison.Ordinal)
+        );
+        if (namespaceIndex >= 0)
+        {
+            var openBraceIndex = namespaceIndex + 1;
+            if (openBraceIndex >= lines.Count || lines[openBraceIndex].Trim() != "{")
             {
-                GCPlacementSortCriteria.ScoreDescending,
-                GCPlacementSortCriteria.Finished,
-                GCPlacementSortCriteria.EliminatedDescending,
-            },
-            hud = new GCGameHudOptions
-            {
-                isPlayersAutoUpdateEnabled = true,
-                players = new GCHudPlayersConfig
-                {
-                    valueTypeEnum = PlayersHudValueType.PointsSmall,
-                    meterTypeEnum = PlayersHudMeterType.Bar,
-                },
-            },
-        });
-
-        GamingCouch.Instance.SetupDone();
-    }
-
-    private void GamingCouchPlay(GCPlayOptions options)
-    {
-        players.Clear();
-        emittedExampleDiagnostic = false;
-        Debug.Log(""GamingCouch play received for "" + options.players.Length + "" players."");
-
-        GamingCouch.Instance.SetupPlayers<" + playerTypeName + @">(options.players, player =>
-        {
-            players.AddPlayer(player);
-            player.ApplyPlayerColor();
-            player.SetLives(3, ""Example play start"");
-            player.SetStatus(GCPlayerStatus.Pending, ""Ready"", ""Example play start"");
-            player.SetMeter(0, ""Example play start"");
-            Debug.Log(""Spawned player index "" + player.Index + ""."");
-        });
-
-        if (roundCoroutine != null)
-        {
-            StopCoroutine(roundCoroutine);
-        }
-
-        roundCoroutine = StartCoroutine(RunRound());
-    }
-
-    private void Update()
-    {
-        if (GamingCouch.Instance == null || GamingCouch.Instance.Status != GCStatus.Playing)
-        {
-            return;
-        }
-
-        foreach (var player in players.Players)
-        {
-            PollInputByPlayerIndex(player);
-        }
-    }
-
-    private void PollInputByPlayerIndex(" + playerTypeName + @" player)
-    {
-        var input = GamingCouch.Instance.GetInputsByPlayerIndex(player.Index);
-        if (input == null)
-        {
-            return;
-        }
-
-        if (input.primary)
-        {
-            player.AddScore(1, ""Primary input"");
-            player.SetStatus(GCPlayerStatus.Success, ""Scored"", ""Primary input"");
-            if (!player.IsFinished)
-            {
-                player.SetFinishedRevokable(""Primary input"");
-            }
-        }
-
-        if (input.secondary)
-        {
-            if (player.IsFinishedRevokable)
-            {
-                player.SetRevokeFinished(""Secondary input"");
+                throw new InvalidOperationException(
+                    "Canonical master namespace must be followed by an opening brace on its own line."
+                );
             }
 
-            player.SetStatus(GCPlayerStatus.Pending, ""Playing"", ""Secondary input"");
-        }
-
-        if (input.alt && !player.IsEliminated)
-        {
-            player.SetEliminatedRevokable(""Alt input"");
-        }
-    }
-
-    private IEnumerator RunRound()
-    {
-        var clampedRoundSeconds = Mathf.Max(0.1f, roundSeconds);
-        yield return new WaitForSeconds(clampedRoundSeconds * 0.5f);
-
-        UpdateRuntimeStateForHud();
-        EmitDiagnosticLogExample();
-
-        yield return new WaitForSeconds(clampedRoundSeconds * 0.5f);
-
-        ApplyRandomFinalScores();
-        GamingCouch.Instance.GameOver();
-    }
-
-    private void UpdateRuntimeStateForHud()
-    {
-        foreach (var player in players.Players)
-        {
-            player.SetStatus(GCPlayerStatus.Pending, ""Halfway"", ""Example runtime state"");
-            player.SetMeter(50, ""Example runtime state"");
-        }
-    }
-
-    private void EmitDiagnosticLogExample()
-    {
-        if (emittedExampleDiagnostic || players.Players.Count == 0)
-        {
-            return;
-        }
-
-        emittedExampleDiagnostic = true;
-        Debug.Log(""Example diagnostic checkpoint: runtime state and HUD updated for "" + players.Players.Count + "" players."");
-    }
-
-    private void ApplyRandomFinalScores()
-    {
-        var clampedMaxScore = Mathf.Max(1, maxScore);
-        foreach (var player in players.Players)
-        {
-            player.SetScore(Random.Range(0, clampedMaxScore + 1), ""Example round complete"");
-            if (player.IsEliminatedRevokable)
+            var closeBraceIndex = lines.FindLastIndex(line => line.Trim() == "}");
+            if (closeBraceIndex <= openBraceIndex)
             {
-                player.SetEliminatedPermanent(""Example round complete"");
+                throw new InvalidOperationException("Canonical master namespace has no closing brace.");
             }
 
-            player.SetFinishedPermanent(""Example round complete"");
+            var rebuilt = new List<string>();
+            rebuilt.AddRange(lines.GetRange(0, namespaceIndex));
+            for (var i = openBraceIndex + 1; i < closeBraceIndex; i++)
+            {
+                rebuilt.Add(RemoveOneIndentLevel(lines[i]));
+            }
+
+            lines = rebuilt;
         }
-    }
-}
-";
-    }
 
-    private static string BuildPlayerScriptSource(
-        string playerTypeName,
-        bool includeExampleTemplateHeader
-    )
-    {
-        return (includeExampleTemplateHeader ? ExampleTemplateHeader : string.Empty) + @"using DSB.GC;
-using UnityEngine;
+        var generated = string.Join("\n", lines).TrimEnd('\n') + "\n";
 
-public class " + playerTypeName + @" : GCPlayer
-{
-    [SerializeField]
-    private Renderer colorRenderer;
-
-    private void Reset()
-    {
-        FindColorRenderer();
-    }
-
-    private void OnValidate()
-    {
-        FindColorRenderer();
-    }
-
-    private void Start()
-    {
-        ApplyPlayerColor();
-    }
-
-    public void ApplyPlayerColor()
-    {
-        FindColorRenderer();
-
-        if (colorRenderer != null)
+        foreach (var replacement in typeNameReplacements)
         {
-            colorRenderer.material.color = ColorBase;
+            generated = generated.Replace(replacement.Key, replacement.Value);
         }
-    }
 
-    public override string GetHudValueText()
-    {
-        return Score.ToString();
-    }
-
-    private void FindColorRenderer()
-    {
-        if (colorRenderer == null)
+        if (includeExampleTemplateHeader)
         {
-            colorRenderer = GetComponentInChildren<Renderer>();
+            generated = ExampleTemplateHeader + generated;
         }
+
+        return generated;
     }
-}
-";
+
+    private static string RemoveOneIndentLevel(string line)
+    {
+        if (line.StartsWith("    ", StringComparison.Ordinal))
+        {
+            return line.Substring(4);
+        }
+
+        if (line.StartsWith("\t", StringComparison.Ordinal))
+        {
+            return line.Substring(1);
+        }
+
+        return line;
     }
 }

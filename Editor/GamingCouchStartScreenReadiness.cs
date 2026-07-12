@@ -46,6 +46,7 @@ internal enum GCStartScreenReadinessActionId
     CreateGamingCouch,
     CreateAndWireGameScript,
     WirePlayerPrefab,
+    WireExampleGame,
     SetFirstBuildSettingsScene,
     Select16By9GameView,
     SetUpWebGLExport,

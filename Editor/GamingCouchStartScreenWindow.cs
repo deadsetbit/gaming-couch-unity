@@ -206,6 +206,11 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             {
                 RunCreateNewExampleScene();
             }
+
+            if (GUILayout.Button("Wire Example Game"))
+            {
+                RunWireExampleGame();
+            }
         }
 
         EditorGUILayout.Space();
@@ -826,6 +831,15 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         }
 
         ApplySetupActionResult(GamingCouchStartScreenSetupActions.FromExampleSceneCreationResult(creation));
+    }
+
+    private void RunWireExampleGame()
+    {
+        ApplySetupActionResult(
+            GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+                GamingCouchActiveSceneSetup.WireExampleGame()
+            )
+        );
     }
 
     internal void ApplyExternalSetupActionResult(GCStartScreenSetupActionResult result)

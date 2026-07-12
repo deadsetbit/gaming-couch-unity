@@ -111,7 +111,7 @@ internal static class GamingCouchExampleSceneCreation
         var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
         // Remove the previous example scenes and any leftover blocking folders (e.g. a directory
-        // literally named "GCGameExample.cs"). Valid example scripts and the player prefab are
+        // literally named "GCExampleGame.cs"). Valid example scripts and the player prefab are
         // intentionally kept and reused: deleting a compiled script here only to regenerate it in the
         // same pass would trip the generator's "a compiled type already exists" guard before Unity
         // reloads the domain.
@@ -186,7 +186,7 @@ internal static class GamingCouchExampleSceneCreation
 
         Debug.Log(
             BuildGeneratedFilesGuidance(message),
-            AssetDatabase.LoadMainAssetAtPath(GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath)
+            AssetDatabase.LoadMainAssetAtPath(GamingCouchActiveSceneSetup.ExampleTemplateScriptAssetPath)
         );
 
         return new GCExampleSceneCreationResult(
@@ -394,7 +394,7 @@ internal static class GamingCouchExampleSceneCreation
         return
             "GamingCouch example scene\n" +
             "Example scripts: " + GamingCouchActiveSceneSetup.ExampleFolderAssetPath + "\n" +
-            "GCGameExample.cs (game) and GCPlayerExample.cs (player)\n" +
+            "GCExampleTemplate.cs (barebones template — copy it to start your own game)\n" +
             "Players spawn at runtime on the Gaming Couch platform.\n" +
             "(You can delete this label.)";
     }
@@ -404,9 +404,9 @@ internal static class GamingCouchExampleSceneCreation
         return
             "GamingCouch: " + headline + "\n" +
             "Browse the generated example files and grow them into your game:\n" +
-            "  - " + GamingCouchActiveSceneSetup.ExampleGameScriptAssetPath + "  (game listener)\n" +
-            "  - " + GamingCouchActiveSceneSetup.ExamplePlayerScriptAssetPath + "  (player)\n" +
-            "  - " + GamingCouchActiveSceneSetup.ExamplePlayerPrefabAssetPath + "  (player prefab)";
+            "  - " + GamingCouchActiveSceneSetup.ExampleTemplateScriptAssetPath + "  (barebones game listener)\n" +
+            "  - " + GamingCouchActiveSceneSetup.StockPlayerPrefabAssetPath + "  (stock player prefab)\n" +
+            "Run \"Wire example game\" to swap in the full example game (GCExampleGame + GCExamplePlayer).";
     }
 
     private static GCExampleSceneCreationResult Cancelled(string[] existingScenePaths)

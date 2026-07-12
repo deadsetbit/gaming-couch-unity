@@ -47,6 +47,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     private bool createdExampleFolderForCollisionTest;
     private bool createdExampleGameScriptPathCollisionForTest;
     private bool createdExamplePlayerScriptPathCollisionForTest;
+    private bool createdExampleTemplateScriptPathCollisionForTest;
 
     [SetUp]
     public void SetUp()
@@ -132,61 +133,104 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
-    public void CreateAndWireGameScriptSetupUsesGCExampleGameAndPlayerAssets()
+    public void ActiveSceneSetupDefaultSpecUsesGCExampleTemplateAndStockPlayer()
     {
+        // The default active-scene setup (incl. "Create example scene") wires the barebones template
+        // + the stock GCPlayer, which has no generated player script.
         var missingPiecesSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
             GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneMissingPieces
         );
+
+        Assert.That(missingPiecesSpec.scriptFolderAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ExampleFolderAssetPath));
+        Assert.That(missingPiecesSpec.gameScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCExampleTemplate.cs"));
+        Assert.That(missingPiecesSpec.playerScriptAssetPath, Is.Null);
+        Assert.That(missingPiecesSpec.playerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayer.prefab"));
+        Assert.That(missingPiecesSpec.gameTypeName, Is.EqualTo("GCExampleTemplate"));
+        Assert.That(missingPiecesSpec.playerTypeName, Is.EqualTo("GCPlayer"));
+        Assert.That(missingPiecesSpec.listenerObjectName, Is.EqualTo("Game"));
+        Assert.That(missingPiecesSpec.requiresGeneratedScriptFolder, Is.True);
+    }
+
+    [Test]
+    public void WireExampleGameSpecUsesGCExampleGameAndPlayerAssets()
+    {
+        // The additive "Wire example game" action selects the full game flavor.
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
             GCActiveSceneSetupIntent.ActiveScene,
-            GCActiveSceneSetupAction.ActiveSceneGameListener
-        );
-        var playerPrefabSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
-            GCActiveSceneSetupIntent.ActiveScene,
-            GCActiveSceneSetupAction.ActiveScenePlayerPrefab
+            GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
 
         Assert.That(gameSpec.scriptFolderAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ExampleFolderAssetPath));
-        Assert.That(gameSpec.gameScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCGameExample.cs"));
-        Assert.That(gameSpec.playerScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
-        Assert.That(gameSpec.playerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
-        Assert.That(gameSpec.gameTypeName, Is.EqualTo("GCGameExample"));
-        Assert.That(gameSpec.playerTypeName, Is.EqualTo("GCPlayerExample"));
+        Assert.That(gameSpec.gameScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCExampleGame.cs"));
+        Assert.That(gameSpec.playerScriptAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCExamplePlayer.cs"));
+        Assert.That(gameSpec.playerPrefabAssetPath, Is.EqualTo("Assets/GamingCouch/GCExample/GCExamplePlayer.prefab"));
+        Assert.That(gameSpec.gameTypeName, Is.EqualTo("GCExampleGame"));
+        Assert.That(gameSpec.playerTypeName, Is.EqualTo("GCExamplePlayer"));
         Assert.That(gameSpec.listenerObjectName, Is.EqualTo("Game"));
         Assert.That(gameSpec.requiresGeneratedScriptFolder, Is.True);
-        Assert.That(playerPrefabSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath));
-        Assert.That(playerPrefabSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath));
-        Assert.That(playerPrefabSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
-        Assert.That(missingPiecesSpec.gameScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath));
-        Assert.That(missingPiecesSpec.playerScriptAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath));
-        Assert.That(missingPiecesSpec.playerPrefabAssetPath, Is.EqualTo(GamingCouchActiveSceneSetup.ActiveScenePlayerPrefabAssetPath));
     }
 
     [Test]
-    public void GeneratedActiveSceneGameSourceUsesGCGameExampleAndDemonstratesPlayFlow()
+    public void GeneratedActiveSceneGameSourceEqualsCanonicalGameMasterAfterRename()
     {
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
             GCActiveSceneSetupIntent.ActiveScene,
-            GCActiveSceneSetupAction.ActiveSceneGameListener
+            GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
-        var source = gameSpec.BuildGameScriptSource();
 
-        AssertHasExampleTemplateHeader(source);
-        AssertGeneratedGameSourceDemonstratesPlayFlow(source, "GCGameExample", "GCPlayerExample");
+        var generated = gameSpec.BuildGameScriptSource();
+
+        AssertGeneratedEqualsCanonicalMaster(
+            generated,
+            GamingCouchActiveSceneSetup.ExampleGameMasterTypeName,
+            new Dictionary<string, string>
+            {
+                { GamingCouchActiveSceneSetup.ExampleGameMasterTypeName, GamingCouchActiveSceneSetup.ExampleGameTypeName },
+                { GamingCouchActiveSceneSetup.ExamplePlayerMasterTypeName, GamingCouchActiveSceneSetup.ExamplePlayerTypeName },
+            }
+        );
+        AssertGeneratedSourceShape(generated, "public class GCExampleGame : MonoBehaviour");
     }
 
     [Test]
-    public void GeneratedActiveScenePlayerSourceUsesGCPlayerExampleAndSupportsColorPlaceholderPrefab()
+    public void GeneratedActiveScenePlayerSourceEqualsCanonicalPlayerMasterAfterRename()
     {
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
             GCActiveSceneSetupIntent.ActiveScene,
-            GCActiveSceneSetupAction.ActiveSceneGameListener
+            GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
-        var source = gameSpec.BuildPlayerScriptSource();
 
-        AssertHasExampleTemplateHeader(source);
-        AssertGeneratedPlayerSourceSupportsColorPlaceholderPrefab(source, "GCPlayerExample");
+        var generated = gameSpec.BuildPlayerScriptSource();
+
+        AssertGeneratedEqualsCanonicalMaster(
+            generated,
+            GamingCouchActiveSceneSetup.ExamplePlayerMasterTypeName,
+            new Dictionary<string, string>
+            {
+                { GamingCouchActiveSceneSetup.ExamplePlayerMasterTypeName, GamingCouchActiveSceneSetup.ExamplePlayerTypeName },
+            }
+        );
+        AssertGeneratedSourceShape(generated, "public class GCExamplePlayer : GCPlayer");
+    }
+
+    [Test]
+    public void GeneratedTemplateSourceEqualsCanonicalTemplateMasterAfterRename()
+    {
+        var masterText = GamingCouchActiveSceneSetup.ReadCanonicalMasterSource(
+            GamingCouchActiveSceneSetup.ExampleTemplateMasterTypeName
+        );
+
+        var generated = GamingCouchActiveSceneSetup.RewriteCanonicalMasterToGeneratedSource(
+            masterText,
+            new Dictionary<string, string>
+            {
+                { GamingCouchActiveSceneSetup.ExampleTemplateMasterTypeName, GamingCouchActiveSceneSetup.ExampleTemplateTypeName },
+            },
+            true
+        );
+
+        AssertGeneratedSourceShape(generated, "public class GCExampleTemplate : MonoBehaviour");
     }
 
     [Test]
@@ -371,20 +415,22 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
-    public void CreateAndWireGameBlocksGCExampleScriptPathCollisionsWithoutOverwrite()
+    public void CreateAndWireBlocksGCExampleTemplateScriptPathCollisionWithoutOverwrite()
     {
-        ReserveGCExampleGameAndPlayerScriptPathsForCollisionTest();
-        CreateScriptPathCollisionDirectory(
-            GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath,
-            ref createdExampleGameScriptPathCollisionForTest
+        // The default create-and-wire flow generates the barebones GCExampleTemplate; a folder
+        // occupying its generated script path must block generation, never overwrite (ADR 0016).
+        ReserveGeneratedScriptPathForCollisionTest(GamingCouchActiveSceneSetup.ExampleTemplateScriptAssetPath);
+        EnsureGCExampleFolderForTest(
+            ref createdExampleProjectFolderForCollisionTest,
+            ref createdExampleFolderForCollisionTest
         );
         CreateScriptPathCollisionDirectory(
-            GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
-            ref createdExamplePlayerScriptPathCollisionForTest
+            GamingCouchActiveSceneSetup.ExampleTemplateScriptAssetPath,
+            ref createdExampleTemplateScriptPathCollisionForTest
         );
         // Deliberately not imported into the AssetDatabase: a folder whose name ends in ".cs" sends
         // Unity's script importer into a re-import loop. The generator blocks on a raw Directory.Exists
-        // check, so importing the collision folders is unnecessary.
+        // check, so importing the collision folder is unnecessary.
         CreateGamingCouch("GamingCouch");
 
         var result = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListenerReference();
@@ -392,9 +438,104 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         Assert.That(result.IsBlocked, Is.True);
         Assert.That(result.changed, Is.False);
         Assert.That(result.status, Is.EqualTo(GCActiveSceneSetupStatus.Blocked));
-        AssertHasEntryContaining(result.details, "Cannot create the example script Assets/GamingCouch/GCExample/GCGameExample.cs because a folder (not a script file) already exists at that path.");
-        AssertHasEntryContaining(result.details, "Cannot create the example script Assets/GamingCouch/GCExample/GCPlayerExample.cs because a folder (not a script file) already exists at that path.");
+        AssertHasEntryContaining(result.details, "Cannot create the example script Assets/GamingCouch/GCExample/GCExampleTemplate.cs because a folder (not a script file) already exists at that path.");
         Assert.That(testScene.GetRootGameObjects().Any(root => root != null && root.name == "Game"), Is.False);
+    }
+
+    [Test]
+    public void WireExampleGameGuardRejectsSceneWithoutGamingCouch()
+    {
+        // The active test scene has no GamingCouch, so the template-first guard rejects it.
+        var isTemplateScene = GamingCouchActiveSceneSetup.TryGetTemplateSceneGamingCouch(out var gamingCouch, out var message);
+
+        Assert.That(isTemplateScene, Is.False);
+        Assert.That(gamingCouch, Is.Null);
+        Assert.That(message, Does.Contain("Create New Example Scene"));
+    }
+
+    [Test]
+    public void WireExampleGameBlocksWhenSceneIsNotTemplateScene()
+    {
+        // Drive the real entry point (not just the extracted guard): the active test scene has no
+        // GamingCouch, so WireExampleGame must return Blocked with the "create the template scene
+        // first" message and generate nothing.
+        var result = GamingCouchActiveSceneSetup.WireExampleGame();
+
+        Assert.That(result.IsBlocked, Is.True);
+        Assert.That(result.IsWired, Is.False);
+        Assert.That(result.changed, Is.False);
+        Assert.That(result.message, Does.Contain("Create New Example Scene"));
+    }
+
+    [Test]
+    public void WireExampleGameScriptsReadySwapReplacesListenerComponentAndPlayerPrefab()
+    {
+        // The heart of "Wire example game": after the generated GCExampleGame/GCExamplePlayer scripts
+        // compile, the scripts-ready continuation swaps the listener's example component to the game
+        // type and repoints GamingCouch.playerPrefab at the generated player prefab. Drive that
+        // continuation directly with compiled fixture stand-ins — a real domain reload cannot be
+        // awaited inside one EditMode test. Template-component removal is keyed to the generated
+        // "GCExampleTemplate" type name, which by design has no compiled stand-in (see
+        // GCExampleGameFixture's note), so that branch and the post-reload dispatch stay manually
+        // verified; the component add + player-prefab repoint are the swap behavior covered here.
+        EnsureTestAssetFolder();
+        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var listener = new GameObject("Game");
+        Assert.That(
+            GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status,
+            Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded)
+        );
+
+        var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(GCExamplePlayerFixture) + ".prefab";
+        var context = new GCExampleAssetSetupContinuationContext(
+            GCActiveSceneSetupIntent.ActiveScene,
+            GCActiveSceneSetupAction.ActiveSceneWireExampleGame,
+            true,
+            testFolderAssetPath,
+            testFolderAssetPath + "/GameScript.cs",
+            testFolderAssetPath + "/PlayerScript.cs",
+            playerPrefabAssetPath,
+            nameof(GCExampleGameFixture),
+            nameof(GCExamplePlayerFixture),
+            "Game",
+            typeof(GCExampleGameFixture),
+            typeof(GCExamplePlayerFixture)
+        );
+
+        GamingCouchActiveSceneSetup.SwapListenerToExampleGameOnScriptsReady(context);
+
+        Assert.That(
+            listener.GetComponent<GCExampleGameFixture>(),
+            Is.Not.Null,
+            "swap did not add the example game component to the listener"
+        );
+        Assert.That(
+            GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName),
+            Is.SameAs(listener),
+            "swap must keep pointing at the same wired listener object"
+        );
+
+        var playerPrefab = GamingCouchSceneWiring.ReadObjectReference(
+            gamingCouch,
+            GamingCouchSceneWiring.PlayerPrefabPropertyName
+        ) as GameObject;
+        Assert.That(playerPrefab, Is.Not.Null, "swap did not repoint playerPrefab to the example player prefab");
+        Assert.That(AssetDatabase.GetAssetPath(playerPrefab), Is.EqualTo(playerPrefabAssetPath));
+        Assert.That(playerPrefab.GetComponent<GCExamplePlayerFixture>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void WireExampleGameGuardRejectsSceneNotWiredToTemplate()
+    {
+        // A GamingCouch with no listener (or a listener without GCExampleTemplate) is not the
+        // template scene "Wire example game" upgrades, so the guard rejects it.
+        CreateGamingCouch("GamingCouch");
+
+        var isTemplateScene = GamingCouchActiveSceneSetup.TryGetTemplateSceneGamingCouch(out var gamingCouch, out var message);
+
+        Assert.That(isTemplateScene, Is.False);
+        Assert.That(gamingCouch, Is.Null);
+        Assert.That(message, Does.Contain("Create New Example Scene"));
     }
 
     [Test]
@@ -1035,80 +1176,57 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         return row;
     }
 
-    private static void AssertGeneratedGameSourceDemonstratesPlayFlow(
-        string source,
-        string gameTypeName,
-        string playerTypeName
+    // Golden generation check: the file the generator writes must equal the canonical master after
+    // the "Source" -> generated name rewrite (normalized for line endings). This replaces the old
+    // ~42 hardcoded substring assertions with a single source of truth — the compiled master.
+    private static void AssertGeneratedEqualsCanonicalMaster(
+        string generated,
+        string masterTypeName,
+        Dictionary<string, string> typeNameReplacements
     )
     {
-        Assert.That(source, Does.Contain("public class " + gameTypeName + " : MonoBehaviour"));
-        Assert.That(source, Does.Contain("private void GamingCouchSetup(GCSetupOptions options)"));
-        Assert.That(source, Does.Contain("Debug.Log(\"GamingCouch setup received."));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupGameVersus(new GCGameVersusSetupOptions"));
-        Assert.That(source, Does.Contain("valueTypeEnum = PlayersHudValueType.PointsSmall"));
-        Assert.That(source, Does.Contain("meterTypeEnum = PlayersHudMeterType.Bar"));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupDone();"));
-        Assert.That(source, Does.Contain("private void GamingCouchPlay(GCPlayOptions options)"));
-        Assert.That(source, Does.Contain("Debug.Log(\"GamingCouch play received for \" + options.players.Length + \" players.\""));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.SetupPlayers<" + playerTypeName + ">(options.players"));
-        Assert.That(source, Does.Contain("players.AddPlayer(player);"));
-        Assert.That(source, Does.Contain("player.ApplyPlayerColor();"));
-        Assert.That(source, Does.Contain("player.SetLives(3, \"Example play start\")"));
-        Assert.That(source, Does.Contain("player.SetStatus(GCPlayerStatus.Pending, \"Ready\", \"Example play start\")"));
-        Assert.That(source, Does.Contain("player.SetMeter(0, \"Example play start\")"));
-        Assert.That(source, Does.Contain("roundCoroutine = StartCoroutine(RunRound());"));
-        Assert.That(source, Does.Contain("private void Update()"));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.Status != GCStatus.Playing"));
-        Assert.That(source, Does.Contain("PollInputByPlayerIndex(player);"));
-        Assert.That(source, Does.Contain("private void PollInputByPlayerIndex(" + playerTypeName + " player)"));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.GetInputsByPlayerIndex(player.Index)"));
-        Assert.That(source, Does.Contain("player.AddScore(1, \"Primary input\")"));
-        Assert.That(source, Does.Contain("if (!player.IsFinished)"));
-        Assert.That(source, Does.Contain("player.SetFinishedRevokable(\"Primary input\")"));
-        Assert.That(source, Does.Contain("if (player.IsFinishedRevokable)"));
-        Assert.That(source, Does.Contain("player.SetRevokeFinished(\"Secondary input\")"));
-        Assert.That(source, Does.Contain("if (input.alt && !player.IsEliminated)"));
-        Assert.That(source, Does.Contain("player.SetEliminatedRevokable(\"Alt input\")"));
-        Assert.That(source, Does.Contain("private IEnumerator RunRound()"));
-        Assert.That(source, Does.Contain("UpdateRuntimeStateForHud();"));
-        Assert.That(source, Does.Contain("EmitDiagnosticLogExample();"));
-        Assert.That(source, Does.Contain("private void UpdateRuntimeStateForHud()"));
-        Assert.That(source, Does.Contain("player.SetStatus(GCPlayerStatus.Pending, \"Halfway\", \"Example runtime state\")"));
-        Assert.That(source, Does.Contain("player.SetMeter(50, \"Example runtime state\")"));
-        Assert.That(source, Does.Contain("private void EmitDiagnosticLogExample()"));
-        Assert.That(source, Does.Contain("Example diagnostic checkpoint: runtime state and HUD updated"));
-        Assert.That(source, Does.Contain("private void ApplyRandomFinalScores()"));
-        Assert.That(source, Does.Contain("Random.Range(0, clampedMaxScore + 1)"));
-        Assert.That(source, Does.Contain("player.SetScore("));
-        Assert.That(source, Does.Contain("player.SetEliminatedPermanent(\"Example round complete\")"));
-        Assert.That(source, Does.Contain("player.SetFinishedPermanent("));
-        Assert.That(source, Does.Contain("GamingCouch.Instance.GameOver();"));
+        var masterText = GamingCouchActiveSceneSetup.ReadCanonicalMasterSource(masterTypeName);
+        var expected = GamingCouchActiveSceneSetup.RewriteCanonicalMasterToGeneratedSource(
+            masterText,
+            typeNameReplacements,
+            true
+        );
+
+        Assert.That(
+            Normalize(generated),
+            Is.EqualTo(Normalize(expected)),
+            "Generated source must equal the canonical master " + masterTypeName + " after name rewrite."
+        );
     }
 
-    private static void AssertGeneratedPlayerSourceSupportsColorPlaceholderPrefab(
-        string source,
-        string playerTypeName
-    )
+    // Structural checks that do not depend on the rewrite implementation, so they catch a broken
+    // transform even where the equality check above is internally consistent.
+    private static void AssertGeneratedSourceShape(string generated, string expectedClassDeclaration)
     {
-        Assert.That(source, Does.Contain("public class " + playerTypeName + " : GCPlayer"));
-        Assert.That(source, Does.Contain("private Renderer colorRenderer;"));
-        Assert.That(source, Does.Contain("private void Reset()"));
-        Assert.That(source, Does.Contain("private void OnValidate()"));
-        Assert.That(source, Does.Contain("private void Start()"));
-        Assert.That(source, Does.Contain("public void ApplyPlayerColor()"));
-        Assert.That(source, Does.Contain("colorRenderer.material.color = ColorBase;"));
-        Assert.That(source, Does.Contain("colorRenderer = GetComponentInChildren<Renderer>();"));
-        Assert.That(source, Does.Contain("public override string GetHudValueText()"));
-        Assert.That(source, Does.Contain("return Score.ToString();"));
+        var normalized = Normalize(generated);
+
+        // The move/rename header is present so the user knows they own and can rename the file.
+        Assert.That(normalized, Does.StartWith("/*\n * GamingCouch example template file."));
+        Assert.That(normalized, Does.Contain("Move this script into your project's own scripts folder"));
+
+        // The generated type keeps the fixed generated name; the canonical "Source" type-name suffix
+        // and the DSB.GC.ExampleCanonical namespace are stripped on the way into the user's project.
+        Assert.That(normalized, Does.Contain(expectedClassDeclaration));
+        Assert.That(
+            normalized,
+            Does.Not.Contain("Source"),
+            "Generated source must not carry the canonical \"Source\" type-name suffix."
+        );
+        Assert.That(
+            normalized,
+            Does.Not.Contain("namespace DSB.GC.ExampleCanonical"),
+            "Generated source must not carry the canonical namespace."
+        );
     }
 
-    private static void AssertHasExampleTemplateHeader(string source)
+    private static string Normalize(string text)
     {
-        Assert.That(source, Does.StartWith("/*\n * GamingCouch example template file."));
-        Assert.That(source, Does.Contain("Move this script into your project's own scripts folder"));
-        Assert.That(source, Does.Contain("rename the file and class to fit your project"));
-        Assert.That(source, Does.Contain("Game.cs/Game"));
-        Assert.That(source, Does.Contain("Player.cs/Player"));
+        return text.Replace("\r\n", "\n").Replace("\r", "\n");
     }
 
     private static GCStartScreenLocalPlayJsonReadiness CreateValidLocalPlayJsonReadiness()
@@ -1524,6 +1642,10 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         DeleteGeneratedScriptPathCollisionTestAsset(
             GamingCouchActiveSceneSetup.ActiveScenePlayerScriptAssetPath,
             ref createdExamplePlayerScriptPathCollisionForTest
+        );
+        DeleteGeneratedScriptPathCollisionTestAsset(
+            GamingCouchActiveSceneSetup.ExampleTemplateScriptAssetPath,
+            ref createdExampleTemplateScriptPathCollisionForTest
         );
         DeleteCreatedGCExampleFolders(
             ref createdExampleProjectFolderForCollisionTest,

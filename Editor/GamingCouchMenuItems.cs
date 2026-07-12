@@ -4,6 +4,7 @@ internal static class GamingCouchMenuPriorities
 {
   internal const int StartScreen = 0;
   internal const int CreateExampleScene = 1;
+  internal const int WireExampleGame = 2;
   internal const int WebGLBuild = 20;
   internal const int CreateGamingCouchGameObject = 21;
 }
@@ -28,6 +29,17 @@ public class GamingCouchMenuItems
     var window = GamingCouchStartScreenWindow.Open();
     window.ApplyExternalSetupActionResult(
       GamingCouchStartScreenSetupActions.FromExampleSceneCreationResult(result)
+    );
+  }
+
+  [MenuItem("GamingCouch/Wire Example Game", false, GamingCouchMenuPriorities.WireExampleGame)]
+  static void WireExampleGame()
+  {
+    var window = GamingCouchStartScreenWindow.Open();
+    window.ApplyExternalSetupActionResult(
+      GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+        GamingCouchActiveSceneSetup.WireExampleGame()
+      )
     );
   }
 

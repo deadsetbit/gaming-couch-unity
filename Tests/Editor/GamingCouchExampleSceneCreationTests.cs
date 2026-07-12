@@ -98,8 +98,7 @@ public sealed class GamingCouchExampleSceneCreationTests
         var guidance = GamingCouchExampleSceneCreation.BuildGeneratedFilesGuidance("Created it.");
 
         Assert.That(guidance, Does.Contain("Created it."));
-        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCGameExample.cs"));
-        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCPlayerExample.cs"));
-        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCPlayerExample.prefab"));
+        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCExampleTemplate.cs"));
+        Assert.That(guidance, Does.Contain("Assets/GamingCouch/GCExample/GCPlayer.prefab"));
     }
 }

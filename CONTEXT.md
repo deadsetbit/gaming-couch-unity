@@ -103,7 +103,7 @@ Safe setup applied to the currently active user scene, including creating or reu
 _Avoid_: generated scene setup
 
 **Example Assets**:
-Generated editable project assets in `Assets/GamingCouch/GCExample`, including `GCGameExample.cs`, `GCPlayerExample.cs`, and `GCPlayerExample.prefab`. They are a wiring demo, not a full sample game.
+Generated editable project assets in `Assets/GamingCouch/GCExample`, in two honest tiers. The **Example Template** (`GCExampleTemplate.cs` + a stock `GCPlayer` prefab, wired by `Create New Example Scene`) is a barebones wiring demo — the minimum a listener does to complete the platform loop — that you copy and grow into your own game. The **Example Game** (`GCExampleGame.cs`, `GCExamplePlayer.cs`, `GCExamplePlayer.prefab`, wired additively by `Wire Example Game`) is a small but complete playable loop (scoring, rounds, per-player input). Both are self-contained: each script *is* the platform listener, with no adapter or base class.
 _Avoid_: package samples
 
 ## Relationships

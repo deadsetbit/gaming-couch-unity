@@ -59,7 +59,7 @@ internal sealed class InheritedCompatibleGameScriptReceiver : CompatibleGameScri
 }
 
 // Fixture stand-in for the generated example game type. It intentionally does NOT reuse the real
-// generated type name (GCGameExample): the generator's FindTypeByName guard matches by simple type
+// generated type name (GCExampleGame): the generator's FindTypeByName guard matches by simple type
 // name across every loaded assembly, so a fixture sharing that name would make the test assembly
 // permanently block example-script generation in any project that loads these tests.
 //
