@@ -204,12 +204,12 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
         {
             if (GUILayout.Button("Create New Example Scene"))
             {
-                RunCreateNewExampleScene();
+                RunDeferred(RunCreateNewExampleScene);
             }
 
             if (GUILayout.Button("Wire Example Game"))
             {
-                RunWireExampleGame();
+                RunDeferred(RunWireExampleGame);
             }
         }
 
@@ -304,7 +304,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             {
                 if (GUI.Button(buttonRect, "Open"))
                 {
-                    OpenGamingCouchScene(entry);
+                    RunDeferred(() => OpenGamingCouchScene(entry));
                 }
             }
 
@@ -583,7 +583,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             {
                 if (GUI.Button(buttonRect, buttonLabel))
                 {
-                    RunChecklistAction(check);
+                    RunDeferred(() => RunChecklistAction(check));
                 }
             }
         }
@@ -756,14 +756,14 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             {
                 if (GUILayout.Button("Set up missing pieces"))
                 {
-                    RunActiveSceneSetup();
+                    RunDeferred(RunActiveSceneSetup);
                 }
             }
         }
 
         if (GUILayout.Button("Configure WebGL Build Settings"))
         {
-            RunWebGLBuildSettingsProfilePreview();
+            RunDeferred(RunWebGLBuildSettingsProfilePreview);
         }
 
         EditorGUILayout.Space();
@@ -820,6 +820,19 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void RunActiveSceneSetup()
     {
         ApplySetupActionResult(GamingCouchStartScreenSetupActions.RunActiveSceneSetup());
+    }
+
+    // Button handlers that create/open scenes or run setup mutate the scene and asset database.
+    // Running that work straight from the click executes it mid-OnGUI, which corrupts the IMGUI
+    // layout stack ("EndLayoutGroup: BeginLayoutGroup must be called first" / unbalanced GUIClips).
+    // Defer it to the next editor tick so the current OnGUI pass finishes cleanly first.
+    private void RunDeferred(Action action)
+    {
+        EditorApplication.delayCall += () =>
+        {
+            action();
+            Repaint();
+        };
     }
 
     private void RunCreateNewExampleScene()

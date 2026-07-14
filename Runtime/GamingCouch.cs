@@ -115,9 +115,15 @@ namespace DSB.GC
 
         private void Awake()
         {
-            GCLog.logLevel = LogLevel;
+            // This is [ExecuteInEditMode], so editor scene setup adding the component fires Awake
+            // in edit mode too. Configure runtime logging and emit lifecycle logs only when actually
+            // running, so creating or editing a scene in the editor doesn't spam the console.
+            if (Application.isPlaying)
+            {
+                GCLog.logLevel = LogLevel;
+                GCLog.LogDebug("Awake");
+            }
 
-            GCLog.LogDebug("Awake");
             // Keep the FindObjectsSortMode overload: the parameterless FindObjectsByType<T>()
             // only exists from Unity 6000.5+, and the package targets Unity 6+. The
             // deprecation warning on newer editors is harmless.
