@@ -17,4 +17,3 @@ Platform (client/SDK) and DevApp maintainers: see the internal
 ## Reference
 
 - [API documentation](https://deadsetbit.github.io/gaming-couch-unity/api)
-- [Gaming Couch Unity Template](https://github.com/deadsetbit/gaming-couch-unity-template) example project

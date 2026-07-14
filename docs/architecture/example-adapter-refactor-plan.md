@@ -26,7 +26,7 @@ Related: ADR 0016 (example scene creation), backlog B004 / B001 / B002 / B006, C
 - **D ✅ — verified.** PlayMode smoke test (`Tests/PlayMode/`, + `InternalsVisibleTo` in `Runtime/GamingCouch.cs`). First run failed with "Game already set" — the test manually `SendMessage`d `GamingCouchSetup`, but `GamingCouch.Start()` already drives it, so setup double-ran. Fixed (removed the manual trigger; the runtime's `Start()` drives setup→play→game-over from the pre-cached fake capture). **Re-run green.**
 - **Full suites green (2026-07-12):** both PlayMode and EditMode ran (all tests) in Unity's Test Runner.
 
-**Verification workflow (decided):** the user runs tests manually in Unity's Test Runner (the open-Editor bridge only progresses while Unity is frontmost). Host project: `/Users/anttil/dev/dsb/gaming-couch-unity-template` (symlinks this repo at `Packages/gaming-couch-unity`).
+**Verification workflow (decided):** the user runs tests manually in Unity's Test Runner (the open-Editor bridge only progresses while Unity is frontmost). Host project: `/absolute/path/to/gaming-couch-unity-template` (symlinks this repo at `Packages/gaming-couch-unity`).
 
 **Remaining optional item:** A4 teeth-test — temporarily rename a runtime API the canonical sources use (e.g. `GCPlayer.SetLives`), confirm the build breaks, revert. The compile guarantee is already proven by construction (the `…ExampleCanonical` assembly compiles against the real runtime and the suite is green); this is only extra confidence. Not run yet; run on request.
 
