@@ -20,5 +20,14 @@
                     "name": "DSB",
                     "email": "info@deadsetbit.com",
                     "url": "https://deadsetbit.com/"
+          },
+          "scripts": {
+                    "release:patch": "python3 Tools/bump-version.py patch",
+                    "release:minor": "python3 Tools/bump-version.py minor",
+                    "release:major": "python3 Tools/bump-version.py major",
+                    "release:prerelease": "python3 Tools/bump-version.py prerelease",
+                    "release:alpha": "python3 Tools/bump-version.py prerelease --preid=alpha",
+                    "release:beta": "python3 Tools/bump-version.py prerelease --preid=beta",
+                    "release:dry": "python3 Tools/bump-version.py prerelease --preid=alpha --dry-run"
           }
 }
