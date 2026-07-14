@@ -37,5 +37,11 @@
   - Add `--mode PlayMode` for Play Mode tests.
 - If `AGENTS.local.md` defines a local Unity host project path, use it when it exists and is the intended symlinked project.
 - If no local Unity host project path is defined and validation needs one, ask the user for the local host Unity project path.
-- If the runner times out without a `started` status, ask the user to open or refresh the host Unity Editor so it loads `Editor/GamingCouchCodexTestBridge.cs`, then retry.
-- Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode.
+- The bridge recompiles on demand: before each run it calls `AssetDatabase.Refresh()`, so on-disk script edits are picked up **without focusing the Editor**. A recompile triggers a domain reload; the bridge pins its session across the reload and resumes the same request, so the run reflects the edited code. Expect a `refreshing` status before `started`.
+  - Pass `--no-refresh` to skip the refresh and run against the currently compiled assemblies (faster; use only when you know nothing changed).
+- Background reliability on macOS: App Nap can freeze a backgrounded Editor's poll loop, which looks like the runner hanging with no status. Disable it once, then relaunch Unity:
+  - `defaults write NSGlobalDomain NSAppSleepDisabled -bool YES` (system-wide; relaunch apps to take effect).
+- Reading a timeout:
+  - No status ever seen → the Editor is not open on this project, not running the bridge (`Editor/GamingCouchCodexTestBridge.cs`), or is suspended (see App Nap above). Ask the user to open/refresh the host Editor, then retry.
+  - Stuck at `refreshing` → the recompile did not finish; check the Unity console for compile errors that block the run.
+- Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode. Batchmode is fully headless (focus-independent) but cannot run while an Editor holds the same project's lock — point it at a separate host-project clone.

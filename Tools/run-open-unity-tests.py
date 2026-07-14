@@ -49,6 +49,15 @@ def parse_args():
     )
     parser.add_argument("--category", action="append", dest="category_names", help="Test category to run.")
     parser.add_argument("--sync", action="store_true", help="Run synchronously for EditMode tests.")
+    parser.add_argument(
+        "--no-refresh",
+        action="store_true",
+        help=(
+            "Skip the Editor-side AssetDatabase.Refresh() the bridge runs before the tests. "
+            "By default the bridge refreshes so on-disk script edits recompile without the Editor "
+            "being focused; pass this to run against the currently compiled assemblies instead."
+        ),
+    )
     parser.add_argument("--timeout", type=float, default=300.0, help="Seconds to wait for completion.")
     return parser.parse_args()
 
@@ -233,6 +242,7 @@ def write_request(args, session, project_path, request_id):
         "categoryNames": args.category_names or [],
         "assemblyNames": assembly_names,
         "runSynchronously": bool(args.sync),
+        "skipRefresh": bool(args.no_refresh),
     }
 
     request_dir = os.path.dirname(request_path)
@@ -311,7 +321,17 @@ def wait_for_completion(status_path, request_id, timeout):
 
         time.sleep(0.5)
 
-    print(f"timeout: no completed Unity test status after {timeout:g}s")
+    if last_state is None:
+        print(f"timeout: Unity never picked up the request after {timeout:g}s")
+        print(
+            "hint: is the Editor open on this project and not suspended? On macOS, App Nap can "
+            "freeze a backgrounded Editor's poll loop -- see AGENTS.md for the fix."
+        )
+    elif last_state == "refreshing":
+        print(f"timeout: Unity was still refreshing/recompiling after {timeout:g}s")
+        print("hint: check the Unity console for compile errors that are blocking the run.")
+    else:
+        print(f"timeout: no terminal Unity test status (last state: {last_state}) after {timeout:g}s")
     print(f"status: {status_path}")
     return 2
 

@@ -19,6 +19,9 @@ internal static class GamingCouchCodexTestBridge
     private const string OutputsDirectoryName = "outputs";
     private const string RequestFileName = "request.json";
     private const string LastRequestIdEditorPrefsKey = "GamingCouch.CodexTestBridge.LastRequestId.";
+    private const string SessionIdSessionStateKey = "GamingCouch.CodexTestBridge.SessionId.";
+    private const string SessionTokenSessionStateKey = "GamingCouch.CodexTestBridge.SessionToken.";
+    private const string RefreshedRequestIdSessionStateKey = "GamingCouch.CodexTestBridge.RefreshedRequestId.";
     private const double PollIntervalSeconds = 0.5d;
     private const uint PrivateDirectoryMode = 448; // 0700
     private const uint PrivateFileMode = 384; // 0600
@@ -27,8 +30,8 @@ internal static class GamingCouchCodexTestBridge
     internal static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
     private static readonly string LocalAppDataDirectory = GetLocalAppDataDirectory();
     internal static readonly string BridgeRootDirectory = GetBridgeRootDirectory(ProjectPath);
-    private static readonly string SessionId = Guid.NewGuid().ToString("N");
-    private static readonly string SessionToken = CreateSessionToken();
+    private static readonly string SessionId = LoadOrCreatePinnedSessionValue(SessionIdSessionStateKey, () => Guid.NewGuid().ToString("N"));
+    private static readonly string SessionToken = LoadOrCreatePinnedSessionValue(SessionTokenSessionStateKey, CreateSessionToken);
     private static readonly string SessionsDirectory = Path.Combine(BridgeRootDirectory, SessionsDirectoryName);
     private static readonly string SessionDirectory = Path.Combine(SessionsDirectory, SessionId);
     internal static readonly string OutputDirectory = Path.Combine(SessionDirectory, OutputsDirectoryName);
@@ -134,7 +137,24 @@ internal static class GamingCouchCodexTestBridge
             return;
         }
 
+        // Recompile edited scripts before running so the run reflects on-disk changes without the
+        // user having to focus the Editor first. AssetDatabase.Refresh() imports changed assets and,
+        // when scripts changed, triggers a compile + domain reload. The request file is left in place
+        // and the run is not yet marked handled, so the reloaded bridge -- which reuses the same
+        // SessionState-pinned session id/token and therefore the same manifest paths -- re-enters
+        // here, sees the refresh was already initiated for this request id, and runs against the
+        // freshly compiled assemblies. When nothing changed, Refresh() is a no-op and the next poll
+        // proceeds straight to the run. Callers can opt out with skipRefresh (see --no-refresh).
+        if (!request.skipRefresh && !string.Equals(GetRefreshedRequestId(), request.requestId, StringComparison.Ordinal))
+        {
+            SetRefreshedRequestId(request.requestId);
+            WriteStatus(CodexTestStatus.Refreshing(request));
+            AssetDatabase.Refresh();
+            return;
+        }
+
         MarkHandledRequest(request.requestId);
+        ClearRefreshedRequestId();
         TryDeleteRequestFile();
 
         if (activeCallbacks != null)
@@ -209,6 +229,25 @@ internal static class GamingCouchCodexTestBridge
     private static string GetLastRequestIdKey()
     {
         return LastRequestIdEditorPrefsKey + ProjectPath;
+    }
+
+    // Tracks which request id has already had its pre-run AssetDatabase.Refresh() kicked off, stored
+    // in SessionState so it survives the domain reload the refresh may trigger. On re-entry after the
+    // reload the id matches and the bridge skips straight to the run instead of refreshing again (which
+    // would loop forever). Cleared once the run actually starts.
+    private static string GetRefreshedRequestId()
+    {
+        return SessionState.GetString(RefreshedRequestIdSessionStateKey + ProjectPath, string.Empty);
+    }
+
+    private static void SetRefreshedRequestId(string requestId)
+    {
+        SessionState.SetString(RefreshedRequestIdSessionStateKey + ProjectPath, requestId ?? string.Empty);
+    }
+
+    private static void ClearRefreshedRequestId()
+    {
+        SessionState.SetString(RefreshedRequestIdSessionStateKey + ProjectPath, string.Empty);
     }
 
     private static void StartRun(CodexTestRequest request)
@@ -717,6 +756,26 @@ internal static class GamingCouchCodexTestBridge
         return Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
     }
 
+    // Pins the session id and token to the Editor process rather than the loaded C# domain, so they
+    // survive the domain reload a pre-run recompile triggers. Without this, [InitializeOnLoad] would
+    // mint a fresh id/token on every reload and rewrite the manifest, orphaning a request the Python
+    // runner already wrote against the previous manifest paths. SessionState lives for the Editor
+    // launch and clears on restart -- the right lifetime, since the runner re-reads the manifest on
+    // every invocation.
+    private static string LoadOrCreatePinnedSessionValue(string keyPrefix, Func<string> factory)
+    {
+        var key = keyPrefix + ProjectPath;
+        var existing = SessionState.GetString(key, string.Empty);
+        if (!string.IsNullOrEmpty(existing))
+        {
+            return existing;
+        }
+
+        var created = factory();
+        SessionState.SetString(key, created);
+        return created;
+    }
+
     private static bool ConstantTimeEquals(string actual, string expected)
     {
         if (string.IsNullOrEmpty(actual) || string.IsNullOrEmpty(expected))
@@ -788,6 +847,10 @@ internal static class GamingCouchCodexTestBridge
         public string[] categoryNames;
         public string[] assemblyNames;
         public bool runSynchronously;
+
+        // Opt out of the pre-run AssetDatabase.Refresh(). Defaults to false so a request that omits
+        // the field (older runners) still refreshes; the Python runner sets it via --no-refresh.
+        public bool skipRefresh;
 
         public string GetDisplayMode()
         {
@@ -864,6 +927,11 @@ internal static class GamingCouchCodexTestBridge
         public int assertCount;
         public double duration;
         public CodexTestFailure[] failures;
+
+        public static CodexTestStatus Refreshing(CodexTestRequest request)
+        {
+            return FromRequest(request, "refreshing", "Refreshing assets and recompiling before the run.", null);
+        }
 
         public static CodexTestStatus Started(CodexTestRequest request, string jobId)
         {

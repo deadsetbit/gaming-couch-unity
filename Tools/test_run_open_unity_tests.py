@@ -6,9 +6,11 @@ status maps to the right exit code, and a run left at "started" times out with e
 
 Run: python3 Tools/test_run_open_unity_tests.py
 """
+import argparse
 import importlib.util
 import json
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -60,6 +62,60 @@ class WaitForCompletionContractTests(unittest.TestCase):
     def test_mismatched_request_id_is_ignored_and_times_out(self):
         path = self._status_file("other-req", "completed")
         self.assertEqual(harness.wait_for_completion(path, "req-6", timeout=0.1), 2)
+
+    def test_refreshing_is_non_terminal_and_times_out(self):
+        # The pre-run recompile publishes a "refreshing" status; it must not be treated as terminal,
+        # so a run that never advances past it times out (exit 2) rather than reporting success.
+        path = self._status_file("req-7", "refreshing")
+        self.assertEqual(harness.wait_for_completion(path, "req-7", timeout=0.1), 2)
+
+
+class WriteRequestSkipRefreshTests(unittest.TestCase):
+    """The request payload must carry skipRefresh so the bridge knows whether to recompile first."""
+
+    def _session(self):
+        session_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, session_dir, ignore_errors=True)
+        os.chmod(session_dir, 0o700)
+        output_dir = os.path.join(session_dir, "outputs")
+        os.mkdir(output_dir, 0o700)
+        return {
+            "projectPath": session_dir,
+            "sessionId": "s1",
+            "token": "t1",
+            "requestPath": os.path.join(session_dir, "request.json"),
+            "outputDirectory": output_dir,
+        }
+
+    def _args(self, no_refresh):
+        return argparse.Namespace(
+            mode="EditMode",
+            assembly=None,
+            all_assemblies=False,
+            test_names=None,
+            group_names=None,
+            category_names=None,
+            sync=False,
+            no_refresh=no_refresh,
+        )
+
+    def _written_request(self, no_refresh):
+        session = self._session()
+        request_id = harness.uuid.uuid4().hex
+        request_path = harness.write_request(
+            self._args(no_refresh), session, session["projectPath"], request_id
+        )
+        with open(request_path, encoding="utf-8") as handle:
+            return json.load(handle)
+
+    def test_skip_refresh_defaults_false(self):
+        data = self._written_request(no_refresh=False)
+        self.assertIn("skipRefresh", data)
+        self.assertFalse(data["skipRefresh"])
+
+    def test_no_refresh_sets_skip_refresh_true(self):
+        data = self._written_request(no_refresh=True)
+        self.assertTrue(data["skipRefresh"])
 
 
 if __name__ == "__main__":
