@@ -319,7 +319,8 @@ def assert_lifecycle_start_remains_payload_free(runtime_source):
 def assert_runtime_attestation_path_present(bootstrap_source, bridge_source):
     required_bootstrap_tokens = [
         "RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)",
-        "Resources.Load<TextAsset>(RuntimeInfoResourceName)",
+        "LoadBakedResourceJson(RuntimeInfoResourceName)",
+        "Resources.Load<TextAsset>(resourceName)",
         "GamingCouchRegisterRuntimeInfo(runtimeInfoJson)",
     ]
     required_bridge_tokens = [
