@@ -14,7 +14,6 @@ internal static class GamingCouchCodexTestBridge
 {
     private const string AppDataDirectoryName = "Gaming Couch";
     private const string BridgeDirectoryName = "CodexTestBridge";
-    private const string SessionsDirectoryName = "sessions";
     private const string ManifestFileName = "session.json";
     private const string OutputsDirectoryName = "outputs";
     private const string RequestFileName = "request.json";
@@ -22,6 +21,7 @@ internal static class GamingCouchCodexTestBridge
     private const string SessionIdSessionStateKey = "GamingCouch.CodexTestBridge.SessionId.";
     private const string SessionTokenSessionStateKey = "GamingCouch.CodexTestBridge.SessionToken.";
     private const string RefreshedRequestIdSessionStateKey = "GamingCouch.CodexTestBridge.RefreshedRequestId.";
+    private const string ActiveRunRequestSessionStateKey = "GamingCouch.CodexTestBridge.ActiveRunRequest.";
     private const double PollIntervalSeconds = 0.5d;
     private const uint PrivateDirectoryMode = 448; // 0700
     private const uint PrivateFileMode = 384; // 0600
@@ -37,19 +37,34 @@ internal static class GamingCouchCodexTestBridge
     internal static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
     internal static readonly string ActivationMarkerPath = Path.Combine(ProjectPath, ActivationMarkerDirectoryName, ActivationMarkerFileName);
     private static readonly string LocalAppDataDirectory = GetLocalAppDataDirectory();
+    // Package-owned boundary: "<localappdata>/Gaming Couch". At and below this directory the bridge
+    // creates, symlink-rejects, and 0700-restricts the directories it owns. Above it (the user's XDG
+    // data home and its ancestors) the bridge only creates missing parents -- it must never tighten
+    // permissions on, or reject a symlinked, ~/.local/share, which is the user's own territory.
+    internal static readonly string AppDataBoundaryDirectory = GetAppDataBoundaryDirectory(LocalAppDataDirectory);
     internal static readonly string BridgeRootDirectory = GetBridgeRootDirectory(ProjectPath);
     private static readonly string SessionId = LoadOrCreatePinnedSessionValue(SessionIdSessionStateKey, () => Guid.NewGuid().ToString("N"));
     private static readonly string SessionToken = LoadOrCreatePinnedSessionValue(SessionTokenSessionStateKey, CreateSessionToken);
-    private static readonly string SessionsDirectory = Path.Combine(BridgeRootDirectory, SessionsDirectoryName);
-    private static readonly string SessionDirectory = Path.Combine(SessionsDirectory, SessionId);
-    internal static readonly string OutputDirectory = Path.Combine(SessionDirectory, OutputsDirectoryName);
-    internal static readonly string RequestFilePath = Path.Combine(SessionDirectory, RequestFileName);
+    // The request inbox and outputs live directly under the per-project bridge root -- a FIXED path
+    // that never depends on SessionId. Unity performs many domain reloads (at startup and after every
+    // recompile) and SessionState-pinned ids have proven to drift across them; keying the inbox to a
+    // per-session subdirectory meant a reload could move the live poll loop to a new directory while
+    // the manifest still advertised the old one, orphaning any request the runner had already written
+    // (the "bridge silently stops until an Editor restart" bug). A fixed inbox makes the runner, the
+    // manifest, and the poll loop always rendezvous at one path regardless of reloads. SessionId is
+    // retained only as an informational manifest field.
+    internal static readonly string OutputDirectory = Path.Combine(BridgeRootDirectory, OutputsDirectoryName);
+    internal static readonly string RequestFilePath = Path.Combine(BridgeRootDirectory, RequestFileName);
     private static readonly string ManifestPath = Path.Combine(BridgeRootDirectory, ManifestFileName);
 
     private static double nextPollTime;
     private static CodexTestRunCallbacks activeCallbacks;
     private static TestRunnerApi activeTestRunnerApi;
     private static bool bridgeSessionReady;
+    // True only while activeCallbacks was reconstructed by ReattachActiveRunAfterReload (an
+    // interrupted run that survived a domain reload). A run started fresh in this domain leaves it
+    // false, so the stale-pin reclaim can never mistake a live async EditMode run for a stale pin.
+    private static bool activeRunReattachedAfterReload;
 
     static GamingCouchCodexTestBridge()
     {
@@ -67,6 +82,7 @@ internal static class GamingCouchCodexTestBridge
         PrepareBridgeSession();
         EditorApplication.update -= PollForRequests;
         EditorApplication.update += PollForRequests;
+        ReattachActiveRunAfterReload();
     }
 
     // Pure activation predicate so the opt-in truth table is unit-testable without a live Editor.
@@ -96,13 +112,27 @@ internal static class GamingCouchCodexTestBridge
         }
     }
 
+    // An active-run pin is stale (safe to reclaim before starting a new request) only when it was
+    // re-attached after a domain reload AND nothing is actually running (not in play mode, not
+    // compiling, not updating assets). The reattach gate matters: a default async EditMode run started
+    // in this domain never reloads, so it is never "reattached" and can never be reclaimed despite
+    // presenting the same idle flags -- which prevents a second, overlapping request from clobbering a
+    // live run. Pure so the decision is unit-testable without a live run.
+    internal static bool ShouldReclaimStaleActiveRun(bool reattachedAfterReload, bool editorPlaying, bool editorCompiling, bool editorUpdating)
+    {
+        return reattachedAfterReload && !editorPlaying && !editorCompiling && !editorUpdating;
+    }
+
     private static void PrepareBridgeSession()
     {
         try
         {
-            EnsureDirectoryTreeWithoutSymlinks(BridgeRootDirectory, LocalAppDataDirectory);
-            EnsureDirectoryWithoutSymlink(SessionsDirectory);
-            EnsureDirectoryWithoutSymlink(SessionDirectory);
+            // Guard only the package-owned subtree ("Gaming Couch/" and below). The tree walk both
+            // creates and 0700/symlink-hardens every segment from its root down, so the root here is
+            // the boundary -- not LocalAppDataDirectory. Missing parents above the boundary (including
+            // ~/.local/share itself) are created as an unpermissioned side effect of CreateDirectory
+            // and are never chmod-ed or symlink-rejected. See AppDataBoundaryDirectory.
+            EnsureDirectoryTreeWithoutSymlinks(BridgeRootDirectory, AppDataBoundaryDirectory);
             EnsureDirectoryWithoutSymlink(OutputDirectory);
 
             var session = new CodexTestBridgeSession
@@ -131,6 +161,51 @@ internal static class GamingCouchCodexTestBridge
         }
     }
 
+    // After a domain reload, re-attach result callbacks to a run that was in flight when the
+    // domain unloaded. A PlayMode run reloads the domain on entering play mode (and again on exiting
+    // it), which drops the static callbacks and UTF's non-serialized CallbacksHolder registration;
+    // without re-registering here, RunFinished is never delivered, no results/terminal status is
+    // written, and the Python runner times out on an otherwise-successful run. The tests are NOT
+    // re-run: the request was already consumed (marked handled + file deleted) before the run
+    // started, so this only re-listens for the result. TestRunnerApi delivers results to any
+    // registered instance, even one created after the run started (see its API docs). The pin
+    // persists until the run reaches a terminal state (cleared in CleanupActiveRun), so both the
+    // enter-play and exit-play reloads re-attach.
+    private static void ReattachActiveRunAfterReload()
+    {
+        if (!bridgeSessionReady || activeCallbacks != null)
+        {
+            return;
+        }
+
+        var request = GetActiveRunRequest();
+        if (request == null || !IsValidRequestId(request.requestId))
+        {
+            return;
+        }
+
+        try
+        {
+            activeTestRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
+            activeTestRunnerApi.hideFlags = HideFlags.HideAndDontSave;
+
+            activeCallbacks = ScriptableObject.CreateInstance<CodexTestRunCallbacks>();
+            activeCallbacks.hideFlags = HideFlags.HideAndDontSave;
+            activeCallbacks.Initialize(request);
+
+            activeTestRunnerApi.RegisterCallbacks(activeCallbacks);
+            activeRunReattachedAfterReload = true;
+            Debug.Log("Gaming Couch Codex test bridge re-attached to an in-progress " + request.GetDisplayMode() + " run after a domain reload.");
+        }
+        catch (Exception exception)
+        {
+            // Drop the pin (CleanupActiveRun clears it) so a broken re-attach does not retry on every
+            // reload for the rest of the session.
+            CleanupActiveRun();
+            Debug.LogError("Gaming Couch Codex test bridge could not re-attach to an in-progress run after a domain reload: " + exception);
+        }
+    }
+
     private static void PollForRequests()
     {
         if (EditorApplication.timeSinceStartup < nextPollTime)
@@ -145,12 +220,16 @@ internal static class GamingCouchCodexTestBridge
             return;
         }
 
-        if (!IsSafeBridgeFile(RequestFilePath, SessionDirectory, out var unsafeRequestReason))
+        if (!IsSafeBridgeFile(RequestFilePath, BridgeRootDirectory, out var unsafeRequestReason))
         {
             Debug.LogWarning("Gaming Couch Codex test bridge ignored an unsafe request file: " + unsafeRequestReason);
             return;
         }
 
+        // The inbox is a fixed path, so a request that can never be handled -- unreadable, malformed,
+        // or holding a token from a previous Editor session -- has to be dropped here or it sits in
+        // the inbox and is re-read on every poll for the rest of the session. The runner writes the
+        // file atomically (temp + rename), so a partial write cannot be mistaken for a bad request.
         CodexTestRequest request;
         try
         {
@@ -158,12 +237,15 @@ internal static class GamingCouchCodexTestBridge
         }
         catch (Exception exception)
         {
-            Debug.LogWarning("Gaming Couch Codex test bridge ignored an unreadable request: " + exception.Message);
+            Debug.LogWarning("Gaming Couch Codex test bridge deleted an unreadable request: " + exception.Message);
+            TryDeleteRequestFile();
             return;
         }
 
         if (request == null || !IsValidRequestId(request.requestId))
         {
+            Debug.LogWarning("Gaming Couch Codex test bridge deleted a request with a missing or malformed request id.");
+            TryDeleteRequestFile();
             return;
         }
 
@@ -174,7 +256,8 @@ internal static class GamingCouchCodexTestBridge
 
         if (!HasSessionToken(request.token))
         {
-            Debug.LogWarning("Gaming Couch Codex test bridge ignored a request with an invalid session token.");
+            Debug.LogWarning("Gaming Couch Codex test bridge deleted a request with an invalid session token.");
+            TryDeleteRequestFile();
             return;
         }
 
@@ -186,8 +269,8 @@ internal static class GamingCouchCodexTestBridge
         // Recompile edited scripts before running so the run reflects on-disk changes without the
         // user having to focus the Editor first. AssetDatabase.Refresh() imports changed assets and,
         // when scripts changed, triggers a compile + domain reload. The request file is left in place
-        // and the run is not yet marked handled, so the reloaded bridge -- which reuses the same
-        // SessionState-pinned session id/token and therefore the same manifest paths -- re-enters
+        // and the run is not yet marked handled, so the reloaded bridge -- polling the same fixed
+        // per-project inbox and reading the SessionState-pinned refreshed-request-id -- re-enters
         // here, sees the refresh was already initiated for this request id, and runs against the
         // freshly compiled assemblies. When nothing changed, Refresh() is a no-op and the next poll
         // proceeds straight to the run. Callers can opt out with skipRefresh (see --no-refresh).
@@ -205,7 +288,36 @@ internal static class GamingCouchCodexTestBridge
 
         if (activeCallbacks != null)
         {
-            WriteStatus(CodexTestStatus.Rejected(request, "A Unity test run is already active."));
+            // Deadlock-breaker: a PlayMode run interrupted without a terminal callback (e.g. the
+            // user presses Play to stop it mid-run) leaves activeCallbacks set after
+            // ReattachActiveRunAfterReload, which would otherwise reject EVERY later request until the
+            // Editor restarts. A brand-new request only reaches here once the runner considered the
+            // previous one finished (it waits for a terminal status, or times out, before re-issuing),
+            // so if nothing is actually running now -- not in play mode, not compiling, not updating --
+            // the lingering pin is stale and we reclaim it instead of rejecting forever. A genuinely
+            // in-flight PlayMode run keeps isPlaying true and is still (correctly) rejected.
+            if (ShouldReclaimStaleActiveRun(activeRunReattachedAfterReload, EditorApplication.isPlaying, EditorApplication.isCompiling, EditorApplication.isUpdating))
+            {
+                Debug.LogWarning("Gaming Couch Codex test bridge reclaimed a stale active-run pin (no run in flight) before handling a new request.");
+                CleanupActiveRun();
+            }
+            else
+            {
+                WriteStatus(CodexTestStatus.Rejected(request, "A Unity test run is already active."));
+                return;
+            }
+        }
+
+        // The pre-run AssetDatabase.Refresh() (or any background recompile) may have failed to
+        // compile. Unity keeps the last-good assemblies loaded, so running here would report
+        // "completed" against stale code -- the exact false-green the refresh path exists to prevent.
+        // isCompiling is already false at this point (guarded at the top of the poll), so
+        // scriptCompilationFailed reliably reflects the finished compile. This also covers the
+        // skipRefresh path: running on known-broken assemblies is always wrong. The request was
+        // already marked handled and its file deleted above, so this reports once and does not loop.
+        if (EditorUtility.scriptCompilationFailed)
+        {
+            WriteStatus(CodexTestStatus.Error(request, "Script compilation failed; fix compile errors and retry."));
             return;
         }
 
@@ -296,6 +408,50 @@ internal static class GamingCouchCodexTestBridge
         SessionState.SetString(RefreshedRequestIdSessionStateKey + ProjectPath, string.Empty);
     }
 
+    // Pins the in-flight run's request to the Editor process so a PlayMode run -- whose Execute
+    // enters play mode and triggers a domain reload that drops the static callbacks and UTF's
+    // non-serialized callback registration -- can reconstruct the result callbacks after the reload
+    // and still receive RunFinished. Stored in SessionState (per project, cleared on Editor restart),
+    // mirroring the session id/token/refreshed-request-id pins. Set before Execute; cleared when the
+    // run reaches a terminal state (CleanupActiveRun). The (de)serialization is pure so the round-trip
+    // is unit-testable without a live Editor.
+    internal static string SerializeActiveRunRequest(CodexTestRequest request)
+    {
+        return request == null ? string.Empty : JsonUtility.ToJson(request);
+    }
+
+    internal static CodexTestRequest DeserializeActiveRunRequest(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonUtility.FromJson<CodexTestRequest>(json);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static void SetActiveRunRequest(CodexTestRequest request)
+    {
+        SessionState.SetString(ActiveRunRequestSessionStateKey + ProjectPath, SerializeActiveRunRequest(request));
+    }
+
+    private static CodexTestRequest GetActiveRunRequest()
+    {
+        return DeserializeActiveRunRequest(SessionState.GetString(ActiveRunRequestSessionStateKey + ProjectPath, string.Empty));
+    }
+
+    private static void ClearActiveRunRequest()
+    {
+        SessionState.SetString(ActiveRunRequestSessionStateKey + ProjectPath, string.Empty);
+    }
+
     private static void StartRun(CodexTestRequest request)
     {
         try
@@ -309,6 +465,15 @@ internal static class GamingCouchCodexTestBridge
             activeCallbacks.Initialize(request);
 
             activeTestRunnerApi.RegisterCallbacks(activeCallbacks);
+
+            // Pin the request before Execute so a PlayMode run -- whose Execute enters play mode
+            // and triggers a domain reload -- can reconstruct these callbacks after the reload and
+            // still receive RunFinished. A synchronous EditMode run clears the pin during Execute
+            // (RunFinished fires inline via CompleteRun -> CleanupActiveRun) before this returns.
+            SetActiveRunRequest(request);
+            // A freshly started run is not a reattach; only ReattachActiveRunAfterReload sets this.
+            activeRunReattachedAfterReload = false;
+
             RunAndTrackStatus(
                 request,
                 () => activeTestRunnerApi.Execute(settings),
@@ -479,6 +644,12 @@ internal static class GamingCouchCodexTestBridge
             UnityEngine.Object.DestroyImmediate(activeTestRunnerApi);
             activeTestRunnerApi = null;
         }
+
+        // The run has reached a terminal state (or failed to start / re-attach); drop the reload
+        // pin so a later unrelated domain reload does not re-attach to a finished run. CompleteRun and
+        // FailRun both reach here, as does StartRun's failure path.
+        ClearActiveRunRequest();
+        activeRunReattachedAfterReload = false;
     }
 
     private static void WriteStatus(CodexTestStatus status)
@@ -520,6 +691,14 @@ internal static class GamingCouchCodexTestBridge
             BridgeDirectoryName,
             ComputeProjectHash(NormalizeProjectPath(projectPath))
         );
+    }
+
+    // Pure so the boundary decision (which segments the bridge is allowed to harden) is unit-testable
+    // without a live Editor: the guarded subtree is exactly "<localappdata>/Gaming Couch" and below;
+    // the local-app-data root itself sits above it and is left untouched.
+    internal static string GetAppDataBoundaryDirectory(string localAppDataDirectory)
+    {
+        return Path.Combine(localAppDataDirectory, AppDataDirectoryName);
     }
 
     private static string GetLocalAppDataDirectory()
@@ -732,7 +911,7 @@ internal static class GamingCouchCodexTestBridge
     {
         try
         {
-            DeleteBridgeFile(RequestFilePath, SessionDirectory);
+            DeleteBridgeFile(RequestFilePath, BridgeRootDirectory);
         }
         catch (Exception exception)
         {
