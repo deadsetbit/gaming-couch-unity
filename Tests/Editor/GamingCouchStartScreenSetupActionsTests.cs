@@ -20,7 +20,14 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [SetUp]
     public void SetUp()
     {
-        previousBuildSettingsScenes = EditorBuildSettings.scenes;
+        // Snapshot build settings WITHOUT any scene this test leaked in a prior interrupted run,
+        // and heal a present leak immediately so it cannot reach a Player build or a commit. See
+        // WithoutLeakedTestScenes / GamingCouchStartScreenEditorSmokeTests.
+        previousBuildSettingsScenes = WithoutLeakedTestScenes(EditorBuildSettings.scenes);
+        if (previousBuildSettingsScenes.Length != EditorBuildSettings.scenes.Length)
+        {
+            EditorBuildSettings.scenes = previousBuildSettingsScenes;
+        }
         previousActiveScene = SceneManager.GetActiveScene();
 
         if (CanReuseActiveSceneAsTestScene(previousActiveScene))
@@ -36,6 +43,31 @@ public sealed class GamingCouchStartScreenSetupActionsTests
 
         ClearSceneRootObjects(testScene);
         EnsureSceneIsActive(testScene);
+    }
+
+    // Drop this test's own scene entry so a leak from an interrupted run cannot survive in the
+    // project's persisted build settings and break a later Player build. Mirrors
+    // GamingCouchStartScreenEditorSmokeTests.
+    private static EditorBuildSettingsScene[] WithoutLeakedTestScenes(EditorBuildSettingsScene[] scenes)
+    {
+        if (scenes == null)
+        {
+            return Array.Empty<EditorBuildSettingsScene>();
+        }
+
+        return scenes
+            .Where(scene => scene != null && !IsTestOwnedScenePath(scene.path))
+            .ToArray();
+    }
+
+    private static bool IsTestOwnedScenePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        return string.Equals(path, TestSceneBuildPath, StringComparison.Ordinal);
     }
 
     [TearDown]
