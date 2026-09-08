@@ -31,6 +31,10 @@
 ## Unity package test execution
 
 - When validating changes to this Unity package, prefer the open-Editor test bridge over launching a second Unity process.
+- The bridge is opt-in and off by default (it must never run in a package consumer's Editor). Enable it for a host project in one of two ways, then relaunch or let the Editor domain-reload once so it picks up the change (there is deliberately no live watcher):
+  - Create the marker file `<host-project>/.gamingcouch/codex-bridge.enabled` (e.g. `touch <host-project>/.gamingcouch/codex-bridge.enabled`). Recommended for a fixed host project; add it to that project's local ignore.
+  - Or export `GAMINGCOUCH_CODEX_TEST_BRIDGE=1` (also accepts `true`/`yes`) before launching the Editor. Note macOS Hub/Finder-launched Editors do not inherit shell env, so the marker is usually the reliable path there.
+  - When enabled, the Editor logs `Gaming Couch Codex test bridge session ready …` on each domain reload; if you never see that line, the bridge is not enabled.
 - Use the bridge runner from this package:
   - `python3 Tools/run-open-unity-tests.py /path/to/unity/project --mode EditMode`
   - Add `--test Full.Test.Name`, `--filter Regex`, or `--category Name` for focused runs.
@@ -42,6 +46,6 @@
 - Background reliability on macOS: App Nap can freeze a backgrounded Editor's poll loop, which looks like the runner hanging with no status. Disable it once, then relaunch Unity:
   - `defaults write NSGlobalDomain NSAppSleepDisabled -bool YES` (system-wide; relaunch apps to take effect).
 - Reading a timeout:
-  - No status ever seen → the Editor is not open on this project, not running the bridge (`Editor/GamingCouchCodexTestBridge.cs`), or is suspended (see App Nap above). Ask the user to open/refresh the host Editor, then retry.
+  - No status ever seen → the Editor is not open on this project, the bridge is not enabled (missing opt-in marker / env var — see the enable step above; enabling needs a domain reload), not running the bridge (`Editor/GamingCouchCodexTestBridge.cs`), or is suspended (see App Nap above). Ask the user to open/refresh the host Editor, then retry.
   - Stuck at `refreshing` → the recompile did not finish; check the Unity console for compile errors that block the run.
 - Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode. Batchmode is fully headless (focus-independent) but cannot run while an Editor holds the same project's lock — point it at a separate host-project clone.

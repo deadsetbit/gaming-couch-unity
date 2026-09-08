@@ -911,7 +911,7 @@ namespace DSB.GC
 
             if (internalPlayerStore.Players.Count > 0)
             {
-                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.Clear() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
             }
 
             SetPlayerReadyCallback(onPlayerSetupReady);
@@ -1219,12 +1219,13 @@ namespace DSB.GC
         /// <summary>
         /// 1) Clears players from the player store and destroys the game objects.
         /// 2) Clears player inputs.
+        /// The run-scoped player-index mapping is preserved so the round-reset pattern -- Clear() then
+        /// SetupPlayers without a fresh Play() -- keeps inputs and GameOver() placement validating.
         /// </summary>
         public void Clear()
         {
             internalPlayerStore.Clear();
             ClearInputs();
-            playerIndexMapping = null;
         }
 
         public GCPlayerOptions[] GetCurrentPlayPlayerOptions()

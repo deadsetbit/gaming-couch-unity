@@ -80,6 +80,8 @@ _(None currently open — C1 completed, see Done above.)_
   - **Interim option (no restructure):** trim or collapse the README's internal/decisions subsections
     (e.g. move them to a single `CONTRIBUTING`/`docs/README` entry point not surfaced in the consumer
     guide). Decide whether to do the interim trim now or wait for the full mirror plan.
+  - **Plan:** [`public-mirror-plan.md`](public-mirror-plan.md) works the mirror direction out in full
+    — phased, with the release-tag flow and the internal/public split.
 
 ---
 
@@ -87,4 +89,4 @@ _(None currently open — C1 completed, see Done above.)_
 
 - P1/P2 share a blocking decision: **how visual content renders on the DocFX `/manual/` page vs GitHub.**
   Resolve that once; it unblocks both.
-- P3 is the largest item and should become its own PRD if the mirror direction is chosen.
+- P3 is the largest item; [`public-mirror-plan.md`](public-mirror-plan.md) is its plan.

@@ -213,6 +213,10 @@ def load_bridge_session(project_path):
     message = (
         "No active Unity bridge session manifest was found. "
         f"Open or refresh the Unity Editor for {project_path}, then retry.\n"
+        "The bridge is opt-in: the Editor can be open but the bridge disabled. Enable it by "
+        "creating the marker file '<project>/.gamingcouch/codex-bridge.enabled' or setting the "
+        "GAMINGCOUCH_CODEX_TEST_BRIDGE=1 environment variable before launching the Editor, then "
+        "let it domain-reload once (no live watcher).\n"
         f"Expected manifest: {expected_path}"
     )
     if errors:
