@@ -27,7 +27,15 @@ internal static class GamingCouchCodexTestBridge
     private const uint PrivateFileMode = 384; // 0600
     private const int MaxRetainedOutputFiles = 40;
 
+    // Opt-in activation. The bridge is a developer tool for driving this package's tests from an
+    // agent/CLI; it must stay completely inert for anyone who merely installs the UPM package.
+    // Enable it for a host project by creating the marker file or setting the environment variable.
+    private const string ActivationEnvironmentVariable = "GAMINGCOUCH_CODEX_TEST_BRIDGE";
+    private const string ActivationMarkerDirectoryName = ".gamingcouch";
+    private const string ActivationMarkerFileName = "codex-bridge.enabled";
+
     internal static readonly string ProjectPath = NormalizeProjectPath(Path.Combine(Application.dataPath, ".."));
+    internal static readonly string ActivationMarkerPath = Path.Combine(ProjectPath, ActivationMarkerDirectoryName, ActivationMarkerFileName);
     private static readonly string LocalAppDataDirectory = GetLocalAppDataDirectory();
     internal static readonly string BridgeRootDirectory = GetBridgeRootDirectory(ProjectPath);
     private static readonly string SessionId = LoadOrCreatePinnedSessionValue(SessionIdSessionStateKey, () => Guid.NewGuid().ToString("N"));
@@ -45,9 +53,47 @@ internal static class GamingCouchCodexTestBridge
 
     static GamingCouchCodexTestBridge()
     {
+        // Stay silent and do nothing unless this host project opted in. Without an opt-in there is
+        // no session directory, no manifest, no poll-loop subscription, and no log line -- a package
+        // consumer sees nothing. Enabling takes effect on the next domain reload (there is
+        // deliberately no live watcher). See AGENTS.md "Unity package test execution".
+        if (!IsActivationRequested(
+                File.Exists(ActivationMarkerPath),
+                Environment.GetEnvironmentVariable(ActivationEnvironmentVariable)))
+        {
+            return;
+        }
+
         PrepareBridgeSession();
         EditorApplication.update -= PollForRequests;
         EditorApplication.update += PollForRequests;
+    }
+
+    // Pure activation predicate so the opt-in truth table is unit-testable without a live Editor.
+    // The bridge activates when the host project's marker file exists, or when the
+    // GAMINGCOUCH_CODEX_TEST_BRIDGE environment variable holds a truthy value (1/true/yes,
+    // case-insensitive, surrounding whitespace ignored). Everything else stays inert.
+    internal static bool IsActivationRequested(bool markerExists, string environmentValue)
+    {
+        if (markerExists)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(environmentValue))
+        {
+            return false;
+        }
+
+        switch (environmentValue.Trim().ToLowerInvariant())
+        {
+            case "1":
+            case "true":
+            case "yes":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static void PrepareBridgeSession()
