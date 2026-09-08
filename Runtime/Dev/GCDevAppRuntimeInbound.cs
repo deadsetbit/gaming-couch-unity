@@ -199,6 +199,16 @@ namespace DSB.GC.Dev
         private const string RuntimeOutputOptionsAction = "runtime_output_options";
         private const string UnsupportedMessageTypeReason = "unsupported_message_type";
 
+        // JsonUtility auto-instantiates [Serializable] class fields, so a message that
+        // omits "payload"/"inputs"/"runtimeOutput" (or a value field like "timescale")
+        // still deserializes to a non-null, zero-valued instance. Probe the raw (compact)
+        // JSON for these key tokens -- mirroring the whitespace-sensitive DevToolTypeProbe
+        // idiom -- so a missing-key message is ignored instead of applying zeros.
+        private const string InputsKeyToken = "\"inputs\":";
+        private const string TimescaleKeyToken = "\"timescale\":";
+        private const string PausedKeyToken = "\"paused\":";
+        private const string RuntimeOutputKeyToken = "\"runtimeOutput\":";
+
         internal const byte CompactControllerInputTypeByte = 0x44;
         internal const int CompactControllerInputByteLength = 16;
         private const float CompactControllerInputAxisScale = 1000f;
@@ -232,7 +242,7 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Unhandled(UnsupportedMessageTypeReason);
             }
 
-            return RouteDevToolAction(data, context);
+            return RouteDevToolAction(data, message, context);
         }
 
         internal GCDevAppRuntimeInboundDecision RouteBinaryMessage(byte[] message)
@@ -310,6 +320,7 @@ namespace DSB.GC.Dev
 
         private static GCDevAppRuntimeInboundDecision RouteDevToolAction(
             GCDevAppRuntimeDevToolMessage message,
+            string rawMessage,
             GCDevAppRuntimeInboundContext context
         )
         {
@@ -318,22 +329,26 @@ namespace DSB.GC.Dev
                 case RestartAction:
                     return GCDevAppRuntimeInboundDecision.Restart();
                 case InputAction:
-                    return RouteTextInput(message.payload);
+                    return RouteTextInput(message.payload, rawMessage);
                 case TimescaleStateAction:
-                    return RouteTimescaleState(message.payload, context);
+                    return RouteTimescaleState(message.payload, rawMessage, context);
                 case RuntimeOutputOptionsAction:
-                    return RouteRuntimeOutputOptions(message.payload);
+                    return RouteRuntimeOutputOptions(message.payload, rawMessage);
                 default:
                     return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_devtool_action");
             }
         }
 
         private static GCDevAppRuntimeInboundDecision RouteTextInput(
-            GCDevAppRuntimeDevToolPayload payload
+            GCDevAppRuntimeDevToolPayload payload,
+            string rawMessage
         )
         {
-            if (payload == null || payload.inputs == null)
+            if (payload == null || !ContainsJsonKey(rawMessage, InputsKeyToken) || payload.inputs == null)
             {
+                // The presence probe covers a missing key; the payload.inputs null-check covers an
+                // explicit "inputs":null, which leaves the field null for BuildControllerInputs to
+                // dereference.
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_input_payload");
             }
 
@@ -357,10 +372,13 @@ namespace DSB.GC.Dev
 
         private static GCDevAppRuntimeInboundDecision RouteTimescaleState(
             GCDevAppRuntimeDevToolPayload payload,
+            string rawMessage,
             GCDevAppRuntimeInboundContext context
         )
         {
-            if (payload == null)
+            if (payload == null ||
+                !ContainsJsonKey(rawMessage, TimescaleKeyToken) ||
+                !ContainsJsonKey(rawMessage, PausedKeyToken))
             {
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_timescale_payload");
             }
@@ -373,15 +391,23 @@ namespace DSB.GC.Dev
         }
 
         private static GCDevAppRuntimeInboundDecision RouteRuntimeOutputOptions(
-            GCDevAppRuntimeDevToolPayload payload
+            GCDevAppRuntimeDevToolPayload payload,
+            string rawMessage
         )
         {
-            if (payload == null || payload.runtimeOutput == null)
+            if (payload == null || !ContainsJsonKey(rawMessage, RuntimeOutputKeyToken) || payload.runtimeOutput == null)
             {
+                // As with inputs: an explicit "runtimeOutput":null passes the presence probe but
+                // leaves the field null, and reading runtimeOutput.runtimeLogCapture would throw.
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_runtime_output_payload");
             }
 
             return GCDevAppRuntimeInboundDecision.RuntimeOutputOptions(payload.runtimeOutput.runtimeLogCapture);
+        }
+
+        private static bool ContainsJsonKey(string rawMessage, string keyToken)
+        {
+            return rawMessage != null && rawMessage.Contains(keyToken);
         }
 
         private static GCControllerInputsData BuildControllerInputs(GCDevAppRuntimeInputData inputs)
