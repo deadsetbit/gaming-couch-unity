@@ -135,9 +135,21 @@ namespace DSB.GC
 
         public void Clear()
         {
-            foreach (var player in players)
+            // Clear() is the runtime round-reset path, where Destroy is correct. It also runs in
+            // EditMode tests (and could run from editor tooling); outside play mode Destroy logs
+            // "Destroy may not be called from edit mode" and defers, so use DestroyImmediate there.
+            // DestroyImmediate runs OnDestroy synchronously, so iterate a snapshot: a GCPlayer
+            // subclass whose OnDestroy touched this store would otherwise break the enumeration.
+            foreach (var player in players.ToArray())
             {
-                UnityEngine.Object.Destroy(player.gameObject);
+                if (UnityEngine.Application.isPlaying)
+                {
+                    UnityEngine.Object.Destroy(player.gameObject);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(player.gameObject);
+                }
             }
 
             players.Clear();
