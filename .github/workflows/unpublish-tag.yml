@@ -1,0 +1,86 @@
+name: unpublish-tag
+
+# Deletes one release tag from the public mirror.
+#
+# This has to be a workflow rather than something a person runs locally: the deploy key's
+# local copies are destroyed when it is created, so it exists only as an Actions secret and
+# there is no laptop that can reach the mirror. Retiring a bad release, and republishing one
+# (which means deleting it first, because published tags are immutable), both come through
+# here.
+#
+# Deleting a tag makes its snapshot commit unreachable. No other release shares ancestry with
+# it, and neither main nor gh-pages is touched, so the landing page and the docs site are
+# unaffected.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to delete from the public mirror, e.g. unity-0.0.0-test.1'
+        required: true
+
+permissions:
+  contents: read
+
+# Shared with publish-mirror so a delete can never race a publish of the same mirror.
+concurrency:
+  group: publish-mirror
+  cancel-in-progress: false
+
+env:
+  PUBLIC_REPO_SSH: git@github.com:deadsetbit/gaming-couch-unity-public.git
+  BOT_NAME: gaming-couch-bot
+  BOT_EMAIL: bot@deadsetbit.com
+
+jobs:
+  unpublish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate the tag
+        id: release
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          case "$TAG" in
+            unity-*) ;;
+            *) echo "::error::'$TAG' is not a unity-<version> release tag."; exit 1 ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Install the deploy key
+        env:
+          DEPLOY_KEY: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY is not set on this repository."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/mirror_key
+          chmod 600 ~/.ssh/mirror_key
+          ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+
+      - name: Delete the tag from the mirror
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          work="$(mktemp -d)"
+          cd "$work"
+          git init --initial-branch=release --quiet
+          git remote add public "$PUBLIC_REPO_SSH"
+
+          if [ -z "$(git ls-remote --tags public "refs/tags/$TAG")" ]; then
+            echo "::error::$TAG is not on the mirror; nothing to delete."
+            exit 1
+          fi
+
+          git push public ":refs/tags/$TAG"
+
+          if [ -n "$(git ls-remote --tags public "refs/tags/$TAG")" ]; then
+            echo "::error::$TAG is still on the mirror after the delete."
+            exit 1
+          fi
+          echo "$TAG is gone from the mirror."
