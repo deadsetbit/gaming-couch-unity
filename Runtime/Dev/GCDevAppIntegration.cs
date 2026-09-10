@@ -20,8 +20,6 @@ namespace DSB.GC.Dev
 #if !UNITY_EDITOR
         // Stub for builds as dev integrations are not part of final builds.
 #else
-        [Header("WebSocket Configuration")]
-        [SerializeField]
         private string serverUrl = "ws://localhost:3167/ws";
         private float reconnectDelay = 2f;
         private bool autoConnectOnPlay = true;
@@ -30,8 +28,14 @@ namespace DSB.GC.Dev
         [SerializeField]
         private bool webSocketLogging = false;
 
+        // An inbound message is a DevApp command or a compact input frame, so nothing legitimate
+        // comes close to this. The cap stops a truncated or hostile fragment stream from growing
+        // the reassembly accumulators without bound.
+        private const int MaxInboundMessageBytes = 1024 * 1024;
+
         private ClientWebSocket websocket;
         private CancellationTokenSource cancellationTokenSource;
+        private int connectionEpoch;
         private bool isConnecting = false;
         private bool shouldReconnect = true;
         private bool isSnapshotSendInFlight = false;
@@ -143,7 +147,11 @@ namespace DSB.GC.Dev
                 yield break;
             }
 
-            LogWebSocket($"Outgoing: {payload}");
+            if (webSocketLogging)
+            {
+                LogWebSocket($"Outgoing: {payload}");
+            }
+
             var bytes = Encoding.UTF8.GetBytes(payload);
             var sendTask = websocket.SendAsync(
                 new ArraySegment<byte>(bytes),
@@ -157,8 +165,13 @@ namespace DSB.GC.Dev
             if (sendTask.IsFaulted)
             {
                 // Read sendTask.Exception so the faulted Task's AggregateException is observed by the
-                // TPL (otherwise it can resurface via TaskScheduler.UnobservedTaskException on finalization).
-                LogWebSocket($"Send faulted: {sendTask.Exception}");
+                // TPL (otherwise it can resurface via TaskScheduler.UnobservedTaskException on
+                // finalization). The read must stay outside the logging guard for that reason.
+                var sendException = sendTask.Exception;
+                if (webSocketLogging)
+                {
+                    LogWebSocket($"Send faulted: {sendException}");
+                }
             }
         }
 
@@ -169,9 +182,17 @@ namespace DSB.GC.Dev
 
         IEnumerator SendRuntimeSnapshotMessage(RuntimeSnapshotState state, string signature)
         {
+            var epoch = connectionEpoch;
             isSnapshotSendInFlight = true;
 
             yield return SendJsonMessage(JsonUtility.ToJson(BuildRuntimeSnapshotMessage(state)));
+
+            if (epoch != connectionEpoch)
+            {
+                // CloseWebSocket already reset the in-flight flag and the signature; a newer
+                // connection owns both now.
+                yield break;
+            }
 
             if (websocket != null && websocket.State == WebSocketState.Open)
             {
@@ -225,6 +246,7 @@ namespace DSB.GC.Dev
         {
             isConnecting = true;
             CloseWebSocket();
+            var epoch = connectionEpoch;
             cancellationTokenSource = new CancellationTokenSource();
             websocket = new ClientWebSocket();
 
@@ -234,13 +256,20 @@ namespace DSB.GC.Dev
             try
             {
                 var connectUrl = BuildConnectionUrl();
-                LogWebSocket($"Connecting to {connectUrl}");
+                if (webSocketLogging)
+                {
+                    LogWebSocket($"Connecting to {connectUrl}");
+                }
+
                 connectTask = websocket.ConnectAsync(new Uri(connectUrl), cancellationTokenSource.Token);
             }
             catch (Exception e)
             {
                 hasException = true;
-                LogWebSocket($"Connect exception: {e.Message}");
+                if (webSocketLogging)
+                {
+                    LogWebSocket($"Connect exception: {e.Message}");
+                }
             }
 
             if (hasException)
@@ -271,7 +300,7 @@ namespace DSB.GC.Dev
                 yield break;
             }
 
-            if (websocket.State == WebSocketState.Open)
+            if (epoch == connectionEpoch && websocket.State == WebSocketState.Open)
             {
                 LogWebSocket("Connected.");
                 currentRunId = BuildRunId();
@@ -279,20 +308,21 @@ namespace DSB.GC.Dev
                 runtimeInbound.ResetInputSequences();
                 yield return SendRuntimeRegisterMessage();
                 TryPublishRuntimeSnapshot();
-                StartCoroutine(ReceiveMessages());
+                StartCoroutine(ReceiveMessages(epoch));
             }
 
             isConnecting = false;
         }
 
-        IEnumerator ReceiveMessages()
+        IEnumerator ReceiveMessages(int epoch)
         {
             var buffer = new byte[1024 * 16];
             var messageBuilder = new StringBuilder(1024);
             var binaryMessage = new List<byte>(GCDevAppRuntimeInbound.CompactControllerInputByteLength);
+            var isDiscardingOversizedMessage = false;
 
             LogWebSocket("Receive loop started.");
-            while (websocket != null && websocket.State == WebSocketState.Open)
+            while (epoch == connectionEpoch && websocket != null && websocket.State == WebSocketState.Open)
             {
                 System.Threading.Tasks.Task<System.Net.WebSockets.WebSocketReceiveResult> receiveTask = null;
                 bool hasException = false;
@@ -304,7 +334,10 @@ namespace DSB.GC.Dev
                 catch (Exception e)
                 {
                     hasException = true;
-                    LogWebSocket($"Receive exception: {e.Message}");
+                    if (webSocketLogging)
+                    {
+                        LogWebSocket($"Receive exception: {e.Message}");
+                    }
                 }
 
                 if (hasException)
@@ -313,6 +346,11 @@ namespace DSB.GC.Dev
                 }
 
                 yield return new WaitUntil(() => receiveTask.IsCompleted);
+
+                if (epoch != connectionEpoch)
+                {
+                    break;
+                }
 
                 if (receiveTask.IsFaulted)
                 {
@@ -330,8 +368,28 @@ namespace DSB.GC.Dev
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    LogWebSocket($"Remote closed: {result.CloseStatus} {result.CloseStatusDescription}");
+                    if (webSocketLogging)
+                    {
+                        LogWebSocket($"Remote closed: {result.CloseStatus} {result.CloseStatusDescription}");
+                    }
+
                     break;
+                }
+
+                if (isDiscardingOversizedMessage ||
+                    messageBuilder.Length + binaryMessage.Count + result.Count > MaxInboundMessageBytes)
+                {
+                    if (webSocketLogging && !isDiscardingOversizedMessage)
+                    {
+                        LogWebSocket($"Dropping inbound message past {MaxInboundMessageBytes} bytes.");
+                    }
+
+                    // Drop the whole message rather than the fragment that crossed the cap, so its
+                    // tail is never reassembled into a message of its own.
+                    messageBuilder.Length = 0;
+                    binaryMessage.Clear();
+                    isDiscardingOversizedMessage = !result.EndOfMessage;
+                    continue;
                 }
 
                 if (result.MessageType == WebSocketMessageType.Text)
@@ -341,7 +399,11 @@ namespace DSB.GC.Dev
                     {
                         var message = messageBuilder.ToString();
                         messageBuilder.Length = 0;
-                        LogWebSocket($"Incoming: {message}");
+                        if (webSocketLogging)
+                        {
+                            LogWebSocket($"Incoming: {message}");
+                        }
+
                         ProcessWebSocketMessage(message);
                     }
                 }
@@ -360,6 +422,12 @@ namespace DSB.GC.Dev
                 }
             }
 
+            if (epoch != connectionEpoch)
+            {
+                LogWebSocket("Receive loop ended for a superseded connection.");
+                yield break;
+            }
+
             LogWebSocket("Receive loop ended.");
             if (shouldReconnect && websocket != null && websocket.State != WebSocketState.Open)
             {
@@ -374,7 +442,11 @@ namespace DSB.GC.Dev
                 yield break;
             }
 
-            LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
+            if (webSocketLogging)
+            {
+                LogWebSocket($"Reconnect scheduled in {reconnectDelay:0.##}s.");
+            }
+
             yield return new WaitForSeconds(reconnectDelay);
 
             if (shouldReconnect)
@@ -390,7 +462,7 @@ namespace DSB.GC.Dev
                 var decision = runtimeInbound.RouteTextMessage(message, BuildInboundContext());
                 ApplyInboundDecision(decision, "devapp_input");
 
-                if (decision.status == GCDevAppRuntimeInboundStatus.Unhandled)
+                if (webSocketLogging && decision.status == GCDevAppRuntimeInboundStatus.Unhandled)
                 {
                     LogWebSocket("Unhandled message type." + message);
                 }
@@ -407,7 +479,11 @@ namespace DSB.GC.Dev
             {
                 if (!GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(message, out var inputFrame))
                 {
-                    LogWebSocket($"Unhandled binary message length: {message?.Length ?? 0}");
+                    if (webSocketLogging)
+                    {
+                        LogWebSocket($"Unhandled binary message length: {message?.Length ?? 0}");
+                    }
+
                     return;
                 }
 
@@ -479,17 +555,6 @@ namespace DSB.GC.Dev
             }
         }
 
-        void SetTimescale(float timescale)
-        {
-            if (GamingCouch.Instance != null)
-            {
-                GamingCouch.Instance.ApplyDevTimescale(timescale);
-                return;
-            }
-
-            Time.timeScale = Mathf.Clamp(timescale, 0.1f, 10.0f);
-        }
-
         void ApplyInboundInput(GCDevAppRuntimeInboundDecision decision, string validationSource)
         {
             if (GamingCouch.Instance == null)
@@ -503,17 +568,17 @@ namespace DSB.GC.Dev
                 return;
             }
 
-            if (string.Equals(validationSource, "devapp_input", StringComparison.Ordinal))
+            if (webSocketLogging && string.Equals(validationSource, "devapp_input", StringComparison.Ordinal))
             {
                 LogWebSocket($"Applying JSON input to GamingCouch player {decision.playerIndex}");
             }
 
-            GamingCouch.Instance.ApplyDevAppInput(decision.playerIndex, decision.inputs);
+            GamingCouch.Instance.ApplyExternalPlayerInput(decision.playerIndex, decision.inputs, "devapp_input");
         }
 
         void ApplyTimescaleState(GCDevAppRuntimeInboundDecision decision)
         {
-            SetTimescale(decision.timescale);
+            GCDevUtils.ApplyTimescale(decision.timescale);
             if (decision.shouldApplyPause)
             {
                 SetPause(decision.paused);
@@ -527,6 +592,9 @@ namespace DSB.GC.Dev
 
         void CloseWebSocket()
         {
+            // Retires every coroutine still running for the previous socket, so a stale receive loop
+            // or in-flight snapshot cannot touch the next connection's state.
+            connectionEpoch += 1;
             currentRunId = null;
             lastSentSnapshotSignature = null;
             isSnapshotSendInFlight = false;
@@ -545,7 +613,10 @@ namespace DSB.GC.Dev
                     }
                     catch (Exception e)
                     {
-                        LogWebSocket($"Close exception: {e.Message}");
+                        if (webSocketLogging)
+                        {
+                            LogWebSocket($"Close exception: {e.Message}");
+                        }
                     }
                 }
 
@@ -568,6 +639,8 @@ namespace DSB.GC.Dev
             CloseWebSocket();
         }
 
+        // Callers that build their message (interpolation, concatenation) guard on webSocketLogging
+        // themselves, so nothing is formatted while logging is off.
         void LogWebSocket(string message)
         {
             if (!webSocketLogging)

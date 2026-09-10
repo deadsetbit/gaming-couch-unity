@@ -80,51 +80,51 @@ namespace DSB.GC.Dev
         internal static GCDevAppRuntimeInboundDecision Unhandled(string reason)
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Unhandled,
-                GCDevAppRuntimeInboundIntentKind.None,
-                -1,
-                default,
-                false,
-                0,
-                1f,
-                false,
-                false,
-                null,
-                reason
+                status: GCDevAppRuntimeInboundStatus.Unhandled,
+                intentKind: GCDevAppRuntimeInboundIntentKind.None,
+                playerIndex: -1,
+                inputs: default,
+                hasInputSequence: false,
+                inputSequence: 0,
+                timescale: 1f,
+                paused: false,
+                shouldApplyPause: false,
+                runtimeLogCaptureMode: null,
+                reason: reason
             );
         }
 
         internal static GCDevAppRuntimeInboundDecision Ignored(string reason)
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Ignored,
-                GCDevAppRuntimeInboundIntentKind.None,
-                -1,
-                default,
-                false,
-                0,
-                1f,
-                false,
-                false,
-                null,
-                reason
+                status: GCDevAppRuntimeInboundStatus.Ignored,
+                intentKind: GCDevAppRuntimeInboundIntentKind.None,
+                playerIndex: -1,
+                inputs: default,
+                hasInputSequence: false,
+                inputSequence: 0,
+                timescale: 1f,
+                paused: false,
+                shouldApplyPause: false,
+                runtimeLogCaptureMode: null,
+                reason: reason
             );
         }
 
         internal static GCDevAppRuntimeInboundDecision Restart()
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Intent,
-                GCDevAppRuntimeInboundIntentKind.Restart,
-                -1,
-                default,
-                false,
-                0,
-                1f,
-                false,
-                false,
-                null,
-                null
+                status: GCDevAppRuntimeInboundStatus.Intent,
+                intentKind: GCDevAppRuntimeInboundIntentKind.Restart,
+                playerIndex: -1,
+                inputs: default,
+                hasInputSequence: false,
+                inputSequence: 0,
+                timescale: 1f,
+                paused: false,
+                shouldApplyPause: false,
+                runtimeLogCaptureMode: null,
+                reason: null
             );
         }
 
@@ -136,17 +136,17 @@ namespace DSB.GC.Dev
         )
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Intent,
-                GCDevAppRuntimeInboundIntentKind.Input,
-                playerIndex,
-                inputs,
-                hasInputSequence,
-                inputSequence,
-                1f,
-                false,
-                false,
-                null,
-                null
+                status: GCDevAppRuntimeInboundStatus.Intent,
+                intentKind: GCDevAppRuntimeInboundIntentKind.Input,
+                playerIndex: playerIndex,
+                inputs: inputs,
+                hasInputSequence: hasInputSequence,
+                inputSequence: inputSequence,
+                timescale: 1f,
+                paused: false,
+                shouldApplyPause: false,
+                runtimeLogCaptureMode: null,
+                reason: null
             );
         }
 
@@ -157,34 +157,34 @@ namespace DSB.GC.Dev
         )
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Intent,
-                GCDevAppRuntimeInboundIntentKind.TimescaleState,
-                -1,
-                default,
-                false,
-                0,
-                timescale,
-                paused,
-                shouldApplyPause,
-                null,
-                null
+                status: GCDevAppRuntimeInboundStatus.Intent,
+                intentKind: GCDevAppRuntimeInboundIntentKind.TimescaleState,
+                playerIndex: -1,
+                inputs: default,
+                hasInputSequence: false,
+                inputSequence: 0,
+                timescale: timescale,
+                paused: paused,
+                shouldApplyPause: shouldApplyPause,
+                runtimeLogCaptureMode: null,
+                reason: null
             );
         }
 
         internal static GCDevAppRuntimeInboundDecision RuntimeOutputOptions(string runtimeLogCaptureMode)
         {
             return new GCDevAppRuntimeInboundDecision(
-                GCDevAppRuntimeInboundStatus.Intent,
-                GCDevAppRuntimeInboundIntentKind.RuntimeOutputOptions,
-                -1,
-                default,
-                false,
-                0,
-                1f,
-                false,
-                false,
-                runtimeLogCaptureMode,
-                null
+                status: GCDevAppRuntimeInboundStatus.Intent,
+                intentKind: GCDevAppRuntimeInboundIntentKind.RuntimeOutputOptions,
+                playerIndex: -1,
+                inputs: default,
+                hasInputSequence: false,
+                inputSequence: 0,
+                timescale: 1f,
+                paused: false,
+                shouldApplyPause: false,
+                runtimeLogCaptureMode: runtimeLogCaptureMode,
+                reason: null
             );
         }
     }
@@ -243,16 +243,6 @@ namespace DSB.GC.Dev
             }
 
             return RouteDevToolAction(data, message, context);
-        }
-
-        internal GCDevAppRuntimeInboundDecision RouteBinaryMessage(byte[] message)
-        {
-            if (!TryParseCompactControllerInputFrame(message, out var inputFrame))
-            {
-                return GCDevAppRuntimeInboundDecision.Unhandled("unsupported_binary_message");
-            }
-
-            return RouteValidatedCompactControllerInputFrame(inputFrame);
         }
 
         internal GCDevAppRuntimeInboundDecision RouteValidatedCompactControllerInputFrame(CompactControllerInputFrame inputFrame)

@@ -219,11 +219,11 @@ public sealed class GCDevAppRuntimeInboundTests
     {
         var inbound = new GCDevAppRuntimeInbound();
 
-        var first = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 100, 0, 0, 0));
-        var duplicate = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
-        var older = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 9, 120, 500, 0, 1));
-        var otherPlayer = inbound.RouteBinaryMessage(CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
-        var next = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 11, 140, 500, 0, 1));
+        var first = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0));
+        var duplicate = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
+        var older = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 9, 120, 500, 0, 1));
+        var otherPlayer = RouteCompactFrame(inbound, CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
+        var next = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 11, 140, 500, 0, 1));
 
         Assert.That(first.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(first.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
@@ -259,15 +259,53 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
+    public void CompactInputRejectedByPlayerIndexValidationDoesNotConsumeItsSequence()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        Assert.That(
+            RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0), isPlayerIndexValid: false),
+            Is.Null
+        );
+
+        var accepted = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
+
+        Assert.That(accepted.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(accepted.inputSequence, Is.EqualTo(10u));
+    }
+
+    [Test]
     public void CompactInputSequenceCanResetForNewDevAppConnection()
     {
         var inbound = new GCDevAppRuntimeInbound();
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 100, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 110, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
 
         inbound.ResetInputSequences();
 
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 120, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 120, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+    }
+
+    // Mirrors GCDevAppIntegration.ProcessBinaryWebSocketMessage: parse, then run the
+    // player-index validation gate, and only then let the router's dedup bookkeeping see the
+    // frame. Returns null where production drops the frame before it reaches the router.
+    private static GCDevAppRuntimeInboundDecision RouteCompactFrame(
+        GCDevAppRuntimeInbound inbound,
+        byte[] message,
+        bool isPlayerIndexValid = true
+    )
+    {
+        if (!GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(message, out var inputFrame))
+        {
+            return null;
+        }
+
+        if (!isPlayerIndexValid)
+        {
+            return null;
+        }
+
+        return inbound.RouteValidatedCompactControllerInputFrame(inputFrame);
     }
 
     private static GCDevAppRuntimeInboundContext Context(bool isPaused = false)
