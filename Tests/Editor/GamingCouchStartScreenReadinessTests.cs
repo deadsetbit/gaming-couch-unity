@@ -213,15 +213,15 @@ public sealed class GamingCouchStartScreenReadinessTests
         var mismatchWithSelection = GamingCouchGameViewAspect.InspectSizeEntries(
             new[]
             {
-                new GCGameViewSizeEntry(0, "Free Aspect", 0, 0, true),
-                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+                new GCGameViewSizeEntry(0, "Free Aspect", 0, 0),
+                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9),
             },
             0,
             true,
             null
         );
         var mismatchWithoutSelection = GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true) },
+            new[] { new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3) },
             0,
             true,
             null
@@ -753,7 +753,7 @@ public sealed class GamingCouchStartScreenReadinessTests
             Array.Empty<EditorBuildSettingsScene>()
         );
         var gameViewReady = GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
             0,
             true,
             null
@@ -775,8 +775,8 @@ public sealed class GamingCouchStartScreenReadinessTests
         var gameViewMismatch = GamingCouchGameViewAspect.InspectSizeEntries(
             new[]
             {
-                new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true),
-                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+                new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3),
+                new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9),
             },
             0,
             true,
@@ -974,7 +974,7 @@ public sealed class GamingCouchStartScreenReadinessTests
     private static GCGameViewAspectReadiness CreateReadyGameViewAspectReadiness()
     {
         return GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
             0,
             true,
             null

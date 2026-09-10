@@ -355,7 +355,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     public void PendingSetupDisplayNameUsesActiveSceneTerminology()
     {
         Assert.That(
-            GamingCouchActiveSceneSetup.GetSetupDisplayName(GCActiveSceneSetupIntent.ActiveScene),
+            GamingCouchActiveSceneSetup.GetSetupDisplayName(),
             Is.EqualTo("Active Scene Setup")
         );
     }
@@ -373,8 +373,8 @@ public sealed class GamingCouchStartScreenSetupActionsTests
             GamingCouchGameViewAspect.InspectSizeEntries(
                 new[]
                 {
-                    new GCGameViewSizeEntry(0, "Free Aspect", 0, 0, true),
-                    new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+                    new GCGameViewSizeEntry(0, "Free Aspect", 0, 0),
+                    new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9),
                 },
                 0,
                 true,
@@ -507,7 +507,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     private static GCGameViewAspectReadiness CreateReadyGameViewAspectReadiness()
     {
         return GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
             0,
             true,
             null

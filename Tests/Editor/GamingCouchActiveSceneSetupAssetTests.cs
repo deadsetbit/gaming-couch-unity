@@ -150,7 +150,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         // The default active-scene setup (incl. "Create example scene") wires the barebones template
         // + the stock GCPlayer, which has no generated player script.
         var missingPiecesSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneMissingPieces
         );
 
@@ -169,7 +168,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     {
         // The additive "Wire example game" action selects the full game flavor.
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
 
@@ -187,7 +185,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     public void GeneratedActiveSceneGameSourceEqualsCanonicalGameMasterAfterRename()
     {
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
 
@@ -209,7 +206,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     public void GeneratedActiveScenePlayerSourceEqualsCanonicalPlayerMasterAfterRename()
     {
         var gameSpec = GamingCouchActiveSceneSetup.GetScriptSetupSpec(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneWireExampleGame
         );
 
@@ -254,7 +250,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         EnsureTestAssetFolder();
         var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(ColorPlaceholderPrefabPlayer) + ".prefab";
         var context = new GCExampleAssetSetupContinuationContext(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
             testFolderAssetPath,
@@ -297,7 +292,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         EnsureTestAssetFolder();
         var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(GCExamplePlayerFixture) + ".prefab";
         var context = new GCExampleAssetSetupContinuationContext(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false,
             testFolderAssetPath,
@@ -500,7 +494,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
 
         var playerPrefabAssetPath = testFolderAssetPath + "/" + nameof(GCExamplePlayerFixture) + ".prefab";
         var context = new GCExampleAssetSetupContinuationContext(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneWireExampleGame,
             true,
             testFolderAssetPath,
@@ -719,16 +712,16 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     {
         var entries = new[]
         {
-            new GCGameViewSizeEntry(0, "Free Aspect", 0, 0, false),
-            new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
-            new GCGameViewSizeEntry(2, "1920x1080", 0, 0, false),
+            new GCGameViewSizeEntry(0, "Free Aspect", 0, 0),
+            new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9),
+            new GCGameViewSizeEntry(2, "1920x1080", 0, 0),
         };
 
         var ready = GamingCouchGameViewAspect.InspectSizeEntries(entries, 1, true, null);
         var mismatch = GamingCouchGameViewAspect.InspectSizeEntries(entries, 0, true, null);
         var unknown = GamingCouchGameViewAspect.InspectSizeEntries(entries, -1, true, "Game View is closed.");
         var mismatchWithoutExisting16By9 = GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3, true) },
+            new[] { new GCGameViewSizeEntry(0, "4:3 Aspect", 4, 3) },
             0,
             true,
             null
@@ -1131,7 +1124,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     private static GCExampleAssetSetupContinuationContext CreateGameListenerTestContext(Type gameType)
     {
         return new GCExampleAssetSetupContinuationContext(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneGameListener,
             false,
             GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
@@ -1271,7 +1263,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
                 new[] { new EditorBuildSettingsScene(TestSceneBuildPath, true) }
             ),
             GamingCouchGameViewAspect.InspectSizeEntries(
-                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+                new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
                 0,
                 true,
                 null
@@ -1311,7 +1303,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     private static GCGameViewAspectReadiness CreateReadyGameViewAspectReadiness()
     {
         return GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
             0,
             true,
             null

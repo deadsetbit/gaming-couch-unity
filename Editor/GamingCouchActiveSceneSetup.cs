@@ -8,11 +8,6 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-internal enum GCActiveSceneSetupIntent
-{
-    ActiveScene,
-}
-
 internal enum GCActiveSceneSetupAction
 {
     ActiveSceneMissingPieces,
@@ -249,7 +244,6 @@ internal sealed class GCExampleScriptSetupSpec
 
 internal sealed class GCExampleAssetSetupContinuationContext
 {
-    internal readonly GCActiveSceneSetupIntent intent;
     internal readonly GCActiveSceneSetupAction action;
     internal readonly bool resumedAfterCompilation;
     internal readonly string exampleFolderAssetPath;
@@ -263,7 +257,6 @@ internal sealed class GCExampleAssetSetupContinuationContext
     internal readonly Type playerType;
 
     internal GCExampleAssetSetupContinuationContext(
-        GCActiveSceneSetupIntent intent,
         GCActiveSceneSetupAction action,
         bool resumedAfterCompilation,
         string exampleFolderAssetPath,
@@ -277,7 +270,6 @@ internal sealed class GCExampleAssetSetupContinuationContext
         Type playerType
     )
     {
-        this.intent = intent;
         this.action = action;
         this.resumedAfterCompilation = resumedAfterCompilation;
         this.exampleFolderAssetPath = exampleFolderAssetPath;
@@ -369,10 +361,8 @@ internal static class GamingCouchActiveSceneSetup
     internal const string StockPlayerPrefabAssetPath = ExampleFolderAssetPath + "/" + StockPlayerTypeName + ".prefab";
 
     private const string PendingSetupSessionKey = "DSB.GC.ActiveSceneSetup.PendingSetup.v1";
-    private const string PendingIntentSessionKey = "DSB.GC.ActiveSceneSetup.PendingIntent.v1";
     private const string PendingActionSessionKey = "DSB.GC.ActiveSceneSetup.PendingAction.v1";
     private const string PendingWarningLoggedSessionKey = "DSB.GC.ActiveSceneSetup.PendingWarningLogged.v1";
-    private const string DefaultIntentValue = "ActiveScene";
     private const string DefaultActionValue = "ActiveSceneMissingPieces";
     private const string ListenerObjectName = "Game";
     private const string ActiveSceneGameListenerObjectName = ListenerObjectName;
@@ -466,21 +456,15 @@ internal static class GamingCouchActiveSceneSetup
 
     internal static GCExampleScriptSetupResult EnsureExampleScripts()
     {
-        return EnsureExampleScripts(GCActiveSceneSetupIntent.ActiveScene);
-    }
-
-    internal static GCExampleScriptSetupResult EnsureExampleScripts(GCActiveSceneSetupIntent intent)
-    {
-        return EnsureExampleScripts(intent, GetDefaultAction(intent), true);
+        return EnsureExampleScripts(GetDefaultAction(), true);
     }
 
     private static GCExampleScriptSetupResult EnsureExampleScripts(
-        GCActiveSceneSetupIntent intent,
         GCActiveSceneSetupAction action,
         bool dispatchWhenReady
     )
     {
-        var spec = GetScriptSetupSpec(intent, action);
+        var spec = GetScriptSetupSpec(action);
         var createdAssetPaths = new List<string>();
         var reusedAssetPaths = new List<string>();
         var blockedReasons = new List<string>();
@@ -491,7 +475,7 @@ internal static class GamingCouchActiveSceneSetup
             return CreateResult(
                 GCExampleScriptSetupStatus.Blocked,
                 false,
-                GetSetupDisplayName(intent) + " script generation is blocked.",
+                GetSetupDisplayName() + " script generation is blocked.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -515,7 +499,7 @@ internal static class GamingCouchActiveSceneSetup
             return CreateResult(
                 GCExampleScriptSetupStatus.Blocked,
                 createdAssetPaths.Count > 0,
-                GetSetupDisplayName(intent) + " script generation is blocked.",
+                GetSetupDisplayName() + " script generation is blocked.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -524,32 +508,32 @@ internal static class GamingCouchActiveSceneSetup
 
         if (createdAssetPaths.Count > 0)
         {
-            PersistPendingSetup(intent, action);
+            PersistPendingSetup(action);
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             StartPendingSetupPolling();
 
             return CreateResult(
                 GCExampleScriptSetupStatus.PendingCompilation,
                 true,
-                GetSetupDisplayName(intent) + " created missing example scripts and queued setup continuation after Unity compiles them.",
+                GetSetupDisplayName() + " created missing example scripts and queued setup continuation after Unity compiles them.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
             );
         }
 
-        var context = CreateContinuationContext(intent, action, false);
+        var context = CreateContinuationContext(action, false);
         if (!context.HasRequiredTypes)
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
-                PersistPendingSetup(intent, action);
+                PersistPendingSetup(action);
                 StartPendingSetupPolling();
 
                 return CreateResult(
                     GCExampleScriptSetupStatus.PendingCompilation,
                     false,
-                    GetSetupDisplayName(intent) + " is waiting for Unity to compile existing example scripts.",
+                    GetSetupDisplayName() + " is waiting for Unity to compile existing example scripts.",
                     createdAssetPaths,
                     reusedAssetPaths,
                     blockedReasons
@@ -560,7 +544,7 @@ internal static class GamingCouchActiveSceneSetup
             return CreateResult(
                 GCExampleScriptSetupStatus.Blocked,
                 false,
-                GetSetupDisplayName(intent) + " cannot continue until the existing script assets compile with the expected type names.",
+                GetSetupDisplayName() + " cannot continue until the existing script assets compile with the expected type names.",
                 createdAssetPaths,
                 reusedAssetPaths,
                 blockedReasons
@@ -582,10 +566,7 @@ internal static class GamingCouchActiveSceneSetup
         );
     }
 
-    internal static GCExampleScriptSetupSpec GetScriptSetupSpec(
-        GCActiveSceneSetupIntent intent,
-        GCActiveSceneSetupAction action
-    )
+    internal static GCExampleScriptSetupSpec GetScriptSetupSpec(GCActiveSceneSetupAction action)
     {
         // The default active-scene setup (including "Create example scene") wires the barebones
         // template; only the additive "Wire example game" action selects the full game flavor.
@@ -785,10 +766,10 @@ internal static class GamingCouchActiveSceneSetup
 
     internal static string GetPendingSetupDisplayName()
     {
-        return GetSetupDisplayName(GetPendingIntent());
+        return GetSetupDisplayName();
     }
 
-    internal static string GetSetupDisplayName(GCActiveSceneSetupIntent intent)
+    internal static string GetSetupDisplayName()
     {
         return "Active Scene Setup";
     }
@@ -860,7 +841,6 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         var scriptResult = EnsureExampleScripts(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneMissingPieces,
             false
         );
@@ -887,7 +867,6 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         var context = CreateContinuationContext(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneMissingPieces,
             false
         );
@@ -968,7 +947,6 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         var scriptResult = EnsureExampleScripts(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveScenePlayerPrefab,
             false
         );
@@ -1016,7 +994,6 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         var scriptResult = EnsureExampleScripts(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneGameListener,
             false
         );
@@ -1086,7 +1063,7 @@ internal static class GamingCouchActiveSceneSetup
             );
         }
 
-        var context = CreateContinuationContext(GCActiveSceneSetupIntent.ActiveScene, action, false);
+        var context = CreateContinuationContext(action, false);
         if (action == GCActiveSceneSetupAction.ActiveScenePlayerPrefab)
         {
             return EnsureExamplePlayerPrefabReference(context, gamingCouch, details);
@@ -1814,7 +1791,7 @@ internal static class GamingCouchActiveSceneSetup
         var existingComponents = FindComponentsInScene(scene, context.gameType);
         if (existingComponents.Length > 1)
         {
-            blockedReasons.Add("The scene contains multiple " + context.gameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning " + GetSetupDisplayName(context.intent) + ".");
+            blockedReasons.Add("The scene contains multiple " + context.gameTypeName + " components. Assign the GamingCouch listener manually or remove duplicates before rerunning " + GetSetupDisplayName() + ".");
             return null;
         }
 
@@ -2042,11 +2019,9 @@ internal static class GamingCouchActiveSceneSetup
         GCExampleAssetSetupContinuationContext context
     )
     {
-        if (context.intent != GCActiveSceneSetupIntent.ActiveScene ||
-            (context.action != GCActiveSceneSetupAction.ActiveSceneMissingPieces &&
-             context.action != GCActiveSceneSetupAction.ActiveScenePlayerPrefab))
+        if (context.action != GCActiveSceneSetupAction.ActiveSceneMissingPieces &&
+            context.action != GCActiveSceneSetupAction.ActiveScenePlayerPrefab)
         {
-            Debug.Log("Example player prefab assignment is deferred until a player prefab setup action runs.");
             return;
         }
 
@@ -2097,11 +2072,9 @@ internal static class GamingCouchActiveSceneSetup
         GCExampleAssetSetupContinuationContext context
     )
     {
-        if (context.intent != GCActiveSceneSetupIntent.ActiveScene ||
-            (context.action != GCActiveSceneSetupAction.ActiveSceneMissingPieces &&
-             context.action != GCActiveSceneSetupAction.ActiveSceneGameListener))
+        if (context.action != GCActiveSceneSetupAction.ActiveSceneMissingPieces &&
+            context.action != GCActiveSceneSetupAction.ActiveSceneGameListener)
         {
-            Debug.Log("Game script assignment is deferred until a Game script setup action runs.");
             return;
         }
 
@@ -2176,7 +2149,6 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         var scriptsResult = EnsureExampleScripts(
-            GCActiveSceneSetupIntent.ActiveScene,
             GCActiveSceneSetupAction.ActiveSceneWireExampleGame,
             true
         );
@@ -2266,8 +2238,7 @@ internal static class GamingCouchActiveSceneSetup
         GCExampleAssetSetupContinuationContext context
     )
     {
-        if (context.intent != GCActiveSceneSetupIntent.ActiveScene ||
-            context.action != GCActiveSceneSetupAction.ActiveSceneWireExampleGame)
+        if (context.action != GCActiveSceneSetupAction.ActiveSceneWireExampleGame)
         {
             return;
         }
@@ -2389,10 +2360,9 @@ internal static class GamingCouchActiveSceneSetup
         return Path.Combine(Application.dataPath, assetPath.Substring(assetsPrefix.Length));
     }
 
-    private static void PersistPendingSetup(GCActiveSceneSetupIntent intent, GCActiveSceneSetupAction action)
+    private static void PersistPendingSetup(GCActiveSceneSetupAction action)
     {
         SessionState.SetBool(PendingSetupSessionKey, true);
-        SessionState.SetString(PendingIntentSessionKey, intent.ToString());
         SessionState.SetString(PendingActionSessionKey, action.ToString());
         SessionState.SetBool(PendingWarningLoggedSessionKey, false);
     }
@@ -2400,7 +2370,6 @@ internal static class GamingCouchActiveSceneSetup
     private static void ClearPendingSetup()
     {
         SessionState.SetBool(PendingSetupSessionKey, false);
-        SessionState.SetString(PendingIntentSessionKey, string.Empty);
         SessionState.SetString(PendingActionSessionKey, string.Empty);
         SessionState.SetBool(PendingWarningLoggedSessionKey, false);
     }
@@ -2429,8 +2398,7 @@ internal static class GamingCouchActiveSceneSetup
             return;
         }
 
-        var intent = GetPendingIntent();
-        var context = CreateContinuationContext(intent, GetPendingAction(intent), true);
+        var context = CreateContinuationContext(GetPendingAction(), true);
         if (!context.HasRequiredTypes)
         {
             LogPendingTypeWarningOnce(context);
@@ -2442,35 +2410,24 @@ internal static class GamingCouchActiveSceneSetup
         DispatchScriptsReady(context);
     }
 
-    private static GCActiveSceneSetupIntent GetPendingIntent()
-    {
-        var value = SessionState.GetString(PendingIntentSessionKey, DefaultIntentValue);
-        if (Enum.TryParse(value, out GCActiveSceneSetupIntent intent))
-        {
-            return intent;
-        }
-
-        return GCActiveSceneSetupIntent.ActiveScene;
-    }
-
-    private static GCActiveSceneSetupAction GetPendingAction(GCActiveSceneSetupIntent intent)
+    private static GCActiveSceneSetupAction GetPendingAction()
     {
         var value = SessionState.GetString(PendingActionSessionKey, DefaultActionValue);
         if (Enum.TryParse(value, out GCActiveSceneSetupAction action) &&
-            IsActionValidForIntent(intent, action))
+            IsKnownAction(action))
         {
             return action;
         }
 
-        return GetDefaultAction(intent);
+        return GetDefaultAction();
     }
 
-    private static GCActiveSceneSetupAction GetDefaultAction(GCActiveSceneSetupIntent intent)
+    private static GCActiveSceneSetupAction GetDefaultAction()
     {
         return GCActiveSceneSetupAction.ActiveSceneMissingPieces;
     }
 
-    private static bool IsActionValidForIntent(GCActiveSceneSetupIntent intent, GCActiveSceneSetupAction action)
+    private static bool IsKnownAction(GCActiveSceneSetupAction action)
     {
         return action == GCActiveSceneSetupAction.ActiveSceneMissingPieces ||
                action == GCActiveSceneSetupAction.ActiveScenePlayerPrefab ||
@@ -2479,14 +2436,12 @@ internal static class GamingCouchActiveSceneSetup
     }
 
     private static GCExampleAssetSetupContinuationContext CreateContinuationContext(
-        GCActiveSceneSetupIntent intent,
         GCActiveSceneSetupAction action,
         bool resumedAfterCompilation
     )
     {
-        var spec = GetScriptSetupSpec(intent, action);
+        var spec = GetScriptSetupSpec(action);
         return new GCExampleAssetSetupContinuationContext(
-            intent,
             action,
             resumedAfterCompilation,
             spec.scriptFolderAssetPath,
@@ -2508,10 +2463,7 @@ internal static class GamingCouchActiveSceneSetup
     {
         if (spec.playerScriptAssetPath == null)
         {
-            var stockPlayerType = FindTypeByName(spec.playerTypeName);
-            return stockPlayerType != null && typeof(GCPlayer).IsAssignableFrom(stockPlayerType)
-                ? stockPlayerType
-                : null;
+            return FindTypeByName(spec.playerTypeName, typeof(GCPlayer));
         }
 
         return FindScriptType(spec.playerScriptAssetPath, spec.playerTypeName, typeof(GCPlayer));
@@ -2547,7 +2499,7 @@ internal static class GamingCouchActiveSceneSetup
         }
 
         SessionState.SetBool(PendingWarningLoggedSessionKey, true);
-        Debug.LogWarning("GamingCouch " + GetSetupDisplayName(context.intent) + " is waiting for compiled types " + context.gameTypeName + " and " + context.playerTypeName + ". Existing scripts will not be overwritten.");
+        Debug.LogWarning("GamingCouch " + GetSetupDisplayName() + " is waiting for compiled types " + context.gameTypeName + " and " + context.playerTypeName + ". Existing scripts will not be overwritten.");
     }
 
     private static Type FindScriptType(string scriptAssetPath, string typeName, Type requiredBaseType)
@@ -2573,6 +2525,14 @@ internal static class GamingCouchActiveSceneSetup
 
     private static Type FindTypeByName(string typeName)
     {
+        return FindTypeByName(typeName, null);
+    }
+
+    // requiredBaseType makes the search skip an unrelated type that happens to share the simple name,
+    // so a namesake in another assembly cannot shadow the real one. The generator's "a compiled type
+    // with this name already exists" guard deliberately passes null: any namesake blocks it (ADR 0017).
+    private static Type FindTypeByName(string typeName, Type requiredBaseType)
+    {
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         for (var assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
         {
@@ -2594,7 +2554,9 @@ internal static class GamingCouchActiveSceneSetup
             for (var typeIndex = 0; typeIndex < types.Length; typeIndex++)
             {
                 var type = types[typeIndex];
-                if (type != null && type.Name == typeName)
+                if (type != null &&
+                    type.Name == typeName &&
+                    (requiredBaseType == null || requiredBaseType.IsAssignableFrom(type)))
                 {
                     return type;
                 }
