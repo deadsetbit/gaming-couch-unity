@@ -253,9 +253,13 @@ internal static class GCUnityBuildInfoPathNormalizer
                IsWindowsDriveAbsolutePath(path);
     }
 
+    // A UNC path (\\server\share) is Windows-shaped without carrying a drive letter, so it needs
+    // the same case-insensitive comparison; otherwise a case-mismatched share root misses every
+    // comparison root and the path is redacted as unknown-absolute.
     private static bool UsesWindowsPathSemantics(string path)
     {
-        return IsWindowsDriveAbsolutePath(path);
+        return IsWindowsDriveAbsolutePath(path) ||
+               path.StartsWith("//", StringComparison.Ordinal);
     }
 
     private static bool IsWindowsDriveAbsolutePath(string path)

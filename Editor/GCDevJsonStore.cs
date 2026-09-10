@@ -112,7 +112,7 @@ namespace DSB.GC.Dev
 
             try
             {
-                File.WriteAllText(path, jsonObject.ToString(Formatting.Indented) + "\n", new UTF8Encoding(false));
+                GCEditorAtomicFileWriter.WriteAllText(path, jsonObject.ToString(Formatting.Indented) + "\n");
             }
             catch (Exception exception)
             {

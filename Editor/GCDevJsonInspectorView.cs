@@ -298,21 +298,10 @@ internal sealed class GCDevJsonInspectorView
                 continue;
             }
 
-            var message = issue.code + ": " + issue.message;
-            if (issue.seatIndex > 0)
-            {
-                message += " Seat " + issue.seatIndex + ".";
-            }
-
-            if (!string.IsNullOrEmpty(issue.fieldName))
-            {
-                message += " Field: " + issue.fieldName + ".";
-            }
-
             var messageType = issue.severity == GCDevJsonIssueSeverity.Error
                 ? MessageType.Error
                 : MessageType.Warning;
-            EditorGUILayout.HelpBox(message, messageType);
+            EditorGUILayout.HelpBox(GCDevJsonIssueFormatter.Format(issue), messageType);
         }
     }
 

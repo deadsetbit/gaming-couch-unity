@@ -44,7 +44,8 @@ public sealed class GCWebGLRuntimeInfoSidecarWriterTests
             var result = GCWebGLRuntimeInfoSidecarWriter.WriteForBuild(
                 BuildTarget.WebGL,
                 outputRootPath,
-                GamingCouchWebGLExportSetup.ProjectTemplateIdentifier
+                GamingCouchWebGLExportSetup.ProjectTemplateIdentifier,
+                identity
             );
 
             Assert.That(result.WasWritten, Is.True);

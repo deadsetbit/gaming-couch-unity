@@ -50,6 +50,51 @@ internal sealed class GCWebGLPreviewRow
     }
 }
 
+internal static class GCWebGLPreviewRowQueries
+{
+    internal static bool HasChangedRows(IReadOnlyList<GCWebGLPreviewRow> rows)
+    {
+        for (var index = 0; rows != null && index < rows.Count; index++)
+        {
+            if (rows[index] != null && rows[index].isChanged)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static bool HasBlockedRows(IReadOnlyList<GCWebGLPreviewRow> rows)
+    {
+        for (var index = 0; rows != null && index < rows.Count; index++)
+        {
+            if (rows[index] != null && rows[index].isBlocked)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static string[] GetDefaultSelectedSkippableRowIds(IReadOnlyList<GCWebGLPreviewRow> rows)
+    {
+        var selectedIds = new List<string>();
+        for (var index = 0; rows != null && index < rows.Count; index++)
+        {
+            if (rows[index] != null &&
+                rows[index].isChanged &&
+                rows[index].isSkippable)
+            {
+                selectedIds.Add(rows[index].id);
+            }
+        }
+
+        return selectedIds.ToArray();
+    }
+}
+
 internal enum GCWebGLBuildSettingsProfileId
 {
     Dev,
@@ -75,18 +120,7 @@ internal sealed class GCWebGLBuildSettingsProfilePlan
 
     internal bool HasChanges
     {
-        get
-        {
-            for (var index = 0; index < rows.Length; index++)
-            {
-                if (rows[index] != null && rows[index].isChanged)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        get { return GCWebGLPreviewRowQueries.HasChangedRows(rows); }
     }
 }
 
@@ -140,19 +174,9 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         return ApplyProfile(GCWebGLBuildSettingsProfileId.Release, selectedSettingIds);
     }
 
-    internal static bool ApplyReleaseProfile(List<string> details)
-    {
-        return ApplyReleaseProfile(details, null);
-    }
-
     internal static bool ApplyReleaseProfile(List<string> details, IEnumerable<string> selectedSettingIds)
     {
         return ApplyProfile(GCWebGLBuildSettingsProfileId.Release, details, selectedSettingIds);
-    }
-
-    internal static GCWebGLBuildSettingsProfileResult ApplyDevProfile()
-    {
-        return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, null);
     }
 
     internal static GCWebGLBuildSettingsProfileResult ApplyDevProfile(IEnumerable<string> selectedSettingIds)
@@ -160,24 +184,9 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, selectedSettingIds);
     }
 
-    internal static bool ApplyDevProfile(List<string> details)
-    {
-        return ApplyDevProfile(details, null);
-    }
-
-    internal static bool ApplyDevProfile(List<string> details, IEnumerable<string> selectedSettingIds)
-    {
-        return ApplyProfile(GCWebGLBuildSettingsProfileId.Dev, details, selectedSettingIds);
-    }
-
     internal static bool IsReleaseProfileApplied(List<string> details)
     {
         return IsProfileApplied(GCWebGLBuildSettingsProfileId.Release, details);
-    }
-
-    internal static bool IsDevProfileApplied(List<string> details)
-    {
-        return IsProfileApplied(GCWebGLBuildSettingsProfileId.Dev, details);
     }
 
     private static GCWebGLBuildSettingsProfilePlan BuildProfilePlan(GCWebGLBuildSettingsProfileId profileId)
@@ -271,7 +280,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         return profileId == GCWebGLBuildSettingsProfileId.Dev ? "Dev" : "Release";
     }
 
-    private static HashSet<string> CreateSelectedIdSet(IEnumerable<string> selectedSettingIds)
+    internal static HashSet<string> CreateSelectedIdSet(IEnumerable<string> selectedSettingIds)
     {
         if (selectedSettingIds == null)
         {
@@ -473,7 +482,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         );
     }
 
-    private static string FormatEnabled(bool value)
+    internal static string FormatEnabled(bool value)
     {
         return value ? "Enabled" : "Disabled";
     }
@@ -523,7 +532,7 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
         return index + 1 < value.Length && char.IsLower(value[index + 1]);
     }
 
-    private static void AddDetail(List<string> details, string detail)
+    internal static void AddDetail(List<string> details, string detail)
     {
         if (details != null && !string.IsNullOrEmpty(detail))
         {

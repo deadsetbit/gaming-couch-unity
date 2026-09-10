@@ -183,6 +183,33 @@ namespace DSB.GC.Dev
         }
     }
 
+    internal static class GCDevJsonTokenReader
+    {
+        internal static bool TryReadString(JToken token, out string value)
+        {
+            value = null;
+            if (token == null || token.Type != JTokenType.String)
+            {
+                return false;
+            }
+
+            value = token.Value<string>();
+            return true;
+        }
+
+        internal static bool TryReadBool(JToken token, out bool value)
+        {
+            value = false;
+            if (token == null || token.Type != JTokenType.Boolean)
+            {
+                return false;
+            }
+
+            value = token.Value<bool>();
+            return true;
+        }
+    }
+
     internal static class GCDevJsonValidation
     {
         internal static GCDevJsonReadResult BuildReadResult(GCDevJsonParsedFile parsedFile)
@@ -278,13 +305,13 @@ namespace DSB.GC.Dev
             }
 
             string entryKey;
-            if (!TryReadString(jsonObject["entryKey"], out entryKey) || !IsValidEntryKey(entryKey))
+            if (!GCDevJsonTokenReader.TryReadString(jsonObject["entryKey"], out entryKey) || !IsValidEntryKey(entryKey))
             {
                 return InvalidReadResult(parsedFile, GCDevJsonIssueCode.InvalidEntryKey, GetInvalidEntryKeyMessage());
             }
 
             string seed;
-            if (!TryReadString(jsonObject["seed"], out seed) || !IsValidSeed(seed))
+            if (!GCDevJsonTokenReader.TryReadString(jsonObject["seed"], out seed) || !IsValidSeed(seed))
             {
                 return InvalidReadResult(parsedFile, GCDevJsonIssueCode.InvalidSeed, GetInvalidSeedMessage());
             }
@@ -346,30 +373,6 @@ namespace DSB.GC.Dev
             return devVersion == GCDevJsonFile.SupportedDevVersion;
         }
 
-        private static bool TryReadString(JToken token, out string value)
-        {
-            value = null;
-            if (token == null || token.Type != JTokenType.String)
-            {
-                return false;
-            }
-
-            value = token.Value<string>();
-            return true;
-        }
-
-        private static bool TryReadBool(JToken token, out bool value)
-        {
-            value = false;
-            if (token == null || token.Type != JTokenType.Boolean)
-            {
-                return false;
-            }
-
-            value = token.Value<bool>();
-            return true;
-        }
-
         private static bool TryReadSeat(
             JToken token,
             int seatIndex,
@@ -392,19 +395,19 @@ namespace DSB.GC.Dev
                 return false;
             }
 
-            if (!TryReadString(seatObject["name"], out name) || !IsValidPlayerName(name))
+            if (!GCDevJsonTokenReader.TryReadString(seatObject["name"], out name) || !IsValidPlayerName(name))
             {
                 issue = InvalidSeatIssue(path, seatIndex, "name");
                 return false;
             }
 
-            if (!TryReadBool(seatObject["enabled"], out enabled))
+            if (!GCDevJsonTokenReader.TryReadBool(seatObject["enabled"], out enabled))
             {
                 issue = InvalidSeatIssue(path, seatIndex, "enabled");
                 return false;
             }
 
-            if (!TryReadBool(seatObject["isBot"], out isBot))
+            if (!GCDevJsonTokenReader.TryReadBool(seatObject["isBot"], out isBot))
             {
                 issue = InvalidSeatIssue(path, seatIndex, "isBot");
                 return false;
@@ -817,7 +820,7 @@ namespace DSB.GC.Dev
                 }
 
                 bool botSupport;
-                if (!TryReadBool(entryObject["botSupport"], out botSupport))
+                if (!GCDevJsonTokenReader.TryReadBool(entryObject["botSupport"], out botSupport))
                 {
                     issue = InvalidPlatformDataFieldsIssue(parsedFile, "Each gc.platform.json game entry must include boolean botSupport.", "game.entries." + entryProperty.Name + ".botSupport", entryProperty.Name);
                     return false;
@@ -887,26 +890,8 @@ namespace DSB.GC.Dev
 
         private static bool TryReadNonEmptyString(JToken token, out string value)
         {
-            value = null;
-            if (token == null || token.Type != JTokenType.String)
-            {
-                return false;
-            }
-
-            value = token.Value<string>();
-            return !string.IsNullOrWhiteSpace(value);
-        }
-
-        private static bool TryReadBool(JToken token, out bool value)
-        {
-            value = false;
-            if (token == null || token.Type != JTokenType.Boolean)
-            {
-                return false;
-            }
-
-            value = token.Value<bool>();
-            return true;
+            return GCDevJsonTokenReader.TryReadString(token, out value) &&
+                   !string.IsNullOrWhiteSpace(value);
         }
 
         private static bool TryReadNonNegativeInteger(JToken token, out int value)
