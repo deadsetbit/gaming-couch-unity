@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DSB.GC
@@ -342,21 +343,13 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerEliminationState requestedState = GCPlayerEliminationState.Permanent;
-
-            if (currentState == requestedState)
-            {
-                return GCPlayerTransitionResult<GCPlayerEliminationState>.NoOp(
-                    GCPlayerTransitionKind.PlayerEliminationStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.DuplicateValue
-                );
-            }
-
-            return AcceptEliminationStateChange(playerIndex, currentState, requestedState, reasonText);
+            return SetPermanentState(
+                GCPlayerTransitionKind.PlayerEliminationStateChanged,
+                playerIndex,
+                currentState,
+                permanentState: GCPlayerEliminationState.Permanent,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerEliminationState> SetEliminatedRevokable(
@@ -365,33 +358,14 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerEliminationState requestedState = GCPlayerEliminationState.Revokable;
-
-            if (currentState == requestedState)
-            {
-                return GCPlayerTransitionResult<GCPlayerEliminationState>.NoOp(
-                    GCPlayerTransitionKind.PlayerEliminationStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.DuplicateValue
-                );
-            }
-
-            if (currentState == GCPlayerEliminationState.Permanent)
-            {
-                return GCPlayerTransitionResult<GCPlayerEliminationState>.Reject(
-                    GCPlayerTransitionKind.PlayerEliminationStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.InvalidTransition
-                );
-            }
-
-            return AcceptEliminationStateChange(playerIndex, currentState, requestedState, reasonText);
+            return SetRevokableState(
+                GCPlayerTransitionKind.PlayerEliminationStateChanged,
+                playerIndex,
+                currentState,
+                revokableState: GCPlayerEliminationState.Revokable,
+                permanentState: GCPlayerEliminationState.Permanent,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerEliminationState> SetRevokeEliminated(
@@ -400,21 +374,14 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerEliminationState requestedState = GCPlayerEliminationState.None;
-
-            if (currentState != GCPlayerEliminationState.Revokable)
-            {
-                return GCPlayerTransitionResult<GCPlayerEliminationState>.Reject(
-                    GCPlayerTransitionKind.PlayerEliminationStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.InvalidRevoke
-                );
-            }
-
-            return AcceptEliminationStateChange(playerIndex, currentState, requestedState, reasonText);
+            return RevokeState(
+                GCPlayerTransitionKind.PlayerEliminationStateChanged,
+                playerIndex,
+                currentState,
+                revokableState: GCPlayerEliminationState.Revokable,
+                noneState: GCPlayerEliminationState.None,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerFinishState> SetFinishedPermanent(
@@ -423,21 +390,13 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerFinishState requestedState = GCPlayerFinishState.Permanent;
-
-            if (currentState == requestedState)
-            {
-                return GCPlayerTransitionResult<GCPlayerFinishState>.NoOp(
-                    GCPlayerTransitionKind.PlayerFinishStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.DuplicateValue
-                );
-            }
-
-            return AcceptFinishStateChange(playerIndex, currentState, requestedState, reasonText);
+            return SetPermanentState(
+                GCPlayerTransitionKind.PlayerFinishStateChanged,
+                playerIndex,
+                currentState,
+                permanentState: GCPlayerFinishState.Permanent,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerFinishState> SetFinishedRevokable(
@@ -446,33 +405,14 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerFinishState requestedState = GCPlayerFinishState.Revokable;
-
-            if (currentState == requestedState)
-            {
-                return GCPlayerTransitionResult<GCPlayerFinishState>.NoOp(
-                    GCPlayerTransitionKind.PlayerFinishStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.DuplicateValue
-                );
-            }
-
-            if (currentState == GCPlayerFinishState.Permanent)
-            {
-                return GCPlayerTransitionResult<GCPlayerFinishState>.Reject(
-                    GCPlayerTransitionKind.PlayerFinishStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.InvalidTransition
-                );
-            }
-
-            return AcceptFinishStateChange(playerIndex, currentState, requestedState, reasonText);
+            return SetRevokableState(
+                GCPlayerTransitionKind.PlayerFinishStateChanged,
+                playerIndex,
+                currentState,
+                revokableState: GCPlayerFinishState.Revokable,
+                permanentState: GCPlayerFinishState.Permanent,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerFinishState> SetRevokeFinished(
@@ -481,21 +421,14 @@ namespace DSB.GC
             string reasonText
         )
         {
-            const GCPlayerFinishState requestedState = GCPlayerFinishState.None;
-
-            if (currentState != GCPlayerFinishState.Revokable)
-            {
-                return GCPlayerTransitionResult<GCPlayerFinishState>.Reject(
-                    GCPlayerTransitionKind.PlayerFinishStateChanged,
-                    playerIndex,
-                    currentState,
-                    requestedState,
-                    reasonText,
-                    GCPlayerTransitionRejectionReason.InvalidRevoke
-                );
-            }
-
-            return AcceptFinishStateChange(playerIndex, currentState, requestedState, reasonText);
+            return RevokeState(
+                GCPlayerTransitionKind.PlayerFinishStateChanged,
+                playerIndex,
+                currentState,
+                revokableState: GCPlayerFinishState.Revokable,
+                noneState: GCPlayerFinishState.None,
+                reasonText
+            );
         }
 
         internal static GCPlayerTransitionResult<GCPlayerStatusValue> SetStatus(
@@ -608,15 +541,102 @@ namespace DSB.GC
             );
         }
 
-        private static GCPlayerTransitionResult<GCPlayerEliminationState> AcceptEliminationStateChange(
+        // ADR 0003 keeps elimination and finish as independent enums, not independent rules: both
+        // families promote in place, reject a permanent-to-revokable step, and revoke only from
+        // revokable. One generic shape parameterized on the enum and the transition kind carries them.
+        private static GCPlayerTransitionResult<TState> SetPermanentState<TState>(
+            GCPlayerTransitionKind kind,
             int playerIndex,
-            GCPlayerEliminationState currentState,
-            GCPlayerEliminationState requestedState,
+            TState currentState,
+            TState permanentState,
             string reasonText
-        )
+        ) where TState : struct, Enum
         {
-            return GCPlayerTransitionResult<GCPlayerEliminationState>.Accept(
-                GCPlayerTransitionKind.PlayerEliminationStateChanged,
+            if (StateEquals(currentState, permanentState))
+            {
+                return GCPlayerTransitionResult<TState>.NoOp(
+                    kind,
+                    playerIndex,
+                    currentState,
+                    permanentState,
+                    reasonText,
+                    GCPlayerTransitionRejectionReason.DuplicateValue
+                );
+            }
+
+            return AcceptStateChange(kind, playerIndex, currentState, permanentState, reasonText);
+        }
+
+        private static GCPlayerTransitionResult<TState> SetRevokableState<TState>(
+            GCPlayerTransitionKind kind,
+            int playerIndex,
+            TState currentState,
+            TState revokableState,
+            TState permanentState,
+            string reasonText
+        ) where TState : struct, Enum
+        {
+            if (StateEquals(currentState, revokableState))
+            {
+                return GCPlayerTransitionResult<TState>.NoOp(
+                    kind,
+                    playerIndex,
+                    currentState,
+                    revokableState,
+                    reasonText,
+                    GCPlayerTransitionRejectionReason.DuplicateValue
+                );
+            }
+
+            if (StateEquals(currentState, permanentState))
+            {
+                return GCPlayerTransitionResult<TState>.Reject(
+                    kind,
+                    playerIndex,
+                    currentState,
+                    revokableState,
+                    reasonText,
+                    GCPlayerTransitionRejectionReason.InvalidTransition
+                );
+            }
+
+            return AcceptStateChange(kind, playerIndex, currentState, revokableState, reasonText);
+        }
+
+        private static GCPlayerTransitionResult<TState> RevokeState<TState>(
+            GCPlayerTransitionKind kind,
+            int playerIndex,
+            TState currentState,
+            TState revokableState,
+            TState noneState,
+            string reasonText
+        ) where TState : struct, Enum
+        {
+            if (!StateEquals(currentState, revokableState))
+            {
+                return GCPlayerTransitionResult<TState>.Reject(
+                    kind,
+                    playerIndex,
+                    currentState,
+                    noneState,
+                    reasonText,
+                    GCPlayerTransitionRejectionReason.InvalidRevoke
+                );
+            }
+
+            return AcceptStateChange(kind, playerIndex, currentState, noneState, reasonText);
+        }
+
+        private static GCPlayerTransitionResult<TState> AcceptStateChange<TState>(
+            GCPlayerTransitionKind kind,
+            int playerIndex,
+            TState currentState,
+            TState requestedState,
+            string reasonText
+        ) where TState : struct, Enum
+        {
+            return GCPlayerTransitionResult<TState>.Accept(
+                kind,
                 playerIndex,
                 currentState,
                 requestedState,
@@ -628,24 +648,9 @@ namespace DSB.GC
             );
         }
 
-        private static GCPlayerTransitionResult<GCPlayerFinishState> AcceptFinishStateChange(
-            int playerIndex,
-            GCPlayerFinishState currentState,
-            GCPlayerFinishState requestedState,
-            string reasonText
-        )
+        private static bool StateEquals<TState>(TState left, TState right) where TState : struct, Enum
         {
-            return GCPlayerTransitionResult<GCPlayerFinishState>.Accept(
-                GCPlayerTransitionKind.PlayerFinishStateChanged,
-                playerIndex,
-                currentState,
-                requestedState,
-                reasonText,
-                Time.time,
-                emitsSemanticTransition: true,
-                latestStateDirtyFlags: GCPlayerLatestStateDirtyFlags.RuntimeStateSnapshot |
-                    GCPlayerLatestStateDirtyFlags.PlayersHud
-            );
+            return EqualityComparer<TState>.Default.Equals(left, right);
         }
 
         private static GCPlayerTransitionResult<int> SetIntValue(

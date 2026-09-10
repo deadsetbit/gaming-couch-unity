@@ -124,22 +124,6 @@ public sealed class GCRuntimeOutputContractTests
             eliminationState: "None",
             finishState: "None"
         );
-
-        var hudData = context.game.BuildPlayersHudData();
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: -1,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
-        );
     }
 
     [Test]
@@ -191,22 +175,6 @@ public sealed class GCRuntimeOutputContractTests
             placement: 1,
             eliminationState: "None",
             finishState: "None"
-        );
-
-        var hudData = context.game.BuildPlayersHudData();
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: 80,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
         );
     }
 
@@ -879,7 +847,7 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
-    public void PlayersHudDataIsBuiltFromCanonicalRuntimeStateSnapshot()
+    public void RuntimeStateSnapshotProjectsEveryPlayerStateFieldWithPlacements()
     {
         var context = CreateRuntimeGame(2);
         context.players[0].SetScore(12, "score");
@@ -890,11 +858,12 @@ public sealed class GCRuntimeOutputContractTests
         context.players[1].SetEliminatedPermanent("out");
         context.players[1].SetFinishedRevokable("finish");
 
-        var hudData = context.game.BuildPlayersHudData();
+        var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
 
-        Assert.That(hudData.players, Has.Length.EqualTo(2));
-        AssertHudPlayer(
-            hudData.players[0],
+        Assert.That(snapshot.game.status, Is.EqualTo("playing"));
+        Assert.That(snapshot.players, Has.Length.EqualTo(2));
+        AssertSnapshotPlayer(
+            snapshot.players[0],
             playerIndex: 0,
             score: 12,
             lives: 3,
@@ -903,12 +872,10 @@ public sealed class GCRuntimeOutputContractTests
             meter: 44,
             placement: 1,
             eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
+            finishState: "None"
         );
-        AssertHudPlayer(
-            hudData.players[1],
+        AssertSnapshotPlayer(
+            snapshot.players[1],
             playerIndex: 1,
             score: 7,
             lives: 0,
@@ -917,9 +884,7 @@ public sealed class GCRuntimeOutputContractTests
             meter: -1,
             placement: 2,
             eliminationState: "Permanent",
-            finishState: "Revokable",
-            eliminated: true,
-            value: null
+            finishState: "Revokable"
         );
     }
 
@@ -990,37 +955,6 @@ public sealed class GCRuntimeOutputContractTests
             placement: 2,
             eliminationState: "Permanent",
             finishState: "Revokable"
-        );
-
-        var hudData = context.game.BuildPlayersHudData();
-        Assert.That(hudData.players, Has.Length.EqualTo(2));
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 10,
-            lives: 2,
-            status: "Success",
-            statusText: "ready",
-            meter: 50,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
-        );
-        AssertHudPlayer(
-            hudData.players[1],
-            playerIndex: 1,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: -1,
-            placement: 2,
-            eliminationState: "Permanent",
-            finishState: "Revokable",
-            eliminated: true,
-            value: null
         );
 
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
@@ -1169,34 +1103,6 @@ public sealed class GCRuntimeOutputContractTests
             Assert.That(index, Is.GreaterThan(previousIndex), "Expected " + needle + " to appear in order.");
             previousIndex = index;
         }
-    }
-
-    private static void AssertHudPlayer(
-        GCPlayersHudDataPlayer player,
-        int playerIndex,
-        int score,
-        int lives,
-        string status,
-        string statusText,
-        int meter,
-        int placement,
-        string eliminationState,
-        string finishState,
-        bool eliminated,
-        string value
-    )
-    {
-        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
-        Assert.That(player.score, Is.EqualTo(score));
-        Assert.That(player.lives, Is.EqualTo(lives));
-        Assert.That(player.status, Is.EqualTo(status));
-        Assert.That(player.statusText, Is.EqualTo(statusText));
-        Assert.That(player.meter, Is.EqualTo(meter));
-        Assert.That(player.placement, Is.EqualTo(placement));
-        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
-        Assert.That(player.finishState, Is.EqualTo(finishState));
-        Assert.That(player.eliminated, Is.EqualTo(eliminated));
-        Assert.That(player.value, Is.EqualTo(value));
     }
 
     private static void AssertSnapshotPlayer(

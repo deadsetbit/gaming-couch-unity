@@ -844,13 +844,14 @@ namespace DSB.GC
         {
             player.gameObject.name = "Player - " + options.playerIndex;
 
+            var colorEnum = GCPlayerOptionResolver.ResolvePlayerColor(options.color);
             var playerSetupOptions = new GCPlayerSetupOptions
             {
                 playerIndex = options.playerIndex,
                 playerSeed = options.playerSeed,
-                type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
-                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
-                colorName = options.color,
+                type = GCPlayerOptionResolver.ResolvePlayerType(options.type),
+                colorEnum = colorEnum,
+                colorName = colorEnum.ToString(),
             };
 
             player._InternalGamingCouchSetup(playerSetupOptions);

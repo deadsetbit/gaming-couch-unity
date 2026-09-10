@@ -8,53 +8,105 @@ namespace DSB.GC
     public class GCPlayerStore<T> : GCPlayerStoreOutput<T>, GCPlayerStoreInput<T> where T : GCPlayer
     {
         private List<T> players = new List<T>();
+        /// <summary>Every player in the store, in the order they were added. This is the store's live list: <see cref="AddPlayer"/> and <see cref="Clear"/> mutate it in place, so snapshot it (<c>.ToList()</c>) before adding or clearing players while enumerating.</summary>
         public List<T> Players => players;
         private List<T> playersBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersBot => playersBot;
         private List<T> playersNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersNonBot => playersNonBot;
         private List<T> playersUneliminated = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersUneliminated => playersUneliminated;
         private List<T> playersUneliminatedNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersUneliminatedNonBot => playersUneliminatedNonBot;
         private List<T> playersUneliminatedBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersUneliminatedBot => playersUneliminatedBot;
         private List<T> playersEliminated = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminated => playersEliminated;
         private List<T> playersEliminatedNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedNonBot => playersEliminatedNonBot;
         private List<T> playersEliminatedBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedBot => playersEliminatedBot;
         private List<T> playersEliminatedPermanent = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedPermanent => playersEliminatedPermanent;
         private List<T> playersEliminatedPermanentNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedPermanentNonBot => playersEliminatedPermanentNonBot;
         private List<T> playersEliminatedPermanentBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedPermanentBot => playersEliminatedPermanentBot;
         private List<T> playersEliminatedRevokable = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedRevokable => playersEliminatedRevokable;
         private List<T> playersEliminatedRevokableNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedRevokableNonBot => playersEliminatedRevokableNonBot;
         private List<T> playersEliminatedRevokableBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersEliminatedRevokableBot => playersEliminatedRevokableBot;
         private List<T> playersFinished = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinished => playersFinished;
         private List<T> playersFinishedNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedNonBot => playersFinishedNonBot;
         private List<T> playersFinishedBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedBot => playersFinishedBot;
         private List<T> playersFinishedPermanent = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedPermanent => playersFinishedPermanent;
         private List<T> playersFinishedPermanentNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedPermanentNonBot => playersFinishedPermanentNonBot;
         private List<T> playersFinishedPermanentBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedPermanentBot => playersFinishedPermanentBot;
         private List<T> playersFinishedRevokable = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedRevokable => playersFinishedRevokable;
         private List<T> playersFinishedRevokableNonBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedRevokableNonBot => playersFinishedRevokableNonBot;
         private List<T> playersFinishedRevokableBot = new List<T>();
+        /// <summary>Live store collection, rebuilt in place on every accepted elimination or finish transition; snapshot it (<c>.ToList()</c>) before mutating player state while enumerating.</summary>
         public List<T> PlayersFinishedRevokableBot => playersFinishedRevokableBot;
+
+        // The interface narrows these to IReadOnlyList<T> so package-internal consumers cannot
+        // mutate the store's collections; the class keeps List<T> for games that surface them.
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.Players => players;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersBot => playersBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersNonBot => playersNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersUneliminated => playersUneliminated;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersUneliminatedNonBot => playersUneliminatedNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersUneliminatedBot => playersUneliminatedBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminated => playersEliminated;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedNonBot => playersEliminatedNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedBot => playersEliminatedBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedPermanent => playersEliminatedPermanent;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedPermanentNonBot => playersEliminatedPermanentNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedPermanentBot => playersEliminatedPermanentBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedRevokable => playersEliminatedRevokable;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedRevokableNonBot => playersEliminatedRevokableNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersEliminatedRevokableBot => playersEliminatedRevokableBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinished => playersFinished;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedNonBot => playersFinishedNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedBot => playersFinishedBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedPermanent => playersFinishedPermanent;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedPermanentNonBot => playersFinishedPermanentNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedPermanentBot => playersFinishedPermanentBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedRevokable => playersFinishedRevokable;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedRevokableNonBot => playersFinishedRevokableNonBot;
+        IReadOnlyList<T> GCPlayerStoreOutput<T>.PlayersFinishedRevokableBot => playersFinishedRevokableBot;
+
         [Obsolete("Use Players.", true)]
         public IEnumerable<T> PlayersEnumerable => players;
         [Obsolete("Use Players.Count.", true)]
