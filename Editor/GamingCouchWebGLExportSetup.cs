@@ -357,15 +357,70 @@ internal static class GamingCouchWebGLExportSetup
         var readiness = InspectReadiness(plan.destinationTemplateDirectoryFullPath);
         details.AddRange(readiness.details);
 
+        var status = readiness.status;
+        var message = readiness.IsReady
+            ? "Gaming Couch web export settings are ready."
+            : readiness.message;
+        if (readiness.IsBlocked && RemainingGapsAreDeliberateSkips(readiness, selectedIds))
+        {
+            status = GCWebGLExportSetupStatus.Warning;
+            message = "Gaming Couch web export settings were applied; skipped rows were left unapplied.";
+        }
+
         return new GCWebGLExportSetupResult(
-            readiness.status,
+            status,
             changed,
-            readiness.IsReady
-                ? "Gaming Couch web export settings are ready."
-                : readiness.message,
+            message,
             details.ToArray(),
             readiness
         );
+    }
+
+    // Rows the caller deselected in the preview are meant to stay unapplied, so the gaps they
+    // leave behind must not surface as a failed apply. Readiness itself stays honest — its flags
+    // and details still report the gaps, so the start screen keeps asking for the missing
+    // settings; only the status the caller sees for this apply run softens to a warning.
+    // Template and build-target rows are never skippable, so only the settings rows can be
+    // left behind on purpose.
+    private static bool RemainingGapsAreDeliberateSkips(
+        GCWebGLExportReadiness readiness,
+        HashSet<string> selectedIds
+    )
+    {
+        if (selectedIds == null ||
+            !readiness.templateFolderReady ||
+            !readiness.templateFilesReady ||
+            !readiness.templateSelected)
+        {
+            return false;
+        }
+
+        var settingsRows = new List<GCWebGLPreviewRow>();
+        AddSplashPlanRows(settingsRows, null);
+        AddProfilePlanRows(
+            GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan(),
+            settingsRows,
+            null
+        );
+
+        var hasDeliberateSkip = false;
+        for (var index = 0; index < settingsRows.Count; index++)
+        {
+            var row = settingsRows[index];
+            if (!row.isChanged)
+            {
+                continue;
+            }
+
+            if (!row.isSkippable || selectedIds.Contains(row.id))
+            {
+                return false;
+            }
+
+            hasDeliberateSkip = true;
+        }
+
+        return hasDeliberateSkip;
     }
 
     private static void AddTemplatePlanRows(

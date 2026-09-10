@@ -51,7 +51,7 @@ internal sealed class GCDevJsonDraft
         for (var index = 0; index < seats.Length; index++)
         {
             var seat = seats[index];
-            fileSeats[index] = new GCDevJsonSeat(seat.name, seat.enabled, seat.isBot);
+            fileSeats[index] = new GCDevJsonSeat(NormalizeSeatName(seat.name), seat.enabled, seat.isBot);
         }
 
         var seed = usesRandomSeed
@@ -59,6 +59,14 @@ internal sealed class GCDevJsonDraft
             : fixedSeed.ToString(CultureInfo.InvariantCulture);
 
         return new GCDevJsonFile(entryKey, seed, fileSeats);
+    }
+
+    // Seat names are validated on their trimmed length, so the trimmed value is what has to be
+    // persisted: a padded name passes validation yet still exceeds the raw-length ceiling the
+    // DevApp applies, and the DevApp rejects gc.dev.json as a whole over a single bad seat name.
+    private static string NormalizeSeatName(string name)
+    {
+        return name == null ? string.Empty : name.Trim();
     }
 }
 

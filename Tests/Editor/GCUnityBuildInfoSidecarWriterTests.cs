@@ -338,6 +338,26 @@ public sealed class GCUnityBuildInfoSidecarWriterTests
     }
 
     [Test]
+    public void NormalizesCaseMismatchedUncPathsAgainstWindowsRoots()
+    {
+        var context = new GCUnityBuildInfoPathNormalizationContext(
+            @"\\Server\Share\Project",
+            @"\\Server\Share\Project\Build",
+            @"\\Server\Share\Home\Ada"
+        );
+
+        // A UNC root carries no drive letter, so the Windows case-insensitive comparison has to
+        // key off the leading double separator. Without that, a case-mismatched share root matches
+        // no configured root and the path is redacted as unknown-absolute instead.
+        AssertNormalized(
+            @"\\SERVER\share\project\Build\index.html",
+            context,
+            GCUnityBuildInfoNormalizedPathKind.BuildOutputRelative,
+            "index.html"
+        );
+    }
+
+    [Test]
     public void RedactsUnknownUnixAbsolutePaths()
     {
         var context = new GCUnityBuildInfoPathNormalizationContext(

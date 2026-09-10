@@ -48,6 +48,35 @@ public sealed class GCDevJsonContractFixtureTests
     }
 
     [Test]
+    public void PaddedSeatNameIsTrimmedBeforeItReachesDevJson()
+    {
+        var casePath = ResolveCasePath("valid-sparse-roster-capture");
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(casePath);
+            var platformData = fixture.PlatformDataStore.Read();
+            var draft = GCDevJsonDraft.FromFile(fixture.DevStore.Read(platformData).data);
+
+            // Raw length 10, trimmed length 8: accepted by the 1-8 rule, which measures the
+            // trimmed value, but over the ceiling the DevApp applies to the raw string. Persisting
+            // the padding there costs the whole file, not just the seat.
+            draft.seats[0].name = " ABCDEFGH ";
+            var file = draft.ToFile();
+            var writeResult = fixture.DevStore.Write(file, platformData);
+            var writtenText = File.ReadAllText(fixture.DevJsonPath, Encoding.UTF8);
+
+            Assert.That(file.seats[0].name, Is.EqualTo("ABCDEFGH"));
+            Assert.That(writeResult.success, Is.True);
+            Assert.That(writtenText, Does.Contain("\"name\": \"ABCDEFGH\""));
+            Assert.That(writtenText, Does.Not.Contain(" ABCDEFGH "));
+            Assert.That(
+                fixture.DevStore.Read(platformData).data.seats[0].name,
+                Is.EqualTo("ABCDEFGH")
+            );
+        }
+    }
+
+    [Test]
     public void ValidPlatformRuntimeViewExposesSortedEntriesAndColors()
     {
         var view = BuildPlatformRuntimeView(
