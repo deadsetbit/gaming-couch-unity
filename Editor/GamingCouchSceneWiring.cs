@@ -232,7 +232,7 @@ internal static class GamingCouchSceneWiring
             return GamingCouchObjectReferenceState.Assigned;
         }
 
-#if UNITY_6000_3_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
         return property.objectReferenceEntityIdValue.IsValid()
             ? GamingCouchObjectReferenceState.Missing
             : GamingCouchObjectReferenceState.Empty;
@@ -359,7 +359,7 @@ internal static class GamingCouchSceneWiring
             return GamingCouchObjectReferenceState.Assigned;
         }
 
-#if UNITY_6000_3_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
         return property.objectReferenceEntityIdValue.IsValid()
             ? GamingCouchObjectReferenceState.Missing
             : GamingCouchObjectReferenceState.Empty;
