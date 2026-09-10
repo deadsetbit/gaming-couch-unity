@@ -4,10 +4,13 @@ using NUnit.Framework;
 public sealed class GCUnityBuildInfoPathNormalizerRelativePathTests
 {
     // Roots that no real working directory can live under, so a CWD-anchored resolution is
-    // guaranteed to land outside every root regardless of where the tests run.
-    private const string UnreachableProjectRoot = "/gc-nonexistent/project";
-    private const string UnreachableBuildOutputRoot = "/gc-nonexistent/project/BuildOutput";
-    private const string UnreachableUserHome = "/gc-nonexistent/home";
+    // guaranteed to land outside every root regardless of where the tests run. Anchored on the
+    // current directory's own root so the paths stay absolute on every platform.
+    private static readonly string UnreachableRoot =
+        Path.Combine(Path.GetPathRoot(Directory.GetCurrentDirectory()), "gc-nonexistent");
+    private static readonly string UnreachableProjectRoot = Path.Combine(UnreachableRoot, "project");
+    private static readonly string UnreachableBuildOutputRoot = Path.Combine(UnreachableProjectRoot, "BuildOutput");
+    private static readonly string UnreachableUserHome = Path.Combine(UnreachableRoot, "home");
 
     [Test]
     public void RelativePathUnderBuildOutputRootIsClassifiedBuildOutputRelative()

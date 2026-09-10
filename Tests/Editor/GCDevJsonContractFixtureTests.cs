@@ -18,6 +18,12 @@ public sealed class GCDevJsonContractFixtureTests
     }
 
     [Test]
+    public void ValidFullRosterCapturesEverySeatColorInTheFixedMap()
+    {
+        RunContractFixtureCase("valid-full-roster-seat-color-map");
+    }
+
+    [Test]
     public void MissingPlatformDataKeepsValidDevJsonReadableWithWarningOnlyIssue()
     {
         RunContractFixtureCase("missing-platform-data-warning-only");
@@ -45,6 +51,62 @@ public sealed class GCDevJsonContractFixtureTests
     public void PreservingWriteKeepsUnrelatedTopLevelDevJsonFields()
     {
         RunContractFixtureCase("preserving-write-unrelated-top-level-fields");
+    }
+
+    // gc.dev.json is owned by the DevApp side of the contract: a missing file is an error to
+    // report, never a file to bootstrap.
+    [Test]
+    public void MissingDevJsonIsReportedAndNeitherCreatedNorRepaired()
+    {
+        using (var fixture = new ContractFixture())
+        {
+            var platformData = fixture.PlatformDataStore.Read();
+            var readResult = fixture.DevStore.Read(platformData);
+            var readIssue = FindIssue(readResult.validation, GCDevJsonIssueCode.MissingFile.ToString());
+
+            Assert.That(readResult.IsValid, Is.False);
+            Assert.That(readIssue, Is.Not.Null, "the missing gc.dev.json was not reported");
+            Assert.That(readIssue.severity, Is.EqualTo(GCDevJsonIssueSeverity.Error));
+            Assert.That(File.Exists(fixture.DevJsonPath), Is.False, "the read created gc.dev.json");
+
+            var writeResult = fixture.DevStore.Write(CreateValidDevJsonFile(), platformData);
+            var writeIssue = FindIssue(writeResult.validation, GCDevJsonIssueCode.MissingFile.ToString());
+
+            Assert.That(writeResult.success, Is.False);
+            Assert.That(writeIssue, Is.Not.Null, "the write did not report the missing gc.dev.json");
+            Assert.That(File.Exists(fixture.DevJsonPath), Is.False, "the write created gc.dev.json");
+            Assert.That(
+                Directory.GetFiles(Path.GetDirectoryName(fixture.DevJsonPath)),
+                Is.Empty,
+                "the store left files in the project root"
+            );
+        }
+    }
+
+    [Test]
+    public void RandomSeedIsAcceptedAndResolvedIntoTheDocumentedRange()
+    {
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(ResolveCasePath("valid-sparse-roster-capture"));
+            File.WriteAllText(
+                fixture.DevJsonPath,
+                File.ReadAllText(fixture.DevJsonPath, Encoding.UTF8).Replace("\"12345\"", "\"random\""),
+                Encoding.UTF8
+            );
+
+            var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
+            var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
+
+            Assert.That(readResult.IsValid, Is.True, "\"random\" was rejected by validation");
+            Assert.That(readResult.data.seed, Is.EqualTo(GCDevJsonFile.RandomSeed));
+            Assert.That(capture.success, Is.True);
+            Assert.That(
+                capture.playOptions.seed,
+                Is.InRange(GCDevJsonFile.MinSeed, GCDevJsonFile.MaxSeed),
+                "\"random\" was not resolved into a usable seed"
+            );
+        }
     }
 
     [Test]
@@ -373,6 +435,34 @@ public sealed class GCDevJsonContractFixtureTests
         Assert.That(copy.playerColors.red.@base, Is.EqualTo(new[] { 243, 63, 94 }));
     }
 
+    // The section counters are what make the harness's "asserted nothing" guard bite; an
+    // expectation that opts out of every section is exactly the case it exists to reject.
+    [Test]
+    public void ContractFixtureSectionCountIsZeroWhenNothingIsAsserted()
+    {
+        var expected = new ExpectedFixture
+        {
+            id = "asserts-nothing",
+            valid = true,
+            issues = Array.Empty<ExpectedIssue>(),
+            capture = new ExpectedCapture { assert = false },
+            write = new ExpectedWrite { assert = false },
+        };
+
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(ResolveCasePath("valid-sparse-roster-capture"));
+            var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
+
+            Assert.That(
+                AssertReadResult(readResult, expected) +
+                AssertCapture(fixture, readResult, expected.capture) +
+                AssertWrite(fixture, expected.write),
+                Is.Zero
+            );
+        }
+    }
+
     private static void RunContractFixtureCase(string caseName)
     {
         var casePath = ResolveCasePath(caseName);
@@ -385,10 +475,27 @@ public sealed class GCDevJsonContractFixtureTests
             var platformDataReadResult = fixture.PlatformDataStore.Read();
             var readResult = fixture.DevStore.Read(platformDataReadResult);
 
-            AssertReadResult(readResult, expected);
-            AssertCapture(fixture, readResult, expected.capture);
-            AssertWrite(fixture, expected.write);
+            var assertedSections =
+                AssertReadResult(readResult, expected) +
+                AssertCapture(fixture, readResult, expected.capture) +
+                AssertWrite(fixture, expected.write);
+
+            // Capture, write and read-back are all opt-in ("assert": false skips them) and the read
+            // section pins nothing beyond the validity flag unless the case expects issues, so a
+            // case can be authored that exercises the corpus without asserting anything.
+            Assert.That(assertedSections, Is.GreaterThan(0), "Contract fixture case asserted nothing: " + caseName);
         }
+    }
+
+    private static GCDevJsonFile CreateValidDevJsonFile()
+    {
+        var seats = new GCDevJsonSeat[GCDevJsonFile.SeatCount];
+        for (var index = 0; index < seats.Length; index++)
+        {
+            seats[index] = new GCDevJsonSeat("P" + (index + 1), index == 0, false);
+        }
+
+        return new GCDevJsonFile("duel", "12345", seats);
     }
 
     private static GCPlatformRuntimeView BuildPlatformRuntimeView(string json, string selectedEntryKey)
@@ -466,7 +573,9 @@ public sealed class GCDevJsonContractFixtureTests
         return expected;
     }
 
-    private static void AssertReadResult(GCDevJsonReadResult readResult, ExpectedFixture expected)
+    // Returns 1 only when the case pins issue expectations; the validity flag alone is not a
+    // section, or every case would count as asserting something.
+    private static int AssertReadResult(GCDevJsonReadResult readResult, ExpectedFixture expected)
     {
         Assert.That(readResult, Is.Not.Null);
         Assert.That(readResult.IsValid, Is.EqualTo(expected.valid));
@@ -484,6 +593,8 @@ public sealed class GCDevJsonContractFixtureTests
             Assert.That(issue, Is.Not.Null, "Expected issue code was not found: " + expectedIssue.code);
             Assert.That(issue.severity.ToString(), Is.EqualTo(expectedIssue.severity));
         }
+
+        return expectedIssues.Length > 0 ? 1 : 0;
     }
 
     private static int CountIssues(ExpectedIssue[] issues, string severity)
@@ -500,11 +611,11 @@ public sealed class GCDevJsonContractFixtureTests
         return count;
     }
 
-    private static void AssertCapture(ContractFixture fixture, GCDevJsonReadResult readResult, ExpectedCapture expected)
+    private static int AssertCapture(ContractFixture fixture, GCDevJsonReadResult readResult, ExpectedCapture expected)
     {
         if (expected == null || !expected.assert)
         {
-            return;
+            return 0;
         }
 
         var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
@@ -515,7 +626,7 @@ public sealed class GCDevJsonContractFixtureTests
             Assert.That(capture.validation, Is.Not.Null);
             Assert.That(capture.validation.ErrorCount, Is.EqualTo(readResult.validation.ErrorCount));
             Assert.That(capture.validation.WarningCount, Is.EqualTo(readResult.validation.WarningCount));
-            return;
+            return 1;
         }
 
         Assert.That(expected.entryKey, Is.Not.Null.And.Not.Empty, "Successful capture fixture must include an entryKey expectation.");
@@ -530,6 +641,7 @@ public sealed class GCDevJsonContractFixtureTests
         var mapping = GCPlayerIndexMapping.Create(capture.playOptions, capture.seatIdentities);
         AssertPlayers(mapping.CreateGameFacingPlayOptions().players, expected.players);
         AssertSeatIdentities(capture.seatIdentities, expected.seatIdentities);
+        return 1;
     }
 
     private static void AssertPlayers(GCPlayerOptions[] players, ExpectedPlayer[] expectedPlayers)
@@ -564,11 +676,11 @@ public sealed class GCDevJsonContractFixtureTests
         }
     }
 
-    private static void AssertWrite(ContractFixture fixture, ExpectedWrite expected)
+    private static int AssertWrite(ContractFixture fixture, ExpectedWrite expected)
     {
         if (expected == null || !expected.assert)
         {
-            return;
+            return 0;
         }
 
         Assert.That(expected.data, Is.Not.Null, "Write fixture must include canonical gc.dev.json data.");
@@ -579,7 +691,7 @@ public sealed class GCDevJsonContractFixtureTests
 
         var writtenText = File.ReadAllText(fixture.DevJsonPath, Encoding.UTF8);
         AssertWrittenText(writtenText, expected.writtenText);
-        AssertReadBack(fixture, expected.readBack);
+        return 1 + AssertReadBack(fixture, expected.readBack);
     }
 
     private static GCDevJsonFile ToDevJsonFile(ExpectedDevJson data)
@@ -614,11 +726,11 @@ public sealed class GCDevJsonContractFixtureTests
         }
     }
 
-    private static void AssertReadBack(ContractFixture fixture, ExpectedReadBack expected)
+    private static int AssertReadBack(ContractFixture fixture, ExpectedReadBack expected)
     {
         if (expected == null || !expected.assert)
         {
-            return;
+            return 0;
         }
 
         var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
@@ -629,6 +741,7 @@ public sealed class GCDevJsonContractFixtureTests
         Assert.That(readResult.data.seed, Is.EqualTo(expected.seed));
         Assert.That(readResult.data.seats, Has.Length.EqualTo(expected.seatCount));
         Assert.That(GetEnabledSeatIndexes(readResult.data.seats), Is.EqualTo(expected.enabledSeatIndexes));
+        return 1;
     }
 
     private static int[] GetEnabledSeatIndexes(GCDevJsonSeat[] seats)

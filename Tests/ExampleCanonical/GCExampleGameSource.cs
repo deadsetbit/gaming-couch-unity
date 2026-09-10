@@ -92,11 +92,11 @@ namespace DSB.GC.ExampleCanonical
 
             foreach (var player in players.Players)
             {
-                PollInputByPlayerIndex(player);
+                HandlePlayerInput(player);
             }
         }
 
-        private void PollInputByPlayerIndex(GCExamplePlayerSource player)
+        private void HandlePlayerInput(GCExamplePlayerSource player)
         {
             var input = GamingCouch.Instance.GetInputsByPlayerIndex(player.Index);
             if (input == null)

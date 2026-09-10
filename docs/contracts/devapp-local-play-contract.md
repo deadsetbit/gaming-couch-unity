@@ -171,7 +171,8 @@ capture at `:455-501`):
 - **Skip disabled seats.** Iterate seats in order; enabled seats get a dense **zero-based**
   `playerIndex` (capture order).
 - **Fixed seat → color map by seat position** (`SeatColors`, `:262-272`): seat 1 → `blue`, 2 → `red`,
-  3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`.
+  3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`
+  (fixture `valid-full-roster-seat-color-map`).
 - `playerSeed` is derived from the normalized seat name — FNV-1a32 of the name mapped into the
   `1`–`999999` seed range (`GCPlayerSeed.FromPlayerName` → `ToSeed`, `Runtime/GCPlayerSeed.cs:11, 34-36`).
 - Each captured player gets a parallel **`GCSeatIdentity`** carrying **1-based** seat provenance
@@ -307,11 +308,12 @@ delivers over the WebGL input wire (see [platform contract §6](platform-runtime
 
 `ContractFixtures/LocalPlay/` holds the executable specification for local play, replayed by
 `Tests/Editor/GCDevJsonContractFixtureTests.cs` (ADR [0012](../adr/0012-defer-cross-engine-extraction.md)).
-The six cases:
+The seven cases:
 
 | Fixture | Covers |
 |---|---|
 | `valid-sparse-roster-capture` | Skip-disabled capture + shuffle + the §7 ordering trap |
+| `valid-full-roster-seat-color-map` | All eight seats enabled: the whole §7 seat → color map |
 | `missing-platform-data-warning-only` | Warning-only degrade to fallback |
 | `platform-data-max-player-gate-failure` | `> maxPlayers` gate Error (§3) |
 | `unsupported-dev-version-failure` | `devVersion != 2` Error |

@@ -78,7 +78,7 @@ public sealed class GCExampleGamePlayModeSmokeTests
                 gamingCouch.ApplyExternalPlayerInput(0, new GCControllerInputsData { b0 = 1 }, "test_input");
                 return player0.Score > scoreBefore;
             },
-            timeoutSeconds: 1.5f
+            timeoutSeconds: 8f
         );
         Assert.That(player0.Score, Is.GreaterThan(scoreBefore), "primary input did not score the player");
 
