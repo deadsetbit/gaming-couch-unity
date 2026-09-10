@@ -19,23 +19,16 @@ public sealed class GCPlayerStoreLookupTests
     [TearDown]
     public void TearDown()
     {
-        foreach (var unityObject in objectsToDestroy)
-        {
-            if (unityObject)
-            {
-                UnityEngine.Object.DestroyImmediate(unityObject);
-            }
-        }
-
-        objectsToDestroy.Clear();
+        GamingCouchEditorTestSupport.DestroyTrackedObjects(objectsToDestroy);
+        GCRuntimeMessageOutput.ResetForTests(null);
         GCLog.logLevel = LogLevel.None;
     }
 
     [Test]
     public void GetPlayerByIndexReturnsPlayerRegisteredUnderThatIndex()
     {
-        var playerZero = CreatePlayer(0);
-        var playerTwo = CreatePlayer(2);
+        var playerZero = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var playerTwo = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(playerZero);
         store.AddPlayer(playerTwo);
@@ -49,8 +42,8 @@ public sealed class GCPlayerStoreLookupTests
     {
         // Indices 0 and 2 occupy list positions 0 and 1. Index 1 is unregistered.
         // The removed list-position fallback used to return the index-2 player (list slot 1).
-        var playerZero = CreatePlayer(0);
-        var playerTwo = CreatePlayer(2);
+        var playerZero = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var playerTwo = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(playerZero);
         store.AddPlayer(playerTwo);
@@ -61,26 +54,11 @@ public sealed class GCPlayerStoreLookupTests
     [Test]
     public void GetPlayerByIndexReturnsNullForOutOfRangeIndexWithoutThrowing()
     {
-        var playerZero = CreatePlayer(0);
+        var playerZero = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(playerZero);
 
         // The removed list-position fallback threw ArgumentOutOfRangeException here.
         Assert.That(store.GetPlayerByIndex(99), Is.Null);
-    }
-
-    private GCPlayer CreatePlayer(int playerIndex, GCPlayerType playerType = GCPlayerType.player)
-    {
-        var gameObject = new GameObject("Player " + playerIndex);
-        objectsToDestroy.Add(gameObject);
-        var player = gameObject.AddComponent<GCPlayer>();
-        player._InternalGamingCouchSetup(new GCPlayerSetupOptions
-        {
-            playerIndex = playerIndex,
-            type = playerType,
-            colorEnum = GCPlayerColor.blue,
-            colorName = "blue",
-        });
-        return player;
     }
 }

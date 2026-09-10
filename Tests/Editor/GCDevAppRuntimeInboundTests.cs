@@ -214,16 +214,59 @@ public sealed class GCDevAppRuntimeInboundTests
         Assert.That(inputFrame.inputs.b2, Is.EqualTo(0));
     }
 
+    // Pinned against literals so the wire shape cannot be changed by editing the constants alone;
+    // the DevApp encoder on the other side of the socket writes these exact values.
+    [Test]
+    public void CompactInputFrameShapeConstantsMatchTheWireFormat()
+    {
+        Assert.That(GCDevAppRuntimeInbound.CompactControllerInputTypeByte, Is.EqualTo((byte)0x44));
+        Assert.That(GCDevAppRuntimeInbound.CompactControllerInputByteLength, Is.EqualTo(16));
+    }
+
+    [Test]
+    public void CompactInputParserRejectsFramesOfTheWrongLength()
+    {
+        var wellFormed = CreateCompactInputFrame(1, 10, 100, 500, -500, 0b00000111);
+
+        Assert.That(GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(null, out _), Is.False);
+        Assert.That(
+            GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(new byte[0], out _),
+            Is.False
+        );
+        Assert.That(
+            GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(Resize(wellFormed, wellFormed.Length - 1), out _),
+            Is.False
+        );
+        Assert.That(
+            GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(Resize(wellFormed, wellFormed.Length + 1), out var overlongFrame),
+            Is.False
+        );
+        Assert.That(overlongFrame.seq, Is.EqualTo(0u), "a rejected frame must not leak decoded fields");
+    }
+
+    [Test]
+    public void CompactInputParserRejectsFrameWithForeignTypeByte()
+    {
+        var frame = CreateCompactInputFrame(1, 10, 100, 500, -500, 0b00000111);
+        frame[0] = (byte)(GCDevAppRuntimeInbound.CompactControllerInputTypeByte + 1);
+
+        Assert.That(GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(frame, out var decoded), Is.False);
+        Assert.That(decoded.seq, Is.EqualTo(0u), "a rejected frame must not leak decoded fields");
+
+        frame[0] = 0;
+        Assert.That(GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(frame, out _), Is.False);
+    }
+
     [Test]
     public void CompactInputSequenceSuppressesStaleFramesPerPlayerIndex()
     {
         var inbound = new GCDevAppRuntimeInbound();
 
-        var first = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 100, 0, 0, 0));
-        var duplicate = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
-        var older = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 9, 120, 500, 0, 1));
-        var otherPlayer = inbound.RouteBinaryMessage(CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
-        var next = inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 11, 140, 500, 0, 1));
+        var first = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0));
+        var duplicate = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
+        var older = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 9, 120, 500, 0, 1));
+        var otherPlayer = RouteCompactFrame(inbound, CreateCompactInputFrame(2, 9, 130, 500, 0, 1));
+        var next = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 11, 140, 500, 0, 1));
 
         Assert.That(first.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
         Assert.That(first.intentKind, Is.EqualTo(GCDevAppRuntimeInboundIntentKind.Input));
@@ -259,15 +302,53 @@ public sealed class GCDevAppRuntimeInboundTests
     }
 
     [Test]
+    public void CompactInputRejectedByPlayerIndexValidationDoesNotConsumeItsSequence()
+    {
+        var inbound = new GCDevAppRuntimeInbound();
+
+        Assert.That(
+            RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0), isPlayerIndexValid: false),
+            Is.Null
+        );
+
+        var accepted = RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 500, 0, 1));
+
+        Assert.That(accepted.status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(accepted.inputSequence, Is.EqualTo(10u));
+    }
+
+    [Test]
     public void CompactInputSequenceCanResetForNewDevAppConnection()
     {
         var inbound = new GCDevAppRuntimeInbound();
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 100, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 110, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 100, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 110, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Ignored));
 
         inbound.ResetInputSequences();
 
-        Assert.That(inbound.RouteBinaryMessage(CreateCompactInputFrame(1, 10, 120, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+        Assert.That(RouteCompactFrame(inbound, CreateCompactInputFrame(1, 10, 120, 0, 0, 0)).status, Is.EqualTo(GCDevAppRuntimeInboundStatus.Intent));
+    }
+
+    // Mirrors GCDevAppIntegration.ProcessBinaryWebSocketMessage: parse, then run the
+    // player-index validation gate, and only then let the router's dedup bookkeeping see the
+    // frame. Returns null where production drops the frame before it reaches the router.
+    private static GCDevAppRuntimeInboundDecision RouteCompactFrame(
+        GCDevAppRuntimeInbound inbound,
+        byte[] message,
+        bool isPlayerIndexValid = true
+    )
+    {
+        if (!GCDevAppRuntimeInbound.TryParseCompactControllerInputFrame(message, out var inputFrame))
+        {
+            return null;
+        }
+
+        if (!isPlayerIndexValid)
+        {
+            return null;
+        }
+
+        return inbound.RouteValidatedCompactControllerInputFrame(inputFrame);
     }
 
     private static GCDevAppRuntimeInboundContext Context(bool isPaused = false)
@@ -296,6 +377,19 @@ public sealed class GCDevAppRuntimeInboundTests
         WriteInt16LittleEndian(frame, 13, a1);
         frame[15] = buttons;
         return frame;
+    }
+
+    // Length-only reshape of a well-formed frame: the leading type byte and every populated field
+    // survive, so a rejection can only come from the length check.
+    private static byte[] Resize(byte[] frame, int length)
+    {
+        var resized = new byte[length];
+        for (var index = 0; index < length && index < frame.Length; index++)
+        {
+            resized[index] = frame[index];
+        }
+
+        return resized;
     }
 
     private static void WriteUInt16LittleEndian(byte[] bytes, int offset, ushort value)

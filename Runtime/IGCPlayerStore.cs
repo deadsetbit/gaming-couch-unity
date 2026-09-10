@@ -3,30 +3,30 @@ using DSB.GC;
 
 public interface GCPlayerStoreOutput<T> where T : GCPlayer
 {
-    List<T> Players { get; }
-    List<T> PlayersBot { get; }
-    List<T> PlayersNonBot { get; }
-    List<T> PlayersUneliminated { get; }
-    List<T> PlayersUneliminatedBot { get; }
-    List<T> PlayersUneliminatedNonBot { get; }
-    List<T> PlayersEliminated { get; }
-    List<T> PlayersEliminatedBot { get; }
-    List<T> PlayersEliminatedNonBot { get; }
-    List<T> PlayersEliminatedPermanent { get; }
-    List<T> PlayersEliminatedPermanentBot { get; }
-    List<T> PlayersEliminatedPermanentNonBot { get; }
-    List<T> PlayersEliminatedRevokable { get; }
-    List<T> PlayersEliminatedRevokableBot { get; }
-    List<T> PlayersEliminatedRevokableNonBot { get; }
-    List<T> PlayersFinished { get; }
-    List<T> PlayersFinishedBot { get; }
-    List<T> PlayersFinishedNonBot { get; }
-    List<T> PlayersFinishedPermanent { get; }
-    List<T> PlayersFinishedPermanentBot { get; }
-    List<T> PlayersFinishedPermanentNonBot { get; }
-    List<T> PlayersFinishedRevokable { get; }
-    List<T> PlayersFinishedRevokableBot { get; }
-    List<T> PlayersFinishedRevokableNonBot { get; }
+    IReadOnlyList<T> Players { get; }
+    IReadOnlyList<T> PlayersBot { get; }
+    IReadOnlyList<T> PlayersNonBot { get; }
+    IReadOnlyList<T> PlayersUneliminated { get; }
+    IReadOnlyList<T> PlayersUneliminatedBot { get; }
+    IReadOnlyList<T> PlayersUneliminatedNonBot { get; }
+    IReadOnlyList<T> PlayersEliminated { get; }
+    IReadOnlyList<T> PlayersEliminatedBot { get; }
+    IReadOnlyList<T> PlayersEliminatedNonBot { get; }
+    IReadOnlyList<T> PlayersEliminatedPermanent { get; }
+    IReadOnlyList<T> PlayersEliminatedPermanentBot { get; }
+    IReadOnlyList<T> PlayersEliminatedPermanentNonBot { get; }
+    IReadOnlyList<T> PlayersEliminatedRevokable { get; }
+    IReadOnlyList<T> PlayersEliminatedRevokableBot { get; }
+    IReadOnlyList<T> PlayersEliminatedRevokableNonBot { get; }
+    IReadOnlyList<T> PlayersFinished { get; }
+    IReadOnlyList<T> PlayersFinishedBot { get; }
+    IReadOnlyList<T> PlayersFinishedNonBot { get; }
+    IReadOnlyList<T> PlayersFinishedPermanent { get; }
+    IReadOnlyList<T> PlayersFinishedPermanentBot { get; }
+    IReadOnlyList<T> PlayersFinishedPermanentNonBot { get; }
+    IReadOnlyList<T> PlayersFinishedRevokable { get; }
+    IReadOnlyList<T> PlayersFinishedRevokableBot { get; }
+    IReadOnlyList<T> PlayersFinishedRevokableNonBot { get; }
     [System.Obsolete("Use Players.Count.", true)]
     int PlayerCount { get; }
     [System.Obsolete("Use Players.", true)]

@@ -148,20 +148,6 @@ internal static class GCWebGLRuntimeInfoSidecarWriter
     internal static GCWebGLRuntimeInfoSidecarWriteResult WriteForBuild(
         BuildTarget buildTarget,
         string buildOutputPath,
-        string webGLTemplate
-    )
-    {
-        if (buildTarget == BuildTarget.WebGL && GCWebGLBuildSidecarTemplatePolicy.ShouldWriteRuntimeInfo(webGLTemplate))
-        {
-            return WriteForBuild(buildTarget, buildOutputPath, webGLTemplate, GCEditorPackageIdentity.Resolve());
-        }
-
-        return WriteForBuild(buildTarget, buildOutputPath, webGLTemplate, null);
-    }
-
-    internal static GCWebGLRuntimeInfoSidecarWriteResult WriteForBuild(
-        BuildTarget buildTarget,
-        string buildOutputPath,
         string webGLTemplate,
         GCPackageIdentity packageIdentity
     )
@@ -235,7 +221,7 @@ internal static class GCWebGLRuntimeInfoSidecarWriter
     )
     {
         Directory.CreateDirectory(outputRootPath);
-        File.WriteAllText(sidecarPath, GCRuntimeInfoJson.Serialize(packageIdentity.ToRuntimeInfo()));
+        GCEditorAtomicFileWriter.WriteAllText(sidecarPath, GCRuntimeInfoJson.Serialize(packageIdentity.ToRuntimeInfo()));
 
         return new GCWebGLRuntimeInfoSidecarWriteResult(
             GCWebGLRuntimeInfoSidecarWriteStatus.Written,

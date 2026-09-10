@@ -14,7 +14,8 @@ durable anchor; line numbers drift). Rationale lives in the [ADRs](../adr/); ter
 [platform runtime contract](platform-runtime-contract.md); this document owns the **producer/capture**
 side and links across per the overlap rule (capture/schema → here; wire/received → platform doc).
 
-JSON examples use placeholder package identity values per `AGENTS.md`.
+JSON examples use placeholder package identity values; the real `package.json` name/version is never
+copied into documentation.
 
 ## Contents
 
@@ -27,7 +28,6 @@ JSON examples use placeholder package identity values per `AGENTS.md`.
 - [7. The `players[]` vs `seatIdentities[]` ordering trap](#7-the-players-vs-seatidentities-ordering-trap)
 - [8. DevApp WebSocket protocol (package-side spec)](#8-devapp-websocket-protocol-package-side-spec)
 - [9. ContractFixtures — executable spec](#9-contractfixtures--executable-spec)
-- [10. Open-Editor test bridge (not part of this contract)](#10-open-editor-test-bridge-not-part-of-this-contract)
 
 ---
 
@@ -153,7 +153,10 @@ Fallback values (`Runtime/GCPlayOptions.cs:83-112, 302-311`):
 - `validationState` `missing` (or `invalid`), `fallbackActive: true`.
 - `game`/`selectedEntryKey` `"notdefined"`; `platform.id` `"unity"`.
 - One entry `notdefined` with `minPlayers 1 / maxPlayers 8 / botSupport true`.
-- `source.platformDataVersion = -1` (unavailable), default player colors.
+- `source.platformDataVersion`: the version the file declared, when `platformDataVersion` itself
+  parsed (`BuildFallback`, `Editor/GCPlatformDataFile.cs`) — so an `invalid` fallback typically
+  carries a real version; `-1` (unavailable) only when no version could be read at all, as with a
+  missing file. Default player colors.
 
 Unity emits `gc.metadata.*` diagnostics for the fallback and never writes or repairs
 `gc.platform.json`.
@@ -162,17 +165,18 @@ Unity emits `gc.metadata.*` diagnostics for the fallback and never writes or rep
 
 ## 5. Seat → player capture
 
-Play-mode capture turns the 8-seat roster into a dense player roster (`Editor/GamingCouchEditor.cs`,
+Play-mode capture turns the 8-seat roster into a dense player roster (`Editor/GCDevJsonLocalPlaySessionProvider.cs`,
 capture at `:455-501`):
 
 - **Skip disabled seats.** Iterate seats in order; enabled seats get a dense **zero-based**
   `playerIndex` (capture order).
 - **Fixed seat → color map by seat position** (`SeatColors`, `:262-272`): seat 1 → `blue`, 2 → `red`,
-  3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`.
+  3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`
+  (fixture `valid-full-roster-seat-color-map`).
 - `playerSeed` is derived from the normalized seat name — FNV-1a32 of the name mapped into the
   `1`–`999999` seed range (`GCPlayerSeed.FromPlayerName` → `ToSeed`, `Runtime/GCPlayerSeed.cs:11, 34-36`).
 - Each captured player gets a parallel **`GCSeatIdentity`** carrying **1-based** seat provenance
-  (`Runtime/Dev/GCSeatIdentity.cs`; built at `GamingCouchEditor.cs:488-495`):
+  (`Runtime/Dev/GCSeatIdentity.cs`; built in `GCDevJsonLocalPlaySessionProvider.cs`):
 
 | `GCSeatIdentity` field | Value |
 |---|---|
@@ -255,7 +259,7 @@ Run/pause/seat state (`GCDevAppRuntimeMessages.cs:40-73`, type `RuntimeSnapshotM
 |---|---|---|
 | `type` | string | `"runtime_snapshot"` |
 | `timestamp` | long | |
-| `runId` | string | Null when not running |
+| `runId` | string | Minted once per run, including a restart, and stable across socket reconnects. Null until the first `Play()` — the runtime is still visible to the DevApp in that window, which treats a missing run id as not-yet-eligible rather than an error. |
 | `isRunning` | bool | |
 | `capabilities` | object | `{ restart, pause, timescale }` all `true` (`:156-162, 80-88`) |
 | `seats` | array | Empty when not running |
@@ -304,11 +308,12 @@ delivers over the WebGL input wire (see [platform contract §6](platform-runtime
 
 `ContractFixtures/LocalPlay/` holds the executable specification for local play, replayed by
 `Tests/Editor/GCDevJsonContractFixtureTests.cs` (ADR [0012](../adr/0012-defer-cross-engine-extraction.md)).
-The six cases:
+The seven cases:
 
 | Fixture | Covers |
 |---|---|
 | `valid-sparse-roster-capture` | Skip-disabled capture + shuffle + the §7 ordering trap |
+| `valid-full-roster-seat-color-map` | All eight seats enabled: the whole §7 seat → color map |
 | `missing-platform-data-warning-only` | Warning-only degrade to fallback |
 | `platform-data-max-player-gate-failure` | `> maxPlayers` gate Error (§3) |
 | `unsupported-dev-version-failure` | `devVersion != 2` Error |
@@ -317,11 +322,3 @@ The six cases:
 
 Cite the fixture name next to any schema example this file adds; a fixture that disagrees with the doc
 is the source of truth.
-
----
-
-## 10. Open-Editor test bridge (not part of this contract)
-
-`Editor/GamingCouchCodexTestBridge.cs` + `Tools/run-open-unity-tests.py` are **agent/CI test tooling**,
-documented in `AGENTS.md` — they have no WebSocket or JSON-contract coupling to the DevApp and are not
-part of the local-play contract. Listed here only to prevent misfiling them as a DevApp surface.

@@ -60,13 +60,19 @@ mergeInto(LibraryManager.library, {
       return;
     }
 
-    var hudConfig = JSON.parse(UTF8ToString(hudConfigJsonString));
+    var hudConfig;
+    try {
+      hudConfig = JSON.parse(UTF8ToString(hudConfigJsonString));
+    } catch (error) {
+      console.error("GamingCouchSetupHud received invalid JSON", error);
+      return;
+    }
+
     window.gamingCouchSetupHud(hudConfig);
   },
 
   GamingCouchSendProjectInfo: function (projectNameString) {
     if (!window.gamingCouchSendProjectInfo) {
-      console.error("gamingCouchSendProjectInfo is not defined");
       return;
     }
 
@@ -79,7 +85,14 @@ mergeInto(LibraryManager.library, {
       return;
     }
 
-    var runtimeMessages = JSON.parse(UTF8ToString(runtimeMessagesJsonString));
+    var runtimeMessages;
+    try {
+      runtimeMessages = JSON.parse(UTF8ToString(runtimeMessagesJsonString));
+    } catch (error) {
+      console.error("GamingCouchRuntimeMessages received invalid JSON", error);
+      return;
+    }
+
     window.gamingCouchRuntimeMessages(runtimeMessages);
   },
 
@@ -88,7 +101,14 @@ mergeInto(LibraryManager.library, {
       return;
     }
 
-    var screenSpace = JSON.parse(UTF8ToString(screenSpaceJsonString));
+    var screenSpace;
+    try {
+      screenSpace = JSON.parse(UTF8ToString(screenSpaceJsonString));
+    } catch (error) {
+      console.error("GamingCouchScreenSpace received invalid JSON", error);
+      return;
+    }
+
     window.gamingCouchScreenSpace(screenSpace);
   }
 });

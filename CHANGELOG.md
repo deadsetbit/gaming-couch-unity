@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the Codex test bridge (`Editor/GamingCouchCodexTestBridge.cs`) and its `Tools/run-open-unity-tests.py` runner. The bridge let an agent run this package's tests inside an already-open Editor by polling a request file under the user's application-data directory. It was internal agent tooling that happened to ship inside the package's `Editor/` folder, and it was inert for anyone who had not opted in, so removing it changes no package behavior. The `.gamingcouch/codex-bridge.enabled` marker file and the `GAMINGCOUCH_CODEX_TEST_BRIDGE` environment variable no longer do anything and can be deleted. The Unity CLI covers package validation (`unity test`), and its `com.unity.pipeline` channel is the supported way to drive a live Editor; `AGENTS.md` documents the flow.
+
 ## [0.1.0-alpha.7] - 2026-09-10
 
 ### Fixed

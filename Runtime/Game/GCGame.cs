@@ -62,7 +62,11 @@ namespace DSB.GC.Game
                         players = options.hud.players
                     }
                 );
-                UpdatePlayersHud();
+
+                if (isPlayersHudAutoUpdateEnabled)
+                {
+                    isPlayersHudAutoUpdatePending = true;
+                }
             }
         }
 
@@ -254,69 +258,11 @@ namespace DSB.GC.Game
             }
         }
 
-        private string GetPlayerHudValue(GCPlayer player)
-        {
-            if (options.hud == null)
-            {
-                return null;
-            }
-
-            var valueType = options.hud.players.valueTypeEnum;
-
-            if (valueType == PlayersHudValueType.None)
-            {
-                return null;
-            }
-
-            switch (valueType)
-            {
-                case PlayersHudValueType.PointsSmall:
-                    return player.Score.ToString() + "/" + options.maxScore;
-                case PlayersHudValueType.Status:
-                    return player.GetHudStatusText();
-                case PlayersHudValueType.Text:
-                    return player.GetHudValueText();
-                case PlayersHudValueType.Lives:
-                    return player.Lives.ToString();
-                default:
-                    throw new Exception($"Unhandled player hud value type '{valueType}'");
-            }
-        }
-
         private void UpdatePlayersHud()
         {
             GCLog.LogDebug("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
             gamingCouch.QueueRuntimeStateSnapshot();
-        }
-
-        internal GCPlayersHudData BuildPlayersHudData()
-        {
-            var snapshot = BuildRuntimeStateSnapshotPayload(gamingCouch?.Status ?? GCStatus.Playing);
-            var playersByIndex = playerStore.Players.ToDictionary(player => player.Index);
-
-            return new GCPlayersHudData
-            {
-                players = snapshot.players.Select(playerState =>
-                {
-                    var player = playersByIndex[playerState.playerIndex];
-
-                    return new GCPlayersHudDataPlayer
-                    {
-                        playerIndex = playerState.playerIndex,
-                        score = playerState.score,
-                        lives = playerState.lives,
-                        status = playerState.status,
-                        statusText = playerState.statusText,
-                        eliminationState = playerState.eliminationState,
-                        finishState = playerState.finishState,
-                        eliminated = playerState.eliminationState != GCPlayerEnumNames.EliminationState(GCPlayerEliminationState.None),
-                        placement = playerState.placement,
-                        value = GetPlayerHudValue(player),
-                        meter = playerState.meter,
-                    };
-                }).ToArray()
-            };
         }
     }
 }

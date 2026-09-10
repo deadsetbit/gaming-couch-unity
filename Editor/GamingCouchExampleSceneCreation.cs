@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -131,7 +130,10 @@ internal static class GamingCouchExampleSceneCreation
         }
 
         var blockedReasons = new List<string>();
-        if (!EnsureFolder(GamingCouchActiveSceneSetup.ExampleFolderAssetPath, blockedReasons))
+        if (!GamingCouchActiveSceneSetup.EnsureProjectFolderRecursive(
+                GamingCouchActiveSceneSetup.ExampleFolderAssetPath,
+                blockedReasons
+            ))
         {
             return Blocked(
                 null,
@@ -254,33 +256,9 @@ internal static class GamingCouchExampleSceneCreation
         return paths.ToArray();
     }
 
-    private static bool EnsureFolder(string folderAssetPath, List<string> blockedReasons)
-    {
-        if (string.IsNullOrEmpty(folderAssetPath) || AssetDatabase.IsValidFolder(folderAssetPath))
-        {
-            return true;
-        }
-
-        var parent = Path.GetDirectoryName(folderAssetPath);
-        parent = string.IsNullOrEmpty(parent) ? "Assets" : parent.Replace('\\', '/');
-        var name = Path.GetFileName(folderAssetPath);
-
-        if (!AssetDatabase.IsValidFolder(parent) && !EnsureFolder(parent, blockedReasons))
-        {
-            return false;
-        }
-
-        var guid = AssetDatabase.CreateFolder(parent, name);
-        if (string.IsNullOrEmpty(guid))
-        {
-            blockedReasons.Add("Could not create folder " + folderAssetPath + ".");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static string DescribeResetActions(string[] existingScenePaths, string[] blockingFolders)
+    // internal: "Wire example game" clears the same blocking folders and confirms with the same
+    // wording.
+    internal static string DescribeResetActions(string[] existingScenePaths, string[] blockingFolders)
     {
         var lines = new List<string>();
         AppendDescribedPaths(lines, "Remove " + existingScenePaths.Length + " existing example scene(s):", existingScenePaths);

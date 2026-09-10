@@ -446,7 +446,7 @@ namespace DSB.GC.RuntimeMessages
 
             AppendOptionalString(builder, "mappingId", mappingId, ref hasPrevious);
             AppendOptionalLong(builder, "seed", seed, ref hasPrevious);
-            AppendOptionalInt(builder, "participantCount", participantCount, ref hasPrevious);
+            AppendOptionalLong(builder, "participantCount", participantCount, ref hasPrevious);
             AppendOptionalString(builder, "offendingReference", offendingReference, ref hasPrevious);
 
             builder.Append("}");
@@ -479,18 +479,6 @@ namespace DSB.GC.RuntimeMessages
         }
 
         private static void AppendOptionalLong(StringBuilder builder, string key, long? value, ref bool hasPrevious)
-        {
-            if (!value.HasValue)
-            {
-                return;
-            }
-
-            AppendSeparator(builder, ref hasPrevious);
-            GCRuntimeJson.AppendString(builder, key);
-            builder.Append(":").Append(value.Value.ToString(CultureInfo.InvariantCulture));
-        }
-
-        private static void AppendOptionalInt(StringBuilder builder, string key, int? value, ref bool hasPrevious)
         {
             if (!value.HasValue)
             {
@@ -726,8 +714,28 @@ namespace DSB.GC.RuntimeMessages
                 return;
             }
 
-            var code = ResolveCode(type);
-            var severity = ResolveSeverity(type);
+            string code;
+            GCDiagnosticSeverity severity;
+            string message;
+            switch (type)
+            {
+                case LogType.Log:
+                    code = GCDiagnosticCodes.RuntimeLog;
+                    severity = GCDiagnosticSeverity.Info;
+                    message = "Unity log captured.";
+                    break;
+                case LogType.Warning:
+                    code = GCDiagnosticCodes.RuntimeWarning;
+                    severity = GCDiagnosticSeverity.Warning;
+                    message = "Unity warning captured.";
+                    break;
+                default:
+                    code = GCDiagnosticCodes.RuntimeError;
+                    severity = GCDiagnosticSeverity.Error;
+                    message = "Unity error captured.";
+                    break;
+            }
+
             var context = new GCDiagnosticContext()
                 .AddDetail("logType", type.ToString())
                 .AddDetail("frameIndex", Time.frameCount)
@@ -742,7 +750,7 @@ namespace DSB.GC.RuntimeMessages
                 code,
                 severity,
                 GCDiagnosticSourceAreas.RuntimeLog,
-                ResolveMessage(type),
+                message,
                 context
             );
         }
@@ -772,10 +780,13 @@ namespace DSB.GC.RuntimeMessages
             return type == LogType.Error || type == LogType.Assert || type == LogType.Exception;
         }
 
+        // DevApp logs its own transport traffic, so capturing those lines would feed
+        // every emitted message back in as a new diagnostic within the same frame.
         private static bool IsDiagnosticMirror(string condition)
         {
             return !string.IsNullOrEmpty(condition) &&
-                condition.StartsWith("[GC] Diagnostic ", StringComparison.Ordinal);
+                (condition.StartsWith("[GC] Diagnostic ", StringComparison.Ordinal) ||
+                    condition.StartsWith("[GCDevApp]", StringComparison.Ordinal));
         }
 
         private static bool IsRateLimited()
@@ -793,51 +804,6 @@ namespace DSB.GC.RuntimeMessages
 
             capturedLogsThisFrame++;
             return false;
-        }
-
-        private static string ResolveCode(LogType type)
-        {
-            if (type == LogType.Log)
-            {
-                return GCDiagnosticCodes.RuntimeLog;
-            }
-
-            if (type == LogType.Warning)
-            {
-                return GCDiagnosticCodes.RuntimeWarning;
-            }
-
-            return GCDiagnosticCodes.RuntimeError;
-        }
-
-        private static GCDiagnosticSeverity ResolveSeverity(LogType type)
-        {
-            if (type == LogType.Log)
-            {
-                return GCDiagnosticSeverity.Info;
-            }
-
-            if (type == LogType.Warning)
-            {
-                return GCDiagnosticSeverity.Warning;
-            }
-
-            return GCDiagnosticSeverity.Error;
-        }
-
-        private static string ResolveMessage(LogType type)
-        {
-            if (type == LogType.Log)
-            {
-                return "Unity log captured.";
-            }
-
-            if (type == LogType.Warning)
-            {
-                return "Unity warning captured.";
-            }
-
-            return "Unity error captured.";
         }
     }
 }

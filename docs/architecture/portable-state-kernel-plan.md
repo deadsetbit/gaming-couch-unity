@@ -165,7 +165,7 @@ event emission in core; `Debug.Log` mirror + `Application.logMessageReceived` ca
 
 **Dependency order:** Phase 0 → 1 → 2 → 3 → 4 → 5. Phase 3 (spec doc) may begin in parallel with Phase 2
 once the Phase 1 seams exist, but must not finalize until Phase 2's new codes are known. Each phase must
-stay green on the open-Editor test bridge (`Tools/run-open-unity-tests.py … --mode EditMode`).
+stay green on the host-project test run (`unity test <host-project> --mode EditMode`).
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. IDs are stable; do not renumber.
 

@@ -12,38 +12,32 @@ using DSB.GC.RuntimeMessages;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 public sealed class GCRuntimeOutputContractTests
 {
     private readonly List<UnityEngine.Object> objectsToDestroy = new List<UnityEngine.Object>();
     private double nowSeconds;
+    private float previousTimeScale;
 
     [SetUp]
     public void SetUp()
     {
+        previousTimeScale = Time.timeScale;
         nowSeconds = 1.0;
         GCRuntimeOutput.ResetForTests(() => nowSeconds);
         GCRuntimeOutput.BeginActiveRun();
         GCLog.logLevel = LogLevel.None;
-        ClearGamingCouchInstance();
+        GamingCouchEditorTestSupport.ClearGamingCouchInstance();
     }
 
     [TearDown]
     public void TearDown()
     {
-        foreach (var unityObject in objectsToDestroy)
-        {
-            if (unityObject)
-            {
-                UnityEngine.Object.DestroyImmediate(unityObject);
-            }
-        }
-
-        objectsToDestroy.Clear();
+        GamingCouchEditorTestSupport.DestroyTrackedObjects(objectsToDestroy);
+        Time.timeScale = previousTimeScale;
         GCRuntimeOutput.ResetForTests(null);
         GCLog.logLevel = LogLevel.None;
-        ClearGamingCouchInstance();
+        GamingCouchEditorTestSupport.ClearGamingCouchInstance();
     }
 
     [Test]
@@ -75,6 +69,38 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(json, Does.Contain("\"seq\":2"));
         Assert.That(json, Does.Contain("\"seq\":3"));
         Assert.That(json, Does.Contain("\"ms\":125"));
+    }
+
+    [Test]
+    public void RuntimeMessageTimestampsFollowUnscaledRealTimeWhileGameTimestampsFollowTheScaledClock()
+    {
+        const double realWaitSeconds = 0.05;
+        var context = CreateRuntimeGame(1);
+        var emitted = new List<string>();
+
+        // Real clock, not an injected one: a runtime clock reading scaled time would stamp about
+        // eight times the wall-clock wait here.
+        Time.timeScale = 8f;
+        GCRuntimeOutput.ResetForTests(null);
+        GCRuntimeOutput.BeginActiveRun();
+        GCRuntimeOutput.RuntimeMessagesEmitted += emitted.Add;
+        var runStartRealtimeSeconds = Time.realtimeSinceStartupAsDouble;
+        var gameTimeBeforeWait = Time.time;
+
+        while (Time.realtimeSinceStartupAsDouble - runStartRealtimeSeconds < realWaitSeconds)
+        {
+        }
+
+        context.players[0].SetEliminatedRevokable("pit");
+        context.gamingCouch.FlushRuntimeOutput();
+        var elapsedRealtimeMs = (Time.realtimeSinceStartupAsDouble - runStartRealtimeSeconds) * 1000.0;
+
+        Assert.That(emitted, Has.Count.EqualTo(1));
+        var runtimeTimeMs = ReadFirstRuntimeTimeMs(emitted[0]);
+        Assert.That(runtimeTimeMs, Is.GreaterThanOrEqualTo(45));
+        Assert.That(runtimeTimeMs, Is.LessThanOrEqualTo(elapsedRealtimeMs + 25.0));
+        Assert.That(context.players[0].LastSetEliminatedGameTime, Is.EqualTo(Time.time));
+        Assert.That(Time.time, Is.EqualTo(gameTimeBeforeWait));
     }
 
     [Test]
@@ -112,7 +138,7 @@ public sealed class GCRuntimeOutputContractTests
         );
 
         var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             snapshot.players[0],
             playerIndex: 0,
             score: 0,
@@ -123,22 +149,6 @@ public sealed class GCRuntimeOutputContractTests
             placement: 1,
             eliminationState: "None",
             finishState: "None"
-        );
-
-        var hudData = context.game.BuildPlayersHudData();
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: -1,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
         );
     }
 
@@ -180,7 +190,7 @@ public sealed class GCRuntimeOutputContractTests
         );
 
         var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             snapshot.players[0],
             playerIndex: 0,
             score: 0,
@@ -191,22 +201,6 @@ public sealed class GCRuntimeOutputContractTests
             placement: 1,
             eliminationState: "None",
             finishState: "None"
-        );
-
-        var hudData = context.game.BuildPlayersHudData();
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: 80,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
         );
     }
 
@@ -699,7 +693,7 @@ public sealed class GCRuntimeOutputContractTests
     [Test]
     public void WebGLJslibExportsCanonicalScreenSpaceBridge()
     {
-        var bridgePath = Path.Combine(FindPackageRootPath(), "Plugins", "GamingCouch.jslib");
+        var bridgePath = Path.Combine(GamingCouchEditorTestSupport.FindPackageRootPath(), "Plugins", "GamingCouch.jslib");
         var bridge = File.ReadAllText(bridgePath);
 
         Assert.That(bridge, Does.Contain("GamingCouchScreenSpace: function (screenSpaceJsonString)"));
@@ -711,7 +705,7 @@ public sealed class GCRuntimeOutputContractTests
     [Test]
     public void CurrentWebGLRuntimeSourcesDoNotEmitLegacyHudOrGameOverBridges()
     {
-        var packageRootPath = FindPackageRootPath();
+        var packageRootPath = GamingCouchEditorTestSupport.FindPackageRootPath();
         var bridgeSource = File.ReadAllText(Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib"));
         var hudSource = File.ReadAllText(Path.Combine(packageRootPath, "Runtime", "Hud", "GCHud.cs"));
         var nameTagSource = File.ReadAllText(Path.Combine(packageRootPath, "Runtime", "Hud", "GCNameTag.cs"));
@@ -867,8 +861,8 @@ public sealed class GCRuntimeOutputContractTests
         context.gamingCouch.FlushRuntimeOutput();
         emitted.Clear();
 
-        SetPrivateField(context.game, "isPlayersHudAutoUpdateEnabled", true);
-        SetPrivateField(context.game, "isPlayersHudAutoUpdatePending", true);
+        GamingCouchEditorTestSupport.SetPrivateField(context.game, "isPlayersHudAutoUpdateEnabled", true);
+        GamingCouchEditorTestSupport.SetPrivateField(context.game, "isPlayersHudAutoUpdatePending", true);
 
         context.game.HandlePlayersHudAutoUpdate();
         context.gamingCouch.FlushRuntimeOutput();
@@ -879,7 +873,7 @@ public sealed class GCRuntimeOutputContractTests
     }
 
     [Test]
-    public void PlayersHudDataIsBuiltFromCanonicalRuntimeStateSnapshot()
+    public void RuntimeStateSnapshotProjectsEveryPlayerStateFieldWithPlacements()
     {
         var context = CreateRuntimeGame(2);
         context.players[0].SetScore(12, "score");
@@ -890,11 +884,12 @@ public sealed class GCRuntimeOutputContractTests
         context.players[1].SetEliminatedPermanent("out");
         context.players[1].SetFinishedRevokable("finish");
 
-        var hudData = context.game.BuildPlayersHudData();
+        var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
 
-        Assert.That(hudData.players, Has.Length.EqualTo(2));
-        AssertHudPlayer(
-            hudData.players[0],
+        Assert.That(snapshot.game.status, Is.EqualTo("playing"));
+        Assert.That(snapshot.players, Has.Length.EqualTo(2));
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
+            snapshot.players[0],
             playerIndex: 0,
             score: 12,
             lives: 3,
@@ -903,12 +898,10 @@ public sealed class GCRuntimeOutputContractTests
             meter: 44,
             placement: 1,
             eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
+            finishState: "None"
         );
-        AssertHudPlayer(
-            hudData.players[1],
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
+            snapshot.players[1],
             playerIndex: 1,
             score: 7,
             lives: 0,
@@ -917,9 +910,7 @@ public sealed class GCRuntimeOutputContractTests
             meter: -1,
             placement: 2,
             eliminationState: "Permanent",
-            finishState: "Revokable",
-            eliminated: true,
-            value: null
+            finishState: "Revokable"
         );
     }
 
@@ -967,7 +958,7 @@ public sealed class GCRuntimeOutputContractTests
         Assert.That(store.PlayersFinishedRevokable, Is.EqualTo(new[] { context.players[1] }));
 
         var snapshot = context.gamingCouch.BuildRuntimeStateSnapshotPayload();
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             snapshot.players[0],
             playerIndex: 0,
             score: 10,
@@ -979,7 +970,7 @@ public sealed class GCRuntimeOutputContractTests
             eliminationState: "None",
             finishState: "None"
         );
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             snapshot.players[1],
             playerIndex: 1,
             score: 0,
@@ -990,37 +981,6 @@ public sealed class GCRuntimeOutputContractTests
             placement: 2,
             eliminationState: "Permanent",
             finishState: "Revokable"
-        );
-
-        var hudData = context.game.BuildPlayersHudData();
-        Assert.That(hudData.players, Has.Length.EqualTo(2));
-        AssertHudPlayer(
-            hudData.players[0],
-            playerIndex: 0,
-            score: 10,
-            lives: 2,
-            status: "Success",
-            statusText: "ready",
-            meter: 50,
-            placement: 1,
-            eliminationState: "None",
-            finishState: "None",
-            eliminated: false,
-            value: null
-        );
-        AssertHudPlayer(
-            hudData.players[1],
-            playerIndex: 1,
-            score: 0,
-            lives: 0,
-            status: "Neutral",
-            statusText: "",
-            meter: -1,
-            placement: 2,
-            eliminationState: "Permanent",
-            finishState: "Revokable",
-            eliminated: true,
-            value: null
         );
 
         Assert.That(context.gamingCouch.TrySubmitGameOverPlacement(new[] { 0, 1 }, out var gameOverEnvelope), Is.True);
@@ -1049,46 +1009,20 @@ public sealed class GCRuntimeOutputContractTests
         {
             placementCriteria = new[] { GCPlacementSortCriteria.ScoreDescending },
         });
-        SetPrivateField(gamingCouch, "game", game);
-        SetPrivateField(gamingCouch, "status", GCStatus.Playing);
-        SetPrivateField(gamingCouch, "playerIndexMapping", CreatePlayerIndexMapping(playerCount));
+        GamingCouchEditorTestSupport.SetPrivateField(gamingCouch, "game", game);
+        GamingCouchEditorTestSupport.SetPrivateField(gamingCouch, "status", GCStatus.Playing);
+        GamingCouchEditorTestSupport.SetPrivateField(gamingCouch, "playerIndexMapping", CreatePlayerIndexMapping(playerCount));
 
         var players = new GCPlayer[playerCount];
         for (var index = 0; index < playerCount; index++)
         {
-            players[index] = CreatePlayer(index);
+            players[index] = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, index);
             game.SetupPlayer(players[index]);
             store.AddPlayer(players[index]);
         }
 
         gamingCouch.QueueRuntimeStateSnapshot();
         return new RuntimeGameContext(gamingCouch, game, players);
-    }
-
-    private static string FindPackageRootPath()
-    {
-        var packageInfo = PackageInfo.FindForAssembly(typeof(GamingCouch).Assembly);
-        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
-        {
-            return packageInfo.resolvedPath;
-        }
-
-        throw new InvalidOperationException("Could not resolve Gaming Couch package root.");
-    }
-
-    private GCPlayer CreatePlayer(int playerIndex)
-    {
-        var gameObject = new GameObject("Player " + playerIndex);
-        objectsToDestroy.Add(gameObject);
-        var player = gameObject.AddComponent<GCPlayer>();
-        player._InternalGamingCouchSetup(new GCPlayerSetupOptions
-        {
-            playerIndex = playerIndex,
-            type = GCPlayerType.player,
-            colorEnum = GCPlayerColor.blue,
-            colorName = "blue",
-        });
-        return player;
     }
 
     private static void ClearLegacyPlayerCallbacks(GCPlayer player)
@@ -1131,18 +1065,11 @@ public sealed class GCRuntimeOutputContractTests
         }, seats);
     }
 
-    private static void SetPrivateField(object target, string fieldName, object value)
+    private static long ReadFirstRuntimeTimeMs(string runtimeMessagesJson)
     {
-        target.GetType()
-            .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
-            .SetValue(target, value);
-    }
-
-    private static void ClearGamingCouchInstance()
-    {
-        typeof(GamingCouch)
-            .GetField("instance", BindingFlags.Static | BindingFlags.NonPublic)
-            .SetValue(null, null);
+        var match = Regex.Match(runtimeMessagesJson, "\"ms\":(\\d+)");
+        Assert.That(match.Success, Is.True, "Expected a runtime message timestamp in " + runtimeMessagesJson);
+        return long.Parse(match.Groups[1].Value);
     }
 
     private static int CountOccurrences(string value, string needle)
@@ -1169,58 +1096,6 @@ public sealed class GCRuntimeOutputContractTests
             Assert.That(index, Is.GreaterThan(previousIndex), "Expected " + needle + " to appear in order.");
             previousIndex = index;
         }
-    }
-
-    private static void AssertHudPlayer(
-        GCPlayersHudDataPlayer player,
-        int playerIndex,
-        int score,
-        int lives,
-        string status,
-        string statusText,
-        int meter,
-        int placement,
-        string eliminationState,
-        string finishState,
-        bool eliminated,
-        string value
-    )
-    {
-        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
-        Assert.That(player.score, Is.EqualTo(score));
-        Assert.That(player.lives, Is.EqualTo(lives));
-        Assert.That(player.status, Is.EqualTo(status));
-        Assert.That(player.statusText, Is.EqualTo(statusText));
-        Assert.That(player.meter, Is.EqualTo(meter));
-        Assert.That(player.placement, Is.EqualTo(placement));
-        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
-        Assert.That(player.finishState, Is.EqualTo(finishState));
-        Assert.That(player.eliminated, Is.EqualTo(eliminated));
-        Assert.That(player.value, Is.EqualTo(value));
-    }
-
-    private static void AssertSnapshotPlayer(
-        GCRuntimeStateSnapshotPlayer player,
-        int playerIndex,
-        int score,
-        int lives,
-        string status,
-        string statusText,
-        int meter,
-        int placement,
-        string eliminationState,
-        string finishState
-    )
-    {
-        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
-        Assert.That(player.score, Is.EqualTo(score));
-        Assert.That(player.lives, Is.EqualTo(lives));
-        Assert.That(player.status, Is.EqualTo(status));
-        Assert.That(player.statusText, Is.EqualTo(statusText));
-        Assert.That(player.meter, Is.EqualTo(meter));
-        Assert.That(player.placement, Is.EqualTo(placement));
-        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
-        Assert.That(player.finishState, Is.EqualTo(finishState));
     }
 
     private readonly struct RuntimeGameContext

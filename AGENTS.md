@@ -6,7 +6,7 @@
 - The local bridge file is machine-specific and keeps local absolute paths out of tracked guidance.
 - It may define:
   - Gaming Couch main repo base path
-  - Local Unity host project path for open-Editor test bridge runs
+  - Local Unity host project path for test runs
 - Relative mappings inside Gaming Couch main repo:
   - GC SDK: `sdk`
   - GC Client: `client`
@@ -30,22 +30,11 @@
 
 ## Unity package test execution
 
-- When validating changes to this Unity package, prefer the open-Editor test bridge over launching a second Unity process.
-- The bridge is opt-in and off by default (it must never run in a package consumer's Editor). Enable it for a host project in one of two ways, then relaunch or let the Editor domain-reload once so it picks up the change (there is deliberately no live watcher):
-  - Create the marker file `<host-project>/.gamingcouch/codex-bridge.enabled` (e.g. `touch <host-project>/.gamingcouch/codex-bridge.enabled`). Recommended for a fixed host project; add it to that project's local ignore.
-  - Or export `GAMINGCOUCH_CODEX_TEST_BRIDGE=1` (also accepts `true`/`yes`) before launching the Editor. Note macOS Hub/Finder-launched Editors do not inherit shell env, so the marker is usually the reliable path there.
-  - When enabled, the Editor logs `Gaming Couch Codex test bridge session ready …` on each domain reload; if you never see that line, the bridge is not enabled.
-- Use the bridge runner from this package:
-  - `python3 Tools/run-open-unity-tests.py /path/to/unity/project --mode EditMode`
-  - Add `--test Full.Test.Name`, `--filter Regex`, or `--category Name` for focused runs.
-  - Add `--mode PlayMode` for Play Mode tests.
-- If `AGENTS.local.md` defines a local Unity host project path, use it when it exists and is the intended symlinked project.
-- If no local Unity host project path is defined and validation needs one, ask the user for the local host Unity project path.
-- The bridge recompiles on demand: before each run it calls `AssetDatabase.Refresh()`, so on-disk script edits are picked up **without focusing the Editor**. A recompile triggers a domain reload; the bridge pins its session across the reload and resumes the same request, so the run reflects the edited code. Expect a `refreshing` status before `started`.
-  - Pass `--no-refresh` to skip the refresh and run against the currently compiled assemblies (faster; use only when you know nothing changed).
-- Background reliability on macOS: App Nap can freeze a backgrounded Editor's poll loop, which looks like the runner hanging with no status. Disable it once, then relaunch Unity:
-  - `defaults write NSGlobalDomain NSAppSleepDisabled -bool YES` (system-wide; relaunch apps to take effect).
-- Reading a timeout:
-  - No status ever seen → the Editor is not open on this project, the bridge is not enabled (missing opt-in marker / env var — see the enable step above; enabling needs a domain reload), not running the bridge (`Editor/GamingCouchCodexTestBridge.cs`), or is suspended (see App Nap above). Ask the user to open/refresh the host Editor, then retry.
-  - Stuck at `refreshing` → the recompile did not finish; check the Unity console for compile errors that block the run.
-- Fall back to Unity batchmode `-runTests` only when the open-Editor bridge is unavailable or the user explicitly asks for batchmode. Batchmode is fully headless (focus-independent) but cannot run while an Editor holds the same project's lock — point it at a separate host-project clone.
+- The package has no test tooling of its own. Validate changes with the Unity CLI (`unity`) against a host project that has this package installed.
+- Take the host project path from `AGENTS.local.md`. If it defines none and validation needs one, ask the user for it.
+- `unity test <host-project> --mode EditMode` runs the EditMode suite; `--mode PlayMode` runs Play Mode. Write the report somewhere outside the repo, e.g. `--output "$TMPDIR/test-results.xml"` — the default (`test-results.xml`) lands in the working directory.
+- `--filter` narrows a run: a semicolon-separated list of full test names or regexes, each optionally negated with `!`. There is no assembly filter; scope by name instead. The Editor tests declare no namespace, so a full name is just the fixture, e.g. `GCPlayerIndexMappingTests`.
+- `unity test` prints nothing while it runs — no progress, no spinner. A first run against a cold project imports the whole project first and can take several minutes of complete silence; that is not a hang. Let it finish and read the exit code.
+- Read the exit code, not the log: `0` all passed, `8` the run finished and reported failures, anything else (commonly `6`) means it never produced a verdict — a compile error, an unavailable license, an Editor crash, or `--timeout`. Under `--format json` the same split appears as `errors[0].code`.
+- `unity test` spawns its own Editor in batch mode, so it cannot run while an Editor holds the host project's lock. Close that Editor or point the run at a separate host-project clone.
+- Driving an already-open Editor is possible via the `com.unity.pipeline` package (`unity pipeline install`, then `unity command` / `unity list`, also exposed to agents through `unity mcp`), which round-trips in a warm session with no domain reload. The package ships no test-run command, so this is not a test path today. If warm test runs become worth it, register a `[CliCommand]` in the **host project** rather than here — a `[CliCommand]` in this package would force a `com.unity.pipeline` dependency on every consumer.

@@ -100,7 +100,7 @@ Do not release `0.2.0-alpha.1` as the recommended package for internal games unt
 Unity package:
 
 - EditMode tests for player-index mapping, deterministic shuffle fixtures, source API guidance, state transitions, `runtime_messages`, `screen_space`, diagnostics, metadata fallback, HUD rendering, and generated examples.
-- Use the open-Editor test bridge for package validation where practical.
+- Validate the package with `unity test` against a host project (see `AGENTS.md`).
 
 Client/SDK:
 

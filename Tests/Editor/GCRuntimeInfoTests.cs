@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using DSB.GC;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public sealed class GCRuntimeInfoTests
@@ -62,7 +61,7 @@ public sealed class GCRuntimeInfoTests
     [Test]
     public void WebGLRuntimeAttestationPathUsesBakedCanonicalPayload()
     {
-        var packageRootPath = FindPackageRootPath();
+        var packageRootPath = GamingCouchEditorTestSupport.FindPackageRootPath();
         var bridgePath = Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib");
         var bridge = File.ReadAllText(bridgePath);
         var bootstrapPath = Path.Combine(packageRootPath, "Runtime", "GCWebGLRuntimeInfoBootstrap.cs");
@@ -98,7 +97,7 @@ public sealed class GCRuntimeInfoTests
     [Test]
     public void WebGLUnityBuildInfoCallbackPathUsesOptionalBakedPayload()
     {
-        var packageRootPath = FindPackageRootPath();
+        var packageRootPath = GamingCouchEditorTestSupport.FindPackageRootPath();
         var bridgePath = Path.Combine(packageRootPath, "Plugins", "GamingCouch.jslib");
         var bridge = File.ReadAllText(bridgePath);
         var bootstrapPath = Path.Combine(packageRootPath, "Runtime", "GCWebGLRuntimeInfoBootstrap.cs");
@@ -129,7 +128,7 @@ public sealed class GCRuntimeInfoTests
     [Test]
     public void PackageManifestNameAndVersionAreNotHardcodedInPackageSources()
     {
-        var packageRootPath = FindPackageRootPath();
+        var packageRootPath = GamingCouchEditorTestSupport.FindPackageRootPath();
         var manifest = ReadPackageManifest();
         var failures = new List<string>();
 
@@ -194,19 +193,8 @@ public sealed class GCRuntimeInfoTests
 
     private static PackageManifest ReadPackageManifest()
     {
-        var manifestPath = Path.Combine(FindPackageRootPath(), "package.json");
+        var manifestPath = Path.Combine(GamingCouchEditorTestSupport.FindPackageRootPath(), "package.json");
         return JsonUtility.FromJson<PackageManifest>(File.ReadAllText(manifestPath));
-    }
-
-    private static string FindPackageRootPath()
-    {
-        var packageInfo = PackageInfo.FindForAssembly(typeof(GamingCouch).Assembly);
-        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
-        {
-            return packageInfo.resolvedPath;
-        }
-
-        throw new InvalidOperationException("Could not resolve Gaming Couch package root.");
     }
 
     private static IEnumerable<string> EnumeratePackageSourcePaths(string packageRootPath)

@@ -6,10 +6,10 @@
 - Keep the Asset Store listing clean while enabling early adopters.
 
 ## Current state
-- Package: `com.dsb.gamingcouch` at `0.1.0-alpha.5` (`package.json`) — alpha phase.
+- Package: `com.dsb.gamingcouch` — alpha phase. `package.json` is the single source of the current version.
 - License: Apache-2.0 (`LICENSE.md`) — the plugin is open source.
 - Minimum Unity: `6000.0` (Unity 6), per `package.json`.
-- Releases so far are Git tags (`unity-0.1.0-alpha.1`, `unity-0.1.0-alpha.3`) with a hand-maintained `CHANGELOG.md`.
+- Releases so far are Git tags in the `unity-<version>` form — list them with `git tag --list 'unity-*'` — with a hand-maintained `CHANGELOG.md`.
 
 ## Versioning scheme
 - Use SemVer: `MAJOR.MINOR.PATCH`.
@@ -23,10 +23,10 @@ Use the `release:*` npm scripts from the repo root — the one-command flow that
 `package.json` (the single source of name/version) and the baked runtime info in sync:
 
 ```bash
-npm run release:alpha        # 0.1.0-alpha.5 -> 0.1.0-alpha.6
+npm run release:alpha        # bump the alpha counter: -alpha.N -> -alpha.N+1
 npm run release:beta         # switch line: -> 0.1.0-beta.0
 npm run release:patch        # finalize a prerelease -> 0.1.0
-npm run release:minor        # -> 0.2.0
+npm run release:minor        # from a prerelease: finalizes it, same as :patch (see below)
 npm run release:major        # -> 1.0.0
 npm run release:dry          # preview an alpha bump, change nothing
 npm run release:prerelease -- --preid=rc   # pass extra flags after --
@@ -37,9 +37,20 @@ not covered by a script (e.g. an explicit version or `--force-tag`):
 
 ```bash
 python3 Tools/bump-version.py 0.2.0-alpha.0              # explicit version
+python3 Tools/bump-version.py preminor --preid=alpha     # open the next minor line: -> 0.2.0-alpha.0
 python3 Tools/bump-version.py prerelease --preid=alpha --dry-run   # same as release:dry
 python3 Tools/bump-version.py --help                    # full flag reference
 ```
+
+**`release:minor` does not open a new minor line while a prerelease is in progress.** These are
+node-semver's keyword rules, which the bumper reproduces exactly (`bump_core` in
+`Tools/bump-version.py`): from `0.1.0-alpha.N`, `minor` only *finalizes* the version already in
+progress — it drops the prerelease tag and leaves `0.1.0`, identical to `release:patch` — because the
+`0.1.0` core has not shipped yet. `minor` raises the minor number only from a released version, or
+from a prerelease whose patch is non-zero. So mid-alpha no `release:*` script produces `0.2.0`: use
+`preminor` (for `0.2.0-alpha.0`) or name the version outright, as above. Dry-run first (`--dry-run`)
+and read the printed `X -> Y` line before answering the prompt — that line, not the script name, is
+what you are about to commit and tag.
 
 What it does:
 1. Warns (y/N) if you are not on `main`.

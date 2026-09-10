@@ -190,7 +190,7 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         applyLabel = "Apply " + plan.displayName + " Settings";
         rows = plan.rows;
         selectedSkippableRowIds = new HashSet<string>(
-            GetDefaultSelectedSkippableRowIds(plan.rows),
+            GCWebGLPreviewRowQueries.GetDefaultSelectedSkippableRowIds(plan.rows),
             StringComparer.Ordinal
         );
         canApply = plan.HasChanges;
@@ -333,22 +333,6 @@ internal sealed class GamingCouchWebGLBuildSettingsPreviewWindow : EditorWindow
         }
 
         return canApply ? MessageType.Info : MessageType.None;
-    }
-
-    private static string[] GetDefaultSelectedSkippableRowIds(GCWebGLPreviewRow[] rows)
-    {
-        var selectedIds = new List<string>();
-        for (var index = 0; rows != null && index < rows.Length; index++)
-        {
-            if (rows[index] != null &&
-                rows[index].isChanged &&
-                rows[index].isSkippable)
-            {
-                selectedIds.Add(rows[index].id);
-            }
-        }
-
-        return selectedIds.ToArray();
     }
 
     private static GCWebGLPreviewApplyOutcome FromProfileResult(GCWebGLBuildSettingsProfileResult result)

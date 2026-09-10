@@ -31,12 +31,23 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private GCStartScreenReadiness readiness;
     private GCGamingCouchSceneEntry[] gamingCouchScenes = new GCGamingCouchSceneEntry[0];
+    // Built from gamingCouchScenes + readiness and read more than once per OnGUI; both refreshes
+    // clear it.
+    private List<GCGamingCouchSceneEntry> displayedScenes;
     private Vector2 scrollPosition;
     private string actionMessage;
     private string[] actionDetails = new string[0];
     private MessageType actionMessageType = MessageType.Info;
     private bool hasSelectedChecklistHelp;
     private GCStartScreenReadinessCheckId selectedChecklistHelpId;
+
+    // Row styles are rebuilt on first draw after every domain reload, because Unity clears static
+    // GUIStyle fields there and EditorStyles is only readable from inside OnGUI.
+    private static GUIStyle sceneNameStyle;
+    private static GUIStyle activeSceneNameStyle;
+    private static GUIStyle scenePathStyle;
+    private static GUIStyle sceneActiveTagStyle;
+    private static GUIStyle checklistLabelStyle;
 
     // EditorWindow.docked is internal to UnityEditor; cache the reflection lookup since
     // IsDocked() runs every OnGUI frame.
@@ -120,6 +131,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void OnFocus()
     {
+        RefreshSceneCatalog();
         Refresh();
     }
 
@@ -170,11 +182,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     private void Refresh()
     {
         readiness = GCStartScreenReadinessService.InspectActiveScene();
+        displayedScenes = null;
     }
 
     private void RefreshSceneCatalog()
     {
         gamingCouchScenes = GamingCouchSceneCatalog.FindGamingCouchScenes();
+        displayedScenes = null;
     }
 
     private void DrawGamingCouchScenesSection()
@@ -221,6 +235,11 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
     // up immediately, even before it is saved.
     private List<GCGamingCouchSceneEntry> GetDisplayedScenes()
     {
+        if (displayedScenes != null)
+        {
+            return displayedScenes;
+        }
+
         var scenes = new List<GCGamingCouchSceneEntry>();
         if (gamingCouchScenes != null)
         {
@@ -236,6 +255,7 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
             scenes.Sort((a, b) => string.Compare(a.path, b.path, StringComparison.Ordinal));
         }
 
+        displayedScenes = scenes;
         return scenes;
     }
 
@@ -399,32 +419,60 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private static GUIStyle GetSceneNameStyle(bool isActive)
     {
-        return new GUIStyle(EditorStyles.label)
+        if (isActive)
         {
-            alignment = TextAnchor.MiddleLeft,
-            fontStyle = isActive ? FontStyle.Bold : FontStyle.Normal
-        };
+            if (activeSceneNameStyle == null)
+            {
+                activeSceneNameStyle = new GUIStyle(EditorStyles.label)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                    fontStyle = FontStyle.Bold
+                };
+            }
+
+            return activeSceneNameStyle;
+        }
+
+        if (sceneNameStyle == null)
+        {
+            sceneNameStyle = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                fontStyle = FontStyle.Normal
+            };
+        }
+
+        return sceneNameStyle;
     }
 
     private static GUIStyle GetScenePathStyle()
     {
-        var style = new GUIStyle(EditorStyles.miniLabel)
+        if (scenePathStyle == null)
         {
-            alignment = TextAnchor.MiddleLeft
-        };
-        var color = style.normal.textColor;
-        color.a = 0.6f;
-        style.normal.textColor = color;
-        return style;
+            scenePathStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.MiddleLeft
+            };
+            var color = scenePathStyle.normal.textColor;
+            color.a = 0.6f;
+            scenePathStyle.normal.textColor = color;
+        }
+
+        return scenePathStyle;
     }
 
     private static GUIStyle GetSceneActiveTagStyle()
     {
-        return new GUIStyle(EditorStyles.miniBoldLabel)
+        if (sceneActiveTagStyle == null)
         {
-            alignment = TextAnchor.MiddleRight,
-            normal = { textColor = new Color(0.35f, 0.8f, 0.45f, 1f) }
-        };
+            sceneActiveTagStyle = new GUIStyle(EditorStyles.miniBoldLabel)
+            {
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = new Color(0.35f, 0.8f, 0.45f, 1f) }
+            };
+        }
+
+        return sceneActiveTagStyle;
     }
 
     private void DrawActiveSceneIssue()
@@ -848,11 +896,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void RunWireExampleGame()
     {
-        ApplySetupActionResult(
-            GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
-                GamingCouchActiveSceneSetup.WireExampleGame()
-            )
-        );
+        var result = GamingCouchActiveSceneSetup.WireExampleGame();
+        if (result.IsCancelled)
+        {
+            return;
+        }
+
+        ApplySetupActionResult(GamingCouchStartScreenSetupActions.FromWireExampleGameResult(result));
     }
 
     internal void ApplyExternalSetupActionResult(GCStartScreenSetupActionResult result)
@@ -1060,10 +1110,15 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private static GUIStyle GetChecklistLabelStyle()
     {
-        return new GUIStyle(EditorStyles.label)
+        if (checklistLabelStyle == null)
         {
-            alignment = TextAnchor.MiddleLeft
-        };
+            checklistLabelStyle = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.MiddleLeft
+            };
+        }
+
+        return checklistLabelStyle;
     }
 
     private static MessageType GetMessageType(GCStartScreenReadinessCheckState state)

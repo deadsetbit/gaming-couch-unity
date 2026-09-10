@@ -10,6 +10,7 @@ using DSB.GC.Log;
 using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using DSB.GC.Dev;
 using DSB.GC.RuntimeMessages;
 using System.Runtime.CompilerServices;
@@ -228,7 +229,6 @@ namespace DSB.GC
                 if (TryRequireSetupOptions("Editor setup"))
                 {
                     GamingCouchSetup();
-                    SendProjectInfo();
                 }
             }
 #else
@@ -366,7 +366,12 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchPause(string pauseString)
         {
-            var pause = bool.Parse(pauseString);
+            if (!bool.TryParse(pauseString, out var pause))
+            {
+                GCLog.LogWarning($"GamingCouchPause: Ignoring unparseable pause value '{pauseString}'.");
+                return;
+            }
+
             GCLog.LogInfo("GamingCouchPause: " + pause);
 
             if (paused && pause)
@@ -539,7 +544,7 @@ namespace DSB.GC
 
             var inputsData = GCControllerInputsData.CreateFromJSON(inputsJson);
 
-            ApplyDevAppInput(playerIndex, inputsData);
+            ApplyExternalPlayerInput(playerIndex, inputsData, "platform_input");
         }
 
         /// <summary>
@@ -726,7 +731,6 @@ namespace DSB.GC
             for (var i = 0; i < playerIndicesByPlacement.Length; i++)
             {
                 var playerIndex = playerIndicesByPlacement[i];
-                var player = internalPlayerStore.GetPlayerByIndex(playerIndex);
                 GCLog.LogInfo($"Player index {playerIndex} placed {i + 1}");
             }
 
@@ -840,13 +844,14 @@ namespace DSB.GC
         {
             player.gameObject.name = "Player - " + options.playerIndex;
 
+            var colorEnum = GCPlayerOptionResolver.ResolvePlayerColor(options.color);
             var playerSetupOptions = new GCPlayerSetupOptions
             {
                 playerIndex = options.playerIndex,
                 playerSeed = options.playerSeed,
-                type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
-                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
-                colorName = options.color,
+                type = GCPlayerOptionResolver.ResolvePlayerType(options.type),
+                colorEnum = colorEnum,
+                colorName = colorEnum.ToString(),
             };
 
             player._InternalGamingCouchSetup(playerSetupOptions);
@@ -977,14 +982,14 @@ namespace DSB.GC
             externalInputsByPlayerIndex.Clear();
         }
 
-        internal void ApplyDevAppInput(int playerIndex, GCControllerInputsData inputsData)
+        internal void ApplyExternalPlayerInput(int playerIndex, GCControllerInputsData inputsData, string source)
         {
             if (paused)
             {
                 return;
             }
 
-            if (!TryValidatePlayerIndex(playerIndex, "devapp_input", out _))
+            if (!TryValidatePlayerIndex(playerIndex, source, out _))
             {
                 return;
             }
@@ -1084,15 +1089,19 @@ namespace DSB.GC
         [SerializeField]
         private bool useKeyboardControls = true;
         [SerializeField]
+        [FormerlySerializedAs("a0")]
         [Tooltip("Left stick X-axis for editor testing. Default: 'Horizontal'")]
         private string axisX = "Horizontal";
         [SerializeField]
+        [FormerlySerializedAs("a1")]
         [Tooltip("Left stick Y-axis for editor testing. Default: 'Vertical'")]
         private string axisY = "Vertical";
         [SerializeField]
+        [FormerlySerializedAs("b0")]
         [Tooltip("Unity Input keyboard input 'primary' action button (A on Xbox controller). Default: 'Jump'")]
         private string buttonPrimary = "Jump";
         [SerializeField]
+        [FormerlySerializedAs("b1")]
         [Tooltip("Unity Input keyboard input 'secondary' action button (B on Xbox controller). Default: 'Fire1'")]
         private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;

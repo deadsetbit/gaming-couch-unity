@@ -136,7 +136,9 @@ namespace DSB.GC.Dev
             return Mathf.Approximately(Time.timeScale, 0.0f);
         }
 
-        private void ApplyTimescale(float nextTimescale)
+        // Shared with GCDevAppIntegration so the "GamingCouch owns the timescale, otherwise drive
+        // Time.timeScale directly" rule -- clamp included -- lives in one place.
+        internal static void ApplyTimescale(float nextTimescale)
         {
             if (GamingCouch.Instance != null)
             {

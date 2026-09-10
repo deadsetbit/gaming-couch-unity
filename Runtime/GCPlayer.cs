@@ -104,7 +104,7 @@ namespace DSB.GC
         /// </summary>
         [Obsolete("GCPlayer.Id has been removed from the game-facing runtime contract. Use GCPlayer.Index.", true)]
         public int Id => id;
-        private string playerName;
+        private string playerName = null;
         /// <summary>
         /// Removed. Player names are platform-owned and are not exposed to Unity game code.
         /// </summary>
@@ -253,7 +253,7 @@ namespace DSB.GC
 
             ApplyEliminationTransition(
                 transition,
-                GCPlayerEliminationTimestampTarget.Permanent,
+                GCPlayerStateTimestampTarget.Permanent,
                 "permanently eliminated"
             );
         }
@@ -272,7 +272,7 @@ namespace DSB.GC
 
             ApplyEliminationTransition(
                 transition,
-                GCPlayerEliminationTimestampTarget.Revokable,
+                GCPlayerStateTimestampTarget.Revokable,
                 "revokably eliminated"
             );
         }
@@ -291,7 +291,7 @@ namespace DSB.GC
 
             ApplyEliminationTransition(
                 transition,
-                GCPlayerEliminationTimestampTarget.Revoke,
+                GCPlayerStateTimestampTarget.Revoke,
                 "elimination revoked"
             );
         }
@@ -349,7 +349,7 @@ namespace DSB.GC
 
             ApplyFinishTransition(
                 transition,
-                GCPlayerFinishTimestampTarget.Permanent,
+                GCPlayerStateTimestampTarget.Permanent,
                 "permanently finished"
             );
         }
@@ -368,7 +368,7 @@ namespace DSB.GC
 
             ApplyFinishTransition(
                 transition,
-                GCPlayerFinishTimestampTarget.Revokable,
+                GCPlayerStateTimestampTarget.Revokable,
                 "revokably finished"
             );
         }
@@ -387,7 +387,7 @@ namespace DSB.GC
 
             ApplyFinishTransition(
                 transition,
-                GCPlayerFinishTimestampTarget.Revoke,
+                GCPlayerStateTimestampTarget.Revoke,
                 "finish revoked"
             );
         }
@@ -510,14 +510,7 @@ namespace DSB.GC
             throw new Exception("GetHudValueText not implemented. Implement this in your GCPlayer subclass to display a custom value in the HUD.");
         }
 
-        private enum GCPlayerEliminationTimestampTarget
-        {
-            Permanent,
-            Revokable,
-            Revoke,
-        }
-
-        private enum GCPlayerFinishTimestampTarget
+        private enum GCPlayerStateTimestampTarget
         {
             Permanent,
             Revokable,
@@ -526,7 +519,7 @@ namespace DSB.GC
 
         private void ApplyEliminationTransition(
             GCPlayerTransitionResult<GCPlayerEliminationState> transition,
-            GCPlayerEliminationTimestampTarget timestampTarget,
+            GCPlayerStateTimestampTarget timestampTarget,
             string logAction
         )
         {
@@ -536,15 +529,15 @@ namespace DSB.GC
 
             switch (timestampTarget)
             {
-                case GCPlayerEliminationTimestampTarget.Permanent:
+                case GCPlayerStateTimestampTarget.Permanent:
                     lastSetEliminatedPermanentGameTime = changedAtGameTime;
                     lastSetEliminatedGameTime = changedAtGameTime;
                     break;
-                case GCPlayerEliminationTimestampTarget.Revokable:
+                case GCPlayerStateTimestampTarget.Revokable:
                     lastSetEliminatedRevokableGameTime = changedAtGameTime;
                     lastSetEliminatedGameTime = changedAtGameTime;
                     break;
-                case GCPlayerEliminationTimestampTarget.Revoke:
+                case GCPlayerStateTimestampTarget.Revoke:
                     lastSetRevokeEliminatedGameTime = changedAtGameTime;
                     lastSetRevokeGameTime = changedAtGameTime;
                     break;
@@ -563,7 +556,7 @@ namespace DSB.GC
 
         private void ApplyFinishTransition(
             GCPlayerTransitionResult<GCPlayerFinishState> transition,
-            GCPlayerFinishTimestampTarget timestampTarget,
+            GCPlayerStateTimestampTarget timestampTarget,
             string logAction
         )
         {
@@ -573,15 +566,15 @@ namespace DSB.GC
 
             switch (timestampTarget)
             {
-                case GCPlayerFinishTimestampTarget.Permanent:
+                case GCPlayerStateTimestampTarget.Permanent:
                     lastSetFinishedPermanentGameTime = changedAtGameTime;
                     lastSetFinishedGameTime = changedAtGameTime;
                     break;
-                case GCPlayerFinishTimestampTarget.Revokable:
+                case GCPlayerStateTimestampTarget.Revokable:
                     lastSetFinishedRevokableGameTime = changedAtGameTime;
                     lastSetFinishedGameTime = changedAtGameTime;
                     break;
-                case GCPlayerFinishTimestampTarget.Revoke:
+                case GCPlayerStateTimestampTarget.Revoke:
                     lastSetRevokeFinishedGameTime = changedAtGameTime;
                     lastSetRevokeGameTime = changedAtGameTime;
                     break;
@@ -653,43 +646,16 @@ namespace DSB.GC
             GCPlayerTransitionResult<GCPlayerEliminationState> transition
         )
         {
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.DuplicateValue)
-            {
-                var message = transition.Value == GCPlayerEliminationState.Permanent
-                    ? "Player is already permanently eliminated."
-                    : "Player is already revokably eliminated.";
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateElimination,
-                    message,
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
-                return;
-            }
-
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidTransition)
-            {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidTransition,
-                    "Permanent elimination cannot transition back to revokable elimination.",
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
-                return;
-            }
-
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidRevoke)
-            {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidRevoke,
-                    "Only revokable elimination can be revoked.",
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
-            }
+            EmitStateTransitionDiagnostic(
+                mutatorName,
+                transition,
+                permanentState: GCPlayerEliminationState.Permanent,
+                duplicateCode: GCDiagnosticCodes.DuplicateElimination,
+                duplicatePermanentMessage: "Player is already permanently eliminated.",
+                duplicateRevokableMessage: "Player is already revokably eliminated.",
+                invalidTransitionMessage: "Permanent elimination cannot transition back to revokable elimination.",
+                invalidRevokeMessage: "Only revokable elimination can be revoked."
+            );
         }
 
         private void EmitFinishTransitionDiagnostic(
@@ -697,42 +663,65 @@ namespace DSB.GC
             GCPlayerTransitionResult<GCPlayerFinishState> transition
         )
         {
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.DuplicateValue)
-            {
-                var message = transition.Value == GCPlayerFinishState.Permanent
-                    ? "Player is already permanently finished."
-                    : "Player is already revokably finished.";
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.DuplicateFinish,
-                    message,
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
-                return;
-            }
+            EmitStateTransitionDiagnostic(
+                mutatorName,
+                transition,
+                permanentState: GCPlayerFinishState.Permanent,
+                duplicateCode: GCDiagnosticCodes.DuplicateFinish,
+                duplicatePermanentMessage: "Player is already permanently finished.",
+                duplicateRevokableMessage: "Player is already revokably finished.",
+                invalidTransitionMessage: "Permanent finish cannot transition back to revokable finish.",
+                invalidRevokeMessage: "Only revokable finish can be revoked."
+            );
+        }
 
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidTransition)
-            {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidTransition,
-                    "Permanent finish cannot transition back to revokable finish.",
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
-                return;
-            }
+        // Elimination and finish stay independent enums per ADR 0003, but they reject for the same
+        // three reasons, so the diagnostic path is shared and each family supplies only its wording.
+        private void EmitStateTransitionDiagnostic<TState>(
+            string mutatorName,
+            GCPlayerTransitionResult<TState> transition,
+            TState permanentState,
+            string duplicateCode,
+            string duplicatePermanentMessage,
+            string duplicateRevokableMessage,
+            string invalidTransitionMessage,
+            string invalidRevokeMessage
+        ) where TState : struct, Enum
+        {
+            var oldState = transition.PreviousValue.ToString();
+            var requestedState = transition.Value.ToString();
 
-            if (transition.RejectionReason == GCPlayerTransitionRejectionReason.InvalidRevoke)
+            switch (transition.RejectionReason)
             {
-                EmitStateDiagnostic(
-                    GCDiagnosticCodes.InvalidRevoke,
-                    "Only revokable finish can be revoked.",
-                    mutatorName,
-                    transition.PreviousValue.ToString(),
-                    transition.Value.ToString()
-                );
+                case GCPlayerTransitionRejectionReason.DuplicateValue:
+                    EmitStateDiagnostic(
+                        duplicateCode,
+                        EqualityComparer<TState>.Default.Equals(transition.Value, permanentState)
+                            ? duplicatePermanentMessage
+                            : duplicateRevokableMessage,
+                        mutatorName,
+                        oldState,
+                        requestedState
+                    );
+                    return;
+                case GCPlayerTransitionRejectionReason.InvalidTransition:
+                    EmitStateDiagnostic(
+                        GCDiagnosticCodes.InvalidTransition,
+                        invalidTransitionMessage,
+                        mutatorName,
+                        oldState,
+                        requestedState
+                    );
+                    return;
+                case GCPlayerTransitionRejectionReason.InvalidRevoke:
+                    EmitStateDiagnostic(
+                        GCDiagnosticCodes.InvalidRevoke,
+                        invalidRevokeMessage,
+                        mutatorName,
+                        oldState,
+                        requestedState
+                    );
+                    return;
             }
         }
 

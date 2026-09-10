@@ -332,15 +332,26 @@ public sealed class GCRuntimeDiagnosticsTests
     }
 
     [Test]
-    public void DiagnosticFieldsRejectNestedDataAndPlatformPlayerIdKeys()
+    public void DiagnosticFieldsRejectNestedDataAndNegativePlayerIndex()
     {
         Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDetail(
             "nested",
             new object[] { new[] { "not-flat" } }
         ));
 
-        Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDetail("playerId", 123));
         Assert.Throws<ArgumentOutOfRangeException>(() => new GCDiagnosticContext().WithPlayerIndex(-1));
+    }
+
+    // The ADR 0006 privacy boundary: every platform player-id key is rejected on both field
+    // channels. A fifth key belongs here as one more [TestCase].
+    [TestCase("playerId")]
+    [TestCase("playerIds")]
+    [TestCase("platformPlayerId")]
+    [TestCase("platformPlayerIds")]
+    public void DiagnosticFieldsRejectPlatformPlayerIdKeys(string key)
+    {
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDetail(key, 123));
+        Assert.Throws<ArgumentException>(() => new GCDiagnosticContext().AddDebug(key, "value"));
     }
 
     [Test]

@@ -203,34 +203,12 @@ internal sealed class GCWebGLExportSetupPlan
 
     internal bool HasChanges
     {
-        get
-        {
-            for (var index = 0; index < rows.Length; index++)
-            {
-                if (rows[index] != null && rows[index].isChanged)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        get { return GCWebGLPreviewRowQueries.HasChangedRows(rows); }
     }
 
     internal string[] GetDefaultSelectedSkippableRowIds()
     {
-        var selectedIds = new List<string>();
-        for (var index = 0; index < rows.Length; index++)
-        {
-            if (rows[index] != null &&
-                rows[index].isChanged &&
-                rows[index].isSkippable)
-            {
-                selectedIds.Add(rows[index].id);
-            }
-        }
-
-        return selectedIds.ToArray();
+        return GCWebGLPreviewRowQueries.GetDefaultSelectedSkippableRowIds(rows);
     }
 }
 
@@ -299,10 +277,10 @@ internal static class GamingCouchWebGLExportSetup
         AddSplashPlanRows(rows, details);
         AddProfilePlanRows(GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan(), rows, details);
 
-        var status = HasBlockedRows(rows)
+        var status = GCWebGLPreviewRowQueries.HasBlockedRows(rows)
             ? GCWebGLExportSetupStatus.Blocked
             : GCWebGLExportSetupStatus.Ready;
-        var hasChanges = HasChangedRows(rows);
+        var hasChanges = GCWebGLPreviewRowQueries.HasChangedRows(rows);
         var message = status == GCWebGLExportSetupStatus.Blocked
             ? "Gaming Couch web export settings preview is blocked."
             : hasChanges
@@ -370,7 +348,7 @@ internal static class GamingCouchWebGLExportSetup
             );
         }
 
-        var selectedIds = CreateSelectedIdSet(selectedSkippableRowIds);
+        var selectedIds = GamingCouchWebGLBuildSettingsProfiles.CreateSelectedIdSet(selectedSkippableRowIds);
         var changed = installResult.changed;
         changed |= SelectTemplate(details);
         changed |= ApplyWebGLExportReleaseDefaults(details, selectedIds);
@@ -379,15 +357,70 @@ internal static class GamingCouchWebGLExportSetup
         var readiness = InspectReadiness(plan.destinationTemplateDirectoryFullPath);
         details.AddRange(readiness.details);
 
+        var status = readiness.status;
+        var message = readiness.IsReady
+            ? "Gaming Couch web export settings are ready."
+            : readiness.message;
+        if (readiness.IsBlocked && RemainingGapsAreDeliberateSkips(readiness, selectedIds))
+        {
+            status = GCWebGLExportSetupStatus.Warning;
+            message = "Gaming Couch web export settings were applied; skipped rows were left unapplied.";
+        }
+
         return new GCWebGLExportSetupResult(
-            readiness.status,
+            status,
             changed,
-            readiness.IsReady
-                ? "Gaming Couch web export settings are ready."
-                : readiness.message,
+            message,
             details.ToArray(),
             readiness
         );
+    }
+
+    // Rows the caller deselected in the preview are meant to stay unapplied, so the gaps they
+    // leave behind must not surface as a failed apply. Readiness itself stays honest — its flags
+    // and details still report the gaps, so the start screen keeps asking for the missing
+    // settings; only the status the caller sees for this apply run softens to a warning.
+    // Template and build-target rows are never skippable, so only the settings rows can be
+    // left behind on purpose.
+    private static bool RemainingGapsAreDeliberateSkips(
+        GCWebGLExportReadiness readiness,
+        HashSet<string> selectedIds
+    )
+    {
+        if (selectedIds == null ||
+            !readiness.templateFolderReady ||
+            !readiness.templateFilesReady ||
+            !readiness.templateSelected)
+        {
+            return false;
+        }
+
+        var settingsRows = new List<GCWebGLPreviewRow>();
+        AddSplashPlanRows(settingsRows, null);
+        AddProfilePlanRows(
+            GamingCouchWebGLBuildSettingsProfiles.BuildReleaseProfilePlan(),
+            settingsRows,
+            null
+        );
+
+        var hasDeliberateSkip = false;
+        for (var index = 0; index < settingsRows.Count; index++)
+        {
+            var row = settingsRows[index];
+            if (!row.isChanged)
+            {
+                continue;
+            }
+
+            if (!row.isSkippable || selectedIds.Contains(row.id))
+            {
+                return false;
+            }
+
+            hasDeliberateSkip = true;
+        }
+
+        return hasDeliberateSkip;
     }
 
     private static void AddTemplatePlanRows(
@@ -517,7 +550,7 @@ internal static class GamingCouchWebGLExportSetup
 
         if (Directory.Exists(fullDestinationPath))
         {
-            AddDetail(details, "Project-local web export template folder already exists: " + fullDestinationPath);
+            GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Project-local web export template folder already exists: " + fullDestinationPath);
         }
         else
         {
@@ -558,7 +591,7 @@ internal static class GamingCouchWebGLExportSetup
             }
             else if (File.Exists(destinationFilePath))
             {
-                AddDetail(details, "Project-local web export template file will be reused: " + destinationFilePath);
+                GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Project-local web export template file will be reused: " + destinationFilePath);
             }
             else
             {
@@ -626,8 +659,8 @@ internal static class GamingCouchWebGLExportSetup
                 SplashScreenRowId,
                 GCWebGLPreviewRowKind.Splash,
                 "Unity splash screen",
-                FormatEnabled(PlayerSettings.SplashScreen.show),
-                FormatEnabled(false),
+                GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.show),
+                GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(false),
                 PlayerSettings.SplashScreen.show,
                 true
             )
@@ -639,8 +672,8 @@ internal static class GamingCouchWebGLExportSetup
                 SplashLogoRowId,
                 GCWebGLPreviewRowKind.Splash,
                 "Unity splash logo",
-                FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo),
-                FormatEnabled(false),
+                GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo),
+                GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(false),
                 PlayerSettings.SplashScreen.showUnityLogo,
                 true
             )
@@ -678,34 +711,8 @@ internal static class GamingCouchWebGLExportSetup
         rows.Add(row);
         if (row.isChanged)
         {
-            AddDetail(details, row.DiffText);
+            GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, row.DiffText);
         }
-    }
-
-    private static bool HasBlockedRows(List<GCWebGLPreviewRow> rows)
-    {
-        for (var index = 0; rows != null && index < rows.Count; index++)
-        {
-            if (rows[index] != null && rows[index].isBlocked)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool HasChangedRows(List<GCWebGLPreviewRow> rows)
-    {
-        for (var index = 0; rows != null && index < rows.Count; index++)
-        {
-            if (rows[index] != null && rows[index].isChanged)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static string FindTemplateFolderParentFileCollision(string destinationTemplateDirectoryFullPath)
@@ -775,19 +782,34 @@ internal static class GamingCouchWebGLExportSetup
             );
         }
 
-        EnsureDirectory(destinationTemplateDirectoryFullPath, createdPaths, reusedPaths, blockedReasons);
-        if (blockedReasons.Count == 0)
+        // Installation is reached from OnGUI, where a filesystem failure (a read-only Assets
+        // folder, a locked file) must surface as a blocked reason rather than throwing out of the
+        // repaint.
+        try
         {
-            foreach (var fileName in ExpectedTemplateFiles)
+            EnsureDirectory(destinationTemplateDirectoryFullPath, createdPaths, reusedPaths, blockedReasons);
+            if (blockedReasons.Count == 0)
             {
-                EnsureTemplateFile(
-                    Path.Combine(sourceTemplateDirectoryFullPath, fileName),
-                    Path.Combine(destinationTemplateDirectoryFullPath, fileName),
-                    createdPaths,
-                    reusedPaths,
-                    blockedReasons
-                );
+                foreach (var fileName in ExpectedTemplateFiles)
+                {
+                    EnsureTemplateFile(
+                        Path.Combine(sourceTemplateDirectoryFullPath, fileName),
+                        Path.Combine(destinationTemplateDirectoryFullPath, fileName),
+                        createdPaths,
+                        reusedPaths,
+                        blockedReasons
+                    );
+                }
             }
+        }
+        catch (Exception exception)
+        {
+            blockedReasons.Add(
+                "Could not install the Gaming Couch web export template into " +
+                destinationTemplateDirectoryFullPath +
+                ": " +
+                exception.Message
+            );
         }
 
         var changed = createdPaths.Count > 0;
@@ -942,8 +964,8 @@ internal static class GamingCouchWebGLExportSetup
         var scriptPath = LocateOwnScriptAssetPath();
         if (!string.IsNullOrEmpty(scriptPath))
         {
-            var packageRootPath = Path.GetFullPath(Path.Combine(AssetPathToFullPath(scriptPath), ".."));
-            var templatePath = Path.Combine(packageRootPath, "WebGLTemplates", TemplateName);
+            var editorFolderPath = Path.GetFullPath(Path.Combine(AssetPathToFullPath(scriptPath), ".."));
+            var templatePath = Path.Combine(editorFolderPath, "WebGLTemplates", TemplateName);
             if (Directory.Exists(templatePath))
             {
                 return templatePath;
@@ -1012,12 +1034,18 @@ internal static class GamingCouchWebGLExportSetup
         var ready = true;
         ready &= Expect(
             !PlayerSettings.SplashScreen.show,
-            "Unity splash screen: " + FormatEnabled(PlayerSettings.SplashScreen.show) + " -> " + FormatEnabled(false),
+            "Unity splash screen: " +
+            GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.show) +
+            " -> " +
+            GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(false),
             details
         );
         ready &= Expect(
             !PlayerSettings.SplashScreen.showUnityLogo,
-            "Unity splash logo: " + FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) + " -> " + FormatEnabled(false),
+            "Unity splash logo: " +
+            GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) +
+            " -> " +
+            GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(false),
             details
         );
         return ready;
@@ -1135,11 +1163,50 @@ internal static class GamingCouchWebGLExportSetup
         if (File.Exists(destinationPath))
         {
             reusedPaths.Add("Reused file: " + destinationPath);
+            if (!MatchesPackageTemplateFile(sourcePath, destinationPath))
+            {
+                reusedPaths.Add("Reused file differs from package template: " + destinationPath);
+            }
+
             return;
         }
 
         File.Copy(sourcePath, destinationPath, false);
         createdPaths.Add("Created file: " + destinationPath);
+    }
+
+    // The user's own file always wins, so drift after a package upgrade is only reported, never
+    // repaired. A file that cannot be read is reported as matching so an unreadable path does not
+    // masquerade as drift.
+    private static bool MatchesPackageTemplateFile(string sourcePath, string destinationPath)
+    {
+        try
+        {
+            var sourceBytes = File.ReadAllBytes(sourcePath);
+            var destinationBytes = File.ReadAllBytes(destinationPath);
+            if (sourceBytes.Length != destinationBytes.Length)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < sourceBytes.Length; index++)
+            {
+                if (sourceBytes[index] != destinationBytes[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return true;
+        }
     }
 
     private static GCWebGLExportTemplateInstallResult CreateInstallResult(
@@ -1172,17 +1239,17 @@ internal static class GamingCouchWebGLExportSetup
         if (PlayerSettings.SplashScreen.show != showSplash)
         {
             var detail = "Unity splash screen: " +
-                         FormatEnabled(PlayerSettings.SplashScreen.show) +
+                         GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.show) +
                          " -> " +
-                         FormatEnabled(showSplash);
+                         GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(showSplash);
             if (selectedIds != null && !selectedIds.Contains(SplashScreenRowId))
             {
-                AddDetail(details, "Skipped " + detail + ".");
+                GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Skipped " + detail + ".");
             }
             else
             {
                 PlayerSettings.SplashScreen.show = showSplash;
-                AddDetail(details, "Applied " + detail + ".");
+                GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Applied " + detail + ".");
                 changed = true;
             }
         }
@@ -1190,45 +1257,22 @@ internal static class GamingCouchWebGLExportSetup
         if (PlayerSettings.SplashScreen.showUnityLogo != showUnityLogo)
         {
             var detail = "Unity splash logo: " +
-                         FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) +
+                         GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(PlayerSettings.SplashScreen.showUnityLogo) +
                          " -> " +
-                         FormatEnabled(showUnityLogo);
+                         GamingCouchWebGLBuildSettingsProfiles.FormatEnabled(showUnityLogo);
             if (selectedIds != null && !selectedIds.Contains(SplashLogoRowId))
             {
-                AddDetail(details, "Skipped " + detail + ".");
+                GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Skipped " + detail + ".");
             }
             else
             {
                 PlayerSettings.SplashScreen.showUnityLogo = showUnityLogo;
-                AddDetail(details, "Applied " + detail + ".");
+                GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, "Applied " + detail + ".");
                 changed = true;
             }
         }
 
         return changed;
-    }
-
-    private static HashSet<string> CreateSelectedIdSet(IEnumerable<string> selectedIds)
-    {
-        if (selectedIds == null)
-        {
-            return null;
-        }
-
-        return new HashSet<string>(selectedIds, StringComparer.Ordinal);
-    }
-
-    private static string FormatEnabled(bool value)
-    {
-        return value ? "Enabled" : "Disabled";
-    }
-
-    private static void AddDetail(List<string> details, string detail)
-    {
-        if (details != null && !string.IsNullOrEmpty(detail))
-        {
-            details.Add(detail);
-        }
     }
 
     private static bool Expect(bool condition, string detail, List<string> details)
@@ -1238,7 +1282,7 @@ internal static class GamingCouchWebGLExportSetup
             return true;
         }
 
-        AddDetail(details, detail);
+        GamingCouchWebGLBuildSettingsProfiles.AddDetail(details, detail);
         return false;
     }
 

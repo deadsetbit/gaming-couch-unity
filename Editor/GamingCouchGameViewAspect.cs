@@ -24,21 +24,18 @@ internal sealed class GCGameViewSizeEntry
     internal readonly string displayText;
     internal readonly int width;
     internal readonly int height;
-    internal readonly bool isAspectRatio;
 
     internal GCGameViewSizeEntry(
         int index,
         string displayText,
         int width,
-        int height,
-        bool isAspectRatio
+        int height
     )
     {
         this.index = index;
         this.displayText = displayText;
         this.width = width;
         this.height = height;
-        this.isAspectRatio = isAspectRatio;
     }
 
     internal string DisplayName
@@ -654,10 +651,7 @@ internal static class GamingCouchGameViewAspect
             height = parsedHeight;
         }
 
-        var sizeType = GetMemberValue(size, "sizeType");
-        var isAspectRatio = sizeType != null &&
-                            string.Equals(sizeType.ToString(), "AspectRatio", StringComparison.Ordinal);
-        return new GCGameViewSizeEntry(index, displayText, width, height, isAspectRatio);
+        return new GCGameViewSizeEntry(index, displayText, width, height);
     }
 
     private static string GetStringMember(object instance, string memberName)

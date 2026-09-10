@@ -135,9 +135,9 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [Test]
     public void FocusActionReturnsTargetWithoutRunningSetup()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = CreateCompatibleListener("Existing Game");
-        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var listener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game");
+        var playerPrefab = GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Existing Player Prefab");
         var readiness = CreateReadiness(gamingCouch, listener, playerPrefab);
         var check = readiness.GetCheck(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
 
@@ -154,9 +154,9 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [Test]
     public void WindowAppliesFocusActionSelectionFromRunnerResult()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = CreateCompatibleListener("Existing Game");
-        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var listener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game");
+        var playerPrefab = GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Existing Player Prefab");
         var readiness = CreateReadiness(gamingCouch, listener, playerPrefab);
         var check = readiness.GetCheck(GCStartScreenReadinessCheckId.PlayerPrefabAssigned);
         var window = EditorWindow.CreateInstance<GamingCouchStartScreenWindow>();
@@ -222,9 +222,9 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     public void StartScreenWebGLChecklistActionOpensSharedPreview()
     {
         CloseWebGLPreviewWindows();
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = CreateCompatibleListener("Existing Game");
-        var playerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var listener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game");
+        var playerPrefab = GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Existing Player Prefab");
         var readiness = CreateReadiness(
             gamingCouch,
             listener,
@@ -273,8 +273,8 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     [Test]
     public void ReadySetupActionResultsRemainSilentForWindowDisplay()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var listener = CreateCompatibleListener("Existing Game");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var listener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game");
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
 
         var result = GamingCouchStartScreenSetupActions.RunSetupAction(
@@ -338,6 +338,19 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         );
         Assert.That(wired.messageType, Is.EqualTo(MessageType.Info));
 
+        // Declining the "move blocking folders to the Trash" confirmation is not a failure, so it
+        // maps to Warning like a cancelled reset, never to Error.
+        var cancelled = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+            new GCWireExampleGameResult(
+                GCWireExampleGameStatus.Cancelled,
+                false,
+                false,
+                "Wire example game was cancelled.",
+                null
+            )
+        );
+        Assert.That(cancelled.messageType, Is.EqualTo(MessageType.Warning));
+
         var nullResult = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(null);
         Assert.That(nullResult.messageType, Is.EqualTo(MessageType.Error));
     }
@@ -355,7 +368,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     public void PendingSetupDisplayNameUsesActiveSceneTerminology()
     {
         Assert.That(
-            GamingCouchActiveSceneSetup.GetSetupDisplayName(GCActiveSceneSetupIntent.ActiveScene),
+            GamingCouchActiveSceneSetup.GetSetupDisplayName(),
             Is.EqualTo("Active Scene Setup")
         );
     }
@@ -366,15 +379,15 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         var readinessWithoutActiveScene = CreateReadinessForScene(default(Scene));
         var missingGamingCouchCheck = readinessWithoutActiveScene.GetCheck(GCStartScreenReadinessCheckId.GamingCouchInstance);
         var gameViewReadiness = CreateReadiness(
-            CreateGamingCouch("GamingCouch"),
-            CreateCompatibleListener("Existing Game"),
-            CreatePlayerPrefabObject("Existing Player Prefab"),
+            GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch"),
+            GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game"),
+            GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Existing Player Prefab"),
             CreateReadyBuildSettingsReadiness(),
             GamingCouchGameViewAspect.InspectSizeEntries(
                 new[]
                 {
-                    new GCGameViewSizeEntry(0, "Free Aspect", 0, 0, true),
-                    new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9, true),
+                    new GCGameViewSizeEntry(0, "Free Aspect", 0, 0),
+                    new GCGameViewSizeEntry(1, "16:9 Aspect", 16, 9),
                 },
                 0,
                 true,
@@ -450,27 +463,6 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         return GCStartScreenReadiness.FromFacts(new GCStartScreenReadinessFacts(scene));
     }
 
-    private static GamingCouch CreateGamingCouch(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.SetActive(false);
-        return gameObject.AddComponent<GamingCouch>();
-    }
-
-    private static GameObject CreateCompatibleListener(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.AddComponent<CompatibleGameScriptReceiver>();
-        return gameObject;
-    }
-
-    private static GameObject CreatePlayerPrefabObject(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.AddComponent<GCPlayer>();
-        return gameObject;
-    }
-
     private GamingCouch[] FindGamingCouchesInTestScene()
     {
         return testScene.GetRootGameObjects()
@@ -507,7 +499,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     private static GCGameViewAspectReadiness CreateReadyGameViewAspectReadiness()
     {
         return GamingCouchGameViewAspect.InspectSizeEntries(
-            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9, true) },
+            new[] { new GCGameViewSizeEntry(0, "16:9 Aspect", 16, 9) },
             0,
             true,
             null

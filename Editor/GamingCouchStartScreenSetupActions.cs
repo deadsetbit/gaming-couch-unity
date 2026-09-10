@@ -583,6 +583,11 @@ internal static class GamingCouchStartScreenSetupActions
             return MessageType.Error;
         }
 
+        if (result.IsCancelled)
+        {
+            return MessageType.Warning;
+        }
+
         return result.IsPendingCompilation ? MessageType.Warning : MessageType.Info;
     }
 

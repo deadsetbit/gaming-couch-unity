@@ -6,6 +6,7 @@
           "unity": "6000.0",
           "documentationUrl": "https://deadsetbit.github.io/gaming-couch-unity/",
           "changelogUrl": "https://github.com/deadsetbit/gaming-couch-unity/blob/main/CHANGELOG.md",
+          "license": "Apache-2.0",
           "licensesUrl": "https://github.com/deadsetbit/gaming-couch-unity/blob/main/LICENSE.md",
           "dependencies": {
                     "com.unity.nuget.newtonsoft-json": "3.2.1"

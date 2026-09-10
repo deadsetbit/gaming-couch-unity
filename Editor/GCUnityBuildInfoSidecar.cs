@@ -39,46 +39,6 @@ internal static class GCUnityBuildInfoSidecarWriter
     private const string OutputPathDescription = "Unity build info sidecar";
 
     internal static GCUnityBuildInfoSidecarWriteResult WriteForBuild(
-        BuildReport report,
-        string webGLTemplate
-    )
-    {
-        if (report == null)
-        {
-            throw new ArgumentNullException(nameof(report));
-        }
-
-        var summary = report.summary;
-        if (!GCWebGLBuildSidecarTemplatePolicy.ShouldWriteUnityBuildInfo(summary.platform))
-        {
-            return WriteForBuild(
-                summary.platform,
-                summary.outputPath,
-                webGLTemplate,
-                null,
-                null,
-                null,
-                null,
-                null
-            );
-        }
-
-        var outputRootPath = ResolveOutputRootPath(summary.outputPath);
-
-        return WriteForBuild(
-            summary.platform,
-            summary.outputPath,
-            webGLTemplate,
-            GCEditorPackageIdentity.Resolve(),
-            GCUnityBuildInfoBuildSummaryCapture.Capture(report, outputRootPath),
-            GCUnityBuildInfoWebGLSettingsCapture.Capture(),
-            Application.unityVersion,
-            GCUnityBuildInfoCaptureClock.CaptureUtcNow(),
-            outputRootPath
-        );
-    }
-
-    internal static GCUnityBuildInfoSidecarWriteResult WriteForBuild(
         BuildTarget buildTarget,
         string buildOutputPath,
         string webGLTemplate,
@@ -87,31 +47,6 @@ internal static class GCUnityBuildInfoSidecarWriter
         GCUnityBuildInfoWebGLSettings webGLSettings,
         string unityVersion,
         string capturedAtUtc
-    )
-    {
-        return WriteForBuild(
-            buildTarget,
-            buildOutputPath,
-            webGLTemplate,
-            packageIdentity,
-            buildSummary,
-            webGLSettings,
-            unityVersion,
-            capturedAtUtc,
-            null
-        );
-    }
-
-    private static GCUnityBuildInfoSidecarWriteResult WriteForBuild(
-        BuildTarget buildTarget,
-        string buildOutputPath,
-        string webGLTemplate,
-        GCPackageIdentity packageIdentity,
-        GCUnityBuildInfoBuildSummary buildSummary,
-        GCUnityBuildInfoWebGLSettings webGLSettings,
-        string unityVersion,
-        string capturedAtUtc,
-        string resolvedOutputRootPath
     )
     {
         if (buildTarget != BuildTarget.WebGL)
@@ -137,7 +72,7 @@ internal static class GCUnityBuildInfoSidecarWriter
             throw new ArgumentNullException(nameof(webGLSettings));
         }
 
-        var outputRootPath = resolvedOutputRootPath ?? ResolveOutputRootPath(buildOutputPath);
+        var outputRootPath = ResolveOutputRootPath(buildOutputPath);
         var sidecarPath = GCWebGLBuildSidecarOutputPaths.ResolveSidecarPath(outputRootPath, SidecarFileName);
 
         return WriteSidecarUnchecked(
@@ -224,7 +159,7 @@ internal static class GCUnityBuildInfoSidecarWriter
         );
 
         Directory.CreateDirectory(outputRootPath);
-        File.WriteAllText(sidecarPath, JsonUtility.ToJson(sidecar, true));
+        GCEditorAtomicFileWriter.WriteAllText(sidecarPath, JsonUtility.ToJson(sidecar, true));
 
         return new GCUnityBuildInfoSidecarWriteResult(
             GCUnityBuildInfoSidecarWriteStatus.Written,

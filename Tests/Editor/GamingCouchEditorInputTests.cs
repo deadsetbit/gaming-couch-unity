@@ -167,7 +167,7 @@ public sealed class GamingCouchEditorInputTests
                 GCActiveRunProjection.Create(CreatePlayOptions(123, GCPlayerType.player)).PlayerIndexMapping
             );
 
-            gamingCouch.ApplyDevAppInput(
+            gamingCouch.ApplyExternalPlayerInput(
                 0,
                 new GCControllerInputsData
                 {
@@ -175,7 +175,8 @@ public sealed class GamingCouchEditorInputTests
                     a1 = -0.5f,
                     b0 = 1,
                     b2 = 1,
-                }
+                },
+                "test_input"
             );
 
             var activeInputs = gamingCouch.GetInputsByPlayerIndex(0).RawData;
@@ -184,7 +185,7 @@ public sealed class GamingCouchEditorInputTests
             Assert.That(activeInputs.b0, Is.EqualTo(1));
             Assert.That(activeInputs.b2, Is.EqualTo(1));
 
-            gamingCouch.ApplyDevAppInput(0, new GCControllerInputsData());
+            gamingCouch.ApplyExternalPlayerInput(0, new GCControllerInputsData(), "test_input");
 
             var neutralInputs = gamingCouch.GetInputsByPlayerIndex(0).RawData;
             Assert.That(neutralInputs.a0, Is.EqualTo(0f));
