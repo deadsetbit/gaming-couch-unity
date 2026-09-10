@@ -97,8 +97,8 @@ public sealed class GamingCouchStartScreenEditorSmokeTests
         {
             EnsureSceneIsActive(launchScene);
             Assert.That(EditorSceneManager.SaveScene(launchScene, sceneAssetPath), Is.True);
-            CreateGamingCouch("GamingCouch A");
-            CreateGamingCouch("GamingCouch B");
+            GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch A");
+            GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch B");
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene(ExistingSceneBuildPath, false),
@@ -165,11 +165,6 @@ public sealed class GamingCouchStartScreenEditorSmokeTests
                 }
             }
         }
-    }
-
-    private static GamingCouch CreateGamingCouch(string name)
-    {
-        return GamingCouchEditorTestSupport.CreateGamingCouch(name);
     }
 
     private void EnsureTestAssetFolder()

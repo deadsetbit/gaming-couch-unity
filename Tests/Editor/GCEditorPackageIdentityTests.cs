@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using DSB.GC;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public sealed class GCEditorPackageIdentityTests
@@ -21,7 +20,7 @@ public sealed class GCEditorPackageIdentityTests
     [Test]
     public void ResolveUsesCurrentPackageManifestValuesAndRuntimeFields()
     {
-        var manifest = ReadPackageManifest(FindPackageRootPath());
+        var manifest = ReadPackageManifest(GamingCouchEditorTestSupport.FindPackageRootPath());
         var identity = GCEditorPackageIdentity.Resolve();
         var runtimeInfo = identity.ToRuntimeInfo();
         var json = JsonUtility.ToJson(identity);
@@ -152,17 +151,6 @@ public sealed class GCEditorPackageIdentityTests
     {
         var manifestPath = Path.Combine(packageRootPath, GCEditorPackageIdentity.PackageManifestFileName);
         return JsonUtility.FromJson<PackageManifest>(File.ReadAllText(manifestPath));
-    }
-
-    private static string FindPackageRootPath()
-    {
-        var packageInfo = PackageInfo.FindForAssembly(typeof(GCEditorPackageIdentity).Assembly);
-        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
-        {
-            return packageInfo.resolvedPath;
-        }
-
-        throw new InvalidOperationException("Could not resolve Gaming Couch package root.");
     }
 
     private static string CreateTemporaryPackageRoot(string packageManifestJson)

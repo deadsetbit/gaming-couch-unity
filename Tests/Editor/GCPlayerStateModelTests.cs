@@ -18,29 +18,22 @@ public sealed class GCPlayerStateModelTests
     {
         GCRuntimeMessageOutput.ResetForTests(() => 0);
         GCLog.logLevel = LogLevel.None;
-        ClearGamingCouchInstance();
+        GamingCouchEditorTestSupport.ClearGamingCouchInstance();
     }
 
     [TearDown]
     public void TearDown()
     {
-        foreach (var unityObject in objectsToDestroy)
-        {
-            if (unityObject)
-            {
-                UnityEngine.Object.DestroyImmediate(unityObject);
-            }
-        }
-
-        objectsToDestroy.Clear();
+        GamingCouchEditorTestSupport.DestroyTrackedObjects(objectsToDestroy);
+        GCRuntimeMessageOutput.ResetForTests(null);
         GCLog.logLevel = LogLevel.None;
-        ClearGamingCouchInstance();
+        GamingCouchEditorTestSupport.ClearGamingCouchInstance();
     }
 
     [Test]
     public void EliminationTransitionsExposeStateBooleansTimestampsAndEventArgs()
     {
-        var player = CreatePlayer(2);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
         var longRevokableReason = new string('e', 300);
         var events = new List<GCPlayerEliminationStateChangedEventArgs>();
         player.OnEliminationStateChanged += events.Add;
@@ -84,7 +77,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void FinishTransitionsExposeStateBooleansTimestampsAndEventArgs()
     {
-        var player = CreatePlayer(1);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1);
         var longRevokableReason = new string('f', 300);
         var events = new List<GCPlayerFinishStateChangedEventArgs>();
         player.OnFinishStateChanged += events.Add;
@@ -128,7 +121,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void RevokingRevokableStatesClearsOnlyTheMatchingState()
     {
-        var player = CreatePlayer(3);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 3);
         var eliminationEvents = new List<GCPlayerEliminationStateChangedEventArgs>();
         var finishEvents = new List<GCPlayerFinishStateChangedEventArgs>();
         player.OnEliminationStateChanged += eliminationEvents.Add;
@@ -177,7 +170,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void DuplicateAndInvalidStateTransitionsDiagnoseAndNoOp()
     {
-        var player = CreatePlayer(4);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 4);
         player.SetEliminatedPermanent("final");
         player.SetFinishedPermanent("final");
         var emittedDiagnostics = new List<string>();
@@ -264,7 +257,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void DuplicateRevokableStatesAndRevokeFromNoneDiagnoseAndNoOp()
     {
-        var player = CreatePlayer(8);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 8);
         var eliminationEventCount = 0;
         var finishEventCount = 0;
         player.OnEliminationStateChanged += args => eliminationEventCount++;
@@ -298,7 +291,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void FinishAndEliminationCanCoexist()
     {
-        var player = CreatePlayer(5);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 5);
 
         player.SetEliminatedPermanent("out");
         player.SetFinishedRevokable("checkpoint");
@@ -429,7 +422,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void StatusTransitionsPreservePublicCallbackAndNoOpBehavior()
     {
-        var player = CreatePlayer(9);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 9);
         var longReason = new string('r', 300);
         var events = new List<(GCPlayerStatus status, string statusText, string reason)>();
         var transitionEvents = new List<(
@@ -560,7 +553,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void ScalarTransitionsPreservePublicCallbacksNoOpsAndClampDiagnostics()
     {
-        var player = CreatePlayer(10);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 10);
         var longReason = new string('s', 300);
         var scoreEvents = new List<(int oldValue, int value, string reason)>();
         var livesEvents = new List<(int oldValue, int value, string reason)>();
@@ -614,7 +607,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void PublicPlayerMutatorsAndCallbackShapesStayGameFacingCompatible()
     {
-        var player = CreatePlayer(11);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 11);
         var eliminationEvents = new List<GCPlayerEliminationStateChangedEventArgs>();
         var finishEvents = new List<GCPlayerFinishStateChangedEventArgs>();
         var scoreEvents = new List<(int oldValue, int value, string reason)>();
@@ -830,7 +823,7 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void StoreBroadEliminationListsTrackNoneVersusAnyEliminatedState()
     {
-        var player = CreatePlayer(7);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 7);
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(player);
 
@@ -855,11 +848,11 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void StoreStateCollectionsExposePlayersPrefixAndBotNonBotSymmetry()
     {
-        var livePlayer = CreatePlayer(0);
-        var eliminatedBot = CreatePlayer(1, GCPlayerType.bot);
-        var eliminatedNonBot = CreatePlayer(2);
-        var finishedBot = CreatePlayer(3, GCPlayerType.bot);
-        var finishedNonBot = CreatePlayer(4);
+        var livePlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var eliminatedBot = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1, GCPlayerType.bot);
+        var eliminatedNonBot = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
+        var finishedBot = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 3, GCPlayerType.bot);
+        var finishedNonBot = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 4);
 
         eliminatedBot.SetEliminatedRevokable("temporary");
         eliminatedNonBot.SetEliminatedPermanent("final");
@@ -905,8 +898,8 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void StoreRejectsDuplicatePlayersAndPlayerIndices()
     {
-        var player = CreatePlayer(0);
-        var duplicateIndexPlayer = CreatePlayer(0);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var duplicateIndexPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
         var store = new GCPlayerStore<GCPlayer>();
         store.AddPlayer(player);
 
@@ -919,15 +912,15 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void BroadPlacementCriteriaTreatPermanentAndRevokableStatesAsCurrent()
     {
-        var eliminatedRevokable = CreatePlayer(0);
-        var eliminatedPermanent = CreatePlayer(1);
-        var livePlayer = CreatePlayer(2);
+        var eliminatedRevokable = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var eliminatedPermanent = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1);
+        var livePlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
         eliminatedRevokable.SetEliminatedRevokable("temporary");
         eliminatedPermanent.SetEliminatedPermanent("final");
 
-        var finishedRevokable = CreatePlayer(3);
-        var finishedPermanent = CreatePlayer(4);
-        var unfinishedPlayer = CreatePlayer(5);
+        var finishedRevokable = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 3);
+        var finishedPermanent = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 4);
+        var unfinishedPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 5);
         finishedRevokable.SetFinishedRevokable("checkpoint");
         finishedPermanent.SetFinishedPermanent("done");
 
@@ -943,8 +936,8 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void RuntimeStateSnapshotProjectsCanonicalDynamicPlayerState()
     {
-        var leadingPlayer = CreatePlayer(0);
-        var trailingPlayer = CreatePlayer(1, GCPlayerType.bot);
+        var leadingPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var trailingPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1, GCPlayerType.bot);
         leadingPlayer.SetScore(10, "score");
         leadingPlayer.SetLives(2, "lives");
         leadingPlayer.SetStatus(GCPlayerStatus.Success, "Finished lap", "status");
@@ -966,7 +959,7 @@ public sealed class GCPlayerStateModelTests
 
         Assert.That(payload.game.status, Is.EqualTo("playing"));
         Assert.That(payload.players, Has.Length.EqualTo(2));
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             payload.players[0],
             playerIndex: 0,
             score: 10,
@@ -978,7 +971,7 @@ public sealed class GCPlayerStateModelTests
             eliminationState: "None",
             finishState: "Revokable"
         );
-        AssertSnapshotPlayer(
+        GamingCouchEditorTestSupport.AssertSnapshotPlayer(
             payload.players[1],
             playerIndex: 1,
             score: 5,
@@ -1001,9 +994,9 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void RuntimeStateSnapshotRequiresCanonicalPlayerIndicesExactlyOnce()
     {
-        var player = CreatePlayer(0);
-        var duplicateIndexPlayer = CreatePlayer(0);
-        var outOfRangePlayer = CreatePlayer(2);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var duplicateIndexPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var outOfRangePlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
 
         Assert.Throws<ArgumentException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
             GCStatus.Playing,
@@ -1020,9 +1013,9 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void RuntimeStateSnapshotValidatesPlayerAndPlacementInputs()
     {
-        var firstPlayer = CreatePlayer(0);
-        var secondPlayer = CreatePlayer(1);
-        var outsidePlayer = CreatePlayer(2);
+        var firstPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var secondPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1);
+        var outsidePlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 2);
 
         Assert.Throws<ArgumentNullException>(() => GCRuntimeStateSnapshotBuilder.BuildPayload(
             GCStatus.Playing,
@@ -1064,8 +1057,8 @@ public sealed class GCPlayerStateModelTests
     [Test]
     public void RuntimeStateSnapshotUsesExactNormalizedGameStatusAndOneBasedPlacements()
     {
-        var firstPlayer = CreatePlayer(0);
-        var secondPlayer = CreatePlayer(1);
+        var firstPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 0);
+        var secondPlayer = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 1);
 
         Assert.That(
             GCRuntimeStateSnapshotBuilder.BuildPayload(GCStatus.PendingSetup, new[] { firstPlayer }, new[] { firstPlayer }).game.status,
@@ -1150,7 +1143,7 @@ public sealed class GCPlayerStateModelTests
     public void PostGameOverPlayerMutationsDiagnoseAndNoOp()
     {
         CreateGameOverGamingCouch();
-        var player = CreatePlayer(6);
+        var player = GamingCouchEditorTestSupport.CreatePlayer(objectsToDestroy, 6);
 
         LogAssert.Expect(LogType.Warning, "[GC] Diagnostic gc.state.post_game_over_mutation: Player mutation after game over was ignored.");
         player.SetEliminatedPermanent("too late");
@@ -1175,21 +1168,6 @@ public sealed class GCPlayerStateModelTests
         LogAssert.NoUnexpectedReceived();
     }
 
-    private GCPlayer CreatePlayer(int playerIndex, GCPlayerType playerType = GCPlayerType.player)
-    {
-        var gameObject = new GameObject("Player " + playerIndex);
-        objectsToDestroy.Add(gameObject);
-        var player = gameObject.AddComponent<GCPlayer>();
-        player._InternalGamingCouchSetup(new GCPlayerSetupOptions
-        {
-            playerIndex = playerIndex,
-            type = playerType,
-            colorEnum = GCPlayerColor.blue,
-            colorName = "blue",
-        });
-        return player;
-    }
-
     private static GCGame CreateGameWithPlacementCriteria(params GCPlacementSortCriteria[] criteria)
     {
         return new GCGame(null, new GCPlayerStore<GCPlayer>(), new GCGameSetupOptions
@@ -1209,13 +1187,6 @@ public sealed class GCPlayerStateModelTests
         typeof(GamingCouch)
             .GetField("status", BindingFlags.Instance | BindingFlags.NonPublic)
             .SetValue(gamingCouch, GCStatus.GameOver);
-    }
-
-    private static void ClearGamingCouchInstance()
-    {
-        typeof(GamingCouch)
-            .GetField("instance", BindingFlags.Static | BindingFlags.NonPublic)
-            .SetValue(null, null);
     }
 
     private static void AssertObsoleteError(MemberInfo member, string expectedGuidance)
@@ -1346,29 +1317,5 @@ public sealed class GCPlayerStateModelTests
         Assert.That(json, Does.Contain("\"mutator\":\"" + mutator + "\""));
         Assert.That(json, Does.Contain("\"oldState\":\"" + oldState + "\""));
         Assert.That(json, Does.Contain("\"requestedState\":\"" + requestedState + "\""));
-    }
-
-    private static void AssertSnapshotPlayer(
-        GCRuntimeStateSnapshotPlayer player,
-        int playerIndex,
-        int score,
-        int lives,
-        string status,
-        string statusText,
-        int meter,
-        int placement,
-        string eliminationState,
-        string finishState
-    )
-    {
-        Assert.That(player.playerIndex, Is.EqualTo(playerIndex));
-        Assert.That(player.score, Is.EqualTo(score));
-        Assert.That(player.lives, Is.EqualTo(lives));
-        Assert.That(player.status, Is.EqualTo(status));
-        Assert.That(player.statusText, Is.EqualTo(statusText));
-        Assert.That(player.meter, Is.EqualTo(meter));
-        Assert.That(player.placement, Is.EqualTo(placement));
-        Assert.That(player.eliminationState, Is.EqualTo(eliminationState));
-        Assert.That(player.finishState, Is.EqualTo(finishState));
     }
 }

@@ -105,11 +105,11 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void SceneWiringPreservesExistingListenerAndPlayerPrefabReferences()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var existingListener = new GameObject("Existing Listener");
         var replacementListener = new GameObject("Replacement Listener");
-        var existingPlayerPrefab = CreatePlayerPrefabObject("Existing Player Prefab");
-        var replacementPlayerPrefab = CreatePlayerPrefabObject("Replacement Player Prefab");
+        var existingPlayerPrefab = GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Existing Player Prefab");
+        var replacementPlayerPrefab = GamingCouchEditorTestSupport.CreatePlayerPrefabObject("Replacement Player Prefab");
 
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, existingListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
         Assert.That(GamingCouchSceneWiring.AssignPlayerPrefabIfMissing(gamingCouch, existingPlayerPrefab).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
@@ -126,9 +126,9 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void SceneWiringReplacesMissingListenerReference()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var deletedListener = CreateCompatibleListener("Deleted Game");
-        var replacementListener = CreateCompatibleListener("Replacement Game");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var deletedListener = GamingCouchEditorTestSupport.CreateCompatibleListener("Deleted Game");
+        var replacementListener = GamingCouchEditorTestSupport.CreateCompatibleListener("Replacement Game");
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, deletedListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
 
         UnityEngine.Object.DestroyImmediate(deletedListener);
@@ -317,7 +317,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupCreatesNamedGameObjectAndLeavesPlayerPrefabEmpty()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var context = CreateGameListenerTestContext();
 
         var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
@@ -335,8 +335,8 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupReplacesMissingListenerReference()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var deletedListener = CreateCompatibleListener("Deleted Game");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var deletedListener = GamingCouchEditorTestSupport.CreateCompatibleListener("Deleted Game");
         var context = CreateGameListenerTestContext();
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, deletedListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
 
@@ -358,7 +358,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupReusesNamedGameObjectBeforeAddingComponent()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var existingGame = new GameObject("Game");
         var context = CreateGameListenerTestContext();
 
@@ -373,8 +373,8 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupBlocksExistingGameComponentOnWrongObjectName()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var existingListener = CreateCompatibleListener("Existing Listener");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var existingListener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Listener");
         var context = CreateGameListenerTestContext();
 
         var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
@@ -390,8 +390,8 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupPreservesOccupiedListenerField()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
-        var existingListener = CreateCompatibleListener("Existing Listener");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var existingListener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Listener");
         var context = CreateGameListenerTestContext();
 
         Assert.That(GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, existingListener).status, Is.EqualTo(GamingCouchSceneWiringStatus.Succeeded));
@@ -408,7 +408,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void GameListenerSetupBlocksIncompatibleGameComponentType()
     {
-        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var context = CreateGameListenerTestContext(typeof(SetupOnlyGameScriptReceiver));
 
         var listenerResult = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListener(context, gamingCouch);
@@ -437,7 +437,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         // Deliberately not imported into the AssetDatabase: a folder whose name ends in ".cs" sends
         // Unity's script importer into a re-import loop. The generator blocks on a raw Directory.Exists
         // check, so importing the collision folder is unnecessary.
-        CreateGamingCouch("GamingCouch");
+        GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
 
         var result = GamingCouchActiveSceneSetup.EnsureActiveSceneGameListenerReference();
 
@@ -485,7 +485,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         // GCExampleGameFixture's note), so that branch and the post-reload dispatch stay manually
         // verified; the component add + player-prefab repoint are the swap behavior covered here.
         EnsureTestAssetFolder();
-        var gamingCouch = CreateGamingCouch("GamingCouch");
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var listener = new GameObject("Game");
         Assert.That(
             GamingCouchSceneWiring.AssignListenerIfMissing(gamingCouch, listener).status,
@@ -534,7 +534,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     {
         // A GamingCouch with no listener (or a listener without GCExampleTemplate) is not the
         // template scene "Wire example game" upgrades, so the guard rejects it.
-        CreateGamingCouch("GamingCouch");
+        GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
 
         var isTemplateScene = GamingCouchActiveSceneSetup.TryGetTemplateSceneGamingCouch(out var gamingCouch, out var message);
 
@@ -1059,7 +1059,7 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     [Test]
     public void WebGLDocsDoNotDuplicateManualBuildSettingLists()
     {
-        var packageRoot = GetPackageRootPath();
+        var packageRoot = GamingCouchEditorTestSupport.FindPackageRootPath();
         var documentPaths = new[]
         {
             "README.md",
@@ -1118,6 +1118,58 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
+    public void WebGLApplyReportsWarningWhenOnlyDeselectedRowsAreLeftUnapplied()
+    {
+        var sourceDirectory = CreateTemporaryWebGLTemplateSource("template source");
+        var destinationDirectory = CreateTemporaryPath("WebGLTemplateDestination");
+
+        try
+        {
+            ApplyReadyWebGLExportSettings();
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            var plan = GamingCouchWebGLExportSetup.CreateWebGLExportSetupPlan(
+                sourceDirectory,
+                destinationDirectory,
+                false
+            );
+
+            var result = GamingCouchWebGLExportSetup.ApplyWebGLExportSetupPlan(plan, new string[0]);
+
+            Assert.That(result.HasWarning, Is.True);
+            Assert.That(result.IsBlocked, Is.False);
+            Assert.That(result.message, Does.Contain("skipped rows were left unapplied"));
+            AssertHasEntryContaining(result.details, "Skipped WebGL compression: Gzip -> Disabled.");
+            Assert.That(PlayerSettings.WebGL.compressionFormat, Is.EqualTo(WebGLCompressionFormat.Gzip));
+            Assert.That(result.readiness.IsBlocked, Is.True);
+            Assert.That(result.readiness.releaseSettingsReady, Is.False);
+        }
+        finally
+        {
+            DeleteTemporaryPath(sourceDirectory);
+            DeleteTemporaryPath(destinationDirectory);
+        }
+    }
+
+    [Test]
+    public void WebGLApplySoftensOnlyDeselectedGapsBehindSatisfiedTemplatePrerequisites()
+    {
+        ApplyReadyWebGLExportSettings();
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        var readiness = CreateUnappliedSettingsWebGLExportReadiness(true);
+        var compressionRowIds = new[] { GamingCouchWebGLBuildSettingsProfiles.WebGLCompressionSettingId };
+
+        // Applying honors the selection, so a selected row that is still unapplied cannot be produced
+        // through ApplyWebGLExportSetupPlan; the softening predicate answers it directly.
+        Assert.That(RemainingGapsAreDeliberateSkips(readiness, new string[0]), Is.True);
+        Assert.That(RemainingGapsAreDeliberateSkips(readiness, compressionRowIds), Is.False);
+        Assert.That(RemainingGapsAreDeliberateSkips(readiness, null), Is.False);
+        Assert.That(
+            RemainingGapsAreDeliberateSkips(CreateUnappliedSettingsWebGLExportReadiness(false), new string[0]),
+            Is.False
+        );
+    }
+
+    [Test]
     public void WebGLReadinessWarnsButDoesNotBlockWhenActiveBuildTargetIsNotWebGL()
     {
         var destinationDirectory = CreateTemporaryInstalledWebGLTemplate("installed template");
@@ -1142,27 +1194,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         {
             DeleteTemporaryPath(destinationDirectory);
         }
-    }
-
-    private static GamingCouch CreateGamingCouch(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.SetActive(false);
-        return gameObject.AddComponent<GamingCouch>();
-    }
-
-    private static GameObject CreateCompatibleListener(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.AddComponent<CompatibleGameScriptReceiver>();
-        return gameObject;
-    }
-
-    private static GameObject CreatePlayerPrefabObject(string name)
-    {
-        var gameObject = new GameObject(name);
-        gameObject.AddComponent<GCPlayer>();
-        return gameObject;
     }
 
     private static GameObject CreatePlayerPrefabAsset(string assetPath, Type playerType)
@@ -1376,6 +1407,38 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         );
     }
 
+    private static GCWebGLExportReadiness CreateUnappliedSettingsWebGLExportReadiness(bool templateSelected)
+    {
+        return new GCWebGLExportReadiness(
+            GCWebGLExportSetupStatus.Blocked,
+            true,
+            true,
+            templateSelected,
+            false,
+            true,
+            true,
+            "Gaming Couch web export settings are incomplete.",
+            Array.Empty<string>()
+        );
+    }
+
+    private static bool RemainingGapsAreDeliberateSkips(
+        GCWebGLExportReadiness readiness,
+        string[] selectedSkippableRowIds
+    )
+    {
+        var predicate = typeof(GamingCouchWebGLExportSetup).GetMethod(
+            "RemainingGapsAreDeliberateSkips",
+            BindingFlags.Static | BindingFlags.NonPublic
+        );
+        Assert.That(predicate, Is.Not.Null);
+        return (bool)predicate.Invoke(null, new object[]
+        {
+            readiness,
+            GamingCouchWebGLBuildSettingsProfiles.CreateSelectedIdSet(selectedSkippableRowIds),
+        });
+    }
+
     private static GCWebGLExportReadiness CreateReadyWebGLExportReadiness()
     {
         return new GCWebGLExportReadiness(
@@ -1405,19 +1468,6 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "index.html"), indexContent);
         return destinationDirectory;
-    }
-
-    private static string GetPackageRootPath()
-    {
-        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(
-            typeof(GamingCouchWebGLExportSetup).Assembly
-        );
-        if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
-        {
-            return packageInfo.resolvedPath;
-        }
-
-        return Directory.GetCurrentDirectory();
     }
 
     private string CreateTemporaryPath(string prefix)
