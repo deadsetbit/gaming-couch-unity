@@ -292,6 +292,7 @@ internal sealed class GCExampleAssetSetupContinuationContext
 internal enum GCWireExampleGameStatus
 {
     Wired,
+    Cancelled,
     Blocked,
 }
 
@@ -322,6 +323,7 @@ internal sealed class GCWireExampleGameResult
     }
 
     internal bool IsWired { get { return status == GCWireExampleGameStatus.Wired; } }
+    internal bool IsCancelled { get { return status == GCWireExampleGameStatus.Cancelled; } }
     internal bool IsBlocked { get { return status == GCWireExampleGameStatus.Blocked; } }
     internal bool IsPendingCompilation { get { return isPendingCompilation; } }
 }
@@ -368,6 +370,7 @@ internal static class GamingCouchActiveSceneSetup
     private const string ActiveSceneGameListenerObjectName = ListenerObjectName;
     private const string CreateGameListenerUndoName = "Create Example Game Listener";
     private const string AddGameListenerComponentUndoName = "Add Example Game Listener";
+    private const string WireExampleGameUndoName = "Wire Example Game";
     private const string PlayerVisualName = "Visual";
     private const string ExampleTemplateHeader =
         "/*\n" +
@@ -1583,6 +1586,36 @@ internal static class GamingCouchActiveSceneSetup
         );
     }
 
+    // Recursive form of EnsureProjectFolder for callers that have only a path: walks the segments
+    // top-down so every missing level is created by the single-segment helper below, which is the one
+    // that rejects a non-folder asset, a file, or a uniquified sibling Unity created instead.
+    internal static bool EnsureProjectFolderRecursive(string assetPath, List<string> blockedReasons)
+    {
+        if (string.IsNullOrEmpty(assetPath))
+        {
+            blockedReasons.Add("Cannot create a folder without an asset path.");
+            return false;
+        }
+
+        var segments = assetPath.Split('/');
+        var currentAssetPath = segments[0];
+        for (var index = 1; index < segments.Length; index++)
+        {
+            var parentAssetPath = currentAssetPath;
+            currentAssetPath = parentAssetPath + "/" + segments[index];
+            EnsureProjectFolder(currentAssetPath, parentAssetPath, segments[index], blockedReasons);
+
+            // Stop at the first level that could not be created; carrying on would only report every
+            // deeper level as "parent folder is missing".
+            if (!AssetDatabase.IsValidFolder(currentAssetPath))
+            {
+                return false;
+            }
+        }
+
+        return AssetDatabase.IsValidFolder(currentAssetPath);
+    }
+
     private static void EnsureProjectFolder(
         string assetPath,
         string parentFolderAssetPath,
@@ -1812,6 +1845,7 @@ internal static class GamingCouchActiveSceneSetup
         {
             try
             {
+                Undo.IncrementCurrentGroup();
                 Undo.SetCurrentGroupName(AddGameListenerComponentUndoName);
                 var listenerComponent = Undo.AddComponent(existingObject, context.gameType);
                 if (listenerComponent == null)
@@ -1836,6 +1870,7 @@ internal static class GamingCouchActiveSceneSetup
         GameObject listenerObject = null;
         try
         {
+            Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(CreateGameListenerUndoName);
             listenerObject = new GameObject(context.listenerObjectName);
             if (listenerObject.scene != scene)
@@ -2141,7 +2176,15 @@ internal static class GamingCouchActiveSceneSetup
 
         // Clear any folder sitting where a generated game/player asset must go (moved to Trash,
         // recoverable), mirroring the reset action; existing script/prefab files are still reused,
-        // never overwritten.
+        // never overwritten. Such a folder can be full of the user's own work, so it is confirmed
+        // first, exactly as the reset flow confirms it.
+        var blockingFolders = FindBlockingExampleAssetFolders();
+        if (ShouldConfirmBlockingFolderRemoval(blockingFolders, Application.isBatchMode) &&
+            !ConfirmBlockingFolderRemoval(blockingFolders))
+        {
+            return WireExampleGameCancelled();
+        }
+
         var cleanup = RemoveBlockingExampleAssetFolders();
         if (cleanup.removedAssetPaths.Length > 0)
         {
@@ -2199,6 +2242,38 @@ internal static class GamingCouchActiveSceneSetup
         return new GCWireExampleGameResult(GCWireExampleGameStatus.Blocked, false, false, message, details);
     }
 
+    private static GCWireExampleGameResult WireExampleGameCancelled()
+    {
+        return new GCWireExampleGameResult(
+            GCWireExampleGameStatus.Cancelled,
+            false,
+            false,
+            "Wire example game was cancelled.",
+            null
+        );
+    }
+
+    // Batch mode has no user to ask, so automation proceeds unprompted — the same bypass the reset
+    // flow uses. internal so the EditMode suite can pin that bypass without raising a dialog.
+    internal static bool ShouldConfirmBlockingFolderRemoval(string[] blockingFolders, bool isBatchMode)
+    {
+        return !isBatchMode && blockingFolders != null && blockingFolders.Length > 0;
+    }
+
+    private static bool ConfirmBlockingFolderRemoval(string[] blockingFolders)
+    {
+        return EditorUtility.DisplayDialog(
+            "Wire Example Game",
+            "Wiring the example game needs the generated example asset paths under " +
+                ExampleFolderAssetPath + " free.\n\n" +
+                GamingCouchExampleSceneCreation.DescribeResetActions(new string[0], blockingFolders) +
+                "\n\nRemoved items are moved to the Trash (recoverable). Existing example scripts " +
+                "and the player prefab are reused, never overwritten.",
+            "Move to Trash and Wire",
+            "Cancel"
+        );
+    }
+
     // Template-first guard: the open scene must have exactly one GamingCouch whose listener is a
     // "Game" object carrying a GCExampleTemplate component.
     internal static bool TryGetTemplateSceneGamingCouch(out GamingCouch gamingCouch, out string message)
@@ -2243,33 +2318,48 @@ internal static class GamingCouchActiveSceneSetup
             return;
         }
 
-        var gamingCouch = GetGamingCouchForScriptsReadyAction(context.action);
-        if (gamingCouch == null)
+        // The swap registers several undo entries (template-component destroy, game-component add,
+        // the player-prefab record), so collapse them into one group: a single Ctrl+Z must revert the
+        // whole upgrade, including the early-return branches. The group has to open here rather than
+        // in WireExampleGame because this handler runs from a post-domain-reload dispatch, by which
+        // time any group the entry point opened is gone.
+        Undo.IncrementCurrentGroup();
+        Undo.SetCurrentGroupName(WireExampleGameUndoName);
+        var undoGroup = Undo.GetCurrentGroup();
+        try
         {
-            return;
-        }
+            var gamingCouch = GetGamingCouchForScriptsReadyAction(context.action);
+            if (gamingCouch == null)
+            {
+                return;
+            }
 
-        if (!SwapActiveSceneListenerComponentToExampleGame(gamingCouch, context, out var swapMessage))
+            if (!SwapActiveSceneListenerComponentToExampleGame(gamingCouch, context, out var swapMessage))
+            {
+                Debug.LogWarning(swapMessage);
+                return;
+            }
+
+            var prefabResult = EnsureExamplePlayerPrefab(context);
+            if (prefabResult.IsBlocked)
+            {
+                Debug.LogWarning(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
+                return;
+            }
+
+            var replaceResult = GamingCouchSceneWiring.ReplacePlayerPrefab(gamingCouch, prefabResult.prefab);
+            if (replaceResult.IsBlocked)
+            {
+                Debug.LogWarning(replaceResult.message);
+                return;
+            }
+
+            Debug.Log(swapMessage + " " + prefabResult.message + " " + replaceResult.message);
+        }
+        finally
         {
-            Debug.LogWarning(swapMessage);
-            return;
+            Undo.CollapseUndoOperations(undoGroup);
         }
-
-        var prefabResult = EnsureExamplePlayerPrefab(context);
-        if (prefabResult.IsBlocked)
-        {
-            Debug.LogWarning(prefabResult.message + " " + string.Join(" ", prefabResult.blockedReasons));
-            return;
-        }
-
-        var replaceResult = GamingCouchSceneWiring.ReplacePlayerPrefab(gamingCouch, prefabResult.prefab);
-        if (replaceResult.IsBlocked)
-        {
-            Debug.LogWarning(replaceResult.message);
-            return;
-        }
-
-        Debug.Log(swapMessage + " " + prefabResult.message + " " + replaceResult.message);
     }
 
     // Removes the GCExampleTemplate component from the wired "Game" object and adds GCExampleGame in
@@ -2463,10 +2553,33 @@ internal static class GamingCouchActiveSceneSetup
     {
         if (spec.playerScriptAssetPath == null)
         {
-            return FindTypeByName(spec.playerTypeName, typeof(GCPlayer));
+            return ResolveStockPlayerType(spec.playerTypeName);
         }
 
         return FindScriptType(spec.playerScriptAssetPath, spec.playerTypeName, typeof(GCPlayer));
+    }
+
+    // The pending-setup poller resolves this every editor tick, and FindTypeByName sweeps GetTypes()
+    // over every loaded assembly, so a hit is cached. Only a hit: a tick during compilation
+    // legitimately sees no type and must stay free to find one later. A hit cannot go stale — the
+    // stock player lives in the package's own runtime assembly, loaded before any editor code runs
+    // and unchangeable within a domain, and this static dies with the domain anyway.
+    private static Type cachedStockPlayerType;
+
+    private static Type ResolveStockPlayerType(string typeName)
+    {
+        if (cachedStockPlayerType != null && cachedStockPlayerType.Name == typeName)
+        {
+            return cachedStockPlayerType;
+        }
+
+        var stockPlayerType = FindTypeByName(typeName, typeof(GCPlayer));
+        if (stockPlayerType != null)
+        {
+            cachedStockPlayerType = stockPlayerType;
+        }
+
+        return stockPlayerType;
     }
 
     private static void DispatchScriptsReady(GCExampleAssetSetupContinuationContext context)

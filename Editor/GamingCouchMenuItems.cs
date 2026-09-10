@@ -35,11 +35,15 @@ public class GamingCouchMenuItems
   [MenuItem("GamingCouch/Wire Example Game", false, GamingCouchMenuPriorities.WireExampleGame)]
   static void WireExampleGame()
   {
+    var result = GamingCouchActiveSceneSetup.WireExampleGame();
+    if (result.IsCancelled)
+    {
+      return;
+    }
+
     var window = GamingCouchStartScreenWindow.Open();
     window.ApplyExternalSetupActionResult(
-      GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
-        GamingCouchActiveSceneSetup.WireExampleGame()
-      )
+      GamingCouchStartScreenSetupActions.FromWireExampleGameResult(result)
     );
   }
 

@@ -896,11 +896,13 @@ internal sealed class GamingCouchStartScreenWindow : EditorWindow
 
     private void RunWireExampleGame()
     {
-        ApplySetupActionResult(
-            GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
-                GamingCouchActiveSceneSetup.WireExampleGame()
-            )
-        );
+        var result = GamingCouchActiveSceneSetup.WireExampleGame();
+        if (result.IsCancelled)
+        {
+            return;
+        }
+
+        ApplySetupActionResult(GamingCouchStartScreenSetupActions.FromWireExampleGameResult(result));
     }
 
     internal void ApplyExternalSetupActionResult(GCStartScreenSetupActionResult result)

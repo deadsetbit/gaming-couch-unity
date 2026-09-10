@@ -338,6 +338,19 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         );
         Assert.That(wired.messageType, Is.EqualTo(MessageType.Info));
 
+        // Declining the "move blocking folders to the Trash" confirmation is not a failure, so it
+        // maps to Warning like a cancelled reset, never to Error.
+        var cancelled = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(
+            new GCWireExampleGameResult(
+                GCWireExampleGameStatus.Cancelled,
+                false,
+                false,
+                "Wire example game was cancelled.",
+                null
+            )
+        );
+        Assert.That(cancelled.messageType, Is.EqualTo(MessageType.Warning));
+
         var nullResult = GamingCouchStartScreenSetupActions.FromWireExampleGameResult(null);
         Assert.That(nullResult.messageType, Is.EqualTo(MessageType.Error));
     }

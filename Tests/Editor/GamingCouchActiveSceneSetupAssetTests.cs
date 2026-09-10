@@ -585,6 +585,72 @@ public sealed class GamingCouchActiveSceneSetupAssetTests
     }
 
     [Test]
+    public void BlockingFolderRemovalConfirmationIsSkippedInBatchMode()
+    {
+        // Wire example game confirms before moving a blocking folder to the Trash, because the folder
+        // may hold the user's own work. A batch run has nobody to answer the dialog, so it must
+        // proceed unprompted. Only the gate is exercised: raising the real dialog would hang an
+        // interactive test run.
+        var blockingFolders = new[] { GamingCouchActiveSceneSetup.ActiveSceneGameScriptAssetPath };
+
+        Assert.That(
+            GamingCouchActiveSceneSetup.ShouldConfirmBlockingFolderRemoval(blockingFolders, true),
+            Is.False,
+            "batch mode must never raise the confirmation dialog"
+        );
+        Assert.That(
+            GamingCouchActiveSceneSetup.ShouldConfirmBlockingFolderRemoval(blockingFolders, false),
+            Is.True,
+            "an interactive run must confirm before trashing a folder"
+        );
+        Assert.That(
+            GamingCouchActiveSceneSetup.ShouldConfirmBlockingFolderRemoval(new string[0], false),
+            Is.False,
+            "nothing to remove means nothing to confirm"
+        );
+    }
+
+    [Test]
+    public void EnsureProjectFolderRecursiveCreatesEveryMissingLevel()
+    {
+        var nestedFolderAssetPath = testFolderAssetPath + "/Nested/Deeper";
+        var blockedReasons = new List<string>();
+
+        Assert.That(
+            GamingCouchActiveSceneSetup.EnsureProjectFolderRecursive(nestedFolderAssetPath, blockedReasons),
+            Is.True
+        );
+
+        Assert.That(blockedReasons, Is.Empty);
+        Assert.That(AssetDatabase.IsValidFolder(testFolderAssetPath), Is.True);
+        Assert.That(AssetDatabase.IsValidFolder(testFolderAssetPath + "/Nested"), Is.True);
+        Assert.That(AssetDatabase.IsValidFolder(nestedFolderAssetPath), Is.True);
+    }
+
+    [Test]
+    public void EnsureProjectFolderRecursiveRefusesToBuildAPathThroughAFile()
+    {
+        // The recursive wrapper delegates each level to the checked single-segment helper, so an
+        // existing file where a folder must go is reported instead of silently worked around.
+        EnsureTestAssetFolder();
+        var fileAssetPath = testFolderAssetPath + "/Nested";
+        File.WriteAllText(AssetPathToFullPath(fileAssetPath), "not a folder");
+        AssetDatabase.ImportAsset(fileAssetPath, ImportAssetOptions.ForceSynchronousImport);
+        var blockedReasons = new List<string>();
+
+        Assert.That(
+            GamingCouchActiveSceneSetup.EnsureProjectFolderRecursive(
+                fileAssetPath + "/Deeper",
+                blockedReasons
+            ),
+            Is.False
+        );
+
+        AssertHasEntryContaining(blockedReasons, "Cannot create folder " + fileAssetPath);
+        Assert.That(AssetDatabase.IsValidFolder(fileAssetPath), Is.False);
+    }
+
+    [Test]
     public void GeneratedAssetCreationReusesExistingFileWithoutOverwriting()
     {
         EnsureTestAssetFolder();
