@@ -108,7 +108,7 @@ fields at L512–529, `CreateFromJSON` at L534–572). Parsing goes through the 
 | Field | Type | Notes |
 |---|---|---|
 | `playerIndex` | int | Zero-based, dense, run-scoped participant index (the only public player identity) |
-| `playerSeed` | int | Deterministic per-player seed |
+| `playerSeed` | int | Deterministic per-player seed, `1`–`999999` — the same range as `seed`. The platform generates it inside that range (SDK `UnityPlayerIdentityMap.createUnityPlayerSeed`, `(fnv1a32(name) % 999999) + 1`); an out-of-range value is normalized rather than rejected (`GCPlayerSeed.NormalizeOrFallback`, `Runtime/GCPlayerSeed.cs:16-29`) |
 | `type` | string | Parsed to `GCPlayerType` (`player`, `bot`; the enum also has a default `unset`, `GamingCouch.cs:29`) |
 | `color` | string | Parsed to `GCPlayerColor` (`blue red green yellow purple pink cyan brown`, `GamingCouch.cs:27`) |
 
@@ -134,6 +134,17 @@ fields at L512–529, `CreateFromJSON` at L534–572). Parsing goes through the 
 
 > **Cross-repo note (client/SDK):** `platformData` arrives **inside** this `GamingCouchPlay` payload,
 > not as a separate message.
+
+> **Known cross-repo discrepancy — `seed` ranges disagree.** Hosted play generates and validates both
+> `seed` and `playerSeed` inside `1`–`999999` (SDK `ACTIVE_RUN_SEED` in
+> `sdk/src/plugins/platform/unity/adapters/UnityPlayerIdentityMap.ts`), and this package rejects a
+> `gc.dev.json` seed outside that range as a validation error (`GCDevJsonFile.MaxSeed`; see the
+> [DevApp local-play contract §1](devapp-local-play-contract.md#1-gcdevjson-schema)). The DevApp's
+> run-configuration UI, however, accepts and randomizes a fixed **round** seed anywhere in
+> `1`–`Number.MAX_SAFE_INTEGER` (`RUN_CONFIGURATION_MAX_FIXED_SEED` in
+> `devspace/devapp/src/frontend/ui/domain/runConfiguration/runConfiguration.ts`), so a DevApp-chosen
+> seed above `999999` is written to `gc.dev.json` and then refused by this package. This is a `seed`
+> mismatch only — `playerSeed` is unaffected — and the fix belongs in the DevApp, not here.
 
 ---
 
@@ -182,7 +193,7 @@ data is missing or invalid, Unity substitutes a read-only fallback view (ADR
 | Field | Type | Notes |
 |---|---|---|
 | `fileName` | string | `"gc.platform.json"` |
-| `platformDataVersion` | int | `-1` (`PlatformDataVersionUnavailable`) when unavailable — a version concept **distinct** from `gameProtocolVersion` and the sidecar `schemaVersion` |
+| `platformDataVersion` | int | The version declared by `gc.platform.json`, including on a fallback view when that field parsed; `-1` (`PlatformDataVersionUnavailable`) only when no version could be read at all. A version concept **distinct** from `gameProtocolVersion` and the sidecar `schemaVersion` |
 | `path` | string | Source path (may be null) |
 | `message` | string | Fallback/validation message (may be null) |
 | `fieldName` | string | Offending field for invalid data (may be null) |
@@ -208,8 +219,16 @@ data is missing or invalid, Unity substitutes a read-only fallback view (ADR
 
 **Fallback view values** (`CreateFallbackMissing` / `GCPlatformRuntimeEntry.Fallback`, L83-112, L302-311):
 `validationState` `missing`, `fallbackActive` `true`, `game`/`selectedEntryKey` `notdefined`, one entry
-`notdefined` with `minPlayers 1 / maxPlayers 8 / botSupport true`, `source.platformDataVersion = -1`, and
-default player colors.
+`notdefined` with `minPlayers 1 / maxPlayers 8 / botSupport true`, and default player colors.
+
+`source.platformDataVersion` is **not** forced to `-1` on a fallback view: when the file parsed far
+enough to read a `platformDataVersion`, the fallback reports that declared version alongside
+`fallbackActive: true` and the `invalid`/`missing` state (`BuildFallback`,
+`Editor/GCPlatformDataFile.cs`); `-1` is reserved for the case where no version could be read — a
+missing file, or a file that failed before that field. `fallbackActive`/`validationState` already say
+"do not trust this data", so the declared version is the more useful debugging signal, where a magic
+`-1` that no consumer reads would only invite mistaking the sentinel for a real version. Runtime
+normalization only floors the value at `-1` (`GCPlatformRuntimeSource.NormalizeForRuntime`, L220-227).
 
 ```json
 {
@@ -402,22 +421,31 @@ L987-1003); duplicates throw.
 
 ## 10. jslib bridge — `window.gamingCouch*` callbacks
 
-Unity → host callbacks are declared in `Plugins/GamingCouch.jslib` (L1-94). All eight:
+Unity → host callbacks are declared in `Plugins/GamingCouch.jslib` (L1-114). All eight:
 
 | Callback | Payload | Fired when | Provenance |
 |---|---|---|---|
-| `gamingCouchInstanceStarted` | *(none)* | Boot startup signal | jslib L2; `GamingCouch.cs:223` |
+| `gamingCouchInstanceStarted` | *(none)* | Boot startup signal | jslib L2; `GamingCouch.cs:237` |
 | `gamingCouchRegisterRuntimeInfo` | runtime-info object | Baked identity forwarded before splash | jslib L10 |
 | `gamingCouchRegisterUnityBuildInfo` | build-info object | Optional baked build diagnostics | jslib L28 |
 | `gamingCouchSetupDone` | *(none)* | Game called `SetupDone()` | jslib L49 |
 | `gamingCouchSetupHud` | HUD config object | HUD configured for hosted rendering | jslib L57; `GCHud.cs:178` |
-| `gamingCouchSendProjectInfo` | project name string | Sent during play | jslib L67; `GamingCouch.cs:396` |
-| `gamingCouchRuntimeMessages` | `runtime_messages` envelope (§7) | Batch flush | jslib L77 |
-| `gamingCouchScreenSpace` | `screen_space` envelope (§9) | Per frame | jslib L86 |
+| `gamingCouchSendProjectInfo` | project name string | Boot, right after `instanceStarted` — **the host does not implement this handler; the call is inert** (see below) | jslib L74; `GamingCouch.cs:415` |
+| `gamingCouchRuntimeMessages` | `runtime_messages` envelope (§7) | Batch flush | jslib L83 |
+| `gamingCouchScreenSpace` | `screen_space` envelope (§9) | Per frame | jslib L99 |
 
-`registerUnityBuildInfo`, `runtimeMessages`, and `screenSpace` are no-ops if the host has not defined
-the handler (silent early-return); the others log a console error. See ADR
+`registerUnityBuildInfo`, `sendProjectInfo`, `runtimeMessages`, and `screenSpace` are no-ops if the
+host has not defined the handler (silent early-return); the others log a console error. See ADR
 [0009](../adr/0009-two-sidecar-identity-model.md) for the identity callbacks.
+
+`gamingCouchSendProjectInfo` currently has **no receiver anywhere in the platform** — no client, SDK,
+backend, or DevApp code defines `window.gamingCouchSendProjectInfo`. Every hosted player build still
+makes the call at boot (`Application.productName`, non-editor branch of `Start`), where it takes the
+silent early-return above, so the notification is fire-and-forget with nothing depending on it. It is
+kept as a declared surface a future host may pick up; nothing in the package changes behavior either
+way, and it is not a `gameProtocolVersion` concern (ADR
+[0008](../adr/0008-game-protocol-version-stays-1.md) reserves a bump for contract changes games and
+SDK adapters cannot translate).
 
 ---
 

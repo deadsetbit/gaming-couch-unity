@@ -73,7 +73,6 @@ mergeInto(LibraryManager.library, {
 
   GamingCouchSendProjectInfo: function (projectNameString) {
     if (!window.gamingCouchSendProjectInfo) {
-      console.error("gamingCouchSendProjectInfo is not defined");
       return;
     }
 

@@ -153,7 +153,10 @@ Fallback values (`Runtime/GCPlayOptions.cs:83-112, 302-311`):
 - `validationState` `missing` (or `invalid`), `fallbackActive: true`.
 - `game`/`selectedEntryKey` `"notdefined"`; `platform.id` `"unity"`.
 - One entry `notdefined` with `minPlayers 1 / maxPlayers 8 / botSupport true`.
-- `source.platformDataVersion = -1` (unavailable), default player colors.
+- `source.platformDataVersion`: the version the file declared, when `platformDataVersion` itself
+  parsed (`BuildFallback`, `Editor/GCPlatformDataFile.cs`) — so an `invalid` fallback typically
+  carries a real version; `-1` (unavailable) only when no version could be read at all, as with a
+  missing file. Default player colors.
 
 Unity emits `gc.metadata.*` diagnostics for the fallback and never writes or repairs
 `gc.platform.json`.
@@ -255,7 +258,7 @@ Run/pause/seat state (`GCDevAppRuntimeMessages.cs:40-73`, type `RuntimeSnapshotM
 |---|---|---|
 | `type` | string | `"runtime_snapshot"` |
 | `timestamp` | long | |
-| `runId` | string | Null when not running |
+| `runId` | string | Minted once per run, including a restart, and stable across socket reconnects. Null until the first `Play()` — the runtime is still visible to the DevApp in that window, which treats a missing run id as not-yet-eligible rather than an error. |
 | `isRunning` | bool | |
 | `capabilities` | object | `{ restart, pause, timescale }` all `true` (`:156-162, 80-88`) |
 | `seats` | array | Empty when not running |
