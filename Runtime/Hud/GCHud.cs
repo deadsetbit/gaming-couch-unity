@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using DSB.GC.RuntimeMessages;
 using UnityEngine;
 
 namespace DSB.GC.Hud
@@ -62,16 +63,40 @@ namespace DSB.GC.Hud
     public struct GCPlayersHudDataPlayer
     {
         /// <summary>
-        /// Gaming Couch player ID.
+        /// Player index.
         /// </summary>
-        public int playerId;
+        public int playerIndex;
         /// <summary>
-        /// If the player is out of the game, the HUD can be set to display this player as eliminated.
+        /// Current runtime score for the player.
+        /// </summary>
+        public int score;
+        /// <summary>
+        /// Current runtime lives for the player.
+        /// </summary>
+        public int lives;
+        /// <summary>
+        /// Current runtime status enum name for the player.
+        /// </summary>
+        public string status;
+        /// <summary>
+        /// Current runtime status text for the player.
+        /// </summary>
+        public string statusText;
+        /// <summary>
+        /// Current runtime elimination state enum name for the player.
+        /// </summary>
+        public string eliminationState;
+        /// <summary>
+        /// Current runtime finish state enum name for the player.
+        /// </summary>
+        public string finishState;
+        /// <summary>
+        /// Compatibility projection for older HUD receivers. Prefer eliminationState.
         /// </summary>
         public bool eliminated;
         /// <summary>
-        /// The placement of the player. 0 is first place, 1 is second place, etc.
-        /// Players in the HUD will be sorted based on this value to indicate placements at given time. (HUD sorting not yet implemented)
+        /// One-based runtime placement for the player. 1 is first place, 2 is second place, etc.
+        /// Players in the HUD will be sorted based on this value to indicate placements at given time.
         /// </summary>
         public int placement;
         /// <summary>
@@ -98,9 +123,9 @@ namespace DSB.GC.Hud
     {
         public string type;
         /// <summary>
-        /// The player ID.
+        /// Player index.
         /// </summary>
-        public int playerId;
+        public int playerIndex;
         /// <summary>
         /// The x position of the point in percentages eg. 0-1. Values outside this range are considered off screen but not disregarded.
         /// </summary>
@@ -128,12 +153,6 @@ namespace DSB.GC.Hud
     {
         [DllImport("__Internal")]
         private static extern void GamingCouchSetupHud(string hudConfigJson);
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchUpdatePlayersHud(string playersHudDataJson);
-
-        [DllImport("__Internal")]
-        private static extern void GamingCouchUpdateScreenPointHud(string playersHudDataJson);
 
         private Camera camera = null;
         public Camera Camera
@@ -163,43 +182,99 @@ namespace DSB.GC.Hud
         /// <summary>
         /// Update the players in the HUD. Call Setup first.
         /// </summary>
+        [Obsolete("GCHud.UpdatePlayers has been removed from the game-facing runtime contract. Use GCPlayer score/lives/status/meter APIs; the hosted HUD consumes runtime_messages state snapshots.", true)]
         public void UpdatePlayers(GCPlayersHudData playersHudData)
         {
-            string playersHudDataJson = JsonUtility.ToJson(playersHudData);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdatePlayersHud(playersHudDataJson);
-#endif
+            throw new InvalidOperationException("GCHud.UpdatePlayers has been removed. Use GCPlayer state APIs.");
         }
 
+        [Obsolete("GCHud.UpdateScreenPointHud has been removed from the game-facing runtime contract. Use QueuePointData for screen-space HUD anchors.", true)]
         public void UpdateScreenPointHud(GCScreenPointData pointData)
         {
-            string screenPointHudDataJson = JsonUtility.ToJson(pointData);
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchUpdateScreenPointHud(screenPointHudDataJson);
-#endif
+            throw new InvalidOperationException("GCHud.UpdateScreenPointHud has been removed. Use QueuePointData.");
         }
 
-        private List<GCScreenPointDataPoint> pointDataQueue = new List<GCScreenPointDataPoint>();
+        private List<GCRuntimeScreenSpaceAnchor> screenSpaceQueue = new List<GCRuntimeScreenSpaceAnchor>();
 
         public void QueuePointData(GCScreenPointDataPoint pointData)
         {
-            pointDataQueue.Add(pointData);
+            if (!GCRuntimeOutput.IsScreenSpaceEnabled)
+            {
+                return;
+            }
+
+            QueueScreenSpaceAnchor(pointData);
         }
 
         public void HandleQueue()
         {
-            var pointData = new GCScreenPointData
+            if (screenSpaceQueue.Count == 0)
             {
-                points = pointDataQueue.ToArray()
-            };
-            UpdateScreenPointHud(pointData);
-            pointDataQueue.Clear();
+                return;
+            }
+
+            try
+            {
+                GCRuntimeOutput.EmitScreenSpace(Time.frameCount, screenSpaceQueue);
+            }
+            catch (Exception exception)
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.MalformedScreenSpace,
+                    GCDiagnosticSeverity.Warning,
+                    GCDiagnosticSourceAreas.ScreenSpace,
+                    "Malformed screen-space output was rejected.",
+                    new GCDiagnosticContext().AddDetail("reason", exception.Message)
+                );
+            }
+            finally
+            {
+                screenSpaceQueue.Clear();
+            }
         }
 
         public void SetCamera(Camera camera)
         {
             this.camera = camera;
+        }
+
+        private void QueueScreenSpaceAnchor(GCScreenPointDataPoint pointData)
+        {
+            if (!GCRuntimeScreenSpaceAnchorTypes.IsKnown(pointData.type))
+            {
+                return;
+            }
+
+            var gamingCouch = GamingCouch.Instance;
+            if (gamingCouch != null &&
+                gamingCouch.Status == GCStatus.Playing &&
+                !gamingCouch.TryValidatePlayerIndex(pointData.playerIndex, "screen_space", out _))
+            {
+                return;
+            }
+
+            try
+            {
+                screenSpaceQueue.Add(new GCRuntimeScreenSpaceAnchor(
+                    pointData.type,
+                    pointData.playerIndex,
+                    pointData.x,
+                    pointData.y,
+                    pointData.isOffScreen
+                ));
+            }
+            catch (Exception exception)
+            {
+                GCDiagnostics.Emit(
+                    GCDiagnosticCodes.MalformedScreenSpace,
+                    GCDiagnosticSeverity.Warning,
+                    GCDiagnosticSourceAreas.ScreenSpace,
+                    "Malformed screen-space anchor was rejected.",
+                    new GCDiagnosticContext()
+                        .AddDetail("type", pointData.type)
+                        .AddDetail("reason", exception.Message)
+                );
+            }
         }
     }
 }

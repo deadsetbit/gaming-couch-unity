@@ -1,6 +1,4 @@
 using UnityEngine;
-using System;
-using DSB.GC;
 
 namespace DSB.GC.Dev
 {
@@ -118,6 +116,50 @@ namespace DSB.GC.Dev
 
         private float previouslySetTimescale = 1.0f;
 
+        private float GetCurrentTimescale()
+        {
+            if (GamingCouch.Instance != null)
+            {
+                return GamingCouch.Instance.CurrentTimescale;
+            }
+
+            return Time.timeScale;
+        }
+
+        private bool IsPaused()
+        {
+            if (GamingCouch.Instance != null)
+            {
+                return GamingCouch.Instance.IsPaused;
+            }
+
+            return Mathf.Approximately(Time.timeScale, 0.0f);
+        }
+
+        // Shared with GCDevAppIntegration so the "GamingCouch owns the timescale, otherwise drive
+        // Time.timeScale directly" rule -- clamp included -- lives in one place.
+        internal static void ApplyTimescale(float nextTimescale)
+        {
+            if (GamingCouch.Instance != null)
+            {
+                GamingCouch.Instance.ApplyDevTimescale(nextTimescale);
+                return;
+            }
+
+            Time.timeScale = Mathf.Clamp(nextTimescale, 0.1f, 10.0f);
+        }
+
+        private void ApplyPause(bool nextPaused)
+        {
+            if (GamingCouch.Instance != null)
+            {
+                GamingCouch.Instance.ApplyDevPause(nextPaused);
+                return;
+            }
+
+            Time.timeScale = nextPaused ? 0.0f : Mathf.Max(previouslySetTimescale, 0.1f);
+        }
+
         private void HandleTimeScale(KeyCode keyCode)
         {
 #if UNITY_EDITOR
@@ -128,23 +170,44 @@ namespace DSB.GC.Dev
 
             if (keyCode == decreaseTimeScalePrimary || keyCode == decreaseTimeScaleAlternative)
             {
-                previouslySetTimescale = Time.timeScale;
-                Time.timeScale = Mathf.Max(Time.timeScale - 0.1f, 0.0f);
+                var currentTimescale = GetCurrentTimescale();
+                previouslySetTimescale = currentTimescale;
+                ApplyTimescale(Mathf.Max(currentTimescale - 0.1f, 0.1f));
             }
             if (keyCode == increaseTimeScalePrimary || keyCode == increaseTimeScaleAlternative)
             {
-                previouslySetTimescale = Time.timeScale;
-                Time.timeScale = Mathf.Min(Time.timeScale + 0.1f, 10.0f);
+                var currentTimescale = GetCurrentTimescale();
+                previouslySetTimescale = currentTimescale;
+                ApplyTimescale(Mathf.Min(currentTimescale + 0.1f, 10.0f));
             }
             if (keyCode == togglePausePrimary || keyCode == togglePauseAlternative)
             {
+                var isPaused = IsPaused();
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
                 {
-                    Time.timeScale = Mathf.Approximately(Time.timeScale, 0.0f) ? previouslySetTimescale : 0.0f;
+                    if (isPaused)
+                    {
+                        ApplyTimescale(Mathf.Max(previouslySetTimescale, 0.1f));
+                        ApplyPause(false);
+                    }
+                    else
+                    {
+                        previouslySetTimescale = GetCurrentTimescale();
+                        ApplyPause(true);
+                    }
                 }
                 else
                 {
-                    Time.timeScale = Mathf.Approximately(Time.timeScale, 0.0f) ? 1.0f : 0.0f;
+                    if (isPaused)
+                    {
+                        ApplyTimescale(1.0f);
+                        ApplyPause(false);
+                    }
+                    else
+                    {
+                        previouslySetTimescale = GetCurrentTimescale();
+                        ApplyPause(true);
+                    }
                 }
             }
 #endif
@@ -156,7 +219,7 @@ namespace DSB.GC.Dev
             {
                 if (enablePlayModeRestart)
                 {
-                    GamingCouch.Instance.InternalHandleGamePlayModeRestart();
+                    GamingCouch.Instance._InternalHandleGamePlayModeRestart();
                 }
             }
         }

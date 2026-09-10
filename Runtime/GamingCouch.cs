@@ -3,13 +3,22 @@ using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Globalization;
 using DSB.GC.Hud;
 using DSB.GC.Game;
 using DSB.GC.Log;
 using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using DSB.GC.Dev;
+using DSB.GC.RuntimeMessages;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Gaming Couch - Netcode for GameObjects")]
+[assembly: InternalsVisibleTo("GamingCouch.Editor")]
+[assembly: InternalsVisibleTo("GamingCouch.Editor.Tests")]
+[assembly: InternalsVisibleTo("GamingCouch.Tests.PlayMode")]
 
 namespace DSB.GC
 {
@@ -23,6 +32,7 @@ namespace DSB.GC
 
     [ExecuteInEditMode]
     [RequireComponent(typeof(GCDevUtils))]
+    [RequireComponent(typeof(GCDevAppIntegration))]
     public class GamingCouch : MonoBehaviour
     {
         [DllImport("__Internal")]
@@ -32,10 +42,9 @@ namespace DSB.GC
         private static extern void GamingCouchSetupDone();
 
         [DllImport("__Internal")]
-        private static extern void GamingCouchGameEnd(byte[] placementsByPlayerId, int placementsByPlayerIdLength);
+        private static extern void GamingCouchSendProjectInfo(string projectName);
 
         private static int MAX_PLAYERS = 8;
-        private static int MAX_NAME_LENGTH = 8;
         private static float AUDIO_FADE_SECONDS = 3.0f;
         private static GamingCouch instance = null;
         public static GamingCouch Instance => instance;
@@ -47,8 +56,12 @@ namespace DSB.GC
         private GameObject playerPrefab;
         private GCSetupOptions setupOptions;
         private GCPlayOptions playOptions;
+        private GCSeatIdentity[] playSeatIdentities = Array.Empty<GCSeatIdentity>();
+        private GCPlayerIndexMapping playerIndexMapping;
         private bool isRestarting = false;
         public bool IsRestarting => isRestarting;
+        public bool IsPaused => paused;
+        public float CurrentTimescale => paused ? timeScaleOnPause : Time.timeScale;
         public bool IsServer
         {
             get
@@ -67,11 +80,20 @@ namespace DSB.GC
         }
         private GCMode mode = GCMode.Production;
         public GCMode Mode => mode;
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
         [SerializeField]
-        [Tooltip("Mark the game to support online multiplayer. After this is enabled you need to call OnlineMultiplayerServerReady() for server and OnlineMultiplayerClientReady() for player. This will indicate to the platform that your game is ready to communicate.")]
+        [Tooltip("Unsupported temporary internal migration surface. Mark the game to use legacy online multiplayer only while GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.")]
         private bool onlineMultiplayerSupport = false;
         public bool OnlineMultiplayerSupport => onlineMultiplayerSupport;
+#else
+        /// <summary>
+        /// Unsupported temporary internal migration probe. Default package builds do not support Gaming Couch multiplayer.
+        /// </summary>
+        public bool OnlineMultiplayerSupport => false;
+#endif
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
         private bool onlineMultiplayerReadyCalled = false;
+#endif
         private GCStatus status = GCStatus.PendingSetup;
         public GCStatus Status => status;
         public int GameSeed
@@ -94,9 +116,18 @@ namespace DSB.GC
 
         private void Awake()
         {
-            GCLog.logLevel = LogLevel;
+            // This is [ExecuteInEditMode], so editor scene setup adding the component fires Awake
+            // in edit mode too. Configure runtime logging and emit lifecycle logs only when actually
+            // running, so creating or editing a scene in the editor doesn't spam the console.
+            if (Application.isPlaying)
+            {
+                GCLog.logLevel = LogLevel;
+                GCLog.LogDebug("Awake");
+            }
 
-            GCLog.LogDebug("Awake");
+            // Keep the FindObjectsSortMode overload: the parameterless FindObjectsByType<T>()
+            // only exists from Unity 6000.5+, and the package targets Unity 6+. The
+            // deprecation warning on newer editors is harmless.
             if (FindObjectsByType<GamingCouch>(FindObjectsSortMode.None).Length > 1)
             {
                 if (Application.isEditor && !Application.isPlaying)
@@ -125,10 +156,59 @@ namespace DSB.GC
             }
 
 #if UNITY_EDITOR
-            // When integrated, platform will define the setup options on Unity boot up via GamingCouchSetup.
-            setupOptions = GetEditorSetupOptions();
+            WarnIfBuildTargetNotWebGL();
+            CaptureEditorPlaySettings();
 #endif
         }
+
+#if UNITY_EDITOR
+        // Runs on editor load and after every domain reload. Switching the active build target
+        // changes scripting defines and triggers a domain reload, so this also fires on platform switch.
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void WarnIfBuildTargetNotWebGLOnLoad()
+        {
+            // Entering play mode is covered by the instance check in Awake; avoid a duplicate warning.
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            var message = GetBuildTargetWarningOrNull();
+            if (message == null)
+            {
+                return;
+            }
+
+            // GCLog respects the runtime log level, which is None until a GamingCouch instance runs,
+            // so this edit-time setup warning is logged directly to make sure it always surfaces.
+            Debug.LogWarning($"[GC] {message}");
+        }
+
+        private void WarnIfBuildTargetNotWebGL()
+        {
+            var message = GetBuildTargetWarningOrNull();
+            if (message != null)
+            {
+                GCLog.LogWarning(message);
+            }
+        }
+
+        private static string GetBuildTargetWarningOrNull()
+        {
+            if (UnityEditor.EditorUserBuildSettings.activeBuildTarget == UnityEditor.BuildTarget.WebGL)
+            {
+                return null;
+            }
+
+            return $"Active build target is '{UnityEditor.EditorUserBuildSettings.activeBuildTarget}', not WebGL. " +
+                "Gaming Couch games are exported for the Web, so the active platform should be WebGL " +
+                "(File > Build Settings > WebGL > Switch Platform). " +
+                "Play mode compiles with the active platform's scripting defines, so other targets can behave " +
+                "differently from the shipped Web build: features gated to the Web build (for example online " +
+                "multiplayer / Netcode) are not compiled here, so their components can appear as 'missing script' " +
+                "in the scene. Open GamingCouch > Start Screen for full readiness.";
+        }
+#endif
 
         private void Start()
         {
@@ -144,22 +224,20 @@ namespace DSB.GC
             status = GCStatus.PendingSetup;
 
 #if UNITY_EDITOR
-            if (!onlineMultiplayerSupport)
+            if (!OnlineMultiplayerSupport)
             {
-                GamingCouchSetup();
+                if (TryRequireSetupOptions("Editor setup"))
+                {
+                    GamingCouchSetup();
+                }
             }
 #else
-            if (!onlineMultiplayerSupport)
+            if (!OnlineMultiplayerSupport)
             {
                 GamingCouchInstanceStarted();
+                SendProjectInfo();
             }
 #endif
-        }
-
-        private void OnValidate()
-        {
-            OnValidatePlayerDataField();
-            OnValidateNumberOfPlayersField();
         }
 
         private void Update()
@@ -173,6 +251,7 @@ namespace DSB.GC
             {
                 game.HandlePlayersHudAutoUpdate();
                 hud.HandleQueue();
+                FlushRuntimeOutput();
             }
         }
 
@@ -183,6 +262,18 @@ namespace DSB.GC
         private void GamingCouchSetupOptions(string optionsJson)
         {
             GCLog.LogInfo("GamingCouchSetupOptions: " + optionsJson);
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup options", out var capturedSetupOptions))
+                {
+                    setupOptions = capturedSetupOptions;
+                }
+
+                return;
+            }
+#endif
 
             // store as we don't want to call the listener before Start so that Unity is fully initialized.
             // this will also ensure the splash screen is shown before game gets to report setup as ready.
@@ -199,14 +290,49 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchSetup()
         {
-            if (setupOptions == null)
+            if (!TryRequireSetupOptions("GamingCouchSetup"))
             {
-                throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
+                return;
             }
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!GCLocalPlaySession.TryRequireCapturedSetupOptions("GamingCouchSetup", out var capturedSetupOptions))
+                {
+                    return;
+                }
+
+                setupOptions = capturedSetupOptions;
+            }
+#endif
 
             mode = setupOptions.mode;
 
             listener.SendMessage("GamingCouchSetup", setupOptions, SendMessageOptions.RequireReceiver);
+        }
+
+        private bool TryRequireSetupOptions(string source)
+        {
+            if (setupOptions != null)
+            {
+                return true;
+            }
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (GCLocalPlaySession.TryRequireCapturedSetupOptions(source, out var capturedSetupOptions))
+                {
+                    setupOptions = capturedSetupOptions;
+                    return true;
+                }
+
+                return false;
+            }
+#endif
+
+            throw new Exception("GamingCouch setup options not set. Make sure to call GCSetup method with setup options.");
         }
 
         /// <summary>
@@ -216,6 +342,19 @@ namespace DSB.GC
         private void GamingCouchPlay(string optionsJson)
         {
             GCLog.LogInfo("GamingCouchPlay: " + optionsJson);
+
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!TryGetEditorPlayOptions("Editor play", out var capturedPlayOptions, out var capturedSeatIdentities))
+                {
+                    return;
+                }
+
+                Play(capturedPlayOptions, capturedSeatIdentities);
+                return;
+            }
+#endif
 
             GCPlayOptions options = GCPlayOptions.CreateFromJSON(optionsJson);
             Play(options);
@@ -227,7 +366,12 @@ namespace DSB.GC
         /// </summary>
         private void GamingCouchPause(string pauseString)
         {
-            var pause = bool.Parse(pauseString);
+            if (!bool.TryParse(pauseString, out var pause))
+            {
+                GCLog.LogWarning($"GamingCouchPause: Ignoring unparseable pause value '{pauseString}'.");
+                return;
+            }
+
             GCLog.LogInfo("GamingCouchPause: " + pause);
 
             if (paused && pause)
@@ -246,7 +390,8 @@ namespace DSB.GC
 
             if (pause)
             {
-                inputsByPlayerId.Clear();
+                inputsByPlayerIndex.Clear();
+                externalInputsByPlayerIndex.Clear();
 
                 volumeOnPause = AudioListener.volume;
                 AudioListener.volume = 0.0f;
@@ -261,50 +406,192 @@ namespace DSB.GC
             Time.timeScale = timeScaleOnPause;
         }
 
+        private void SendProjectInfo()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            string projectName = Application.productName;
+            if (!string.IsNullOrEmpty(projectName))
+            {
+                GamingCouchSendProjectInfo(projectName);
+            }
+#endif
+        }
+
+#if UNITY_EDITOR
         private IEnumerator _EditorPlay()
         {
             GCLog.LogInfo("_EditorPlay");
             yield return new WaitForSeconds(0.1f); // fake some delay as if Play was called by the platform
-            Play(GetEditorPlayOptions());
+            if (!TryGetEditorPlayOptions("Editor play", out var capturedPlayOptions, out var capturedSeatIdentities))
+            {
+                yield break;
+            }
+
+            Play(capturedPlayOptions, capturedSeatIdentities);
         }
+#endif
 
         /// <summary>
         /// Triggers GamingCouchPlay and sets the status to Playing.
         /// </summary>
         private void Play(GCPlayOptions options)
         {
-            playOptions = options;
-            listener.SendMessage("GamingCouchPlay", options, SendMessageOptions.RequireReceiver);
+            Play(options, null);
+        }
+
+        /// <summary>
+        /// Triggers GamingCouchPlay and sets the status to Playing.
+        /// </summary>
+        private void Play(GCPlayOptions options, GCSeatIdentity[] seatIdentities)
+        {
+            var activeRunProjection = GCActiveRunProjection.Create(options, seatIdentities);
+            playerIndexMapping = activeRunProjection.PlayerIndexMapping;
+            playOptions = activeRunProjection.GameFacingPlayOptions;
+            playSeatIdentities = activeRunProjection.MappedSeatIdentities;
+            GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
+            EmitPlatformMetadataDiagnostics(playOptions.platformData);
+            listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
             status = GCStatus.Playing;
+            QueueRuntimeStateSnapshot();
+        }
+
+        internal static void EmitPlatformMetadataDiagnostics(GCPlatformRuntimeView platformData)
+        {
+            if (platformData == null || !platformData.fallbackActive)
+            {
+                return;
+            }
+
+            var validationState = platformData.validationState;
+            var isMissing = string.Equals(validationState, GCPlatformRuntimeValidationState.Missing, StringComparison.Ordinal);
+            var context = CreatePlatformMetadataDiagnosticContext(platformData);
+            var sourceMessage = platformData.source != null ? platformData.source.message : null;
+            var metadataMessage = !string.IsNullOrWhiteSpace(sourceMessage)
+                ? sourceMessage
+                : isMissing
+                    ? "gc.platform.json was not found."
+                    : "gc.platform.json is invalid.";
+
+            GCDiagnostics.Emit(
+                isMissing ? GCDiagnosticCodes.MissingPlatformData : GCDiagnosticCodes.InvalidPlatformData,
+                GCDiagnosticSeverity.Warning,
+                GCDiagnosticSourceAreas.Metadata,
+                GCRuntimePayloadBounds.Truncate(metadataMessage, GCDiagnostics.MaxMessageLength),
+                context
+            );
+
+            GCDiagnostics.Emit(
+                GCDiagnosticCodes.FallbackActive,
+                GCDiagnosticSeverity.Warning,
+                GCDiagnosticSourceAreas.Metadata,
+                "Fallback platform metadata is active.",
+                context
+            );
+        }
+
+        private static GCDiagnosticContext CreatePlatformMetadataDiagnosticContext(GCPlatformRuntimeView platformData)
+        {
+            var context = new GCDiagnosticContext()
+                .AddDetail("validationState", platformData.validationState)
+                .AddDetail("selectedEntryKey", platformData.selectedEntryKey);
+
+            var source = platformData.source;
+            if (source == null)
+            {
+                return context;
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.fieldName))
+            {
+                context.AddDetail("fieldName", source.fieldName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.path))
+            {
+                context.AddDebug("path", GCRuntimePayloadBounds.Truncate(source.path, GCDiagnosticFields.MaxStringLength));
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.message))
+            {
+                context.AddDebug("sourceMessage", GCRuntimePayloadBounds.Truncate(source.message, GCDiagnosticFields.MaxStringLength));
+            }
+
+            return context;
+        }
+
+        private static GCSeatIdentity[] CopySeatIdentities(GCSeatIdentity[] seatIdentities)
+        {
+            if (seatIdentities == null || seatIdentities.Length == 0)
+            {
+                return Array.Empty<GCSeatIdentity>();
+            }
+
+            var copiedSeatIdentities = new GCSeatIdentity[seatIdentities.Length];
+            Array.Copy(seatIdentities, copiedSeatIdentities, seatIdentities.Length);
+            return copiedSeatIdentities;
         }
 
         /// <summary>
         /// Called by the platform to update player inputs.
         /// </summary>
-        private void GamingCouchInputs(string playerIdAndInputs)
+        private void GamingCouchInputs(string playerIndexAndInputs)
         {
-            if (paused)
+            if (!TryParsePlayerInputMessage(playerIndexAndInputs, out var playerIndex, out var inputsJson))
             {
+                Debug.LogWarning("[GamingCouch] Ignoring malformed player input message.");
                 return;
             }
 
-            string[] playerIdAndInputsArray = playerIdAndInputs.Split('|');
+            var inputsData = GCControllerInputsData.CreateFromJSON(inputsJson);
 
-            GCControllerInputs inputs = GCControllerInputs.CreateFromJSON(playerIdAndInputsArray[1]);
+            ApplyExternalPlayerInput(playerIndex, inputsData, "platform_input");
+        }
 
-            var playerId = int.Parse(playerIdAndInputsArray[0]);
-            inputsByPlayerId[playerId] = inputs;
+        /// <summary>
+        /// Parses a platform "playerIndex|inputsJson" message. The player index is parsed with
+        /// invariant culture and <see cref="NumberStyles.None"/> so a host locale can never change
+        /// how it is read (matching the seed parse in GCDevJsonDraft), and a null/empty, unsplittable,
+        /// or non-numeric message returns false instead of throwing so the caller can drop it.
+        /// </summary>
+        internal static bool TryParsePlayerInputMessage(string playerIndexAndInputs, out int playerIndex, out string inputsJson)
+        {
+            playerIndex = -1;
+            inputsJson = null;
+
+            if (string.IsNullOrEmpty(playerIndexAndInputs))
+            {
+                return false;
+            }
+
+            string[] parts = playerIndexAndInputs.Split('|');
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out playerIndex))
+            {
+                return false;
+            }
+
+            inputsJson = parts[1];
+            return true;
         }
         #endregion
 
         #region Methods to be called by the game
 
         /// <summary>
-        /// Inform the platform tha the server is ready to receive multiplayer clients.
+        /// Unsupported temporary internal migration surface. Inform the platform that the server is ready to receive multiplayer clients only when GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.
         /// </summary>
         public void OnlineMultiplayerServerReady()
         {
-            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
+            if (!TryRequireSetupOptions("OnlineMultiplayerServerReady"))
+            {
+                return;
+            }
+
             Assert.IsTrue(setupOptions.isServer, "[GamingCouch] ServerReady should only be called by the server.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ServerReady should only be called once.");
 
@@ -315,14 +602,22 @@ namespace DSB.GC
 #else
             GamingCouchSetup();
 #endif
+#else
+            throw CreateUnsupportedMultiplayerApiException("OnlineMultiplayerServerReady");
+#endif
         }
 
         /// <summary>
-        /// Inform the platform that the client is ready to connect with the multiplayer server.
+        /// Unsupported temporary internal migration surface. Inform the platform that the client is ready to connect with the multiplayer server only when GC_ENABLE_UNSUPPORTED_MULTIPLAYER is enabled.
         /// </summary>
         public void OnlineMultiplayerClientReady()
         {
-            Assert.IsNotNull(setupOptions, "[GamingCouch] GamingCouch setup options not set.");
+#if GC_ENABLE_UNSUPPORTED_MULTIPLAYER
+            if (!TryRequireSetupOptions("OnlineMultiplayerClientReady"))
+            {
+                return;
+            }
+
             Assert.IsFalse(setupOptions.isServer, "[GamingCouch] ClientReady should only be called by the client.");
             Assert.IsFalse(onlineMultiplayerReadyCalled, "[GamingCouch] ClientReady should only be called once.");
 
@@ -333,7 +628,28 @@ namespace DSB.GC
 #else
             GamingCouchSetup();
 #endif
+#else
+            throw CreateUnsupportedMultiplayerApiException("OnlineMultiplayerClientReady");
+#endif
         }
+
+#if !GC_ENABLE_UNSUPPORTED_MULTIPLAYER
+        private static NotSupportedException CreateUnsupportedMultiplayerApiException(string apiName)
+        {
+            const string message = "Gaming Couch online multiplayer APIs are unsupported in the default Unity runtime contract. Define GC_ENABLE_UNSUPPORTED_MULTIPLAYER only for temporary internal migration of legacy multiplayer games.";
+            GCDiagnostics.Emit(
+                GCDiagnosticCodes.UnsupportedMultiplayerApi,
+                GCDiagnosticSeverity.Error,
+                GCDiagnosticSourceAreas.Api,
+                message,
+                new GCDiagnosticContext()
+                    .AddDetail("api", apiName)
+                    .AddDetail("optInDefine", "GC_ENABLE_UNSUPPORTED_MULTIPLAYER")
+                    .AddDetail("supportStatus", "unsupported_temporary_internal_migration")
+            );
+            return new NotSupportedException(message);
+        }
+#endif
 
         /// <summary>
         /// Call after game setup is done eg. level and other assets are loaded and the game is ready to play intro and spawn players.
@@ -343,12 +659,22 @@ namespace DSB.GC
         {
             GCLog.LogDebug("SetupDone");
 
+#if UNITY_EDITOR
+            if (!TryGetEditorPlayOptions("Editor play", out _, out _))
+            {
+                return;
+            }
+#endif
+
             StartCoroutine(_FadeVolume(AudioListener.volume, 1.0f));
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             GamingCouchSetupDone();
-#else
+#elif UNITY_EDITOR
             StartCoroutine(_EditorPlay());
+#else
+            Debug.LogError("[GamingCouch] Local editor play callbacks are only available in the Unity editor.");
+            return;
 #endif
             status = GCStatus.SetupDone;
         }
@@ -361,7 +687,7 @@ namespace DSB.GC
         {
             if (game == null)
             {
-                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGame() before calling '" + source + "'.");
+                throw new InvalidOperationException("[GamingCouch] Game not set. You should call GamingCouch.Instance.SetupGameVersus() before calling '" + source + "'.");
             }
         }
 
@@ -391,37 +717,74 @@ namespace DSB.GC
         {
             RequireGameSetupDone("GameOver");
 
-            var players = internalPlayerStore.PlayersEnumerable.ToList();
+            var players = internalPlayerStore.Players.ToList();
             var playersSorted = game.GetPlayersInPlacementOrder(players).ToList();
 
-            var placementsByPlayerId = new int[playersSorted.Count];
+            var playerIndicesByPlacement = new int[playersSorted.Count];
             for (int i = 0; i < playersSorted.Count; i++)
             {
-                placementsByPlayerId[i] = playersSorted[i].Id;
+                playerIndicesByPlacement[i] = playersSorted[i].Index;
             }
 
-            GCLog.LogInfo($"GameOver: {string.Join(",", placementsByPlayerId)}");
+            GCLog.LogInfo($"GameOver: {string.Join(",", playerIndicesByPlacement)}");
 
-            for (var i = 0; i < placementsByPlayerId.Length; i++)
+            for (var i = 0; i < playerIndicesByPlacement.Length; i++)
             {
-                var playerId = placementsByPlayerId[i];
-                var player = internalPlayerStore.GetPlayerById(playerId);
-                GCLog.LogInfo($"Player {player.PlayerName} placed {i + 1} - (id:{playerId})");
+                var playerIndex = playerIndicesByPlacement[i];
+                GCLog.LogInfo($"Player index {playerIndex} placed {i + 1}");
             }
 
-            byte[] result = new byte[placementsByPlayerId.Length];
-            for (int i = 0; i < placementsByPlayerId.Length; i++)
+            if (!TrySubmitGameOverPlacement(playerIndicesByPlacement, out _))
             {
-                result[i] = (byte)placementsByPlayerId[i];
+                return;
             }
 
             StartCoroutine(_FadeVolume(AudioListener.volume, 0.0f));
+        }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        GamingCouchGameEnd(result, result.Length);
-#endif
+        internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload()
+        {
+            RequireGameSetupDone("BuildRuntimeStateSnapshotPayload");
+            return game.BuildRuntimeStateSnapshotPayload(status);
+        }
 
-            status = GCStatus.GameOver;
+        internal bool TrySubmitGameOverPlacement(int[] playerIndicesByPlacement, out string runtimeMessagesJson)
+        {
+            return GCRuntimeOutput.TrySubmitGameOverPlacement(
+                playerIndicesByPlacement,
+                internalPlayerStore.Players.Count,
+                indices => TryValidateGameOverPlacement(indices, "game_over"),
+                () => status = GCStatus.GameOver,
+                () => BuildRuntimeStateSnapshotPayload().ToJson(),
+                out runtimeMessagesJson
+            );
+        }
+
+        internal void QueueRuntimeStateSnapshot()
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            GCRuntimeOutput.QueueStateSnapshot();
+        }
+
+        internal void QueueRuntimePlayerTransition(string name, int playerIndex, string dataJson)
+        {
+            GCRuntimeOutput.QueuePlayerTransition(name, playerIndex, dataJson);
+        }
+
+        private Func<string> _flushSnapshotPayload;
+
+        internal void FlushRuntimeOutput()
+        {
+            if (_flushSnapshotPayload == null)
+            {
+                _flushSnapshotPayload = () => game == null ? null : BuildRuntimeStateSnapshotPayload().ToJson();
+            }
+
+            GCRuntimeOutput.FlushFrameOutput(_flushSnapshotPayload);
         }
         #endregion
 
@@ -442,7 +805,7 @@ namespace DSB.GC
         #region Player
         private T InstantiatePlayer<T>(GCPlayerOptions options, Vector3 position, Quaternion rotation)
         {
-            GCLog.LogDebug($"InstantiatePlayer: {options.playerId}, {options.name}, {options.color}");
+            GCLog.LogDebug($"InstantiatePlayer: {options.playerIndex}, {options.color}");
 
             var activeOriginal = playerPrefab.activeSelf;
             playerPrefab.SetActive(false);
@@ -477,18 +840,18 @@ namespace DSB.GC
             }
         }
 
-        public void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
+        internal void _InternalSetPlayerProperties(GCPlayer player, GCPlayerOptions options)
         {
-            player.gameObject.name = "Player - " + options.name;
+            player.gameObject.name = "Player - " + options.playerIndex;
 
+            var colorEnum = GCPlayerOptionResolver.ResolvePlayerColor(options.color);
             var playerSetupOptions = new GCPlayerSetupOptions
             {
-                index = internalPlayerStore.PlayerCount,
-                type = (GCPlayerType)Enum.Parse(typeof(GCPlayerType), options.type),
-                playerId = options.playerId,
-                name = options.name,
-                colorEnum = (GCPlayerColor)Enum.Parse(typeof(GCPlayerColor), options.color),
-                colorName = options.color,
+                playerIndex = options.playerIndex,
+                playerSeed = options.playerSeed,
+                type = GCPlayerOptionResolver.ResolvePlayerType(options.type),
+                colorEnum = colorEnum,
+                colorName = colorEnum.ToString(),
             };
 
             player._InternalGamingCouchSetup(playerSetupOptions);
@@ -496,6 +859,7 @@ namespace DSB.GC
             // TODO: move as this fnc is for player properties?
             game.SetupPlayer(player);
             internalPlayerStore.AddPlayer(player);
+            QueueRuntimeStateSnapshot();
             SetupPlayerReady?.Invoke(player);
         }
 
@@ -550,9 +914,9 @@ namespace DSB.GC
                 }
             }
 
-            if (internalPlayerStore.PlayerCount > 0)
+            if (internalPlayerStore.Players.Count > 0)
             {
-                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.ClearPlayers() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
+                GCLog.LogWarning("Players already instantiated. Call GamingCouch.Instance.Clear() before calling SetupPlayers. Note that clearing players is only for dev purposes in dev mode to reset game for example.");
             }
 
             SetPlayerReadyCallback(onPlayerSetupReady);
@@ -572,24 +936,37 @@ namespace DSB.GC
             }
         }
 
-        public GCPlayerOptions GetPlayerOptions(int playerId)
+        public GCPlayerOptions GetPlayerOptions(int playerIndex)
         {
-            return playOptions.players.Single(p => p.playerId == playerId);
+            return playOptions.players.Single(p => p.playerIndex == playerIndex);
         }
         #endregion
 
         #region Player inputs
-        private Dictionary<int, GCControllerInputs> inputsByPlayerId = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputs> inputsByPlayerIndex = new Dictionary<int, GCControllerInputs>();
+        private Dictionary<int, GCControllerInputs> externalInputsByPlayerIndex = new Dictionary<int, GCControllerInputs>();
+
         /// <summary>
-        /// Get player inputs by player ID.
+        /// Removed. Use GetInputsByPlayerIndex.
         /// </summary>
-        /// <param name="playerId">Player ID</param>
+        /// <param name="playerIndex">Player index</param>
         /// <returns>null if not available</returns>
-        public GCControllerInputs GetInputsByPlayerId(int playerId)
+        [Obsolete("GetInputsByPlayerId has been removed from the game-facing runtime contract. Use GetInputsByPlayerIndex.", true)]
+        public GCControllerInputs GetInputsByPlayerId(int playerIndex)
         {
-            if (inputsByPlayerId.ContainsKey(playerId))
+            throw new InvalidOperationException("GetInputsByPlayerId has been removed. Use GetInputsByPlayerIndex.");
+        }
+
+        /// <summary>
+        /// Get player inputs by player index.
+        /// </summary>
+        /// <param name="playerIndex">Player index</param>
+        /// <returns>null if not available</returns>
+        public GCControllerInputs GetInputsByPlayerIndex(int playerIndex)
+        {
+            if (inputsByPlayerIndex.ContainsKey(playerIndex))
             {
-                return inputsByPlayerId[playerId];
+                return inputsByPlayerIndex[playerIndex];
             }
 
             return null;
@@ -601,50 +978,85 @@ namespace DSB.GC
         public void ClearInputs()
         {
             GCLog.LogDebug("ClearInputs");
-            inputsByPlayerId.Clear();
+            inputsByPlayerIndex.Clear();
+            externalInputsByPlayerIndex.Clear();
+        }
+
+        internal void ApplyExternalPlayerInput(int playerIndex, GCControllerInputsData inputsData, string source)
+        {
+            if (paused)
+            {
+                return;
+            }
+
+            if (!TryValidatePlayerIndex(playerIndex, source, out _))
+            {
+                return;
+            }
+
+            var inputs = new GCControllerInputs(inputsData);
+            externalInputsByPlayerIndex[playerIndex] = inputs;
+            inputsByPlayerIndex[playerIndex] = inputs;
+        }
+
+        internal bool TryGetPlayerIndexForSourceSeat(int sourceSeatIndex, out int playerIndex)
+        {
+            playerIndex = -1;
+            return playerIndexMapping != null && playerIndexMapping.TryGetPlayerIndexForSourceSeat(sourceSeatIndex, out playerIndex);
+        }
+
+        internal bool TryValidatePlayerIndex(int playerIndex, string source, out GCPlayerIndexMappingEntry entry)
+        {
+            if (playerIndexMapping == null)
+            {
+                entry = default;
+                return false;
+            }
+
+            return playerIndexMapping.TryValidatePlayerIndex(playerIndex, source, out entry);
+        }
+
+        internal bool TryValidateGameOverPlacement(int[] playerIndicesByPlacement, string source)
+        {
+            return playerIndexMapping != null && playerIndexMapping.TryValidatePlacement(playerIndicesByPlacement, source);
         }
         #endregion
 
         #region Development settings for editor and inspector
-        private void OnValidatePlayerDataField()
+#if UNITY_EDITOR
+        private void CaptureEditorPlaySettings()
         {
-            // Initialize
-            if (playerData.Length == 0)
+            setupOptions = null;
+            if (GCLocalPlaySession.CaptureForRuntimeEntry() &&
+                GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup", out var capturedSetupOptions))
             {
-                Array.Resize(ref playerData, MAX_PLAYERS);
-
-                for (int i = 0; i < MAX_PLAYERS; i++)
-                {
-                    playerData[i].color = (GCPlayerColor)i;
-                }
-            }
-
-            if (playerData.Length != MAX_PLAYERS)
-            {
-                Array.Resize(ref playerData, MAX_PLAYERS);
-            }
-
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (playerData[i].name == null || playerData[i].name == "")
-                {
-                    playerData[i].name = $"Player {i + 1}"[..MAX_NAME_LENGTH];
-                }
+                setupOptions = capturedSetupOptions;
             }
         }
 
-        private void OnValidateNumberOfPlayersField()
+        private void RecaptureEditorPlaySettingsForRestart()
         {
-            if (numberOfPlayers > MAX_PLAYERS)
+            setupOptions = null;
+            if (GCLocalPlaySession.CaptureForRestart() &&
+                GCLocalPlaySession.TryRequireCapturedSetupOptions("Editor setup", out var capturedSetupOptions))
             {
-                numberOfPlayers = MAX_PLAYERS;
+                setupOptions = capturedSetupOptions;
             }
         }
 
-        [SerializeField]
-        [Header("Editor game settings")]
-        [Tooltip("The game mode ID to be played in editor play mode.")]
-        private string gameModeId;
+        private bool TryGetEditorPlayOptions(
+            string source,
+            out GCPlayOptions capturedPlayOptions,
+            out GCSeatIdentity[] capturedSeatIdentities
+        )
+        {
+            return GCLocalPlaySession.TryRequireCapturedPlayOptions(
+                source,
+                out capturedPlayOptions,
+                out capturedSeatIdentities
+            );
+        }
+#endif
 
         [Serializable]
         private struct PlayerEditorData
@@ -654,86 +1066,112 @@ namespace DSB.GC
             public bool isBot;
         }
 
-        [SerializeField]
-        [Header("Editor player settings")]
+        // Obsolete serialized editor play fields are kept only so old scenes deserialize.
+        // Root gc.dev.json is the functional source for editor setup and play capture.
+#pragma warning disable 0169, 0414
+        [SerializeField, HideInInspector]
+        private string gameModeId;
+
+        [SerializeField, HideInInspector]
         private PlayerEditorData[] playerData = new PlayerEditorData[0];
 
-        [SerializeField]
-        [Tooltip("Number of players to instantiate on editor play mode.")]
+        [SerializeField, HideInInspector]
         private int numberOfPlayers = MAX_PLAYERS;
 
-        [SerializeField]
-        [Tooltip("Randomize player ID's to better replicate real use case where ID's comes from the platform. If false, player ID's will be assigned in order starting from 1. (RECOMMENDED TO KEEP THIS ENABLED)")]
+        [SerializeField, HideInInspector]
         private bool randomizePlayerIds = true;
-
-        private GCSetupOptions GetEditorSetupOptions()
-        {
-            return new GCSetupOptions
-            {
-                isServer = true,
-                gameModeId = gameModeId,
-                mode = GCMode.Development,
-            };
-        }
-
-        private GCPlayOptions GetEditorPlayOptions()
-        {
-            GCPlayOptions options = new GCPlayOptions
-            {
-                players = new GCPlayerOptions[numberOfPlayers],
-                seed = UnityEngine.Random.Range(1, 999999),
-            };
-
-            var usedColors = new List<GCPlayerColor>();
-
-            for (int i = 0; i < numberOfPlayers; i++)
-            {
-                if (usedColors.Contains(playerData[i].color))
-                {
-                    throw new Exception("[GamingCouch] Player color '" + playerData[i].color + "' set more than once in GamingCouch 'playerData'. Make sure to use unique colors for each player.");
-                }
-
-                usedColors.Add(playerData[i].color);
-
-
-                options.players[i] = new GCPlayerOptions
-                {
-                    type = playerData[i].isBot ? GCPlayerType.bot.ToString() : GCPlayerType.player.ToString(),
-                    playerId = randomizePlayerIds ? UnityEngine.Random.Range(1, 99) : i + 1,
-                    name = playerData[i].name,
-                    color = playerData[i].color.ToString(),
-                };
-            }
-
-            return options;
-        }
+#pragma warning restore 0169, 0414
         #endregion
 
-        [Header("Editor keyboard controls")]
+        [Header("Editor keyboard controls (Unity Input System map)")]
 
         #region Editor keyboard controls
         [SerializeField]
         private bool useKeyboardControls = true;
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Horizontal'")]
-        private string a0 = "Horizontal";
+        [FormerlySerializedAs("a0")]
+        [Tooltip("Left stick X-axis for editor testing. Default: 'Horizontal'")]
+        private string axisX = "Horizontal";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing button for editor testing. Default: 'Vertical'")]
-        private string a1 = "Vertical";
+        [FormerlySerializedAs("a1")]
+        [Tooltip("Left stick Y-axis for editor testing. Default: 'Vertical'")]
+        private string axisY = "Vertical";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Jump'")]
-        private string b0 = "Jump";
+        [FormerlySerializedAs("b0")]
+        [Tooltip("Unity Input keyboard input 'primary' action button (A on Xbox controller). Default: 'Jump'")]
+        private string buttonPrimary = "Jump";
         [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire1'")]
-        private string b1 = "Fire1";
-        [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire2'")]
-        private string b2 = "Fire2";
-        [SerializeField]
-        [Tooltip("Unity Input button for editor testing. Default: 'Fire3'")]
-        private string b3 = "Fire3";
+        [FormerlySerializedAs("b1")]
+        [Tooltip("Unity Input keyboard input 'secondary' action button (B on Xbox controller). Default: 'Fire1'")]
+        private string buttonSecondary = "Fire1";
+        private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
-        private int controlPlayerIndex = 0;
+        private int editorControlPlayerIndex = 0;
+
+        private static bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
+        {
+            if (inputs == null)
+            {
+                return false;
+            }
+
+            if (Mathf.Abs(inputs.a0) > axisDeadzone || Mathf.Abs(inputs.a1) > axisDeadzone)
+            {
+                return true;
+            }
+
+            return inputs.b0 == 1 || inputs.b1 == 1 || inputs.b2 == 1;
+        }
+
+        internal static GCControllerInputsData ResolveEditorInputs(
+            GCControllerInputsData keyboardInputsData,
+            GCControllerInputsData externalInputsData,
+            float axisDeadzone
+        )
+        {
+            var selectedInputs = HasNonZeroInput(keyboardInputsData, axisDeadzone)
+                ? keyboardInputsData
+                : HasNonZeroInput(externalInputsData, axisDeadzone)
+                    ? externalInputsData
+                    : null;
+
+            if (selectedInputs == null)
+            {
+                return new GCControllerInputsData();
+            }
+
+            return new GCControllerInputsData
+            {
+                a0 = Mathf.Clamp(selectedInputs.a0, -1.0f, 1.0f),
+                a1 = Mathf.Clamp(selectedInputs.a1, -1.0f, 1.0f),
+                b0 = selectedInputs.b0,
+                b1 = selectedInputs.b1,
+                b2 = selectedInputs.b2,
+            };
+        }
+
+        internal static void ApplyEditorInputsForPlayer(
+            int playerIndex,
+            GCControllerInputsData keyboardInputsData,
+            Dictionary<int, GCControllerInputs> gameFacingInputsByPlayerIndex,
+            Dictionary<int, GCControllerInputs> externalInputsByPlayerIndex,
+            float axisDeadzone
+        )
+        {
+            GCControllerInputsData externalInputsData = null;
+            if (externalInputsByPlayerIndex != null &&
+                externalInputsByPlayerIndex.TryGetValue(playerIndex, out var externalInputs))
+            {
+                externalInputsData = externalInputs.RawData;
+            }
+
+            var finalInputsData = ResolveEditorInputs(
+                keyboardInputsData: keyboardInputsData,
+                externalInputsData: externalInputsData,
+                axisDeadzone: axisDeadzone
+            );
+            gameFacingInputsByPlayerIndex[playerIndex] = new GCControllerInputs(finalInputsData);
+        }
 
         private void HandleEditorInputs()
         {
@@ -742,34 +1180,46 @@ namespace DSB.GC
                 return;
             }
 
-            if (!useKeyboardControls) return;
-
             if (internalPlayerStore == null) return;
-            if (internalPlayerStore.PlayerCount == 0) return;
+            if (internalPlayerStore.Players.Count == 0) return;
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
                 if (Input.GetKeyDown((i + 1).ToString()))
                 {
-                    controlPlayerIndex = i;
+                    editorControlPlayerIndex = i;
                 }
             }
 
-            var player = internalPlayerStore.GetPlayerByIndex(controlPlayerIndex);
+            var player = internalPlayerStore.GetPlayerByIndex(editorControlPlayerIndex);
 
             if (player == null) return;
 
-            var inputs = new GCControllerInputs(new GCControllerInputsData
+            // keyboard inputs
+            GCControllerInputsData keyboardInputsData = null;
+            if (useKeyboardControls)
             {
-                a0 = Input.GetAxis(a0),
-                a1 = Input.GetAxis(a1),
-                b0 = Input.GetButton(b0) ? 1 : 0,
-                b1 = Input.GetButton(b1) ? 1 : 0,
-                b2 = Input.GetButton(b2) ? 1 : 0,
-                b3 = Input.GetButton(b3) ? 1 : 0
-            });
+                keyboardInputsData = new GCControllerInputsData
+                {
+                    a0 = Input.GetAxis(axisX),
+                    a1 = Input.GetAxis(axisY),
+                    b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
+                    b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
+                };
+            }
 
-            inputsByPlayerId[player.Id] = inputs;
+            if (keyboardInputsData == null && !externalInputsByPlayerIndex.ContainsKey(player.Index))
+            {
+                return;
+            }
+
+            ApplyEditorInputsForPlayer(
+                playerIndex: player.Index,
+                keyboardInputsData: keyboardInputsData,
+                gameFacingInputsByPlayerIndex: inputsByPlayerIndex,
+                externalInputsByPlayerIndex: externalInputsByPlayerIndex,
+                axisDeadzone: INPUT_AXIS_INNER_DEADZONE
+            );
         }
         #endregion
 
@@ -778,11 +1228,48 @@ namespace DSB.GC
         /// <summary>
         /// 1) Clears players from the player store and destroys the game objects.
         /// 2) Clears player inputs.
+        /// The run-scoped player-index mapping is preserved so the round-reset pattern -- Clear() then
+        /// SetupPlayers without a fresh Play() -- keeps inputs and GameOver() placement validating.
         /// </summary>
         public void Clear()
         {
             internalPlayerStore.Clear();
             ClearInputs();
+        }
+
+        public GCPlayerOptions[] GetCurrentPlayPlayerOptions()
+        {
+            if (playOptions?.players == null)
+            {
+                return Array.Empty<GCPlayerOptions>();
+            }
+
+            var playerOptions = new GCPlayerOptions[playOptions.players.Length];
+            Array.Copy(playOptions.players, playerOptions, playOptions.players.Length);
+            return playerOptions;
+        }
+
+        internal GCSeatIdentity[] GetCurrentPlaySeatIdentities()
+        {
+            return CopySeatIdentities(playSeatIdentities);
+        }
+
+        public void ApplyDevPause(bool nextPaused)
+        {
+            GamingCouchPause(nextPaused.ToString());
+        }
+
+        public void ApplyDevTimescale(float nextTimescale)
+        {
+            var clampedTimescale = Mathf.Clamp(nextTimescale, 0.1f, 10.0f);
+
+            if (paused)
+            {
+                timeScaleOnPause = clampedTimescale;
+                return;
+            }
+
+            Time.timeScale = clampedTimescale;
         }
 
         /**
@@ -804,13 +1291,29 @@ namespace DSB.GC
                 throw new Exception("[GamingCouch] Restart can only be called in play mode.");
             }
 
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                if (!GCLocalPlaySession.TryRunRestartPreflight())
+                {
+                    return;
+                }
+
+                RecaptureEditorPlaySettingsForRestart();
+                if (!TryGetEditorPlayOptions("Editor play", out _, out _))
+                {
+                    return;
+                }
+            }
+#endif
+
             game = null;
 
             Clear();
             Start();
         }
 
-        internal void InternalHandleGamePlayModeRestart()
+        internal void _InternalHandleGamePlayModeRestart()
         {
             if (!isRestarting)
             {
@@ -825,6 +1328,13 @@ namespace DSB.GC
                 yield break;
             }
 
+#if UNITY_EDITOR
+            if (!GCLocalPlaySession.TryRunRestartPreflight())
+            {
+                yield break;
+            }
+#endif
+
             isRestarting = true;
 
             try
@@ -836,6 +1346,7 @@ namespace DSB.GC
                 Scene dontDestroyScene = temp.scene;
                 DestroyImmediate(temp);
 
+                // Sort-mode overload kept for Unity 6.0-6.1 compatibility (see Awake).
                 GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
                 List<GameObject> donDestroyOnLoadObjects = new List<GameObject>();
 

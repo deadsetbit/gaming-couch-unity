@@ -7,6 +7,45 @@ mergeInto(LibraryManager.library, {
     window.gamingCouchInstanceStarted();
   },
 
+  GamingCouchRegisterRuntimeInfo: function (runtimeInfoJsonString) {
+    if (!window.gamingCouchRegisterRuntimeInfo) {
+      console.error("gamingCouchRegisterRuntimeInfo is not defined");
+      return;
+    }
+
+    var runtimeInfoJson = UTF8ToString(runtimeInfoJsonString);
+    var runtimeInfo;
+    try {
+      runtimeInfo = JSON.parse(runtimeInfoJson);
+    } catch (error) {
+      console.error("GamingCouchRegisterRuntimeInfo received invalid JSON", error);
+      return;
+    }
+
+    window.gamingCouchRegisterRuntimeInfo(runtimeInfo);
+  },
+
+  GamingCouchRegisterUnityBuildInfo: function (unityBuildInfoJsonString) {
+    if (!window.gamingCouchRegisterUnityBuildInfo) {
+      return;
+    }
+
+    var unityBuildInfoJson = UTF8ToString(unityBuildInfoJsonString);
+    var unityBuildInfo;
+    try {
+      unityBuildInfo = JSON.parse(unityBuildInfoJson);
+    } catch (error) {
+      console.error("GamingCouchRegisterUnityBuildInfo received invalid JSON", error);
+      return;
+    }
+
+    try {
+      window.gamingCouchRegisterUnityBuildInfo(unityBuildInfo);
+    } catch (error) {
+      console.error("GamingCouchRegisterUnityBuildInfo callback failed", error);
+    }
+  },
+
   GamingCouchSetupDone: function () {
     if (!window.gamingCouchSetupDone) {
       console.error("GamingCouchSetupDone is not defined");
@@ -21,45 +60,55 @@ mergeInto(LibraryManager.library, {
       return;
     }
 
-    var hudConfig = JSON.parse(UTF8ToString(hudConfigJsonString));
+    var hudConfig;
+    try {
+      hudConfig = JSON.parse(UTF8ToString(hudConfigJsonString));
+    } catch (error) {
+      console.error("GamingCouchSetupHud received invalid JSON", error);
+      return;
+    }
+
     window.gamingCouchSetupHud(hudConfig);
   },
 
-  GamingCouchUpdatePlayersHud: function (playersHudDataJsonString) {
-    if (!window.gamingCouchUpdatePlayersHud) {
-      console.error("gamingCouchUpdatePlayersHud is not defined");
+  GamingCouchSendProjectInfo: function (projectNameString) {
+    if (!window.gamingCouchSendProjectInfo) {
       return;
     }
 
-    var playersHudData = JSON.parse(UTF8ToString(playersHudDataJsonString));
-    window.gamingCouchUpdatePlayersHud(playersHudData);
+    var projectName = UTF8ToString(projectNameString);
+    window.gamingCouchSendProjectInfo(projectName);
   },
 
-  GamingCouchUpdateScreenPointHud: function (screenPointHudDataJsonString) {
-    if (!window.gamingCouchUpdateScreenPointHud) {
-      console.error("gamingCouchUpdateScreenPointHud is not defined");
+  GamingCouchRuntimeMessages: function (runtimeMessagesJsonString) {
+    if (!window.gamingCouchRuntimeMessages) {
       return;
     }
 
-    var screenPointHudData = JSON.parse(
-      UTF8ToString(screenPointHudDataJsonString)
-    );
-    window.gamingCouchUpdateScreenPointHud(screenPointHudData);
-  },
-
-  GamingCouchGameEnd: function (
-    placementsByPlayerId,
-    placementsByPlayerIdLength
-  ) {
-    if (!window.gamingCouchGameEnd) {
-      console.error("gamingCouchGameEnd is not defined");
+    var runtimeMessages;
+    try {
+      runtimeMessages = JSON.parse(UTF8ToString(runtimeMessagesJsonString));
+    } catch (error) {
+      console.error("GamingCouchRuntimeMessages received invalid JSON", error);
       return;
     }
 
-    var result = [];
-    for (var i = 0; i < placementsByPlayerIdLength; i++) {
-      result.push(HEAPU8[(placementsByPlayerId >> 0) + i]);
-    }
-    window.gamingCouchGameEnd(result);
+    window.gamingCouchRuntimeMessages(runtimeMessages);
   },
+
+  GamingCouchScreenSpace: function (screenSpaceJsonString) {
+    if (!window.gamingCouchScreenSpace) {
+      return;
+    }
+
+    var screenSpace;
+    try {
+      screenSpace = JSON.parse(UTF8ToString(screenSpaceJsonString));
+    } catch (error) {
+      console.error("GamingCouchScreenSpace received invalid JSON", error);
+      return;
+    }
+
+    window.gamingCouchScreenSpace(screenSpace);
+  }
 });

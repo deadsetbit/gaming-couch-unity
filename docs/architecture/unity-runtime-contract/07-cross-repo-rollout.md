@@ -1,0 +1,155 @@
+## Cross-Repo Rollout Plan
+
+Status: Core contract decisions captured. Unity package-side work (contract docs/fixtures and the package implementation) is done on `feature/standalone-controller`; client/SDK, DevApp, internal-game migration, hosted rollout, the `0.2.0-alpha.1` release, and legacy-bridge removal remain open.
+
+## Purpose
+
+Define how the Unity package, Gaming Couch client, SDK, DevApp, and internal games move through this contract migration without long-lived semantic drift.
+
+## Carry-Forward Decisions
+
+- Unity package source API should break old game-facing ID/name/state calls intentionally so internal game source migrates to `Index`, `playerIndex`, and explicit permanent/revokable state APIs.
+- Runtime game-facing DTOs should remove player names and platform player IDs completely. Temporary compatibility lives in platform/client/SDK adapters for already-built games, not in new Unity game source APIs.
+- Player-index deterministic shuffle is in scope for this migration and should land with the index mapping contract.
+- DevApp/local seat concepts (`seatIndex`, `activeSeats`, and `GCSeatIdentity`) remain local routing and source-seat provenance. Current Unity boot/runtime identity is the `players[]` roster and `playerIndex`.
+- Already-built older Unity games still need a short-lived platform/client/SDK runtime bridge during migration.
+- The bridge is a one-off internal migration bridge, not the long-term versioning, deployment, or legacy support strategy.
+- New Unity game-over messages use an object shape rather than a bare array so the result payload can expand later. The initial object carries `playersByPlacement` only; no one-off version field is introduced for this method.
+- During the temporary bridge, adapters distinguish new versus legacy game-over output by shape and message path: a `runtime_messages` `gc.game.game_over` object means new player-index result, while legacy `runtime_game_over.playerIdsByPlacement` or hosted bare array means legacy platform IDs. This avoids ambiguity around `playerIndex: 0` versus old positive platform IDs.
+- The Unity-first migration uses a staged adapter rollout with no immediate `gameProtocolVersion` bump. A future bump remains available as a later public compatibility boundary after internal games and JavaScript runtime semantics are aligned.
+- Launch policy for diagnostics is staged with the runtime output work: Unity log capture is package/runtime-owned and emitted as structured `gc.diagnostic` messages when enabled, while WebGL loader `print`/`printErr` mirroring and browser console capture remain host-owned debug controls outside the Unity runtime contract.
+- Target Unity package release line for the source API migration is `0.2.0-alpha.1`.
+
+## Release Decision
+
+Chosen path: staged adapter rollout.
+
+- Do not immediately bump `gameProtocolVersion` for the Unity-first source migration.
+- Ship strict hosted client/SDK adapter support for both new object-shaped game-over payloads and legacy top-level `playerIdsByPlacement` before recommending Unity package `0.2.0-alpha.1`; DevApp/local Unity support is strict-current only and accepts the new `runtime_messages` path.
+- For strict Unity package cleanup that rejects legacy inbound play/runtime identity, the current recommendation remains no `gameProtocolVersion` bump when client/SDK runtime selection keeps old Unity builds on the legacy payload path and sends current Unity builds the private transport roster as `players[]` with `playerIndex`. Any protocol bump remains a release-owner/user decision based on rollout risk and adapter compatibility.
+- Use package-version compatibility checks to block new Unity package usage against old DevApp/client paths.
+- Migrate internal Unity games to `Index`, `playerIndex`, explicit state APIs, and the new object game-over shape.
+- Keep the bridge until no internal deployed build emits legacy ID-shaped Unity payloads.
+- Revisit a protocol bump or broader runtime versioning boundary when JavaScript runtime semantics align and the legacy bridge is ready for removal.
+
+## Runtime Message Ownership
+
+> Wire shapes moved out of this tracker (D9). The current Unity `game_over` envelope and payload
+> (`runtime_messages` → `gc.game` / `game_over` → `{ playersByPlacement }`) are owned by the
+> [platform runtime contract](../../contracts/platform-runtime-contract.md#73-game-over-gcgame--game_over).
+> The legacy hosted/client bridge shape (`runtime_game_over.playerIdsByPlacement`) is a client/SDK-repo
+> concept, not part of this package's wire. This tracker keeps only the rollout rules that discriminate
+> the two during migration.
+
+Rules:
+
+- `gc.game.game_over.data.playersByPlacement` is the new runtime-owned placement field.
+- `runtime_game_over.playerIdsByPlacement` is legacy-only and removal-bound in the hosted client/SDK bridge. DevApp/local Unity must not accept it as a current contract path.
+- Messages containing both new game-over payloads and legacy `playerIdsByPlacement` are malformed.
+- New versus legacy game-over payloads are discriminated by message path and shape: object-wrapped `playersByPlacement` inside `runtime_messages` is the new player-index result; top-level `playerIdsByPlacement` is the legacy platform-ID result.
+- New game-over payloads must not contain legacy ID fields.
+- Local DevApp and hosted adapters map accepted current `playersByPlacement` through the player-index mapping before updating platform-facing `LatestGameOverResult.playerIdsByPlacement`.
+- Platform-facing playlist/stats surfaces may keep `playerIdsByPlacement` while platform state still uses platform player IDs.
+- Game-over acceptance is first-accepted-wins per active run. Hosted client/SDK adapters apply this across both the new runtime message path and the temporary legacy bridge. DevApp/local Unity applies it only to the current `runtime_messages` path. After one result is accepted, later duplicate, replayed, or second result messages are rejected, diagnosed, and must not mutate playlist, stats, or platform result state again.
+- Accepting a legacy array/message in the hosted client/SDK bridge emits `gc.api.legacy_runtime_payload`.
+
+Hosted WebGL bridge:
+
+- New Unity WebGL output uses `runtime_messages` and the same game-over object shape.
+- Legacy Unity WebGL output remains a bare array and is interpreted only as platform player IDs.
+- Object/array discrimination is by value shape only.
+- Null, primitive, mixed object/array, object with legacy ID fields, or object with reserved future result fields is malformed.
+
+## Branch Order
+
+1. Unity package planning/docs and fixtures branch captures the final contracts. — Done: contracts captured on `feature/standalone-controller` and distilled into `docs/adr` (`ContractFixtures`, this doc set).
+2. Client/SDK adapter branch adds shape-discriminated Unity game-over handling, player-index mapping helpers, platform/session active-run seed resolution and validation before Unity play payload creation, `runtime_messages`/`screen_space` validation, diagnostics callback validation, hosted launch policy for Unity log capture and host-owned console mirroring, and tests while preserving legacy behavior.
+3. DevApp branch adds local `runtime_messages`, `screen_space`, active seat-to-index routing, metadata fallback health, diagnostics UI ingestion, launch-only Unity log capture controls, host-owned console mirroring controls where needed, and tests with no `runtime_game_over` legacy acceptance.
+4. Unity package implementation branch migrates source APIs, state model, runtime output, diagnostics, metadata view, examples, and local runtime messages. — Done on `feature/standalone-controller`: strict index/state source APIs, legacy payload rejection, v1 `runtime_messages` output, diagnostics, platform metadata runtime view, and generated examples.
+5. Internal game migration branches update game source to `Index`, `playerIndex`, explicit state APIs, and object-shaped game-over behavior.
+6. Hosted rollout branch/release enables the new Unity adapter path after client/SDK tests pass.
+7. Cleanup branch removes the legacy bridge after the removal checkpoint is met.
+
+Do not release `0.2.0-alpha.1` as the recommended package for internal games until DevApp/client adapters that understand `runtime_messages`, `screen_space`, and the new game-over shape are available.
+
+## Release Order
+
+1. Ship DevApp support for current `runtime_messages`/`screen_space` only, plus hosted client/SDK support that can accept old and new Unity result shapes and validate new runtime output paths.
+2. Release Unity package `0.2.0-alpha.1`.
+3. Migrate internal Unity game source to the new package and APIs.
+4. Validate hosted play and local Editor play against migrated games.
+5. Decide JS runtime follow-up timing before declaring the runtime identity vocabulary stable across engines.
+6. Remove the temporary bridge only after no internal deployed build still emits legacy ID-shaped Unity payloads.
+
+## Skew Matrix
+
+| Combination | Expected outcome | Required validation |
+| --- | --- | --- |
+| Old hosted Unity build / new hosted client/SDK adapter | Supported through legacy `playerIdsByPlacement` bridge with `gc.api.legacy_runtime_payload`. | Legacy game-over, HUD/screen-point, and diagnostics bridge tests. |
+| Old Unity Editor package / new DevApp | Not supported for Unity local runtime messaging. DevApp should show a package compatibility error rather than accepting legacy `runtime_game_over`. | Local package compatibility check. |
+| New Unity package / new DevApp-client | Supported. Runtime output uses player indices, `runtime_messages`, `screen_space`, and object-shaped game over. | Full Unity, DevApp, client, SDK, and hosted integration tests. |
+| New Unity package / old DevApp-client | Not supported. Block by package-version compatibility check or fail loudly before play/result publishing. | Negative skew test with clear developer error. |
+| Old DevApp / new Unity Editor package | Not supported for local runtime messaging. Developers must update DevApp before using package `0.2.0-alpha.1`. | Local run compatibility check. |
+| New DevApp / old Unity Editor package | Not supported for Unity local runtime messaging. Developers must update the Unity package before using the strict-current DevApp path. | DevApp package compatibility check. |
+| Old hosted Unity build / new hosted adapter | Supported through temporary legacy bridge. | Hosted adapter legacy array tests. |
+| New hosted Unity build / old hosted adapter | Not released. Hosted deploy order must prevent this combination. | Release gate/checklist. |
+| New Unity semantics / JavaScript runtime v1 | Allowed as temporary documented divergence, but JS follow-up must be scheduled. | Docs and follow-up issue/PRD. |
+
+## Validation Plan
+
+Unity package:
+
+- EditMode tests for player-index mapping, deterministic shuffle fixtures, source API guidance, state transitions, `runtime_messages`, `screen_space`, diagnostics, metadata fallback, HUD rendering, and generated examples.
+- Validate the package with `unity test` against a host project (see `AGENTS.md`).
+
+Client/SDK:
+
+- Unit tests for platform/session active-run seed validation, ID-to-index input mapping, index-to-ID game-over/runtime-message/screen-space mapping, object game-over validation, legacy array bridge, malformed hybrid rejection, diagnostics callback validation, and hosted skew behavior.
+- Cross-language deterministic shuffle fixtures for TypeScript and C#.
+
+DevApp:
+
+- Runtime message validation tests for `runtime_messages`, `screen_space`, effectful `gc.game.game_over`, malformed hybrid messages, diagnostics ingress, active-run filtering, ring-buffer aggregation, seat-to-index routing, metadata fallback warnings, and upload/publish blocking. Do not add DevApp acceptance tests for legacy `runtime_game_over`.
+- Browser/UI tests for the hidden diagnostics rail, persistent project health warnings, and the separation between runtime-owned Unity log capture and host-owned WebGL/browser console mirroring controls.
+
+Cross-repo integration:
+
+- Local Editor play smoke with a migrated Unity game.
+- Local Editor play smoke with the current Unity package/runtime contract.
+- Hosted WebGL smoke for new object-shaped game over.
+- Hosted WebGL smoke for legacy array result while the bridge is active.
+- Rollback test that disables migrated game/package use without removing the adapter bridge.
+
+## Rollback
+
+- Keep the legacy bridge deployed until after migrated internal games are verified in hosted and local play.
+- If hosted runtime rejects new object results, roll back internal game builds/package recommendation while leaving hosted client/SDK legacy bridge support in place.
+- If DevApp local runtime support fails, block package `0.2.0-alpha.1` in DevApp compatibility messaging and continue using the old package for local tests.
+- If diagnostics or non-effectful runtime messages are noisy but core game-over mapping works, keep the core adapter path and disable only optional diagnostics visibility, state snapshots, `screen_space`, optional Unity log capture, WebGL loader mirroring, or browser console capture.
+- Do not remove hosted client/SDK legacy support in the same release that first enables new package support.
+
+## JS Follow-Up
+
+- JavaScript runtime migration is not a hard prerequisite for the Unity-first package source migration under the recommended staged path.
+- JS follow-up must be scheduled before claiming the platform has one stable cross-engine runtime vocabulary.
+- JS planning should decide whether JavaScript games also move to player indices, object-shaped game over, `runtime_messages`, `screen_space`, structured diagnostics, and the same metadata fallback vocabulary.
+- Until JS is migrated, docs must call out Unity-first semantics explicitly and avoid implying that JavaScript games already share the new Unity contract.
+
+## Post-Legacy Cleanup Ledger
+
+After all internal games are migrated off the temporary bridge:
+
+- Delete legacy array-shaped game-over acceptance in hosted client and SDK adapters.
+- Delete bridge diagnostics and tests that exist only for already-built ID-based Unity games.
+- Delete hard-obsolete Unity placeholders after their compile messages are no longer needed.
+- Delete adapter code that maps game-facing names or platform IDs into Unity runtime payloads.
+- Delete unsupported multiplayer opt-in/stubs if no migrated game still requires them.
+
+## Ready When
+
+- The staged adapter rollout is the implementation path.
+- The cross-repo branch and release order is explicit.
+- The skew matrix has expected outcomes and tests.
+- The temporary object-vs-array game-over bridge is specified with removal criteria.
+- Internal game migration scope is known.
+- DevApp/client/SDK validation is scheduled before implementation tasks are marked ready.

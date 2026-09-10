@@ -60,3 +60,12 @@ crashlytics-build.properties
 
 # Allow to commit files ending with ~ (tilde)
 !*~
+
+# Local machine-specific agent bridge
+AGENTS.local.md
+AGENTS.local.md.meta
+
+# Python
+**/__pycache__/
+*.pyc
+**/__pycache__.meta

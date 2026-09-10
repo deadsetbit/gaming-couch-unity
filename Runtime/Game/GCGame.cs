@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DSB.GC.Hud;
 using DSB.GC.Log;
+using DSB.GC.RuntimeMessages;
 
 namespace DSB.GC.Game
 {
@@ -61,55 +62,24 @@ namespace DSB.GC.Game
                         players = options.hud.players
                     }
                 );
-                UpdatePlayersHud();
+
+                if (isPlayersHudAutoUpdateEnabled)
+                {
+                    isPlayersHudAutoUpdatePending = true;
+                }
             }
         }
 
         public void SetupPlayer(GCPlayer player)
         {
-            Debug.Log("SetupPlayer - playerId:" + player.name + " playerStore count:" + playerStore.PlayersEnumerable.Count());
-
-            var self = this;
+            GCLog.LogDebug("SetupPlayer - playerIndex:" + player.Index + " playerStore count:" + playerStore.Players.Count);
 
             if (isPlayersHudAutoUpdateEnabled)
             {
                 isPlayersHudAutoUpdatePending = true;
             }
 
-            player.OnEliminated += reason =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnUneliminated += reason =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnFinished += reason =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnScoreChanged += (playerId, score, reason) =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnLivesChanged += (playerId, lives, reason) =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnStatusChanged += (status, statusText, reason) =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
-
-            player.OnMeterChanged += (playerId, meter, reason) =>
-            {
-                self.isPlayersHudAutoUpdatePending = true;
-            };
+            player.AcceptedTransition += HandlePlayerAcceptedTransition;
         }
 
         public void SetMaxScore(int maxScore)
@@ -121,6 +91,8 @@ namespace DSB.GC.Game
             {
                 isPlayersHudAutoUpdatePending = true;
             }
+
+            gamingCouch?.QueueRuntimeStateSnapshot();
         }
 
         private void ValidateOptions(GCGameSetupOptions options)
@@ -152,13 +124,13 @@ namespace DSB.GC.Game
             {
                 case GCPlacementSortCriteria.Eliminated:
                 case GCPlacementSortCriteria.EliminatedDescending:
-                    return p => p.IsEliminated ? p.LastSetEliminatedTime : float.MaxValue;
+                    return p => p.IsEliminated ? p.LastSetEliminatedGameTime : float.MaxValue;
                 case GCPlacementSortCriteria.Score:
                 case GCPlacementSortCriteria.ScoreDescending:
                     return p => p.Score;
                 case GCPlacementSortCriteria.Finished:
                 case GCPlacementSortCriteria.FinishedDescending:
-                    return p => p.IsFinished ? p.FinishedTime : float.MaxValue;
+                    return p => p.IsFinished ? p.LastSetFinishedGameTime : float.MaxValue;
                 default:
                     throw new Exception($"Unhandled placement sort criteria '{criteria}'");
             }
@@ -196,47 +168,101 @@ namespace DSB.GC.Game
             return sortedPlayers;
         }
 
-        private string GetPlayerHudValue(GCPlayer player)
+        internal GCRuntimeStateSnapshotPayload BuildRuntimeStateSnapshotPayload(GCStatus gameStatus)
         {
-            var valueType = options.hud.players.valueTypeEnum;
+            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.Players);
+            return GCRuntimeStateSnapshotBuilder.BuildPayload(gameStatus, playerStore.Players, playersByPlacement);
+        }
 
-            if (valueType == PlayersHudValueType.None)
+        private void HandlePlayerAcceptedTransition(GCPlayerAcceptedTransition transition)
+        {
+            if (transition.MarksPlayersHudDirty)
             {
-                return null;
+                isPlayersHudAutoUpdatePending = true;
             }
 
-            switch (valueType)
+            if (transition.EmitsSemanticTransition)
             {
-                case PlayersHudValueType.PointsSmall:
-                    return player.Score.ToString() + "/" + options.maxScore;
-                case PlayersHudValueType.Status:
-                    return player.GetHudStatusText();
-                case PlayersHudValueType.Text:
-                    return player.GetHudValueText();
-                case PlayersHudValueType.Lives:
-                    return player.Lives.ToString();
+                gamingCouch?.QueueRuntimePlayerTransition(
+                    GetRuntimeMessageName(transition.Kind),
+                    transition.PlayerIndex,
+                    BuildRuntimeTransitionPayload(transition)
+                );
+            }
+
+            if (transition.MarksRuntimeStateSnapshotDirty)
+            {
+                gamingCouch?.QueueRuntimeStateSnapshot();
+            }
+        }
+
+        private static string GetRuntimeMessageName(GCPlayerTransitionKind kind)
+        {
+            switch (kind)
+            {
+                case GCPlayerTransitionKind.PlayerEliminationStateChanged:
+                    return GCRuntimeMessageNames.EliminationChanged;
+                case GCPlayerTransitionKind.PlayerFinishStateChanged:
+                    return GCRuntimeMessageNames.FinishChanged;
+                case GCPlayerTransitionKind.PlayerScoreChanged:
+                    return GCRuntimeMessageNames.ScoreChanged;
+                case GCPlayerTransitionKind.PlayerLivesChanged:
+                    return GCRuntimeMessageNames.LivesChanged;
+                case GCPlayerTransitionKind.PlayerStatusChanged:
+                    return GCRuntimeMessageNames.StatusChanged;
+                case GCPlayerTransitionKind.PlayerMeterChanged:
+                    return GCRuntimeMessageNames.MeterChanged;
                 default:
-                    throw new Exception($"Unhandled player hud value type '{valueType}'");
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unhandled player transition kind.");
+            }
+        }
+
+        private static string BuildRuntimeTransitionPayload(GCPlayerAcceptedTransition transition)
+        {
+            switch (transition.Kind)
+            {
+                case GCPlayerTransitionKind.PlayerEliminationStateChanged:
+                    return GCRuntimeTransitionPayload.BuildStringJson(
+                        transition.PlayerIndex,
+                        GCPlayerEnumNames.EliminationState(transition.PreviousEliminationState),
+                        GCPlayerEnumNames.EliminationState(transition.EliminationState),
+                        transition.ReasonText
+                    );
+                case GCPlayerTransitionKind.PlayerFinishStateChanged:
+                    return GCRuntimeTransitionPayload.BuildStringJson(
+                        transition.PlayerIndex,
+                        GCPlayerEnumNames.FinishState(transition.PreviousFinishState),
+                        GCPlayerEnumNames.FinishState(transition.FinishState),
+                        transition.ReasonText
+                    );
+                case GCPlayerTransitionKind.PlayerScoreChanged:
+                case GCPlayerTransitionKind.PlayerLivesChanged:
+                case GCPlayerTransitionKind.PlayerMeterChanged:
+                    return GCRuntimeTransitionPayload.BuildIntJson(
+                        transition.PlayerIndex,
+                        transition.PreviousIntValue,
+                        transition.IntValue,
+                        transition.ReasonText
+                    );
+                case GCPlayerTransitionKind.PlayerStatusChanged:
+                    return GCRuntimeTransitionPayload.BuildStatusJson(
+                        transition.PlayerIndex,
+                        transition.PreviousStatusValue.Status,
+                        transition.PreviousStatusValue.StatusText,
+                        transition.StatusValue.Status,
+                        transition.StatusValue.StatusText,
+                        transition.ReasonText
+                    );
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(transition.Kind), transition.Kind, "Unhandled player transition kind.");
             }
         }
 
         private void UpdatePlayersHud()
         {
-            Debug.Log("UpdatePlayersHud - player count:" + playerStore.PlayersEnumerable.Count());
+            GCLog.LogDebug("UpdatePlayersHud - player count:" + playerStore.Players.Count);
 
-            var playersByPlacement = GetPlayersInPlacementOrder(playerStore.PlayersEnumerable);
-
-            gamingCouch.Hud.UpdatePlayers(new GCPlayersHudData
-            {
-                players = playersByPlacement.Select((player, index) => new GCPlayersHudDataPlayer
-                {
-                    playerId = player.Id,
-                    eliminated = player.IsEliminated,
-                    placement = index,
-                    value = GetPlayerHudValue(player),
-                    meter = player.Meter
-                }).ToArray()
-            });
+            gamingCouch.QueueRuntimeStateSnapshot();
         }
     }
 }

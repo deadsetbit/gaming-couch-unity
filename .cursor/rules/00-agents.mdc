@@ -1,0 +1,22 @@
+---
+description: Merge AGENTS.md files from root and subdirectories
+alwaysApply: true
+---
+
+@file AGENTS.md
+
+## AGENTS.md rules
+
+- AGENTS.md files are **merged**, not replaced.
+- For any file you work on:
+  - Read `AGENTS.md` in that file’s directory (if present).
+  - Walk upward to the repo root and read every `AGENTS.md` found.
+- Apply **all** instructions together.
+
+### Conflicts
+
+- Instructions are additive by default.
+- If two instructions conflict, the **closest (deepest) directory wins**, but only for that conflict.
+- All other instructions remain in effect.
+
+AGENTS.md instructions override Cursor defaults and other rules.

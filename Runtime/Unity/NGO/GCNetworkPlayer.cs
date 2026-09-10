@@ -1,7 +1,6 @@
 #if GC_UNITY_NETCODE_GAMEOBJECTS
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.UIElements;
 
 namespace DSB.GC.Unity.NGO
 {
@@ -9,7 +8,7 @@ namespace DSB.GC.Unity.NGO
     [RequireComponent(typeof(NetworkObject))]
     public class GCNetworkPlayer : NetworkBehaviour
     {
-        public NetworkVariable<uint> netPlayerId = new NetworkVariable<uint>(0);
+        public NetworkVariable<uint> netPlayerIndex = new NetworkVariable<uint>(0);
         public NetworkVariable<bool> isEliminated = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> isFinished = new NetworkVariable<bool>(false);
         public NetworkVariable<int> score = new NetworkVariable<int>(0);
@@ -41,7 +40,7 @@ namespace DSB.GC.Unity.NGO
 
         private void StateSyncClient()
         {
-            var playerOptions = GamingCouch.Instance.GetPlayerOptions((int)netPlayerId.Value);
+            var playerOptions = GamingCouch.Instance.GetPlayerOptions((int)netPlayerIndex.Value);
             GamingCouch.Instance._InternalSetPlayerProperties(player, playerOptions);
 
             isEliminated.OnValueChanged += (oldValue, newValue) =>
@@ -53,17 +52,24 @@ namespace DSB.GC.Unity.NGO
 
                 if (newValue)
                 {
-                    player.SetEliminated(TEMP_REASON_NOT_SYNCED);
+                    player.SetEliminatedRevokable(TEMP_REASON_NOT_SYNCED);
                 }
                 else
                 {
-                    player.SetUneliminated(TEMP_REASON_NOT_SYNCED);
+                    player.SetRevokeEliminated(TEMP_REASON_NOT_SYNCED);
                 }
             };
 
             isFinished.OnValueChanged += (oldValue, newValue) =>
             {
-                player.SetFinished(TEMP_REASON_NOT_SYNCED);
+                if (newValue)
+                {
+                    player.SetFinishedRevokable(TEMP_REASON_NOT_SYNCED);
+                }
+                else
+                {
+                    player.SetRevokeFinished(TEMP_REASON_NOT_SYNCED);
+                }
             };
 
             score.OnValueChanged += (oldValue, newValue) =>
@@ -86,9 +92,9 @@ namespace DSB.GC.Unity.NGO
         private void StateSyncServer()
         {
             // init the network values
-            var id = player.Id;
-            Debug.Assert(id > 0, "Player ID not set");
-            netPlayerId.Value = (uint)id;
+            var playerIndex = player.Index;
+            Debug.Assert(playerIndex >= 0, "Player index not set");
+            netPlayerIndex.Value = (uint)playerIndex;
 
             isEliminated.Value = player.IsEliminated;
             isFinished.Value = player.IsFinished;
@@ -98,16 +104,15 @@ namespace DSB.GC.Unity.NGO
             playerType.Value = player.PlayerType;
 
             // sync basic GCPlayer state changes by default
-            player.OnEliminated += reason => isEliminated.Value = true;
-            player.OnUneliminated += reason => isEliminated.Value = false;
-            player.OnFinished += reason => isFinished.Value = true;
-            player.OnScoreChanged += (playerId, score, reason) =>
+            player.OnEliminationStateChanged += args => isEliminated.Value = player.IsEliminated;
+            player.OnFinishStateChanged += args => isFinished.Value = player.IsFinished;
+            player.OnScoreChanged += (oldScore, newScore, reason) =>
             {
-                this.score.Value = score;
+                this.score.Value = newScore;
             };
-            player.OnLivesChanged += (playerId, lives, reason) =>
+            player.OnLivesChanged += (oldLives, newLives, reason) =>
             {
-                this.lives.Value = lives;
+                this.lives.Value = newLives;
             };
             player.OnStatusChanged += (status, statusText, reason) =>
             {
