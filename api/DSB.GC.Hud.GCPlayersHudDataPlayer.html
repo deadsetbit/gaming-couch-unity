@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Struct GCPlayersHudDataPlayer | Gaming Couch | 0.0.1 </title>
+      <title>Struct GCPlayersHudDataPlayer | Gaming Couch | 0.1.0-alpha.6 </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Struct GCPlayersHudDataPlayer | Gaming Couch | 0.0.1 ">
+      <meta name="title" content="Struct GCPlayersHudDataPlayer | Gaming Couch | 0.1.0-alpha.6 ">
       
       
       <link rel="icon" href="../favicon.ico">
@@ -89,7 +89,7 @@
 
 
   <h1 id="DSB_GC_Hud_GCPlayersHudDataPlayer" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer" class="text-break">
-Struct GCPlayersHudDataPlayer  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L61"><i class="bi bi-code-slash"></i></a>
+Struct GCPlayersHudDataPlayer  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -146,10 +146,10 @@ public struct GCPlayersHudDataPlayer</code></pre>
 
   <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_eliminated" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.eliminated">
   eliminated
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L96"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>If the player is out of the game, the HUD can be set to display this player as eliminated.</p>
+  <div class="markdown level1 summary"><p>Compatibility projection for older HUD receivers. Prefer eliminationState.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -175,9 +175,102 @@ public struct GCPlayersHudDataPlayer</code></pre>
 
 
 
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_eliminationState" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.eliminationState">
+  eliminationState
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime elimination state enum name for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string eliminationState</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_finishState" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.finishState">
+  finishState
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime finish state enum name for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string finishState</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_lives" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.lives">
+  lives
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime lives for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int lives</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
   <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_meter" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.meter">
   meter
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The meter value (-1-100) to display for the player. This can be health, boost, etc. based on the meterType in the GCHudPlayersConfig.</p>
@@ -208,11 +301,11 @@ public struct GCPlayersHudDataPlayer</code></pre>
 
   <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_placement" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.placement">
   placement
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The placement of the player. 0 is first place, 1 is second place, etc.
-Players in the HUD will be sorted based on this value to indicate placements at given time. (HUD sorting not yet implemented)</p>
+  <div class="markdown level1 summary"><p>One-based runtime placement for the player. 1 is first place, 2 is second place, etc.
+Players in the HUD will be sorted based on this value to indicate placements at given time.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -238,17 +331,17 @@ Players in the HUD will be sorted based on this value to indicate placements at 
 
 
 
-  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_playerId" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.playerId">
-  playerId
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_playerIndex" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.playerIndex">
+  playerIndex
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gaming Couch player ID.</p>
+  <div class="markdown level1 summary"><p>Player index.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int playerId</code></pre>
+    <pre><code class="lang-csharp hljs">public int playerIndex</code></pre>
   </div>
 
 
@@ -269,9 +362,102 @@ Players in the HUD will be sorted based on this value to indicate placements at 
 
 
 
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_score" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.score">
+  score
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime score for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int score</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_status" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.status">
+  status
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime status enum name for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string status</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_statusText" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.statusText">
+  statusText
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Current runtime status text for the player.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string statusText</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
   <h3 id="DSB_GC_Hud_GCPlayersHudDataPlayer_value" data-uid="DSB.GC.Hud.GCPlayersHudDataPlayer.value">
   value
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/Hud/GCHud.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The value to display for the player. This can be points, lives, etc. based on the valueType in the GCHudPlayersConfig.</p>

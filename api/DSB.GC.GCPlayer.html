@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class GCPlayer | Gaming Couch | 0.0.1 </title>
+      <title>Class GCPlayer | Gaming Couch | 0.1.0-alpha.6 </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class GCPlayer | Gaming Couch | 0.0.1 ">
+      <meta name="title" content="Class GCPlayer | Gaming Couch | 0.1.0-alpha.6 ">
       
       
       <link rel="icon" href="../favicon.ico">
@@ -89,7 +89,7 @@
 
 
   <h1 id="DSB_GC_GCPlayer" data-uid="DSB.GC.GCPlayer" class="text-break">
-Class GCPlayer  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L19"><i class="bi bi-code-slash"></i></a>
+Class GCPlayer  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -116,6 +116,14 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
   </dl>
 
 
+  <dl class="typelist derived">
+    <dt>Derived</dt>
+    <dd>
+      <div><a class="xref" href="DSB.GC.ExampleCanonical.GCExamplePlayerSource.html">GCExamplePlayerSource</a></div>
+      <div><a class="xref" href="Global.ColorPlaceholderPrefabPlayer.html">ColorPlaceholderPrefabPlayer</a></div>
+      <div><a class="xref" href="Global.GCExamplePlayerFixture.html">GCExamplePlayerFixture</a></div>
+    </dd>
+  </dl>
 
 
 
@@ -128,16 +136,16 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
-  <h3 id="DSB_GC_GCPlayer_OnEliminated" data-uid="DSB.GC.GCPlayer.OnEliminated">
-  OnEliminated
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_OnEliminationStateChanged" data-uid="DSB.GC.GCPlayer.OnEliminationStateChanged">
+  OnEliminationStateChanged
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnEliminated</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;GCPlayerEliminationStateChangedEventArgs&gt; OnEliminationStateChanged</code></pre>
   </div>
 
 
@@ -145,7 +153,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="DSB.GC.GCPlayerEliminationStateChangedEventArgs.html">GCPlayerEliminationStateChangedEventArgs</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -158,16 +166,16 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
-  <h3 id="DSB_GC_GCPlayer_OnFinished" data-uid="DSB.GC.GCPlayer.OnFinished">
-  OnFinished
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  <h3 id="DSB_GC_GCPlayer_OnFinishStateChanged" data-uid="DSB.GC.GCPlayer.OnFinishStateChanged">
+  OnFinishStateChanged
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnFinished</code></pre>
+    <pre><code class="lang-csharp hljs">public Action&lt;GCPlayerFinishStateChangedEventArgs&gt; OnFinishStateChanged</code></pre>
   </div>
 
 
@@ -175,7 +183,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h4 class="section">Field Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="DSB.GC.GCPlayerFinishStateChangedEventArgs.html">GCPlayerFinishStateChangedEventArgs</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -190,7 +198,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_OnLivesChanged" data-uid="DSB.GC.GCPlayer.OnLivesChanged">
   OnLivesChanged
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L87"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -220,7 +228,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_OnMeterChanged" data-uid="DSB.GC.GCPlayer.OnMeterChanged">
   OnMeterChanged
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L88"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -250,7 +258,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_OnScoreChanged" data-uid="DSB.GC.GCPlayer.OnScoreChanged">
   OnScoreChanged
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -280,7 +288,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_OnStatusChanged" data-uid="DSB.GC.GCPlayer.OnStatusChanged">
   OnStatusChanged
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -308,39 +316,9 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
-  <h3 id="DSB_GC_GCPlayer_OnUneliminated" data-uid="DSB.GC.GCPlayer.OnUneliminated">
-  OnUneliminated
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L22"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Action&lt;string&gt; OnUneliminated</code></pre>
-  </div>
-
-
-
-
-  <h4 class="section">Field Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
   <h3 id="DSB_GC_GCPlayer_PlayerType" data-uid="DSB.GC.GCPlayer.PlayerType">
   PlayerType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L92"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -375,7 +353,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_ColorBase" data-uid="DSB.GC.GCPlayer.ColorBase">
   ColorBase
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>GamingCouch player color &quot;base&quot; variant.</p>
@@ -407,7 +385,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_ColorDark" data-uid="DSB.GC.GCPlayer.ColorDark">
   ColorDark
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L120"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>GamingCouch player color &quot;dark&quot; variant.</p>
@@ -439,7 +417,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_ColorEnum" data-uid="DSB.GC.GCPlayer.ColorEnum">
   ColorEnum
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -466,42 +444,11 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
-  <a id="DSB_GC_GCPlayer_ColorHex_" data-uid="DSB.GC.GCPlayer.ColorHex*"></a>
-
-  <h3 id="DSB_GC_GCPlayer_ColorHex" data-uid="DSB.GC.GCPlayer.ColorHex">
-  ColorHex
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L76"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string ColorHex { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
   <a id="DSB_GC_GCPlayer_ColorLight_" data-uid="DSB.GC.GCPlayer.ColorLight*"></a>
 
   <h3 id="DSB_GC_GCPlayer_ColorLight" data-uid="DSB.GC.GCPlayer.ColorLight">
   ColorLight
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L124"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>GamingCouch player color &quot;light&quot; variant.</p>
@@ -533,7 +480,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_ColorName" data-uid="DSB.GC.GCPlayer.ColorName">
   ColorName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -564,7 +511,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_ColorOffWhite" data-uid="DSB.GC.GCPlayer.ColorOffWhite">
   ColorOffWhite
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>GamingCouch player color &quot;off-white&quot; variant.</p>
@@ -592,19 +539,82 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <a id="DSB_GC_GCPlayer_EliminationState_" data-uid="DSB.GC.GCPlayer.EliminationState*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_EliminationState" data-uid="DSB.GC.GCPlayer.EliminationState">
+  EliminationState
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GCPlayerEliminationState EliminationState { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="DSB.GC.GCPlayerEliminationState.html">GCPlayerEliminationState</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_FinishState_" data-uid="DSB.GC.GCPlayer.FinishState*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_FinishState" data-uid="DSB.GC.GCPlayer.FinishState">
+  FinishState
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L156"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GCPlayerFinishState FinishState { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="DSB.GC.GCPlayerFinishState.html">GCPlayerFinishState</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="DSB_GC_GCPlayer_FinishedTime_" data-uid="DSB.GC.GCPlayer.FinishedTime*"></a>
 
   <h3 id="DSB_GC_GCPlayer_FinishedTime" data-uid="DSB.GC.GCPlayer.FinishedTime">
   FinishedTime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The time player was set as finished. eg. when they reach the finish line.</p>
+  <div class="markdown level1 summary"><p>Removed. Use LastSetFinishedGameTime or the explicit permanent/revokable timestamp properties.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public float FinishedTime { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use LastSetFinishedGameTime, LastSetFinishedPermanentGameTime, or LastSetFinishedRevokableGameTime.&quot;, true)]
+public float FinishedTime { get; }</code></pre>
   </div>
 
 
@@ -628,15 +638,16 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_Id" data-uid="DSB.GC.GCPlayer.Id">
   Id
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>GamingCouch player id. Note that this can't be used as an index, as the number can be anything starting from 1.</p>
+  <div class="markdown level1 summary"><p>Removed. Use Index for game-facing player identity.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Id { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;GCPlayer.Id has been removed from the game-facing runtime contract. Use GCPlayer.Index.&quot;, true)]
+public int Id { get; }</code></pre>
   </div>
 
 
@@ -660,7 +671,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_Index" data-uid="DSB.GC.GCPlayer.Index">
   Index
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L95"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -691,7 +702,7 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_IsBot" data-uid="DSB.GC.GCPlayer.IsBot">
   IsBot
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -722,10 +733,10 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_IsEliminated" data-uid="DSB.GC.GCPlayer.IsEliminated">
   IsEliminated
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L160"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Get the player's eliminated status. Use LastSetEliminatedTime/LastSetUneliminatedTime to get the time the player was last eliminated/uneliminated.</p>
+  <div class="markdown level1 summary"><p>Get the player's broad eliminated status.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -750,15 +761,76 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <a id="DSB_GC_GCPlayer_IsEliminatedPermanent_" data-uid="DSB.GC.GCPlayer.IsEliminatedPermanent*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_IsEliminatedPermanent" data-uid="DSB.GC.GCPlayer.IsEliminatedPermanent">
+  IsEliminatedPermanent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsEliminatedPermanent { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_IsEliminatedRevokable_" data-uid="DSB.GC.GCPlayer.IsEliminatedRevokable*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_IsEliminatedRevokable" data-uid="DSB.GC.GCPlayer.IsEliminatedRevokable">
+  IsEliminatedRevokable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L162"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsEliminatedRevokable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="DSB_GC_GCPlayer_IsFinished_" data-uid="DSB.GC.GCPlayer.IsFinished*"></a>
 
   <h3 id="DSB_GC_GCPlayer_IsFinished" data-uid="DSB.GC.GCPlayer.IsFinished">
   IsFinished
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Get the player's finished status. Use FinishedTime to get the time the player was set as finished.</p>
-</div>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
@@ -782,19 +854,361 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <a id="DSB_GC_GCPlayer_IsFinishedPermanent_" data-uid="DSB.GC.GCPlayer.IsFinishedPermanent*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_IsFinishedPermanent" data-uid="DSB.GC.GCPlayer.IsFinishedPermanent">
+  IsFinishedPermanent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsFinishedPermanent { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_IsFinishedRevokable_" data-uid="DSB.GC.GCPlayer.IsFinishedRevokable*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_IsFinishedRevokable" data-uid="DSB.GC.GCPlayer.IsFinishedRevokable">
+  IsFinishedRevokable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsFinishedRevokable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetEliminatedGameTime_" data-uid="DSB.GC.GCPlayer.LastSetEliminatedGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetEliminatedGameTime" data-uid="DSB.GC.GCPlayer.LastSetEliminatedGameTime">
+  LastSetEliminatedGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetEliminatedGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetEliminatedPermanentGameTime_" data-uid="DSB.GC.GCPlayer.LastSetEliminatedPermanentGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetEliminatedPermanentGameTime" data-uid="DSB.GC.GCPlayer.LastSetEliminatedPermanentGameTime">
+  LastSetEliminatedPermanentGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetEliminatedPermanentGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetEliminatedRevokableGameTime_" data-uid="DSB.GC.GCPlayer.LastSetEliminatedRevokableGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetEliminatedRevokableGameTime" data-uid="DSB.GC.GCPlayer.LastSetEliminatedRevokableGameTime">
+  LastSetEliminatedRevokableGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L169"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetEliminatedRevokableGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="DSB_GC_GCPlayer_LastSetEliminatedTime_" data-uid="DSB.GC.GCPlayer.LastSetEliminatedTime*"></a>
 
   <h3 id="DSB_GC_GCPlayer_LastSetEliminatedTime" data-uid="DSB.GC.GCPlayer.LastSetEliminatedTime">
   LastSetEliminatedTime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L99"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L187"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Get the time the player was last eliminated.</p>
+  <div class="markdown level1 summary"><p>Removed. Use LastSetEliminatedGameTime or the explicit permanent/revokable timestamp properties.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public float LastSetEliminatedTime { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use LastSetEliminatedGameTime, LastSetEliminatedPermanentGameTime, or LastSetEliminatedRevokableGameTime.&quot;, true)]
+public float LastSetEliminatedTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetFinishedGameTime_" data-uid="DSB.GC.GCPlayer.LastSetFinishedGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetFinishedGameTime" data-uid="DSB.GC.GCPlayer.LastSetFinishedGameTime">
+  LastSetFinishedGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetFinishedGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetFinishedPermanentGameTime_" data-uid="DSB.GC.GCPlayer.LastSetFinishedPermanentGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetFinishedPermanentGameTime" data-uid="DSB.GC.GCPlayer.LastSetFinishedPermanentGameTime">
+  LastSetFinishedPermanentGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetFinishedPermanentGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetFinishedRevokableGameTime_" data-uid="DSB.GC.GCPlayer.LastSetFinishedRevokableGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetFinishedRevokableGameTime" data-uid="DSB.GC.GCPlayer.LastSetFinishedRevokableGameTime">
+  LastSetFinishedRevokableGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L175"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetFinishedRevokableGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetRevokeEliminatedGameTime_" data-uid="DSB.GC.GCPlayer.LastSetRevokeEliminatedGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetRevokeEliminatedGameTime" data-uid="DSB.GC.GCPlayer.LastSetRevokeEliminatedGameTime">
+  LastSetRevokeEliminatedGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetRevokeEliminatedGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetRevokeFinishedGameTime_" data-uid="DSB.GC.GCPlayer.LastSetRevokeFinishedGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetRevokeFinishedGameTime" data-uid="DSB.GC.GCPlayer.LastSetRevokeFinishedGameTime">
+  LastSetRevokeFinishedGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L177"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetRevokeFinishedGameTime { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_LastSetRevokeGameTime_" data-uid="DSB.GC.GCPlayer.LastSetRevokeGameTime*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_LastSetRevokeGameTime" data-uid="DSB.GC.GCPlayer.LastSetRevokeGameTime">
+  LastSetRevokeGameTime
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float LastSetRevokeGameTime { get; }</code></pre>
   </div>
 
 
@@ -818,15 +1232,16 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_LastSetUneliminatedTime" data-uid="DSB.GC.GCPlayer.LastSetUneliminatedTime">
   LastSetUneliminatedTime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L192"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Get the time the player was last set uneliminated.</p>
+  <div class="markdown level1 summary"><p>Removed. Use LastSetRevokeEliminatedGameTime.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public float LastSetUneliminatedTime { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use LastSetRevokeEliminatedGameTime.&quot;, true)]
+public float LastSetUneliminatedTime { get; }</code></pre>
   </div>
 
 
@@ -850,10 +1265,10 @@ Class GCPlayer  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="DSB_GC_GCPlayer_Lives" data-uid="DSB.GC.GCPlayer.Lives">
   Lives
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L204"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Set the player's lives. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+  <div class="markdown level1 summary"><p>Set the player's lives. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
 If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -883,7 +1298,7 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <h3 id="DSB_GC_GCPlayer_Meter" data-uid="DSB.GC.GCPlayer.Meter">
   Meter
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L214"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's meter value (-1-100).</p>
@@ -915,15 +1330,16 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <h3 id="DSB_GC_GCPlayer_PlayerName" data-uid="DSB.GC.GCPlayer.PlayerName">
   PlayerName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L111"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>GamingCouch player name.</p>
+  <div class="markdown level1 summary"><p>Removed. Player names are platform-owned and are not exposed to Unity game code.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string PlayerName { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;GCPlayer.PlayerName has been removed from the game-facing runtime contract. Player names are platform-owned.&quot;, true)]
+public string PlayerName { get; }</code></pre>
   </div>
 
 
@@ -943,11 +1359,43 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
 
 
+  <a id="DSB_GC_GCPlayer_PlayerSeed_" data-uid="DSB.GC.GCPlayer.PlayerSeed*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_PlayerSeed" data-uid="DSB.GC.GCPlayer.PlayerSeed">
+  PlayerSeed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Deterministic player-specific seed generated by the platform from player-owned identity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int PlayerSeed { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="DSB_GC_GCPlayer_Score_" data-uid="DSB.GC.GCPlayer.Score*"></a>
 
   <h3 id="DSB_GC_GCPlayer_Score" data-uid="DSB.GC.GCPlayer.Score">
   Score
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L198"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's score.</p>
@@ -979,7 +1427,7 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <h3 id="DSB_GC_GCPlayer_Status" data-uid="DSB.GC.GCPlayer.Status">
   Status
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Player status.
@@ -1013,7 +1461,7 @@ If Players HUD is set to display status text, this will be reflected there as we
 
   <h3 id="DSB_GC_GCPlayer_StatusText" data-uid="DSB.GC.GCPlayer.StatusText">
   StatusText
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L152"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Players status text.
@@ -1051,7 +1499,7 @@ If Players HUD is set to display status text, this will be reflected there as we
 
   <h3 id="DSB_GC_GCPlayer_AddLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.AddLives(System.Int32,System.String)">
   AddLives(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L241"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L424"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Add to player's lives.</p>
@@ -1085,10 +1533,10 @@ If Players HUD is set to display status text, this will be reflected there as we
 
   <h3 id="DSB_GC_GCPlayer_AddScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.AddScore(System.Int32,System.String)">
   AddScore(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L318"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Add to player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+  <div class="markdown level1 summary"><p>Add to player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
 If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1120,7 +1568,7 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <h3 id="DSB_GC_GCPlayer_GetHudStatusText" data-uid="DSB.GC.GCPlayer.GetHudStatusText">
   GetHudStatusText()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L309"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L499"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's HUD status text to be displayed in the HUD.
@@ -1153,7 +1601,7 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_GetHudValueText" data-uid="DSB.GC.GCPlayer.GetHudValueText">
   GetHudValueText()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L318"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L508"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the player's HUD value to be displayed in the HUD.</p>
@@ -1185,15 +1633,77 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_SetEliminated_System_String_" data-uid="DSB.GC.GCPlayer.SetEliminated(System.String)">
   SetEliminated(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L230"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Mark the player as eliminated. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.</p>
-</div>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetEliminated(string reason)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SetEliminated has been removed from the game-facing runtime contract. Choose SetEliminatedPermanent(reason) or SetEliminatedRevokable(reason).&quot;, true)]
+public void SetEliminated(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_SetEliminatedPermanent_" data-uid="DSB.GC.GCPlayer.SetEliminatedPermanent*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetEliminatedPermanent_System_String_" data-uid="DSB.GC.GCPlayer.SetEliminatedPermanent(System.String)">
+  SetEliminatedPermanent(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L242"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetEliminatedPermanent(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_SetEliminatedRevokable_" data-uid="DSB.GC.GCPlayer.SetEliminatedRevokable*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetEliminatedRevokable_System_String_" data-uid="DSB.GC.GCPlayer.SetEliminatedRevokable(System.String)">
+  SetEliminatedRevokable(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L261"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetEliminatedRevokable(string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -1217,15 +1727,77 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_SetFinished_System_String_" data-uid="DSB.GC.GCPlayer.SetFinished(System.String)">
   SetFinished(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L332"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Set the player as finished. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.</p>
-</div>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetFinished(string reason)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SetFinished has been removed from the game-facing runtime contract. Choose SetFinishedPermanent(reason) or SetFinishedRevokable(reason).&quot;, true)]
+public void SetFinished(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_SetFinishedPermanent_" data-uid="DSB.GC.GCPlayer.SetFinishedPermanent*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetFinishedPermanent_System_String_" data-uid="DSB.GC.GCPlayer.SetFinishedPermanent(System.String)">
+  SetFinishedPermanent(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L338"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetFinishedPermanent(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_SetFinishedRevokable_" data-uid="DSB.GC.GCPlayer.SetFinishedRevokable*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetFinishedRevokable_System_String_" data-uid="DSB.GC.GCPlayer.SetFinishedRevokable(System.String)">
+  SetFinishedRevokable(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L357"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetFinishedRevokable(string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -1249,7 +1821,7 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_SetLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetLives(System.Int32,System.String)">
   SetLives(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L219"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L398"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's lives.</p>
@@ -1283,7 +1855,7 @@ This will include the status text and status.</p>
 
   <h3 id="DSB_GC_GCPlayer_SetMeter_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetMeter(System.Int32,System.String)">
   SetMeter(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L284"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L473"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's meter value ranging from -1 to 100. Depending on the HUD configuration, this will be displayed in the HUD.
@@ -1314,14 +1886,76 @@ Set value to -1 to hide the meter from the HUD (if meter is configured to be dis
 
 
 
+  <a id="DSB_GC_GCPlayer_SetRevokeEliminated_" data-uid="DSB.GC.GCPlayer.SetRevokeEliminated*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetRevokeEliminated_System_String_" data-uid="DSB.GC.GCPlayer.SetRevokeEliminated(System.String)">
+  SetRevokeEliminated(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L280"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetRevokeEliminated(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="DSB_GC_GCPlayer_SetRevokeFinished_" data-uid="DSB.GC.GCPlayer.SetRevokeFinished*"></a>
+
+  <h3 id="DSB_GC_GCPlayer_SetRevokeFinished_System_String_" data-uid="DSB.GC.GCPlayer.SetRevokeFinished(System.String)">
+  SetRevokeFinished(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L376"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetRevokeFinished(string reason)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
   <a id="DSB_GC_GCPlayer_SetScore_" data-uid="DSB.GC.GCPlayer.SetScore*"></a>
 
   <h3 id="DSB_GC_GCPlayer_SetScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SetScore(System.Int32,System.String)">
   SetScore(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L174"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L303"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Set the player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+  <div class="markdown level1 summary"><p>Set the player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
 If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1353,7 +1987,7 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 
   <h3 id="DSB_GC_GCPlayer_SetStatus_DSB_GC_GCPlayerStatus_System_String_System_String_" data-uid="DSB.GC.GCPlayer.SetStatus(DSB.GC.GCPlayerStatus,System.String,System.String)">
   SetStatus(GCPlayerStatus, string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L451"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Set the player's status and status text.
@@ -1398,15 +2032,15 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <h3 id="DSB_GC_GCPlayer_SetUneliminated_System_String_" data-uid="DSB.GC.GCPlayer.SetUneliminated(System.String)">
   SetUneliminated(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Clear the player's eliminated status.</p>
-</div>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetUneliminated(string reason)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SetUneliminated has been removed from the game-facing runtime contract. Use SetRevokeEliminated(reason) for revokable elimination.&quot;, true)]
+public void SetUneliminated(string reason)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -1430,7 +2064,7 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <h3 id="DSB_GC_GCPlayer_SubtractLives_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SubtractLives(System.Int32,System.String)">
   SubtractLives(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L432"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Subtract from player's lives.</p>
@@ -1464,10 +2098,10 @@ SetStatus(PlayerStatus.Failure, &quot;Sadge :(&quot;);</p>
 
   <h3 id="DSB_GC_GCPlayer_SubtractScore_System_Int32_System_String_" data-uid="DSB.GC.GCPlayer.SubtractScore(System.Int32,System.String)">
   SubtractScore(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L199"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L327"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Subtract from player's score. Depending on the GCGamePlacementOrder used, this can be used to determine the player's placement.
+  <div class="markdown level1 summary"><p>Subtract from player's score. Depending on the GCPlacementSortCriteria used, this can be used to determine the player's placement.
 If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1482,40 +2116,6 @@ If hudAutoUpdate is true, the changes will be reflected in the HUD.</p>
     <dd></dd>
     <dt><code>reason</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-  <a id="DSB_GC_GCPlayer__InternalGamingCouchSetup_" data-uid="DSB.GC.GCPlayer._InternalGamingCouchSetup*"></a>
-
-  <h3 id="DSB_GC_GCPlayer__InternalGamingCouchSetup_DSB_GC_GCPlayerSetupOptions_" data-uid="DSB.GC.GCPlayer._InternalGamingCouchSetup(DSB.GC.GCPlayerSetupOptions)">
-  _InternalGamingCouchSetup(GCPlayerSetupOptions)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/deadsetbit/gaming-couch-unity/blob/main/Runtime/GCPlayer.cs/#L136"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>This is called by the GamingCouch script.
-You can access all the properties set by this method, such as Id, PlayerName, Color, etc. in your subclasses Start().</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void _InternalGamingCouchSetup(GCPlayerSetupOptions options)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>options</code> <a class="xref" href="DSB.GC.GCPlayerSetupOptions.html">GCPlayerSetupOptions</a></dt>
-    <dd><p>Options provided by the platform</p>
-</dd>
   </dl>
 
 
