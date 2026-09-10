@@ -3,7 +3,7 @@
 Status: Draft for grilling — **do not implement yet**
 Owner: Gaming Couch Unity package team
 Created: 2026-07-11
-Related: CONTEXT.md (`:138` portability doctrine), `docs/contracts/platform-runtime-contract.md`,
+Related: CONTEXT.md (`:138` portability doctrine), `public/package/Documentation~/platform-runtime-contract.md`,
 ADR 0008 (`gameProtocolVersion` stays 1), ADR 0009 (two-sidecar identity), `VERSIONING_PLAN.md`,
 `example-adapter-refactor-plan.md` (sibling — **landed COMPLETE**, two self-contained example scripts), `ContractFixtures/` + `GCDevJsonContractFixtureTests`.
 

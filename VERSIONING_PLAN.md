@@ -6,10 +6,10 @@
 - Keep the Asset Store listing clean while enabling early adopters.
 
 ## Current state
-- Package: `com.dsb.gamingcouch` — alpha phase. `package.json` is the single source of the current version.
-- License: Apache-2.0 (`LICENSE.md`) — the plugin is open source.
-- Minimum Unity: `6000.0` (Unity 6), per `package.json`.
-- Releases so far are Git tags in the `unity-<version>` form — list them with `git tag --list 'unity-*'` — with a hand-maintained `CHANGELOG.md`.
+- Package: `com.dsb.gamingcouch` — alpha phase. `public/package/package.json` is the single source of the current version. The root `package.json` is private and carries the release scripts only.
+- License: Apache-2.0 (`public/package/LICENSE.md`) — the plugin is open source.
+- Minimum Unity: `6000.0` (Unity 6), per `public/package/package.json`.
+- Releases so far are Git tags in the `unity-<version>` form — list them with `git tag --list 'unity-*'` — with a hand-maintained `public/package/CHANGELOG.md`.
 
 ## Versioning scheme
 - Use SemVer: `MAJOR.MINOR.PATCH`.
@@ -20,7 +20,7 @@
 
 ## Bumping the version (protocol)
 Use the `release:*` npm scripts from the repo root — the one-command flow that keeps
-`package.json` (the single source of name/version) and the baked runtime info in sync:
+`public/package/package.json` (the single source of name/version) and the baked runtime info in sync:
 
 ```bash
 npm run release:alpha        # bump the alpha counter: -alpha.N -> -alpha.N+1
@@ -33,7 +33,7 @@ npm run release:prerelease -- --preid=rc   # pass extra flags after --
 ```
 
 Each script just calls `Tools/bump-version.py`; you can invoke it directly for anything
-not covered by a script (e.g. an explicit version or `--force-tag`):
+not covered by a script (e.g. an explicit version):
 
 ```bash
 python3 Tools/bump-version.py 0.2.0-alpha.0              # explicit version
@@ -54,17 +54,17 @@ what you are about to commit and tag.
 
 What it does:
 1. Warns (y/N) if you are not on `main`.
-2. Bumps `version` in `package.json` (npm-style keyword or explicit `X.Y.Z`), preserving the file's exact formatting.
-3. Re-bakes `Runtime/Resources/GamingCouchRuntimeInfo.json` to the canonical payload for the new version.
+2. Bumps `version` in `public/package/package.json` (npm-style keyword or explicit `X.Y.Z`), preserving the file's exact formatting.
+3. Re-bakes `public/package/Runtime/Resources/GamingCouchRuntimeInfo.json` to the canonical payload for the new version.
 4. Verifies with `Tools/check-runtime-package-info.py` (the baked-JSON-matches-`package.json` invariant is a hard gate; other guard findings are advisory with a y/N).
-5. Commits `chore(release): <version>` and creates the lightweight `unity-<version>` tag.
+5. Commits `chore(release): <version>` and creates the lightweight `unity-<version>` tag. A tag that already exists is refused outright: published tags are immutable, and moving one would leave the public mirror serving the old commit.
 6. Prompts (y/N) to push the branch + tag.
 7. Prompts (y/N) to hand off to the monorepo's DevApp release helper
    (`devspace/devapp/scripts/prepare-devapp-release.sh`), which bumps the DevApp version and
    registers the new `unity-<version>` tag in the DevApp component-version map. The monorepo
    path defaults to `../gamingcouch/client` (override with `$GC_MONOREPO_DIR` or `--monorepo-dir`).
 
-`CHANGELOG.md` is intentionally left manual — write the release notes yourself.
+`public/package/CHANGELOG.md` is intentionally left manual — write the release notes yourself.
 
 ## Runtime identity and protocol versioning
 These decisions are recorded as ADRs; this plan only points to them:
@@ -73,9 +73,9 @@ These decisions are recorded as ADRs; this plan only points to them:
 - WebGL export writes two sidecars: `gc.runtime-info.json` as the narrow identity gate and `gc.unity-build-info.json` as non-gating diagnostics with its own `schemaVersion`; `package.json` is the sole source of package name/version. See [ADR 0009](docs/adr/0009-two-sidecar-identity-model.md).
 
 ## Release automation
-- CI: GitHub Actions is set up; `.github/workflows/docfx-unitypackage.yml` builds and publishes DocFX docs to `gh-pages` on pushes to `main`.
-- Version bumps are currently manual via `Tools/bump-version.py` (see "Bumping the version" above), which produces `unity-<version>` tags.
-- semantic-release is configured in `.releaserc.json`: angular commit conventions on `main`, tag format `Development-v${version}`, changelog generation, and `package.json` version bumps committed back (no npm publish). No workflow in this repo invokes it yet, and existing tags still use the manual `unity-<version>` format — wiring semantic-release into CI (or aligning the tag format) is the remaining automation step.
+- CI: `.github/workflows/docfx-unitypackage.yml` builds the DocFX site, and is `workflow_dispatch` only — the action reads the package from the repository root, which no longer holds one. `docs/architecture/public-mirror-plan.md` rebuilds it to stage `public/package/` and deploy to the public repo.
+- Version bumps are manual via `Tools/bump-version.py` (see "Bumping the version" above), which produces `unity-<version>` tags.
+- `unity-<version>` is the only tag scheme. semantic-release is not wired in and its `.releaserc.json` — which named a second, unused `Development-v${version}` scheme — is deleted.
 - No nightly workflow exists yet; if nightlies are added, CI should build, version, and tag them as clearly labeled "unstable".
 
 ## Release channels

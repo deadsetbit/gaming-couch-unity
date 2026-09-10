@@ -8,18 +8,19 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-PACKAGE_JSON_PATH = ROOT_DIR / "package.json"
-RUNTIME_INFO_PATH = ROOT_DIR / "Runtime" / "GCRuntimeInfo.cs"
-RUNTIME_DIR = ROOT_DIR / "Runtime"
+PACKAGE_DIR = ROOT_DIR / "public" / "package"
+PACKAGE_JSON_PATH = PACKAGE_DIR / "package.json"
+RUNTIME_DIR = PACKAGE_DIR / "Runtime"
+RUNTIME_INFO_PATH = RUNTIME_DIR / "GCRuntimeInfo.cs"
 WEBGL_BOOTSTRAP_PATH = RUNTIME_DIR / "GCWebGLRuntimeInfoBootstrap.cs"
 BAKED_RUNTIME_INFO_PATH = RUNTIME_DIR / "Resources" / "GamingCouchRuntimeInfo.json"
 PACKAGE_CODE_DIRS = [
-    ROOT_DIR / "Runtime",
-    ROOT_DIR / "Editor",
-    ROOT_DIR / "Plugins",
+    PACKAGE_DIR / "Runtime",
+    PACKAGE_DIR / "Editor",
+    PACKAGE_DIR / "Plugins",
 ]
 PACKAGE_CODE_SUFFIXES = {".cs", ".jslib"}
-WEBGL_BRIDGE_PATH = ROOT_DIR / "Plugins" / "GamingCouch.jslib"
+WEBGL_BRIDGE_PATH = PACKAGE_DIR / "Plugins" / "GamingCouch.jslib"
 
 
 class CheckError(Exception):
@@ -294,7 +295,7 @@ def assert_manifest_values_not_hardcoded_in_package_sources(manifest):
 
     for path in iter_package_code_paths():
         source = path.read_text(encoding="utf-8")
-        relative_path = path.relative_to(ROOT_DIR)
+        relative_path = path.relative_to(PACKAGE_DIR)
         if source_contains_string_literal(source, manifest["name"]):
             failures.append("{0} hardcodes package name literal".format(relative_path))
         if source_contains_string_literal(source, manifest["version"]):
@@ -366,7 +367,7 @@ def main():
             "Runtime/GCRuntimeInfo.cs",
         )
         runtime_source = read_required_text(
-            ROOT_DIR / "Runtime" / "GamingCouch.cs",
+            RUNTIME_DIR / "GamingCouch.cs",
             "Runtime/GamingCouch.cs",
         )
         bootstrap_source = read_required_text(

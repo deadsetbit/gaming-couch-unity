@@ -298,7 +298,8 @@ internal static class GamingCouchWebGLBuildSettingsProfiles
             CreateManagedStrippingLevelSpec(ManagedStrippingLevel.High),
             CreateStripUnusedMeshComponentsSpec(true),
             CreateWebGLDataCachingSpec(true),
-            // Disabled by design, see docs/adr/0013-webgl-compression-disabled.md
+            // Disabled by design: compressing served build files is the hosting platform's
+            // serving-layer concern, not the build's. Do not "fix" this to Brotli/Gzip.
             CreateWebGLCompressionSpec(WebGLCompressionFormat.Disabled),
             CreateWebGLExceptionSupportSpec(WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly),
             CreateWebGLDebugSymbolsSpec(WebGLDebugSymbolMode.Off),

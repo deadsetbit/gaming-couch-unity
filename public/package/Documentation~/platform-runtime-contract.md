@@ -1,15 +1,15 @@
 # Platform runtime contract (JS ↔ Unity wire spec)
 
 > **Internal: Gaming Couch platform (client/SDK) maintainers — game developers do not need this.**
-> "Internal" is an audience label, not secrecy — this repository is public. Third-party game
-> developers should read the [root README](../../README.md) instead; nothing here is required to
-> build and ship a game. This document is the complete wire contract between the Gaming Couch
+> "Internal" is an audience label, not secrecy — this document ships with the package.
+> Third-party game developers should read the package [README](../README.md) instead; nothing
+> here is required to build and ship a game. This document is the complete wire contract between the Gaming Couch
 > JavaScript host (client/SDK) and this Unity package.
 
-This is a living contract reference. Every schema below carries `file:line` provenance against this
-repository's code (line numbers are pointers — the named type/method is the durable anchor). Decision
-rationale lives in the [ADRs](../adr/); this document states the *shape*, not the *why*, and links to
-the ADR that owns each decision. Terminology is defined in [CONTEXT.md](../../CONTEXT.md).
+This is a living contract reference. Every schema below carries `file:line` provenance against the
+package's code (line numbers are pointers — the named type/method is the durable anchor). It states
+the *shape*, not the *why*: decision rationale lives in the package repository's architecture decision
+records, which are internal and do not ship with the package.
 
 JSON examples use **placeholder** package identity values (e.g. `com.example.game`, `1.2.3`): the real
 `package.json` name/version is never copied into documentation, so a release cannot leave these examples
@@ -68,8 +68,8 @@ Unity → host signals during this flow are the jslib callbacks in §10.
    Unity streams `runtime_messages` and `screen_space` outward (§7, §9).
 6. `GameOver()` emits the terminal `game_over` runtime message (§7).
 
-See ADR [0001](../adr/0001-strict-runtime-identity-boundary.md) for the strict-current boundary rule
-(the package accepts only current identity; legacy adaptation is the client/SDK's job).
+The identity boundary is strict-current: the package accepts only current identity, and adapting
+legacy identity is the client/SDK's job.
 
 ---
 
@@ -162,7 +162,7 @@ fields at L512–529, `CreateFromJSON` at L534–572). Parsing goes through the 
 | Unique | `DuplicatePlayerIndexPayloadErrorMessage` | Duplicate `playerIndex` values |
 
 Legacy `playerId`/`name` roster adaptation is **not** performed here — the client/SDK must translate
-before invoking Unity (ADR [0001](../adr/0001-strict-runtime-identity-boundary.md)).
+before invoking Unity.
 
 ---
 
@@ -171,8 +171,8 @@ before invoking Unity (ADR [0001](../adr/0001-strict-runtime-identity-boundary.m
 Full shape at `GCPlayOptions.cs`, class `GCPlatformRuntimeView` (L43–172) and its nested types.
 This is the runtime-facing projection of `gc.platform.json`; the **capture/producer** side of that
 schema is owned by the [DevApp local-play contract](devapp-local-play-contract.md). When platform
-data is missing or invalid, Unity substitutes a read-only fallback view (ADR
-[0007](../adr/0007-readonly-platform-metadata-notdefined.md)).
+data is missing or invalid, Unity substitutes a read-only fallback view (see
+[DevApp local-play contract §4](devapp-local-play-contract.md#4-fallback-platform-view)).
 
 **`GCPlatformRuntimeView`** (L43-58):
 
@@ -268,7 +268,7 @@ floats, `-1.0`–`1.0`.
 no keyboard binding for it in local play (editor input mapping at `GamingCouch.cs`, `ApplyDevAppInput`
 path). The physical/touch mapping of `b2` (which button, on which controller) is owned by the client
 repo, not this package. Game-facing semantics for `alt` (an accessibility button, not for core
-mechanics) live in the [root README](../../README.md#player-inputs) and the `GCControllerInputs.alt`
+mechanics) live in the package [README](../README.md#player-inputs) and the `GCControllerInputs.alt`
 XML docs.
 
 Example message: `0|{"a0":-1.0,"a1":0.0,"b0":1,"b1":0,"b2":0}`
@@ -278,7 +278,7 @@ Example message: `0|{"a0":-1.0,"a1":0.0,"b0":1,"b1":0,"b2":0}`
 ## 7. `runtime_messages` envelope, records, and payloads
 
 Runtime state and diagnostics flow out through `window.gamingCouchRuntimeMessages` as batched
-envelopes (ADR [0004](../adr/0004-two-path-runtime-output.md)). Builder:
+envelopes. Builder:
 `Runtime/RuntimeMessages/GCRuntimeMessages.cs`.
 
 **Envelope** (`BuildEnvelopeJson`, L787-817):
@@ -342,9 +342,8 @@ placement (first = 1st place):
 **First-accepted-wins:** once accepted, later submissions are rejected with a
 `gc.runtime.invalid_game_over_placement` diagnostic and ignored
 (`TrySubmitGameOverPlacement`, L129-201; guard `gameOverPlacementAccepted` at L155/193). A final state
-snapshot is flushed immediately before the `game_over` record. See ADR
-[0005](../adr/0005-object-wrapped-game-over.md). Transitions are never coalesced (ADR
-[0015](../adr/0015-ordered-transitions-never-coalesced.md)).
+snapshot is flushed immediately before the `game_over` record. Ordered transitions are never
+coalesced.
 
 ---
 
@@ -388,7 +387,7 @@ prefix** (the record `name`); each prefix maps 1:1 to the matching `sourceArea` 
 
 **Platform-player-id keys are hard-rejected.** Context field keys `playerId`, `playerIds`,
 `platformPlayerId`, `platformPlayerIds` throw (`ValidateKey`, L207-213) — public diagnostics must
-never expose platform player IDs. See ADR [0006](../adr/0006-diagnostics-spine.md).
+never expose platform player IDs.
 
 ---
 
@@ -435,25 +434,21 @@ Unity → host callbacks are declared in `Plugins/GamingCouch.jslib` (L1-114). A
 | `gamingCouchScreenSpace` | `screen_space` envelope (§9) | Per frame | jslib L99 |
 
 `registerUnityBuildInfo`, `sendProjectInfo`, `runtimeMessages`, and `screenSpace` are no-ops if the
-host has not defined the handler (silent early-return); the others log a console error. See ADR
-[0009](../adr/0009-two-sidecar-identity-model.md) for the identity callbacks.
+host has not defined the handler (silent early-return); the others log a console error.
 
 `gamingCouchSendProjectInfo` currently has **no receiver anywhere in the platform** — no client, SDK,
 backend, or DevApp code defines `window.gamingCouchSendProjectInfo`. Every hosted player build still
 makes the call at boot (`Application.productName`, non-editor branch of `Start`), where it takes the
 silent early-return above, so the notification is fire-and-forget with nothing depending on it. It is
 kept as a declared surface a future host may pick up; nothing in the package changes behavior either
-way, and it is not a `gameProtocolVersion` concern (ADR
-[0008](../adr/0008-game-protocol-version-stays-1.md) reserves a bump for contract changes games and
-SDK adapters cannot translate).
+way, and it is not a `gameProtocolVersion` concern — a bump is reserved for contract changes that
+games and SDK adapters cannot translate (§13).
 
 ---
 
 ## 11. Sidecars and template gating
 
-WebGL export writes two sidecars with deliberately different weights (ADR
-[0009](../adr/0009-two-sidecar-identity-model.md)). This is the relocated home for the sidecar detail
-that formerly lived in the README.
+WebGL export writes two sidecars with deliberately different weights.
 
 ### `gc.runtime-info.json` — narrow identity gate
 
@@ -497,8 +492,7 @@ Build diagnostic paths are normalized before serialization: build-output-relativ
 
 ## 12. Web export template contract
 
-The Gaming Couch web export template is a production/upload shell only (ADR
-[0014](../adr/0014-minimal-shell-web-template.md)). Constants at
+The Gaming Couch web export template is a production/upload shell only. Constants at
 `Editor/GamingCouchWebGLExportSetup.cs:208-212`:
 
 - Template name `GamingCouch`; selected as `PROJECT:GamingCouch` (`ProjectTemplateIdentifier`).
@@ -507,8 +501,7 @@ The Gaming Couch web export template is a production/upload shell only (ADR
   standalone playtest harness, no GamingCouch JS callback shims, no local fixtures, no controller
   simulation, and no DevApp communication (`Editor/WebGLTemplates/GamingCouch/index.html`).
 
-WebGL compression is intentionally disabled in the export profiles (ADR
-[0013](../adr/0013-webgl-compression-disabled.md)) — do not "fix" it to Brotli.
+WebGL compression is intentionally disabled in the export profiles — do not "fix" it to Brotli.
 
 ---
 
@@ -521,9 +514,7 @@ document) does not change the contract and requires no bump.
 
 The current recommendation is to keep `gameProtocolVersion` at `1` when the client/SDK already
 translates legacy hosted payloads into current Unity payloads before invoking the package. Any bump
-is a release-owner/user decision. This policy is owned by ADR
-[0008](../adr/0008-game-protocol-version-stays-1.md); per `AGENTS.md`, a bump is always a user
-decision.
+is always a release-owner decision.
 
 ---
 
@@ -545,7 +536,7 @@ required or validated in this slice. The hosted SDK reads `gc.runtime-info.json`
 
 > **Internal migration surface — not a supported runtime contract.** Reserved for temporary internal
 > migration of legacy games that already used the old multiplayer path. Do not use for new work. The
-> [root README](../../README.md) says only "Online multiplayer is not currently supported."
+> package [README](../README.md) says only "Online multiplayer is not currently supported."
 
 Default package builds keep `GamingCouch.OnlineMultiplayerSupport` as a false-returning compatibility
 probe (`GamingCouch.cs:90`); `OnlineMultiplayerServerReady()` and `OnlineMultiplayerClientReady()`

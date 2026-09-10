@@ -20,6 +20,17 @@
 - Always ask permission from the user if making changes to outside repos.
 - Do not add machine-local absolute paths to this tracked file. Put them in `AGENTS.local.md`.
 
+## Repository layout
+
+- The UPM package lives in `public/package/`. Everything under that folder is published to
+  `deadsetbit/gaming-couch-unity-public` on release; nothing else is. Read `public/AGENTS.md`
+  before editing anything there — links and paths inside the package must resolve from the
+  package root, not this one.
+- Everything outside `public/package/` stays private: `docs/`, `Tools/`, `CONTEXT.md`,
+  `AGENTS*.md`, `VERSIONING_PLAN.md`, and the root `package.json`, which is marked private and
+  carries the release scripts only.
+- The design is `docs/architecture/public-mirror-plan.md`.
+
 ## Runtime API compatibility
 
 - The Unity package exposes runtime identity to the Gaming Couch platform.
@@ -32,6 +43,7 @@
 
 - The package has no test tooling of its own. Validate changes with the Unity CLI (`unity`) against a host project that has this package installed.
 - Take the host project path from `AGENTS.local.md`. If it defines none and validation needs one, ask the user for it.
+- The host project reaches the package through an untracked `Packages/gaming-couch-unity` symlink, which is per-developer local state. It must point at this repository's `public/package` folder; a fresh clone or a new machine has to create it.
 - `unity test <host-project> --mode EditMode` runs the EditMode suite; `--mode PlayMode` runs Play Mode. Write the report somewhere outside the repo, e.g. `--output "$TMPDIR/test-results.xml"` — the default (`test-results.xml`) lands in the working directory.
 - `--filter` narrows a run: a semicolon-separated list of full test names or regexes, each optionally negated with `!`. There is no assembly filter; scope by name instead. The Editor tests declare no namespace, so a full name is just the fixture, e.g. `GCPlayerIndexMappingTests`.
 - `unity test` prints nothing while it runs — no progress, no spinner. A first run against a cold project imports the whole project first and can take several minutes of complete silence; that is not a hang. Let it finish and read the exit code.

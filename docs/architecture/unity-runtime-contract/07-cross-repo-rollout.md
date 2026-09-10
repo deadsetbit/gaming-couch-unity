@@ -36,7 +36,7 @@ Chosen path: staged adapter rollout.
 
 > Wire shapes moved out of this tracker (D9). The current Unity `game_over` envelope and payload
 > (`runtime_messages` → `gc.game` / `game_over` → `{ playersByPlacement }`) are owned by the
-> [platform runtime contract](../../contracts/platform-runtime-contract.md#73-game-over-gcgame--game_over).
+> [platform runtime contract](../../../public/package/Documentation~/platform-runtime-contract.md#73-game-over-gcgame--game_over).
 > The legacy hosted/client bridge shape (`runtime_game_over.playerIdsByPlacement`) is a client/SDK-repo
 > concept, not part of this package's wire. This tracker keeps only the rollout rules that discriminate
 > the two during migration.

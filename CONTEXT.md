@@ -2,11 +2,13 @@
 
 This context records the domain language for the Gaming Couch Unity package. It keeps local play, runtime, and platform integration terms stable while the package architecture is deepened.
 
-This file owns terminology only. The detailed wire/schema contracts these terms name live in
-[`docs/contracts/`](docs/contracts/) — the [platform runtime contract](docs/contracts/platform-runtime-contract.md)
-(JS↔Unity wire) and the [DevApp / local-play contract](docs/contracts/devapp-local-play-contract.md)
+This file owns terminology only. The detailed wire/schema contracts these terms name ship with the
+package in [`public/package/Documentation~/`](public/package/Documentation~/) — the
+[platform runtime contract](public/package/Documentation~/platform-runtime-contract.md)
+(JS↔Unity wire) and the
+[DevApp / local-play contract](public/package/Documentation~/devapp-local-play-contract.md)
 (`gc.dev.json`/`gc.platform.json` schemas, capture, shuffle, WebSocket protocol). Decision rationale
-lives in [`docs/adr/`](docs/adr/).
+lives in [`docs/adr/`](docs/adr/), which stays private.
 
 ## Language
 

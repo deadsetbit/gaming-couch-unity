@@ -1,10 +1,12 @@
 name: docfx-unitypackage
 
+# Manual only. The action reads the package from the repository root, and the package lives in
+# public/package/, so every one of its file guards takes the not-found branch: a run succeeds
+# and deploys a gutted site over the docs URL baked into every published tag. Do not restore an
+# automatic trigger until this workflow stages public/package/ as its root and deploys to the
+# public repo.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   build-and-deploy:
