@@ -2,11 +2,19 @@
 
 ## [Unreleased]
 
+## [0.1.0-alpha.7] - 2026-09-10
+
+### Changed
+
+- Renamed `ApplyDevAppInput` to `ApplyExternalPlayerInput`. It is the shared entry point for hosted platform input as well as DevApp input, so the old name described half of what it does. Hosted platform inputs also report as `platform_input` rather than `devapp_input` in diagnostics, so the two sources can be told apart.
+- Narrowed `IGCPlayerStore`'s collection properties to `IReadOnlyList`. `GCPlayerStore` keeps its `List` properties and satisfies the interface explicitly, so a game that declares the concrete store and calls `List` members on it is unaffected. The derived collections are rebuilt whenever a transition is accepted, so enumerating one while eliminating players still throws -- that hazard is now documented per property.
+- Wire Example Game asks before moving an existing folder at one of the example paths to the Trash, matching what Create Example Scene has always done. All four entry points -- the menu item, the checklist action, the start-screen action and the method itself -- share one dialog, and declining is reported as a warning rather than a failure. The swap is also a single named undo group, so one undo restores all of it instead of part.
+- A reused `index.html` whose contents do not match the packaged WebGL template is reported as differing instead of being accepted silently, which was hiding template drift across package upgrades. Nothing is overwritten.
+- The DevApp connection's `serverUrl` is no longer a serialized inspector field.
+
 ### Removed
 
 - Removed the Codex test bridge (`Editor/GamingCouchCodexTestBridge.cs`) and its `Tools/run-open-unity-tests.py` runner. The bridge let an agent run this package's tests inside an already-open Editor by polling a request file under the user's application-data directory. It was internal agent tooling that happened to ship inside the package's `Editor/` folder, and it was inert for anyone who had not opted in, so removing it changes no package behavior. The `.gamingcouch/codex-bridge.enabled` marker file and the `GAMINGCOUCH_CODEX_TEST_BRIDGE` environment variable no longer do anything and can be deleted. The Unity CLI covers package validation (`unity test`), and its `com.unity.pipeline` channel is the supported way to drive a live Editor; `AGENTS.md` documents the flow.
-
-## [0.1.0-alpha.7] - 2026-09-10
 
 ### Fixed
 
@@ -17,6 +25,25 @@
 - Fixed `GCPlayerStore.Clear()` leaving player game objects alive outside play mode. It called `Object.Destroy`, which defers outside play mode (and logs "Destroy may not be called from edit mode"), so the store emptied while the objects lingered in the scene. It now destroys immediately outside play mode and iterates a snapshot, so a `GCPlayer` subclass that touches the store from `OnDestroy` cannot break the loop mid-clear. Player builds are unaffected -- this only showed up in the Editor and editor tooling.
 - Fixed the DevApp devtool router applying zeroed values for keys a message omits. `JsonUtility` cannot express an absent key, so a payload-less `timescale_state` was applied as timescale 0 (clamped downstream) and unpaused, silently unpausing a paused game. Missing-key devtool messages are now ignored.
 - Fixed the `GamingCouch` inspector re-running the full Start Screen readiness scan -- disk reads, a whole-scene component walk, GameView reflection and WebGL template stats -- on every repaint. It is now cached and refreshed at most twice a second.
+- Fixed customised keyboard bindings resetting silently on package upgrade. The serialized input fields were renamed (`a0`/`a1`/`b0`/`b1` to `axisX`/`axisY`/`buttonPrimary`/`buttonSecondary`) with no `[FormerlySerializedAs]`, so Unity dropped the stored values on deserialize.
+- Fixed `SetupPlayers` aborting mid-roster when a player's `type` differed in case, for example `"Bot"`. `_InternalSetPlayerProperties` used a case-sensitive throwing `Enum.Parse` while the rest of the roster pipeline used the tolerant resolver, and the rethrow left a deactivated instantiated object behind. It now uses the same resolver.
+- Fixed template setup failing outright in a project that contains its own type named `GCPlayer`. The stock-player lookup returned the first simple-name match across every assembly, so a namesake shadowed the real type; namesakes that fail the base-type check are now skipped.
+- Fixed seat names being persisted to `gc.dev.json` untrimmed. A padded name passed Unity's 1-8 character rule, but the DevApp checks the minimum on the trimmed value and the maximum on the raw one, so it rejected the file -- and that rejection is whole-file: the project dropped to action-required, seat config became uneditable and the local runner refused to start, recoverable only by hand-editing the JSON. Trimming now happens in the draft's file conversion, which write, validation and the dirty comparison all pass through, and an already-padded file reads as dirty on load so applying normalizes it.
+- Fixed the game-over result of every run after the first being silently dropped while the DevApp is attached. `runId` was minted on each WebSocket open and a Unity restart keeps the socket open, so the id never changed between runs -- the DevApp refuses a second game-over for the same id and only clears per-run diagnostics when it changes. The id is now minted once per run, restart included, and survives a reconnect.
+- Fixed the runtime rejecting DevApp messages that were not byte-identical to the compact form. The inbound router matched the exact bytes of `"type":"gcdevtool"` before parsing, so a pretty-printed or spaced message was dropped. The probe is now a fast path that falls through to the parser, and the payload key probes tolerate whitespace the same way.
+- Fixed concurrent `SendAsync` calls on one `ClientWebSocket` when two runtime outputs landed in the same frame, which both .NET and Mono reject and which surfaced only through logging that is off by default. Sends now go through one queue drained by a single pump.
+- Fixed two races around DevApp reconnects and capped inbound message reassembly. A receive completing just before a close could loop back onto the new socket, and a snapshot coroutine outliving its connection could clear a newer send's in-flight flag; both now bail on a connection epoch. The fragmented-message accumulators grew unbounded until `EndOfMessage` and are now capped, with the remainder discarded so a truncated tail is never reassembled into a message of its own.
+- Fixed a malformed platform pause payload throwing inside the JS-to-Unity dispatch. `GamingCouchPause` parsed with a throwing `bool.Parse` while the sibling inputs path was already hardened.
+- Fixed `GCPlayerStore.Clear()` leaving the store half-cleared: it never unsubscribed `AcceptedTransition`, and a game-destroyed GameObject could abort the loop, after which the next `AddPlayer` threw.
+- Fixed the bake-time JSON writer shipping in player builds. `GCRuntimeInfo.cs` held an editor-only writer that was not `#if`-guarded even though only Editor code calls it; it is now wrapped in `UNITY_EDITOR`.
+- Fixed a re-entrant log capture loop with `webSocketLogging` and full log capture both on: a `[GCDevApp][WebSocket]` line became a diagnostic, became a runtime message, and was logged again in the same frame.
+- Fixed `gc.dev.json` and the two sidecar files being written non-atomically while external tools and the 0.25s stamp poller read them. All three now write to a temp file and rename.
+- Fixed a read-only `Assets` folder throwing straight out of `OnGUI`. `InstallTemplateFiles` caught nothing; filesystem failures are now blocked reasons naming the path. The jslib's runtime-messages, screen-space and setup-hud imports also parsed JSON bare while their siblings wrapped it, so malformed JSON threw out of the bridge.
+- Fixed a successful WebGL apply raising a modal error dialog when a row had been deselected. Readiness folded deliberately-skipped rows into its blocking flag; the apply seam now softens its own status when every still-changed row is one the caller deselected, while readiness itself stays honest.
+- Fixed the WebGL template shipping a hardcoded `<title>App</title>`.
+- Fixed the inspector rendering validation issues through a hand-rolled formatter that dropped the gate prefix and path suffix the start-screen window shows, and fixed UNC paths being over-redacted because only drive-absolute paths took the Windows comparison.
+- Fixed `CS0649` appearing in every consumer's console for `GCPlayer.playerName`.
+- Fixed the start screen recomputing its scene list twice per repaint and allocating four `GUIStyle`s per row, and the pending-setup poller running a full assembly and type sweep on every editor tick on the default template path. The stock player type is now memoized, cached only on success so a tick during compilation stays free to find it later.
 
 ## [0.1.0-alpha.6] - 2026-07-18
 
