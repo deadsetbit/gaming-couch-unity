@@ -188,8 +188,16 @@ them the release tooling points at the old paths and no release can be cut.
       `docs/contracts/devapp-local-play-contract.md` into `public/package/Documentation~/` and
       link them there; repoint API links at the **`/latest/api/…`** deep-link base; drop the
       links to the ADRs, the backlog and `CONTEXT.md`.
-      **Acceptance:** `grep -rn "gaming-couch-unity/\|github.io/gaming-couch-unity\|\.\./docs" public/package/`
-      returns nothing.
+- [ ] **Rewrite the moved contract documents' own links.** They are not inert text: between
+      them they carry around a dozen `../adr/…` links plus `../../README.md` and
+      `../../CONTEXT.md`. From `public/package/Documentation~/` every one of those resolves
+      outside the published package, and `docs/`, the ADRs and `CONTEXT.md` are deliberately
+      staying private — so a consumer following any link inside a published contract hits a
+      404. Rewrite the ones with a public destination and remove the rest; where an ADR is
+      genuinely load-bearing for a game author, fold its point into the contract text rather
+      than linking to a private file.
+      **Acceptance:** `grep -rnE "\]\((\.\./)+|gaming-couch-unity/|github\.io/gaming-couch-unity" public/package/`
+      returns nothing that escapes the package root.
 - [ ] Delete the metas orphaned by the move — `docs.meta`, `Tools.meta`, `AGENTS.md.meta`,
       `CONTEXT.md.meta`, `VERSIONING_PLAN.md.meta`, `AGENTS.local.example.md.meta`,
       `Tools/__pycache__.meta`. Unity will never see those files again.
@@ -353,8 +361,9 @@ The page must:
 - State that the package lives in the tags, not on this branch.
 - Carry **no `package.json`** — that absence is what makes a tagless git URL fail loudly
   instead of installing a moving version.
-- After Phase 7, carry a line that `https://deadsetbit.github.io/gaming-couch-unity/` is dead
-  and that tags published before the cutover have that URL baked into their manifest.
+- Not carry a notice about the dead legacy docs URL. Someone following
+  `https://deadsetbit.github.io/gaming-couch-unity/` never arrives here, so a line on this
+  page cannot mitigate it — see Phase 7.
 
 **Verify:** `gh api repos/deadsetbit/gaming-couch-unity-public/contents` lists `README.md` and
 **no** `package.json`.
@@ -435,11 +444,27 @@ Then:
 - [ ] Flip `deadsetbit/gaming-couch-unity` to private (Settings → Danger Zone).
 - [ ] Smoke test: a clean checkout of a consumer project resolves the package from the public
       URL with no credentials.
-- [ ] Add the dead-docs-URL line to the landing page (Phase 5).
 
-`https://deadsetbit.github.io/gaming-couch-unity/` dies at the flip, and the tags published
-before the cutover carry that URL in their `package.json`. A published tag cannot be fixed
-retroactively.
+### The legacy docs URL
+
+`https://deadsetbit.github.io/gaming-couch-unity/` dies at the flip — on Free, making a repo
+private unpublishes its Pages site — and every tag published before the cutover carries that
+URL in its `package.json`, where it cannot be fixed retroactively. A notice on the new landing
+page does **not** mitigate this: requests to the old URL never reach the new repo.
+
+Two honest options, and the plan takes the first:
+
+- **Accept it, and make the population empty.** The preconditions above already require every
+  device to be on a post-restructure release before the flip, so nobody should still be
+  holding a pre-cutover tag. Say so in the `CHANGELOG` entry for the first post-cutover
+  release, and treat any remaining pre-cutover install as needing an upgrade rather than a
+  working docs link.
+- **Preserve the URL.** The path segment is the repo name, so keeping it alive means renaming
+  the source repo and creating a *public* stub at `deadsetbit/gaming-couch-unity` whose only
+  job is a Pages redirect. That also captures the old git URL, which then resolves to a repo
+  with no package instead of failing as "not found" — arguably clearer, but it is a second
+  repo to own and a rename with its own redirect semantics. Only worth it if real traffic
+  turns out to depend on the old URL.
 
 ## Developer install routes
 
