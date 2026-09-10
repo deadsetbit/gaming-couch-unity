@@ -140,21 +140,39 @@ namespace DSB.GC
             // "Destroy may not be called from edit mode" and defers, so use DestroyImmediate there.
             // DestroyImmediate runs OnDestroy synchronously, so iterate a snapshot: a GCPlayer
             // subclass whose OnDestroy touched this store would otherwise break the enumeration.
-            foreach (var player in players.ToArray())
+            // Play-mode Destroy is deferred to end of frame, so undo the AddPlayer subscription
+            // here rather than relying on the player going away.
+            try
             {
-                if (UnityEngine.Application.isPlaying)
+                foreach (var player in players.ToArray())
                 {
-                    UnityEngine.Object.Destroy(player.gameObject);
-                }
-                else
-                {
-                    UnityEngine.Object.DestroyImmediate(player.gameObject);
+                    player.AcceptedTransition -= HandleAcceptedTransition;
+
+                    // A player whose GameObject was destroyed outside the store leaves a live C#
+                    // wrapper behind, and reading gameObject on it throws MissingReferenceException.
+                    if (player == null)
+                    {
+                        continue;
+                    }
+
+                    if (UnityEngine.Application.isPlaying)
+                    {
+                        UnityEngine.Object.Destroy(player.gameObject);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.DestroyImmediate(player.gameObject);
+                    }
                 }
             }
-
-            players.Clear();
-            ClearStateCollections();
-            playerByIndex.Clear();
+            finally
+            {
+                // The store must end up empty even if a subclass OnDestroy threw, or the next run
+                // would start on a half-cleared store.
+                players.Clear();
+                ClearStateCollections();
+                playerByIndex.Clear();
+            }
         }
 
         private void RebuildStateCollections()

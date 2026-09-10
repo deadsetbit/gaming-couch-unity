@@ -69,7 +69,7 @@ public sealed class GamingCouchClearMappingTests
         LogAssert.Expect(LogType.Warning, InvalidPlayerIndexWarning);
         Assert.That(gamingCouch.TryValidatePlayerIndex(9, "test_input", out _), Is.False);
 
-        gamingCouch.ApplyDevAppInput(0, new GCControllerInputsData { a0 = 0.75f, b0 = 1 });
+        gamingCouch.ApplyExternalPlayerInput(0, new GCControllerInputsData { a0 = 0.75f, b0 = 1 }, "test_input");
 
         var inputs = gamingCouch.GetInputsByPlayerIndex(0);
         Assert.That(inputs, Is.Not.Null);

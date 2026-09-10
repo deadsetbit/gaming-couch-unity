@@ -75,7 +75,7 @@ public sealed class GCExampleGamePlayModeSmokeTests
         yield return WaitUntil(
             () =>
             {
-                gamingCouch.ApplyDevAppInput(0, new GCControllerInputsData { b0 = 1 });
+                gamingCouch.ApplyExternalPlayerInput(0, new GCControllerInputsData { b0 = 1 }, "test_input");
                 return player0.Score > scoreBefore;
             },
             timeoutSeconds: 1.5f

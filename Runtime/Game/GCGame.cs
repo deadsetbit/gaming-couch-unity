@@ -62,7 +62,11 @@ namespace DSB.GC.Game
                         players = options.hud.players
                     }
                 );
-                UpdatePlayersHud();
+
+                if (isPlayersHudAutoUpdateEnabled)
+                {
+                    isPlayersHudAutoUpdatePending = true;
+                }
             }
         }
 
@@ -310,7 +314,7 @@ namespace DSB.GC.Game
                         statusText = playerState.statusText,
                         eliminationState = playerState.eliminationState,
                         finishState = playerState.finishState,
-                        eliminated = playerState.eliminationState != GCPlayerEnumNames.EliminationState(GCPlayerEliminationState.None),
+                        eliminated = player.IsEliminated,
                         placement = playerState.placement,
                         value = GetPlayerHudValue(player),
                         meter = playerState.meter,

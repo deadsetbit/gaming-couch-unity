@@ -104,7 +104,7 @@ namespace DSB.GC
         /// </summary>
         [Obsolete("GCPlayer.Id has been removed from the game-facing runtime contract. Use GCPlayer.Index.", true)]
         public int Id => id;
-        private string playerName;
+        private string playerName = null;
         /// <summary>
         /// Removed. Player names are platform-owned and are not exposed to Unity game code.
         /// </summary>
