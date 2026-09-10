@@ -118,6 +118,20 @@ namespace DSB.GC.Dev
 
     }
 
+    // The DevApp keys per-run bookkeeping off runId: it refuses a second game-over for a runId it
+    // has already accepted, and only clears per-run diagnostics when the id changes. The id must
+    // therefore change exactly once per run and stay put across socket reconnects, so it is owned
+    // here rather than by the websocket connection.
+    internal static class GCDevAppRunIdentity
+    {
+        internal static string CurrentRunId { get; private set; }
+
+        internal static void BeginRun()
+        {
+            CurrentRunId = Guid.NewGuid().ToString("N");
+        }
+    }
+
     internal static class GCDevAppRuntimeOutputSettings
     {
         private static string runtimeLogCaptureMode = GCRuntimeUnityLogCaptureMode.Off;
@@ -134,8 +148,12 @@ namespace DSB.GC.Dev
             hasRuntimeLogCaptureModeOverride = true;
         }
 
+        // GCActiveRunProjection calls this once per Play() -- restart included -- so it is also the
+        // run-start signal reachable from the dev integration, and where the run id is minted.
         internal static GCRuntimeOutputOptions Apply(GCRuntimeOutputOptions options)
         {
+            GCDevAppRunIdentity.BeginRun();
+
             var outputOptions = options ?? new GCRuntimeOutputOptions();
             if (!hasRuntimeLogCaptureModeOverride)
             {

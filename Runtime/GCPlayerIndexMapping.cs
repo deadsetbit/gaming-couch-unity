@@ -11,6 +11,7 @@ namespace DSB.GC
     {
         private readonly GCPlayerIndexMappingEntry[] entriesByIndex;
         private readonly Dictionary<int, int> playerIndexBySourceSeatIndex = new Dictionary<int, int>();
+        private readonly HashSet<string> emittedInvalidPlayerIndexKeys = new HashSet<string>();
 
         internal string MappingId { get; }
         internal int Seed { get; }
@@ -249,6 +250,15 @@ namespace DSB.GC
 
         private void EmitInvalidPlayerIndex(int playerIndex, string source)
         {
+            // A bad index arrives once per input frame, and each emit allocates a payload, queues a
+            // runtime message and logs a warning. Suppressing repeats per (source, playerIndex)
+            // keeps the first occurrence and every genuinely new offender, and a mapping is built
+            // per run, so the set is empty again whenever the roster is rebuilt.
+            if (!emittedInvalidPlayerIndexKeys.Add(source + ":" + playerIndex))
+            {
+                return;
+            }
+
             var context = new GCDiagnosticContext()
                 .WithMapping(CreateDiagnosticContext(source + ":playerIndex:" + playerIndex));
 

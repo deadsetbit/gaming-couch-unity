@@ -192,6 +192,9 @@ namespace DSB.GC.Dev
     internal sealed class GCDevAppRuntimeInbound
     {
         private const string DevToolMessageType = "gcdevtool";
+        // The compact form the DevApp emits today (JSON.stringify with no indent argument). A hit
+        // is a fast path past the key scan; a miss proves nothing, because any whitespace around
+        // the key or the colon breaks the literal, so it falls through to the parse.
         private const string DevToolTypeProbe = "\"type\":\"" + DevToolMessageType + "\"";
         private const string RestartAction = "restart";
         private const string InputAction = "input";
@@ -201,13 +204,15 @@ namespace DSB.GC.Dev
 
         // JsonUtility auto-instantiates [Serializable] class fields, so a message that
         // omits "payload"/"inputs"/"runtimeOutput" (or a value field like "timescale")
-        // still deserializes to a non-null, zero-valued instance. Probe the raw (compact)
-        // JSON for these key tokens -- mirroring the whitespace-sensitive DevToolTypeProbe
-        // idiom -- so a missing-key message is ignored instead of applying zeros.
-        private const string InputsKeyToken = "\"inputs\":";
-        private const string TimescaleKeyToken = "\"timescale\":";
-        private const string PausedKeyToken = "\"paused\":";
-        private const string RuntimeOutputKeyToken = "\"runtimeOutput\":";
+        // still deserializes to a non-null, zero-valued instance. Scan the raw JSON for
+        // these keys so a missing-key message is ignored instead of applying zeros. The scan
+        // only has to tell an absent key from a zero value, which it can do without pinning
+        // the sender's whitespace.
+        private const string TypeKey = "\"type\"";
+        private const string InputsKey = "\"inputs\"";
+        private const string TimescaleKey = "\"timescale\"";
+        private const string PausedKey = "\"paused\"";
+        private const string RuntimeOutputKey = "\"runtimeOutput\"";
 
         internal const byte CompactControllerInputTypeByte = 0x44;
         internal const int CompactControllerInputByteLength = 16;
@@ -231,7 +236,10 @@ namespace DSB.GC.Dev
                 return GCDevAppRuntimeInboundDecision.Unhandled("empty_message");
             }
 
-            if (!message.Contains(DevToolTypeProbe))
+            // Pre-filter only: text without a type key at all is not a DevApp command and is not
+            // worth parsing. Everything else goes to the data.type check below, which is what
+            // actually decides -- and is whitespace-agnostic.
+            if (!message.Contains(DevToolTypeProbe) && !ContainsJsonKey(message, TypeKey))
             {
                 return GCDevAppRuntimeInboundDecision.Unhandled(UnsupportedMessageTypeReason);
             }
@@ -334,7 +342,7 @@ namespace DSB.GC.Dev
             string rawMessage
         )
         {
-            if (payload == null || !ContainsJsonKey(rawMessage, InputsKeyToken) || payload.inputs == null)
+            if (payload == null || !ContainsJsonKey(rawMessage, InputsKey) || payload.inputs == null)
             {
                 // The presence probe covers a missing key; the payload.inputs null-check covers an
                 // explicit "inputs":null, which leaves the field null for BuildControllerInputs to
@@ -367,8 +375,8 @@ namespace DSB.GC.Dev
         )
         {
             if (payload == null ||
-                !ContainsJsonKey(rawMessage, TimescaleKeyToken) ||
-                !ContainsJsonKey(rawMessage, PausedKeyToken))
+                !ContainsJsonKey(rawMessage, TimescaleKey) ||
+                !ContainsJsonKey(rawMessage, PausedKey))
             {
                 return GCDevAppRuntimeInboundDecision.Ignored("missing_timescale_payload");
             }
@@ -385,7 +393,7 @@ namespace DSB.GC.Dev
             string rawMessage
         )
         {
-            if (payload == null || !ContainsJsonKey(rawMessage, RuntimeOutputKeyToken) || payload.runtimeOutput == null)
+            if (payload == null || !ContainsJsonKey(rawMessage, RuntimeOutputKey) || payload.runtimeOutput == null)
             {
                 // As with inputs: an explicit "runtimeOutput":null passes the presence probe but
                 // leaves the field null, and reading runtimeOutput.runtimeLogCapture would throw.
@@ -395,9 +403,39 @@ namespace DSB.GC.Dev
             return GCDevAppRuntimeInboundDecision.RuntimeOutputOptions(payload.runtimeOutput.runtimeLogCapture);
         }
 
-        private static bool ContainsJsonKey(string rawMessage, string keyToken)
+        // Matches a quoted key followed by its colon, tolerating whitespace on either side of the
+        // colon, so pretty-printed JSON reads the same as the compact form.
+        private static bool ContainsJsonKey(string rawMessage, string quotedKey)
         {
-            return rawMessage != null && rawMessage.Contains(keyToken);
+            if (rawMessage == null)
+            {
+                return false;
+            }
+
+            var searchIndex = 0;
+            while (searchIndex <= rawMessage.Length - quotedKey.Length)
+            {
+                var keyIndex = rawMessage.IndexOf(quotedKey, searchIndex, StringComparison.Ordinal);
+                if (keyIndex < 0)
+                {
+                    return false;
+                }
+
+                var cursor = keyIndex + quotedKey.Length;
+                while (cursor < rawMessage.Length && char.IsWhiteSpace(rawMessage[cursor]))
+                {
+                    cursor += 1;
+                }
+
+                if (cursor < rawMessage.Length && rawMessage[cursor] == ':')
+                {
+                    return true;
+                }
+
+                searchIndex = keyIndex + 1;
+            }
+
+            return false;
         }
 
         private static GCControllerInputsData BuildControllerInputs(GCDevAppRuntimeInputData inputs)
