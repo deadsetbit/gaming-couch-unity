@@ -1,6 +1,8 @@
+#if UNITY_EDITOR
 using System;
 using System.Globalization;
 using System.Text;
+using DSB.GC.RuntimeMessages;
 
 namespace DSB.GC
 {
@@ -37,68 +39,17 @@ namespace DSB.GC
 
         private static void AppendJsonProperty(StringBuilder builder, string propertyName, string value)
         {
-            AppendJsonString(builder, propertyName);
+            GCRuntimeJson.AppendString(builder, propertyName);
             builder.Append(':');
-            AppendJsonString(builder, value);
+            GCRuntimeJson.AppendString(builder, value);
         }
 
         private static void AppendJsonProperty(StringBuilder builder, string propertyName, int value)
         {
-            AppendJsonString(builder, propertyName);
+            GCRuntimeJson.AppendString(builder, propertyName);
             builder.Append(':');
             builder.Append(value.ToString(CultureInfo.InvariantCulture));
         }
-
-        private static void AppendJsonString(StringBuilder builder, string value)
-        {
-            if (value == null)
-            {
-                builder.Append("null");
-                return;
-            }
-
-            builder.Append('"');
-            foreach (var character in value)
-            {
-                switch (character)
-                {
-                    case '"':
-                        builder.Append("\\\"");
-                        break;
-                    case '\\':
-                        builder.Append("\\\\");
-                        break;
-                    case '\b':
-                        builder.Append("\\b");
-                        break;
-                    case '\f':
-                        builder.Append("\\f");
-                        break;
-                    case '\n':
-                        builder.Append("\\n");
-                        break;
-                    case '\r':
-                        builder.Append("\\r");
-                        break;
-                    case '\t':
-                        builder.Append("\\t");
-                        break;
-                    default:
-                        if (character < ' ')
-                        {
-                            builder.Append("\\u");
-                            builder.Append(((int)character).ToString("x4", CultureInfo.InvariantCulture));
-                        }
-                        else
-                        {
-                            builder.Append(character);
-                        }
-
-                        break;
-                }
-            }
-
-            builder.Append('"');
-        }
     }
 }
+#endif
