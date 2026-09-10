@@ -2,11 +2,14 @@
 
 ## [Unreleased]
 
+## [0.1.0-alpha.7] - 2026-09-10
+
 ### Fixed
 
 - Fixed the Codex test bridge activating in every Editor with this package installed. It was gated behind `#if UNITY_INCLUDE_TESTS`, which is active in a package consumer's Editor, so simply installing the package started a background file-polling bridge that created directories outside the project, wrote a token manifest into the user's application-data directory, and (on macOS/Linux) tightened permissions there. The bridge is now opt-in per host project -- a `.gamingcouch/codex-bridge.enabled` marker file or the `GAMINGCOUCH_CODEX_TEST_BRIDGE` environment variable -- and is completely inert without one.
 - Fixed the test bridge restricting a directory it does not own: its permission walk rooted at the local application-data directory itself, so on macOS/Linux it chmod-ed `~/.local/share` to 0700. It now creates, symlink-rejects and 0700-restricts only `<localappdata>/Gaming Couch` and below.
 - Fixed `GamingCouch.Instance.Clear()` dropping the run-scoped player-index mapping, which did not reset the run but permanently disarmed it: every later platform inputs message was silently dropped and `GameOver()` could never submit a placement. The round-reset pattern -- `Clear()` followed by `SetupPlayers` without a fresh `Play()` -- works again.
+- Fixed `GCPlayerStore.Clear()` leaving player game objects alive outside play mode. It called `Object.Destroy`, which defers outside play mode (and logs "Destroy may not be called from edit mode"), so the store emptied while the objects lingered in the scene. It now destroys immediately outside play mode and iterates a snapshot, so a `GCPlayer` subclass that touches the store from `OnDestroy` cannot break the loop mid-clear. Player builds are unaffected -- this only showed up in the Editor and editor tooling.
 - Fixed the DevApp devtool router applying zeroed values for keys a message omits. `JsonUtility` cannot express an absent key, so a payload-less `timescale_state` was applied as timescale 0 (clamped downstream) and unpaused, silently unpausing a paused game. Missing-key devtool messages are now ignored.
 - Fixed the `GamingCouch` inspector re-running the full Start Screen readiness scan -- disk reads, a whole-scene component walk, GameView reflection and WebGL template stats -- on every repaint. It is now cached and refreshed at most twice a second.
 
