@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Changelog | Gaming Couch | 0.1.0-alpha.6 </title>
+      <title>Changelog | Gaming Couch | 0.1.0-alpha.7 </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Changelog | Gaming Couch | 0.1.0-alpha.6 ">
+      <meta name="title" content="Changelog | Gaming Couch | 0.1.0-alpha.7 ">
       
       
       <link rel="icon" href="../favicon.ico">
@@ -92,11 +92,14 @@
 <ul>
 <li>Removed the Codex test bridge (<code>Editor/GamingCouchCodexTestBridge.cs</code>) and its <code>Tools/run-open-unity-tests.py</code> runner. The bridge let an agent run this package's tests inside an already-open Editor by polling a request file under the user's application-data directory. It was internal agent tooling that happened to ship inside the package's <code>Editor/</code> folder, and it was inert for anyone who had not opted in, so removing it changes no package behavior. The <code>.gamingcouch/codex-bridge.enabled</code> marker file and the <code>GAMINGCOUCH_CODEX_TEST_BRIDGE</code> environment variable no longer do anything and can be deleted. The Unity CLI covers package validation (<code>unity test</code>), and its <code>com.unity.pipeline</code> channel is the supported way to drive a live Editor; <code>AGENTS.md</code> documents the flow.</li>
 </ul>
+<h2 id="010-alpha7---2026-09-10">[0.1.0-alpha.7] - 2026-09-10</h2>
 <h3 id="fixed">Fixed</h3>
 <ul>
+<li>Fixed the package failing to compile on Unity 6000.3 with <code>error CS1061: 'SerializedProperty' does not contain a definition for 'objectReferenceEntityIdValue'</code>. The scene-wiring missing-reference check gated that property behind <code>UNITY_6000_3_OR_NEWER</code>, but while the <code>EntityId</code> type ships in 6000.3, the <code>SerializedProperty.objectReferenceEntityIdValue</code> accessor only arrives in 6000.4. The guard is now <code>UNITY_6000_4_OR_NEWER</code>, which leaves 6000.3 on the deprecated but still available instance-ID path.</li>
 <li>Fixed the Codex test bridge activating in every Editor with this package installed. It was gated behind <code>#if UNITY_INCLUDE_TESTS</code>, which is active in a package consumer's Editor, so simply installing the package started a background file-polling bridge that created directories outside the project, wrote a token manifest into the user's application-data directory, and (on macOS/Linux) tightened permissions there. The bridge is now opt-in per host project -- a <code>.gamingcouch/codex-bridge.enabled</code> marker file or the <code>GAMINGCOUCH_CODEX_TEST_BRIDGE</code> environment variable -- and is completely inert without one.</li>
 <li>Fixed the test bridge restricting a directory it does not own: its permission walk rooted at the local application-data directory itself, so on macOS/Linux it chmod-ed <code>~/.local/share</code> to 0700. It now creates, symlink-rejects and 0700-restricts only <code>&lt;localappdata&gt;/Gaming Couch</code> and below.</li>
 <li>Fixed <code>GamingCouch.Instance.Clear()</code> dropping the run-scoped player-index mapping, which did not reset the run but permanently disarmed it: every later platform inputs message was silently dropped and <code>GameOver()</code> could never submit a placement. The round-reset pattern -- <code>Clear()</code> followed by <code>SetupPlayers</code> without a fresh <code>Play()</code> -- works again.</li>
+<li>Fixed <code>GCPlayerStore.Clear()</code> leaving player game objects alive outside play mode. It called <code>Object.Destroy</code>, which defers outside play mode (and logs &quot;Destroy may not be called from edit mode&quot;), so the store emptied while the objects lingered in the scene. It now destroys immediately outside play mode and iterates a snapshot, so a <code>GCPlayer</code> subclass that touches the store from <code>OnDestroy</code> cannot break the loop mid-clear. Player builds are unaffected -- this only showed up in the Editor and editor tooling.</li>
 <li>Fixed the DevApp devtool router applying zeroed values for keys a message omits. <code>JsonUtility</code> cannot express an absent key, so a payload-less <code>timescale_state</code> was applied as timescale 0 (clamped downstream) and unpaused, silently unpausing a paused game. Missing-key devtool messages are now ignored.</li>
 <li>Fixed the <code>GamingCouch</code> inspector re-running the full Start Screen readiness scan -- disk reads, a whole-scene component walk, GameView reflection and WebGL template stats -- on every repaint. It is now cached and refreshed at most twice a second.</li>
 </ul>
