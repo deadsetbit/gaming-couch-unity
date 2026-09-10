@@ -7,8 +7,7 @@ Owner: Gaming Couch Unity package team
 ## Purpose
 
 Follow-up improvements to the game-developer (EXT) and internal documentation, raised after the
-audience-split docs restructure landed (see the delete-at-merge PRD
-`gamingcouch-docs-restructure-prd.md`). This is a tracker, not a PRD: clear-cut items can be
+audience-split docs restructure landed. This is a tracker, not a PRD: clear-cut items can be
 implemented directly; planning items need a decision or a design pass first. Not linked from the
 README's consumer-facing sections.
 
@@ -22,8 +21,8 @@ Legend: `[x]` done · `[ ]` open · **Type** = *Clear-cut* (do directly) or *Nee
   The external `gaming-couch-unity-template` repo is not a public example, so all three README links to
   it were removed (What next?, Creating a Unity project from scratch, Documentation → For game
   developers). The Documentation section now points to the in-editor example instead
-  (`GamingCouch → Create New Example Scene` → `GCGameExample`/`GCPlayerExample`), which every user can
-  generate from the package.
+  (`GamingCouch → Create New Example Scene` → `GCExampleTemplate`, or `Wire Example Game` for
+  `GCExampleGame`/`GCExamplePlayer`), which every user can generate from the package.
 
 - [x] **C1 — Add an FAQ section to the README.** *(Clear-cut, done 2026-07-05)*
   Replaced the standalone `## Multiplayer` section with a `## FAQ` section (and updated the Contents TOC

@@ -357,7 +357,7 @@ When you are ready to build for Gaming Couch:
 ## FAQ
 
 **Is online multiplayer supported?**
-Online multiplayer is not supported feature.
+Online multiplayer is not currently supported.
 
 To test online it can be feasible over screen sharing in discord, google meet, etc. for this, you can share the mobile controller from the Gaming Couch DevApp or upload the build to gaming couch.
 

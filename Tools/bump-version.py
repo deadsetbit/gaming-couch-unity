@@ -31,10 +31,10 @@ Usage:
                     path to the gaming-couch-client monorepo. Defaults to
                     $GC_MONOREPO_DIR, else ../gamingcouch/client next to this repo.
 
-Examples (current package 0.1.0-alpha.5):
-  Tools/bump-version.py prerelease --preid=alpha   -> 0.1.0-alpha.6
-  Tools/bump-version.py prerelease --preid=beta    -> 0.1.0-beta.0
-  Tools/bump-version.py patch                      -> 0.1.0  (finalize the prerelease)
+Examples (from a prerelease X.Y.Z-alpha.N; package.json holds the real current version):
+  Tools/bump-version.py prerelease --preid=alpha   -> X.Y.Z-alpha.N+1
+  Tools/bump-version.py prerelease --preid=beta    -> X.Y.Z-beta.0
+  Tools/bump-version.py patch                      -> X.Y.Z  (finalize the prerelease)
   Tools/bump-version.py 0.2.0-alpha.0              -> exact version
 """
 

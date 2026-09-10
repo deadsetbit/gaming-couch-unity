@@ -6,10 +6,10 @@
 - Keep the Asset Store listing clean while enabling early adopters.
 
 ## Current state
-- Package: `com.dsb.gamingcouch` at `0.1.0-alpha.5` (`package.json`) — alpha phase.
+- Package: `com.dsb.gamingcouch` — alpha phase. `package.json` is the single source of the current version.
 - License: Apache-2.0 (`LICENSE.md`) — the plugin is open source.
 - Minimum Unity: `6000.0` (Unity 6), per `package.json`.
-- Releases so far are Git tags (`unity-0.1.0-alpha.1`, `unity-0.1.0-alpha.3`) with a hand-maintained `CHANGELOG.md`.
+- Releases so far are Git tags in the `unity-<version>` form — list them with `git tag --list 'unity-*'` — with a hand-maintained `CHANGELOG.md`.
 
 ## Versioning scheme
 - Use SemVer: `MAJOR.MINOR.PATCH`.
@@ -23,7 +23,7 @@ Use the `release:*` npm scripts from the repo root — the one-command flow that
 `package.json` (the single source of name/version) and the baked runtime info in sync:
 
 ```bash
-npm run release:alpha        # 0.1.0-alpha.5 -> 0.1.0-alpha.6
+npm run release:alpha        # bump the alpha counter: -alpha.N -> -alpha.N+1
 npm run release:beta         # switch line: -> 0.1.0-beta.0
 npm run release:patch        # finalize a prerelease -> 0.1.0
 npm run release:minor        # -> 0.2.0

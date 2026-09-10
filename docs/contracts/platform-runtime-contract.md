@@ -11,10 +11,10 @@ repository's code (line numbers are pointers — the named type/method is the du
 rationale lives in the [ADRs](../adr/); this document states the *shape*, not the *why*, and links to
 the ADR that owns each decision. Terminology is defined in [CONTEXT.md](../../CONTEXT.md).
 
-JSON examples use **placeholder** package identity values (e.g. `com.example.game`, `1.2.3`); per
-`AGENTS.md` the real `package.json` name/version must never be copied into documentation. `platform`
-(`"unity"`) and `gameProtocolVersion` (`1`) are protocol constants, not package metadata, and are shown
-literally.
+JSON examples use **placeholder** package identity values (e.g. `com.example.game`, `1.2.3`): the real
+`package.json` name/version is never copied into documentation, so a release cannot leave these examples
+stale. `platform` (`"unity"`) and `gameProtocolVersion` (`1`) are protocol constants, not package metadata,
+and are shown literally.
 
 ## Contents
 

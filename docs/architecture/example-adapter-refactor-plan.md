@@ -1,6 +1,6 @@
 # Example Refactor — Plan (grilled 2026-07-11; decisions resolved)
 
-Status: **COMPLETE 2026-07-12 — all nine decisions resolved (§9), design simplified to two self-contained scripts (§4.1), ADR 0017 drafted, executable task tracker in §11 fully executed. Groups A–E DONE; EditMode + PlayMode suites verified green in Unity's Test Runner. Nothing committed (repo convention: no commits/push unless asked).**
+Status: **COMPLETE 2026-07-12 — all nine decisions resolved (§9), design simplified to two self-contained scripts (§4.1), ADR 0017 drafted, executable task tracker in §11 fully executed. Groups A–E DONE; EditMode + PlayMode suites verified green in Unity's Test Runner.**
 Owner: Gaming Couch Unity package team
 Created: 2026-07-10
 Review: fact-checked against the codebase (2026-07-10). Load-bearing mechanism claims verified

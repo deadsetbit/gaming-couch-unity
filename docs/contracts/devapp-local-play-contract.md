@@ -14,7 +14,8 @@ durable anchor; line numbers drift). Rationale lives in the [ADRs](../adr/); ter
 [platform runtime contract](platform-runtime-contract.md); this document owns the **producer/capture**
 side and links across per the overlap rule (capture/schema → here; wire/received → platform doc).
 
-JSON examples use placeholder package identity values per `AGENTS.md`.
+JSON examples use placeholder package identity values; the real `package.json` name/version is never
+copied into documentation.
 
 ## Contents
 
@@ -161,7 +162,7 @@ Unity emits `gc.metadata.*` diagnostics for the fallback and never writes or rep
 
 ## 5. Seat → player capture
 
-Play-mode capture turns the 8-seat roster into a dense player roster (`Editor/GamingCouchEditor.cs`,
+Play-mode capture turns the 8-seat roster into a dense player roster (`Editor/GCDevJsonLocalPlaySessionProvider.cs`,
 capture at `:455-501`):
 
 - **Skip disabled seats.** Iterate seats in order; enabled seats get a dense **zero-based**
@@ -171,7 +172,7 @@ capture at `:455-501`):
 - `playerSeed` is derived from the normalized seat name — FNV-1a32 of the name mapped into the
   `1`–`999999` seed range (`GCPlayerSeed.FromPlayerName` → `ToSeed`, `Runtime/GCPlayerSeed.cs:11, 34-36`).
 - Each captured player gets a parallel **`GCSeatIdentity`** carrying **1-based** seat provenance
-  (`Runtime/Dev/GCSeatIdentity.cs`; built at `GamingCouchEditor.cs:488-495`):
+  (`Runtime/Dev/GCSeatIdentity.cs`; built in `GCDevJsonLocalPlaySessionProvider.cs`):
 
 | `GCSeatIdentity` field | Value |
 |---|---|
