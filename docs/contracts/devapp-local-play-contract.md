@@ -27,7 +27,6 @@ JSON examples use placeholder package identity values per `AGENTS.md`.
 - [7. The `players[]` vs `seatIdentities[]` ordering trap](#7-the-players-vs-seatidentities-ordering-trap)
 - [8. DevApp WebSocket protocol (package-side spec)](#8-devapp-websocket-protocol-package-side-spec)
 - [9. ContractFixtures — executable spec](#9-contractfixtures--executable-spec)
-- [10. Open-Editor test bridge (not part of this contract)](#10-open-editor-test-bridge-not-part-of-this-contract)
 
 ---
 
@@ -317,11 +316,3 @@ The six cases:
 
 Cite the fixture name next to any schema example this file adds; a fixture that disagrees with the doc
 is the source of truth.
-
----
-
-## 10. Open-Editor test bridge (not part of this contract)
-
-`Editor/GamingCouchCodexTestBridge.cs` + `Tools/run-open-unity-tests.py` are **agent/CI test tooling**,
-documented in `AGENTS.md` — they have no WebSocket or JSON-contract coupling to the DevApp and are not
-part of the local-play contract. Listed here only to prevent misfiling them as a DevApp surface.

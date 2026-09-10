@@ -132,8 +132,6 @@ All the affected paths funnel through a single `ROOT_DIR`, so this is a handful 
       (Display strings like `"Runtime/GamingCouch.cs"` are cosmetic — update for clarity, not correctness.)
 - [ ] `.releaserc.json`: `assets` → `["public/dist/package.json", "public/dist/CHANGELOG.md"]`
       (only relevant if semantic-release is ever wired in; still fix it).
-- [ ] `Tools/run-open-unity-tests.py`: **no change** — it takes the host project path as an
-      argument and doesn't hard-code the package location.
 - [ ] Run `npm run release:dry` and confirm the bump/check tooling operates on
       `public/dist/` end to end.
 

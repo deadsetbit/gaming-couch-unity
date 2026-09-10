@@ -368,8 +368,8 @@ Layered, cheapest-first:
 - **Phase 5 — Docs.** Update README / CONTEXT.md / ADR 0017; resolve the "complete game vs
   wiring demo" tension; mark backlog B004 addressed and note B001/B002/B006 relations.
 
-Each phase should stay green on the open-Editor test bridge
-(`Tools/run-open-unity-tests.py … --mode EditMode`, and `--mode PlayMode` once Phase 3 lands).
+Each phase should stay green on the host-project test run
+(`unity test <host-project> --mode EditMode`, and `--mode PlayMode` once Phase 3 lands).
 
 ---
 
@@ -476,8 +476,8 @@ class, just two self-contained swappable game scripts (§4.1).
 
 ## 11. Execution task tracker (for implementation)
 
-Work top-to-bottom; keep each group green on the test bridge before moving on
-(`python3 Tools/run-open-unity-tests.py … --mode EditMode`; add `--mode PlayMode` once Group D
+Work top-to-bottom; keep each group green before moving on
+(`unity test <host-project> --mode EditMode`; add `--mode PlayMode` once Group D
 lands). Honor the guardrails below and in §8 / ADR 0016 / ADR 0017 throughout. Names per §4.3.
 
 ### Group A — Canonical master source + compile guarantee (Phase 1 + compile half of Phase 3)
