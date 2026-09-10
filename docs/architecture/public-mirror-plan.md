@@ -1,72 +1,85 @@
 # Public Mirror Plan — private source, public releases
 
-Status: **planned, not started.** Execute the phases in order. Phase 0 is the only
-thing to do today; everything else waits until the active feature branches are merged
-(see the timing gotcha in Phase 1).
+Make `deadsetbit/gaming-couch-unity` **private** — ADRs, reviews, agent notes, WIP branches
+and dev tooling stay internal — and publish each release to a separate **public** repo that
+consumers install from.
+
+The source repo stays public until the final phase, so every step before it is invisible to
+consumers and reversible.
 
 ## Goal
 
-Make `deadsetbit/gaming-couch-unity` **private** (all ADRs, reviews, agent notes, WIP
-branches, dev tooling stay internal) and publish each release to a separate **public**
-repo that consumers install from:
-
-- **Public repo:** `https://github.com/deadsetbit/gaming-couch-unity-public`
-  (follows the shape of the existing `gaming-couch-public`: generated, read-only,
-  package contents at the repo root).
-- **Keep release history** as an immutable, browsable set of `unity-<version>` tags —
-  unlike the client mirror, which force-pushes a single squashed snapshot.
+- **Public repo:** `https://github.com/deadsetbit/gaming-couch-unity-public` — generated,
+  read-only, package contents at the repo root.
+- **Keep release history** as an immutable, browsable set of `unity-<version>` tags.
 - **Be able to delete a specific release outright** if something slips in by accident.
 
-## Current state (facts this plan builds on)
+## Where this stands
 
-- This repo **is** the UPM package `com.dsb.gamingcouch` — `package.json` at the root,
-  plus `Runtime/`, `Editor/`, `Tests/`, `Plugins/`, `Documentation~/`.
-- Consumers install **UPM-via-git-tag**: `…/gaming-couch-unity.git#unity-0.1.0-alpha.6`.
-- Releases are lightweight `unity-<version>` tags cut by `Tools/bump-version.py`, which
-  also re-bakes `Runtime/Resources/GamingCouchRuntimeInfo.json` and verifies it with
+- [x] Public repo `deadsetbit/gaming-couch-unity-public` created (public, empty).
+- [x] Landing page written for its `main` (Phase 5).
+- [ ] Deploy key pair generated; public half added to the public repo **with write access**.
+- [ ] Private half stored as secret `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` on
+      `deadsetbit/gaming-couch-unity`.
+
+Everything from Phase 1 on is unstarted.
+
+## Facts this plan builds on
+
+- This repo **is** the UPM package `com.dsb.gamingcouch` — `package.json` at the root, plus
+  `Runtime/`, `Editor/`, `Tests/`, `Plugins/`, `Documentation~/`, `ContractFixtures/`.
+- Consumers install **UPM-via-git-tag**: `…/gaming-couch-unity.git#unity-<version>`.
+- Releases are lightweight `unity-<version>` tags cut by `Tools/bump-version.py`, which also
+  re-bakes `Runtime/Resources/GamingCouchRuntimeInfo.json` and verifies it with
   `Tools/check-runtime-package-info.py`.
-- **Promotion to end users is already manual and separate from publishing.** What a
-  device installs is the exact `unity-<tag>` string that the `devapp-component-versions`
-  Supabase edge function serves for its environment, read from
+- **Promotion to end users is already manual and separate from publishing.** What a device
+  installs is the exact `unity-<tag>` string that the `devapp-component-versions` Supabase
+  edge function serves for its environment, read from
   `backend/supabase/functions/devapp-component-versions/componentVersionMap.json` in the
-  client monorepo. `develop` and `production` are distinct sections; production is
-  promoted by a manual `develop → main` PR. `Tools/bump-version.py` can hand off to
-  `devspace/devapp/scripts/prepare-devapp-release.sh` to edit that map.
+  client monorepo. `develop` and `production` are distinct sections; production is promoted
+  by a manual `develop` to `main` pull request.
 - The org already runs this pattern once: the client's `.github/workflows/sync-public.yml`
-  mirrors `public/dist/` to `deadsetbit/gaming-couch-public` via a scoped SSH deploy key.
+  mirrors its `public/dist/` folder to `deadsetbit/gaming-couch-public` via a scoped SSH
+  deploy key.
 
 ## Target architecture
 
 ```
 PRIVATE  deadsetbit/gaming-couch-unity            PUBLIC  deadsetbit/gaming-couch-unity-public
 ──────────────────────────────────────            ─────────────────────────────────────────────
-public/dist/            <- the package            (contents of public/dist/ become the repo ROOT)
-  package.json                                     tag unity-0.1.0-alpha.6  (orphan snapshot)
-  Runtime/ Editor/ Tests/ Plugins/                 tag unity-0.1.0-alpha.5  (orphan snapshot)
-  Documentation~/ README CHANGELOG LICENSE         tag unity-0.1.0-alpha.4  (orphan snapshot)
-                                    │  tag push     main = latest snapshot (landing page only)
-docs/ Tools/ .claude/ .github/  ───┼──────────▶
-CONTEXT.md AGENTS*.md ...           │  CI: build orphan snapshot of public/dist@tag,
-package.json (dev scripts only)     │      push ONLY that tag with a scoped deploy key
+public/package/         <- the package            (contents of public/package/ become the ROOT)
+  package.json                                     tag unity-0.1.0-alpha.8  (orphan snapshot)
+  Runtime/ Editor/ Tests/ Plugins/                 tag unity-0.1.0-alpha.9  (orphan snapshot)
+  ContractFixtures/ Documentation~/                gh-pages  = the docs site
+  README CHANGELOG LICENSE                         main      = hand-written landing page
+public/AGENTS.md        <- the rule, unpublished
+                                    │  tag push
+docs/ Tools/ .claude/ .github/  ────┼──────────▶
+CONTEXT.md AGENTS*.md               │  CI: build an orphan snapshot of public/package@tag,
+package.json (dev scripts only)     │      publish ONLY that tag with a scoped deploy key
   (never leaves the private repo)   ┘
 ```
 
-**Principles:**
+## Principles
 
-1. **The boundary is the filesystem, not a list.** If a file is under `public/dist/`, it
-   ships; if not, it can't. No allowlist to forget to update (kills failure mode A).
+1. **The boundary is the filesystem, not a list.** If a file is under `public/package/`, it
+   ships; if not, it cannot. There is no allowlist to forget to update — and no ignore-list
+   inside the published folder either. Anything that must stay private lives outside the
+   folder. Dev-only *behaviour* ships and is gated at runtime rather than stripped at publish
+   time: stripping would mean the package we test is not the package that ships, and the
+   completeness gate would stop gating the real artifact.
 2. **One release = one orphan snapshot commit + one tag.** Releases share no ancestry, so
-   deleting a version's tag makes its commit unreachable **without touching any other
-   release**. The unit of deletion is the tag, and it's independently deletable.
-3. **Publish ≠ promote.** Pushing a tag to the public repo only makes it *available*. The
-   DevApp component-version map (manual, per environment) is the sole thing that puts a
-   version in front of end users. A broken publish is inert until someone points the map
-   at it.
-4. **Tags are immutable.** Never move or reuse a published tag — UPM caches by ref. A
-   broken release is fixed by cutting the next version, never in place.
-5. **End users never track a moving ref.** "Latest" is whatever the DevApp map's
-   `production` section names; "latest edge" is its `develop` section. No `latest` git
-   branch is exposed for installation.
+   deleting a version's tag makes its commit unreachable without touching any other release.
+3. **Publish is not promote.** Publishing a tag only makes a version *available*. The DevApp
+   component-version map is the sole thing that puts a version in front of anyone. A broken
+   publish is inert until someone points the map at it.
+4. **Tags are immutable.** Never move or reuse a published tag — UPM caches by ref. A broken
+   release is fixed by cutting the next version. Republishing a tag means deleting it first;
+   the workflow builds a fresh commit each run, so publishing over a live tag is rejected.
+5. **Nobody installs a moving ref.** Public `main` is a landing page and carries no package
+   manifest, so a URL without a tag fails loudly instead of silently tracking whatever
+   shipped last. "Latest" is whatever the map's `production` section names; "latest edge" is
+   its `develop` section.
 
 ## Naming / constants
 
@@ -74,337 +87,291 @@ package.json (dev scripts only)     │      push ONLY that tag with a scoped de
 |---|---|
 | Public repo (SSH) | `git@github.com:deadsetbit/gaming-couch-unity-public.git` |
 | Public repo (docs/consume URL) | `https://github.com/deadsetbit/gaming-couch-unity-public` |
-| Package folder in private repo | `public/dist/` |
+| Package folder in private repo | `public/package/` |
 | Tag format | `unity-<version>` (unchanged) |
 | Actions secret (private repo) | `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` |
 | Bot identity | `gaming-couch-bot <bot@deadsetbit.com>` |
-| Docs Pages URL (after move) | `https://deadsetbit.github.io/gaming-couch-unity-public/` |
+| Docs URL (after Phase 6) | `https://deadsetbit.github.io/gaming-couch-unity-public/` |
 
 ---
 
-## Phase 0 — Groundwork (do today, manual; see the checklist at the bottom)
+## Phase 0 — Credentials
 
-Create the empty public repo and the scoped deploy key. Zero risk, unblocks everything,
-touches no code. **Full step-by-step is in the "Today's manual GitHub task" appendix.**
+The public repo already exists. What remains is the deploy key, and only a human can do it.
 
-- [ ] Public repo `deadsetbit/gaming-couch-unity-public` created (empty, public).
-- [ ] Deploy key pair generated; public half added to the public repo **with write access**.
-- [ ] Private half stored as secret `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` on
-      `deadsetbit/gaming-couch-unity`.
-- [ ] Local key files deleted.
+1. **Generate a dedicated deploy key pair** (no passphrase), from a scratch directory:
+   ```bash
+   ssh-keygen -t ed25519 -C "gaming-couch-unity-public deploy key" \
+     -f ./gc-unity-public-deploy-key -N ""
+   ```
+2. **Add the PUBLIC key to the PUBLIC repo, with write access:**
+   `deadsetbit/gaming-couch-unity-public` → Settings → Deploy keys → Add deploy key →
+   paste `gc-unity-public-deploy-key.pub` → **check "Allow write access"**. Scoping the key
+   to this repo means it can never touch the private source.
+3. **Add the PRIVATE key to the PRIVATE repo as an Actions secret:**
+   `deadsetbit/gaming-couch-unity` → Settings → Secrets and variables → Actions →
+   New repository secret → Name: `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` → Value: the full
+   private key including its BEGIN/END lines.
+4. **Delete the local key files.**
 
-## Phase 1 — Restructure the private repo into `public/dist/`
+One key serves both the release mirror (Phase 4) and the docs deploy (Phase 6).
 
-**Timing gotcha — do this on a quiet tree.** This is a repo-wide move commit; every open
-branch (`feature/standalone-controller`, `feature/portable-state-kernel`, the `codex/*`
-and `prototype-*` branches, `point-hud`, …) will conflict on it. Land the branches you
-care about first, then do the move as one isolated commit, then rebase or abandon the
-stragglers deliberately.
+## Phase 1 — Restructure the private repo into `public/package/`
 
-- [ ] `git mv` the package into `public/dist/`: `package.json`, `Runtime/`, `Editor/`,
-      `Tests/`, `Plugins/`, `Documentation~/`, `README.md`, `CHANGELOG.md`, `LICENSE.md`
-      and their `.meta` files. (`.meta` files travel with their assets.)
-- [ ] Leave outside `public/dist/` (private): `docs/`, `Tools/`, `.claude/`, `.cursor/`,
-      `.github/`, `.releaserc.json`, `CONTEXT.md`, `AGENTS*.md`, `VERSIONING_PLAN.md`,
-      `ContractFixtures/`, `.vscode/`.
-- [ ] **Split the manifest.** The shipped `public/dist/package.json` becomes a *pure Unity
-      manifest* (name, version, unity, dependencies, keywords, author). Move the `release:*`
-      npm `scripts` into a **new private root `package.json`** that never ships.
-- [ ] In `public/dist/package.json`, repoint the URLs to the public repo:
-      `documentationUrl` → `https://deadsetbit.github.io/gaming-couch-unity-public/`,
-      `changelogUrl`/`licensesUrl` → `…/gaming-couch-unity-public/blob/main/…`.
-- [ ] Decide whether `Tests/` ships (keeping it under `public/dist/Tests/` preserves
-      today's behavior; move it out only if tests must stay private — then they can't be
-      package-embedded tests). **Default: keep it shipped.**
-- [ ] Update any host/test Unity project that references this package by local path:
-      `file:../gaming-couch-unity` → `file:../gaming-couch-unity/public/dist`.
+A repo-wide move commit. Every open branch conflicts with it, so land or abandon what matters
+first, then do the move as one isolated commit.
+
+- [ ] Move the package into `public/package/`: `package.json`, `Runtime/`, `Editor/`,
+      `Tests/`, `Plugins/`, `Documentation~/`, `ContractFixtures/`, `README.md`,
+      `CHANGELOG.md`, `LICENSE.md` and their `.meta` files.
+- [ ] **`ContractFixtures/` moves inside the package**, not outside it.
+      `Tests/Editor/GCDevJsonContractFixtureTests.cs` resolves its corpus from the package
+      root, so leaving the fixtures behind gives every consumer six failing tests. There is
+      nothing private about them, and they are the clearest public description of the
+      `gc.dev.json` contract.
+- [ ] Leave outside `public/package/` (private): `docs/`, `Tools/`, `.claude/`, `.cursor/`,
+      `.github/`, `CONTEXT.md`, `AGENTS*.md`, `VERSIONING_PLAN.md`, `.vscode/`.
+- [ ] Add `public/AGENTS.md` (and the `CLAUDE.md` beside it) stating the rule: everything
+      under `public/package/` is published on release; write paths and links relative to the
+      package root, because the `public/package/` prefix does not exist in the public repo.
+      Files in `public/` itself are not published.
+- [ ] **Split the manifest.** The shipped `public/package/package.json` becomes a pure Unity
+      manifest (name, version, unity, dependencies, keywords, author). The `release:*` npm
+      scripts move to a **new private root `package.json`** that never ships.
+- [ ] In `public/package/package.json`, repoint the URLs at the public repo:
+      `documentationUrl` to `https://deadsetbit.github.io/gaming-couch-unity-public/`, and
+      `changelogUrl`/`licensesUrl` into the public repo.
+- [ ] **Fix the shipped README's links.** It links five times into
+      `…/gaming-couch-unity/blob/main/docs/…` and `CONTEXT.md`, all of which 404 for a
+      consumer once the source is private. Move `docs/contracts/platform-runtime-contract.md`
+      and `docs/contracts/devapp-local-play-contract.md` into
+      `public/package/Documentation~/` and link them there; drop the links to the ADRs, the
+      backlog and `CONTEXT.md`.
+- [ ] `Tests/` keeps shipping. It is Apache-2.0 code that is public today, and shipping it
+      keeps the package we test byte-identical to the package consumers install.
+- [ ] Update the host Unity project: `Packages/gaming-couch-unity` is a symlink to the repo
+      root and must point at `…/gaming-couch-unity/public/package`. Any project using a
+      `file:` dependency moves the same way.
+- [ ] Update the paths named in `AGENTS.md` and under `docs/` that assume the package sits at
+      the repo root.
 
 ## Phase 2 — Retool the scripts for the new path
 
-All the affected paths funnel through a single `ROOT_DIR`, so this is a handful of edits.
-
-- [ ] `Tools/bump-version.py`: rebase `PACKAGE_JSON_PATH` and `BAKED_RUNTIME_INFO_PATH`
-      under `public/dist/`, and fix the two paths in the final `git commit … --` call
-      (`public/dist/package.json`, `public/dist/Runtime/Resources/GamingCouchRuntimeInfo.json`).
-      Keep `CHECK_SCRIPT_PATH` → `Tools/` (stays private).
-- [ ] `Tools/check-runtime-package-info.py`: introduce `PACKAGE_DIR = ROOT_DIR / "public" / "dist"`
-      and rebase `PACKAGE_JSON_PATH`, `RUNTIME_DIR`, `RUNTIME_INFO_PATH`, `WEBGL_BRIDGE_PATH`.
-      (Display strings like `"Runtime/GamingCouch.cs"` are cosmetic — update for clarity, not correctness.)
-- [ ] `.releaserc.json`: `assets` → `["public/dist/package.json", "public/dist/CHANGELOG.md"]`
-      (only relevant if semantic-release is ever wired in; still fix it).
-- [ ] Run `npm run release:dry` and confirm the bump/check tooling operates on
-      `public/dist/` end to end.
+- [ ] `Tools/bump-version.py`: rebase `PACKAGE_JSON_PATH` and `BAKED_RUNTIME_INFO_PATH` under
+      `public/package/`, and fix the two paths in the final commit's pathspec.
+      `CHECK_SCRIPT_PATH` stays under `Tools/`.
+- [ ] `Tools/check-runtime-package-info.py`: introduce
+      `PACKAGE_DIR = ROOT_DIR / "public" / "package"` and rebase `PACKAGE_JSON_PATH`,
+      `RUNTIME_DIR`, `RUNTIME_INFO_PATH`, `BAKED_RUNTIME_INFO_PATH`, `WEBGL_BOOTSTRAP_PATH`,
+      `WEBGL_BRIDGE_PATH`, `PACKAGE_CODE_DIRS`, and the literal `Runtime/GamingCouch.cs` path
+      near the end of the file.
+- [ ] Delete `.releaserc.json`. It targets `Development-v${version}` tags and semantic-release
+      was never wired in; fixing its asset paths would preserve a file nothing runs.
+- [ ] Run `npm run release:dry` and confirm the bump and check tooling operate on
+      `public/package/` end to end.
 
 ## Phase 3 — Publish gate (`Tools/check-dist-complete.py`)
 
-A static, no-Unity-license gate that fails the publish if `public/dist/` isn't a
-self-contained package. Because the boundary is now a folder, the residual risk is a
-*reference that points outside the folder*, which this catches.
+A static, no-Unity-license gate that fails the publish if `public/package/` is not a
+self-contained package. Because the boundary is a folder, the residual risk is a reference
+that points outside it.
 
 - [ ] `package.json` present, valid JSON, `name == com.dsb.gamingcouch`, and
       `version == <tag without the "unity-" prefix>`.
-- [ ] **Meta pairing:** every asset under `public/dist/` has a sibling `.meta`, and every
-      `.meta` has its asset. (Missing `.meta` is the classic dropped-file symptom.)
-- [ ] Every `.asmdef` parses and its references resolve within `public/dist/`.
-- [ ] Secret scan (e.g. `gitleaks`) over `public/dist/` as the leak backstop.
-- [ ] Wire it into the mirror workflow (Phase 4) as a hard gate before any push.
-- [ ] *(Optional, later)* Upgrade to a real compile gate via GameCI
-      (`game-ci/unity-test-runner`, needs a Unity license secret) or a local Unity smoke
-      test invoked from `bump-version.py` before it pushes the tag. The static gate covers
-      the common failure; the compile gate is the gold standard.
+- [ ] **Meta pairing, with an explicit exclusion rule.** Every asset has a sibling `.meta` and
+      every `.meta` has its asset — except paths with a segment ending in `~` (Unity hides
+      them, so `Documentation~` has no metas by design), the package's own top-level folders
+      (which carry no committed folder `.meta`), and `.DS_Store`. Without those exclusions the
+      gate fails against a correct tree.
+- [ ] Every `.asmdef` parses and its references resolve within `public/package/`.
+- [ ] `ContractFixtures/LocalPlay` is present. The asmdef check cannot see it — the shipped
+      tests reach it by string path — so it needs its own assertion.
+- [ ] Secret scan (for example `gitleaks`) over `public/package/` as the leak backstop.
+- [ ] Wire it into the mirror workflow as a hard gate before any publish, alongside
+      `Tools/check-runtime-package-info.py`. `bump-version.py` enforces the baked-identity
+      invariant, but a hand-cut tag bypasses it.
+- [ ] *(Optional, later)* A real compile gate via GameCI (`game-ci/unity-test-runner`, needs a
+      Unity license secret), or a local `unity test` run invoked before the tag goes up. The
+      static gate covers the common failure; the compile gate is the gold standard.
 
 ## Phase 4 — Mirror workflow (tag-triggered orphan snapshot)
 
 New workflow in the **private** repo, `.github/workflows/publish-mirror.yml`. Runs on
-`unity-*` tag push (and manually for re-publish). Builds an orphan snapshot of
-`public/dist/` at the tag and pushes **only that tag** to the public repo. Also
-force-updates the public `main` to the latest snapshot as a browsable landing page (no one
-installs from `main`).
+`unity-*` tag push, and manually for a republish. It builds an orphan snapshot of
+`public/package/` at the tag and publishes **only that tag**. It never touches the public
+repo's `main`.
 
-```yaml
-name: Publish release to public mirror
+Shape of the job:
 
-on:
-  push:
-    tags: ["unity-*"]
-  workflow_dispatch:
-    inputs:
-      tag: { description: "Existing unity-* tag to (re)publish", required: true }
+- Resolve the tag from either the trigger or the `workflow_dispatch` input.
+- `actions/checkout@v4` at that tag, `fetch-depth: 1`, `permissions: contents: read` — the
+  publish authenticates with the deploy key, not `GITHUB_TOKEN`.
+- Run `Tools/check-runtime-package-info.py`, then
+  `Tools/check-dist-complete.py public/package <tag>`. Both are hard gates.
+- Install the deploy key into `~/.ssh` and set `GIT_SSH_COMMAND` with `IdentitiesOnly=yes`.
+- Copy `public/package/.` into a temp directory, initialise a repo there on an orphan branch,
+  commit as `gaming-couch-bot <bot@deadsetbit.com>` with the message `gaming-couch <version>`,
+  tag it `unity-<version>`, add the public repo as a remote, and publish that one tag ref.
+- `concurrency: { group: publish-mirror, cancel-in-progress: false }` so two releases never
+  race.
 
-permissions:
-  contents: read          # only read THIS repo; the push authenticates with the deploy key
-concurrency:
-  group: publish-mirror
-  cancel-in-progress: false
+Two things the workflow cannot do, by construction:
 
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "name=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-      - uses: actions/checkout@v4
-        with: { ref: "${{ steps.tag.outputs.name }}", fetch-depth: 1 }
+- **Republish over a live tag.** Every run builds a fresh orphan commit with a new SHA, so
+  publishing an existing tag is rejected as a non-fast-forward. A republish means deleting the
+  tag from the public repo first (Phase 8), which is the same operation as an unpublish and
+  keeps principle 4 honest.
+- **Publish a tag cut before Phase 1.** Checking out an older tag yields a tree with no
+  `public/package/` and no gate script. The first exercise of this workflow is therefore a
+  throwaway tag cut after the restructure, not a replay of history.
 
-      - name: Completeness gate
-        run: python3 Tools/check-dist-complete.py public/dist "${{ steps.tag.outputs.name }}"
+- [ ] Add the workflow.
+- [ ] Cut a throwaway tag (`unity-0.0.0-test.1`), let it publish, and confirm the public repo
+      shows the package at its root and that the tag installs into a scratch Unity project.
+- [ ] Delete the throwaway tag (Phase 8) and confirm the release is gone while `main` and the
+      docs are untouched.
 
-      - name: Publish orphan snapshot + tag
-        env:
-          DEPLOY_KEY: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
-          TAG: ${{ steps.tag.outputs.name }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+## Phase 5 — The public repo's landing page
 
-          WORK="$(mktemp -d)"
-          cp -a public/dist/. "$WORK/"
-          cd "$WORK"
-          git init -q && git checkout -q --orphan release && git add -A
-          git -c user.name="gaming-couch-bot" -c user.email="bot@deadsetbit.com" \
-              commit -q -m "gaming-couch ${TAG#unity-}"
-          git tag "$TAG"
-          git remote add public git@github.com:deadsetbit/gaming-couch-unity-public.git
-          git push public "refs/tags/$TAG"          # the release (immutable)
-          git push --force public "release:main"     # landing page = latest snapshot
-```
+`main` on the public repo is a hand-written page, not a snapshot. It welcomes a browser,
+explains what the package is, and sends them to the tags. It deliberately carries **no**
+`package.json`, so the repo's git URL with no `#tag` fails to resolve instead of installing a
+moving version.
 
-- [ ] Add the workflow; dry-run it against an existing tag via `workflow_dispatch` while
-      the source repo is still private-to-be but the public repo already exists.
-- [ ] Confirm the public repo shows the package at its root and the tag is installable:
-      `…/gaming-couch-unity-public.git#unity-<v>` in a throwaway project.
-- [ ] *(Optional)* also create a GitHub Release per tag with the **prerelease** flag for
-      alpha/beta, so the public repo's "Latest release" badge only ever shows stable.
+- [x] Write the landing page and publish it as the public repo's first commit.
+- [ ] Keep version numbers out of it, so it does not drift.
+- The mirror workflow never touches `main`. If the page is ever worth generating per release,
+  that is an addition, not a requirement.
 
-## Phase 5 — Docs/Pages published from the public repo
+## Phase 6 — Docs published from the public repo
 
-A private repo can't serve public GitHub Pages on Free/Pro, so the docs **build stays in
+A private repo cannot serve public GitHub Pages on Free or Pro, so the docs **build stays in
 the private repo** and only the rendered HTML is deployed to the **public** repo's
-`gh-pages`. Two tiers: 5a is the cutover baseline; 5b is the versioned bonus (land it
-around the beta transition — see the recommendation at the end).
+`gh-pages`.
 
-### Phase 5a — Relocate docs to the public repo (unversioned, `/latest` only)
+The build runs `deadsetbit/docfx-unitypackage`, a composite action that assembles a DocFX site
+out of package conventions read from the **repo root**: `Documentation~/` becomes the manual,
+`README.md` its index, `CHANGELOG.md` and `LICENSE.md` their own pages, `package.json` the
+site title, and `**/*.cs` the API reference. It takes exactly one input, `github_token`, so
+there is nothing to point at a subfolder. Two of its steps also resolve the site's base URL
+from the Pages config of the repo the workflow runs in, which stops existing the moment that
+repo is private.
 
-- [ ] In `.github/workflows/docfx-unitypackage.yml`, point the package source at
-      `public/dist/` and change the deploy step (`peaceiris/actions-gh-pages`) to target the
-      external public repo using the deploy key:
-      ```yaml
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          external_repository: deadsetbit/gaming-couch-unity-public
-          deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
-          publish_branch: gh-pages
-          publish_dir: _site
-      ```
-- [ ] Enable Pages on `gaming-couch-unity-public` (source: `gh-pages`).
-- [ ] Verify `https://deadsetbit.github.io/gaming-couch-unity-public/` renders.
-- [ ] Confirm `documentationUrl` in `public/dist/package.json` matches that URL.
+- [ ] **Patch the fork.** `deadsetbit/docfx-unitypackage` is ours (a fork of
+      `CaseyHofland/docfx-unitypackage`, one tag, untouched since 2024). Add a `base_url`
+      input used by the `docfx.json` generation and the redirect step, falling back to the
+      existing Pages lookup when it is empty. Cut `v1.1.0`. Patch `v1.0.2` as it stands rather
+      than rebasing on upstream first.
+- [ ] **Stage the package as the workspace root** instead of teaching the action about
+      subfolders: check out into a `src/` path, move `src/public/package/*` (dotglob on) up to
+      the workspace root, remove `src/`. Every root-relative assumption then holds, and the C#
+      crawl covers only the package.
+- [ ] **Trigger on `unity-*` tags**, not on pushes to `main`, so the published docs describe
+      the newest release rather than unreleased work.
+- [ ] **Deploy to the public repo** with `peaceiris/actions-gh-pages@v3`:
+      `external_repository: deadsetbit/gaming-couch-unity-public`,
+      `deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}`,
+      `publish_branch: gh-pages`, `publish_dir: _site`, `destination_dir: latest`,
+      `keep_files: true` — and `base_url` set to the `latest/` URL.
+- [ ] Place a one-line `index.html` at the `gh-pages` root redirecting to `latest/`, by hand.
+      It never changes, so it does not need generating.
+- [ ] Enable Pages on `gaming-couch-unity-public` with `gh-pages` as the source, and confirm
+      `documentationUrl` in the shipped manifest matches the site root.
 
-### Phase 5b — Versioned docs + version selector (bonus)
+Publishing into `latest/` from the first deploy is what keeps versioned docs additive later:
+the URL scheme is already versioned-shaped, so archives can be added without breaking a
+bookmark. **Versioned archives are deferred to the beta transition** — during `0.x` a folder
+per alpha is churn, and each archived version wants its own build because the base URL is
+absolute, so a release would build the docs twice.
 
-One `gh-pages` branch, one subfolder per version, `/latest/` = newest, a root redirect,
-and a `versions.json` that drives an in-page dropdown. No tooling change — DocFX stays.
+## Phase 7 — Go-private cutover
 
-```
-gh-pages/
-  index.html        -> redirect to /latest/
-  versions.json     -> ["0.1.0-alpha.6", …] + which is "latest"
-  latest/           -> full COPY of newest docs (so /latest/<anypage> always resolves)
-  0.1.0-alpha.6/  0.1.0-alpha.5/  …
-```
+Do this **only after** Phases 1–6 are green and the mirror is serving real tags.
 
-- [ ] Change the docs deploy to a **custom step** (instead of peaceiris) that: clones the
-      public `gh-pages` via the deploy key, drops the freshly built `_site` into
-      `pages/<version>/` and overwrites `pages/latest/`, regenerates `versions.json` +
-      root `index.html`, then commits once and pushes. Cloning the real branch (not
-      force-pushing) is what preserves older version folders.
-- [ ] `Tools/gen-docs-index.py <pages-dir>`: lists the version folders (`sort -rV`), writes
-      `versions.json` and the root redirect `index.html`.
-- [ ] `Tools/inject-version-selector.py <site-dir>` (post-build): inserts one `<script>`
-      into each built HTML page. The script fetches
-      `/gaming-couch-unity-public/versions.json`, renders a `<select>` (current preselected,
-      a "latest" entry), and on change navigates to the **same sub-path** under the chosen
-      version, falling back to that version's home on 404. Absolute base path is hardcoded
-      to `/gaming-couch-unity-public/`. (If `docfx-unitypackage` exposes a custom
-      `docfx.json`/template, prefer injecting the dropdown as a template partial instead —
-      but this post-build step works regardless of the action.)
-- [ ] **Branch-growth policy (decide before enabling):** while in `0.x` alpha, do **not**
-      archive every alpha — keep `/latest/` plus optionally `/next/` for the current
-      prerelease line; start real per-version archiving at beta/stable. Prevents dozens of
-      throwaway alpha doc-sites bloating `gh-pages`.
-- [ ] **"latest" definition:** newest stable once stable exists; newest alpha while in
-      `0.x`. Optionally source "latest stable" from the DevApp `production` tag.
+The DevApp and backend half of this cutover is tracked separately in
+https://github.com/deadsetbit/gaming-couch/issues/587, including the ordering trap: the DevApp
+recognises the managed package by a hardcoded URL allowlist while the backend composes the
+install URL, and the two ship separately, so the DevApp change must land first.
 
-## Phase 6 — Go-private cutover (order matters — don't flip early)
-
-Do these **only after** Phases 1–5 are green and the public mirror is serving real tags.
-
-- [ ] Repoint every consumer game's `Packages/manifest.json`:
-      `com.dsb.gamingcouch` URL from `…/gaming-couch-unity.git#…` →
-      `…/gaming-couch-unity-public.git#…`. (Batch this the way the GC game migrations are
-      batched.)
-- [ ] Repoint wherever the DevApp composes the install URL from the map's tag (client
-      config / `componentVersionMap` base URL) to the public repo. Verify a `develop`
-      install resolves from the public URL.
-- [ ] Confirm `documentationUrl`/`changelogUrl`/`licensesUrl` in `public/dist/package.json`
-      already point at the public repo (Phase 1).
+- [ ] Repointing the consumer game repos is handled outside this plan.
+- [ ] Cut a fresh release once the mirror is publishing, and point the component-version map
+      at it. The mirror can only publish tags cut after Phase 1, so the public repo starts
+      with no history — a current release is what consumers move to.
 - [ ] **Only now** flip `deadsetbit/gaming-couch-unity` to private (Settings → Danger Zone).
-- [ ] Smoke test: a clean checkout of a consumer game resolves the package from the public
+- [ ] Smoke test: a clean checkout of a consumer project resolves the package from the public
       URL with no credentials.
 
-## Phase 7 — Promotion, channels, "latest", test releases (operating model)
+`https://deadsetbit.github.io/gaming-couch-unity/` dies at the flip, and the already-published
+tags carry that URL in their `package.json`. A published tag cannot be fixed retroactively; a
+line on the landing page is the mitigation.
 
-Nothing here is new machinery — it's how to *use* the DevApp map you already have.
+## Developer install routes
 
-- **Test / edge release:** cut a prerelease tag (`unity-0.1.0-alpha.N`) → the mirror
-  workflow publishes it (gated) → it's available but inert. Point the **`develop`** section
-  of `componentVersionMap.json` at it via `prepare-devapp-release.sh`, deploy the develop
-  function → dev/edge devices get it; **production untouched**.
-- **Promote to production:** verify in the DevApp, then the manual `develop → main` PR (or
-  set the `production` section's Unity tag). This is the single promotion gate.
-- **"Latest":** = whatever the map's `production` section names (stable) / `develop` names
-  (edge). Do **not** add a moving `latest` git branch for installs.
-- **Throwaway tags are cheap:** publish `alpha.7`, find it broken, delete its tag (Phase 8),
-  cut `alpha.8`. No production history is touched. Never re-point `alpha.7`.
+Two routes, for two different situations. Both are recognised by the DevApp.
 
-## Phase 8 — Deletion / leak-incident runbook
+- **Local path or symlink — the default for anyone with a clone.** Unity treats a folder in
+  `Packages/` as an embedded package, and the DevApp reads the version straight out of the
+  embedded `package.json` and version-compares it. Edits are live, and there is no
+  authentication to arrange. After Phase 1 the symlink points at
+  `…/gaming-couch-unity/public/package`.
+- **`?path=` against the private repo — for a pinned tag without a clone:** the repo's git URL
+  with `?path=/public/package` before the `#unity-<version>` revision. This needs git to
+  authenticate **without prompting**, because UPM runs it with no terminal attached: either
+  HTTPS with a credential helper (`gh auth setup-git`) or SSH with a passphrase-less key the
+  Editor's environment can see. Never put a token in the URL — `manifest.json` is committed.
 
-**Routine unpublish (retiring or accidental release):**
+A project installed from the private `?path=` URL will be rewritten to the public URL by the
+DevApp's update action, because the managed target is composed from the public URL. That is
+the intended behaviour; document it rather than engineering around it.
 
-```bash
-# delete the release tag from the public mirror
-GIT_SSH_COMMAND="ssh -i <deploy-key>" \
-  git push git@github.com:deadsetbit/gaming-couch-unity-public.git --delete unity-<v>
-```
+## Phase 8 — Promotion, channels, deletion
 
-The orphan commit becomes unreachable and GC-eligible; no other release is affected. If
-`main` happened to point at it, the next release resets `main`.
+**Test / edge release:** cut a prerelease tag, the mirror publishes it (gated), and it is
+available but inert. Point the **`develop`** section of `componentVersionMap.json` at it and
+deploy the develop function, and dev devices get it; production is untouched.
 
-**Leaked secret — deletion is NOT erasure on a public host.** Deleting the tag reduces
+**Promote to production:** verify in the DevApp, then the manual `develop` to `main` pull
+request. This is the single promotion gate.
+
+**Throwaway tags are cheap:** publish a version, find it broken, delete its tag, cut the next
+one. No production history is touched, and a published tag is never re-pointed.
+
+**Routine unpublish:** delete the release tag from the public mirror with the deploy key. The
+orphan commit becomes unreachable and GC-eligible; no other release is affected.
+
+**Leaked secret — deletion is not erasure on a public host.** Deleting the tag reduces
 exposure but does not guarantee removal: GitHub keeps unreachable commits reachable by SHA
-until its own GC (you can't trigger it — file a support request to expunge), forks and
-`GH Archive`/search caches persist, and anyone who cloned still has it. **The only real
-remediation for a leaked secret is to rotate/revoke it.** Treat the `public/dist/` folder
-boundary + the Phase 3 secret scan as the real defense; deletion is cleanup, not a safety
-net.
+until its own GC, forks and archive or search caches persist, and anyone who cloned still has
+it. **The only real remediation for a leaked secret is to rotate it.** The `public/package/`
+boundary and the Phase 3 secret scan are the defense; deletion is cleanup, not a safety net.
 
----
+## Cost
 
-## Cost / Actions quota
-
-- The mirror workflow runs in the **private** repo → draws from private-repo Actions
-  minutes. `ubuntu-latest` = **1× multiplier** (avoid macOS = 10×, Windows = 2×).
-- **Per release:** shallow checkout + static gate + copy + git commit/tag/push ≈
-  **1–2 billed minutes**. It fires **only on `unity-*` tag push**, at your release cadence
-  → single-digit minutes/month vs. 2,000 (Free) / 3,000 (Pro/Team). Effectively free.
-- **Tag-only by construction:** each run publishes **only the tag just pushed**; existing
-  releases are never re-enumerated or re-uploaded (unlike the client's mirror, which
-  re-syncs the whole folder on every `main` push). The single `git push --force release:main`
-  is a cosmetic landing-page pointer, not a re-publish — drop it for a strict tags-only mirror.
-- **The only real cost lever** is the *optional* in-CI Unity compile gate (GameCI): long
-  builds, often macOS (10×). The default static gate (Phase 3) keeps cost negligible.
-- **Side effect of going private:** the existing DocFX workflow is free today (public repo)
-  but will start billing against private minutes after the flip — infrequent, still small.
-
-## Decisions still open
-
-- **Folder name:** `public/dist/` (matches the client) vs a flatter `Package/`. Plan
-  assumes `public/dist/`.
-- **Ship `Tests/`?** Plan default: yes (keeps today's behavior).
-- **Compile gate depth:** static-only (Phase 3) now; GameCI or local-Unity smoke test later.
-- **`main` on the public repo:** latest-snapshot landing page (plan default) vs no default
-  branch at all (tags only).
-- **Docs versioning timing:** ship Phase 5a (unversioned) at cutover; land Phase 5b
-  (versioned + selector) around the beta transition, when multiple pinned versions start to
-  matter and the alpha-doc churn is behind you. **Recommended, not yet committed.**
+- The mirror workflow runs in the **private** repo, so it draws private-repo Actions minutes.
+  `ubuntu-latest` is a 1x multiplier; avoid macOS (10x) and Windows (2x).
+- **Per release:** shallow checkout, static gate, copy, commit, tag, publish — roughly 1–2
+  billed minutes, only on a `unity-*` tag push. Single-digit minutes a month against 2,000
+  (Free) or 3,000 (Pro/Team).
+- **Tag-only by construction:** each run publishes only the tag just pushed. Existing releases
+  are never re-enumerated or re-uploaded.
+- **The only real cost lever** is the optional in-CI Unity compile gate: long builds, often
+  macOS. The default static gate keeps cost negligible.
+- **Side effect of going private:** the docs build is free today on a public repo and starts
+  billing private minutes after the flip. Infrequent, still small.
 
 ## Rollback
 
-Every phase before Phase 6 is reversible and invisible to consumers (the public repo is
-additive; the source is still public). The point of no return is flipping the source repo
-private in Phase 6 — and even that is reversible by flipping it back, *provided* consumers
-haven't yet been repointed. Sequence Phase 6 exactly as written so a rollback never breaks
-an installed game.
+Every phase before Phase 7 is reversible and invisible to consumers: the public repo is
+additive and the source is still public. The point of no return is flipping the source repo
+private — and even that reverses by flipping it back, provided consumers have not yet been
+repointed. Sequence Phase 7 exactly as written so a rollback never breaks an installed game.
 
----
+## Decisions still open
 
-## Appendix — Today's manual GitHub task (Phase 0)
-
-Mirrors the proven setup from the client's `sync-public.yml`, retargeted to this repo.
-Do this from a scratch directory.
-
-1. **Create the public repo** (empty — no README, no license, no .gitignore), **Public**
-   visibility, under the org: `deadsetbit/gaming-couch-unity-public`.
-
-2. **Generate a dedicated deploy key pair** (no passphrase):
-   ```bash
-   ssh-keygen -t ed25519 -C "gaming-couch-unity-public deploy key" \
-     -f ./gc-unity-public-deploy-key -N ""
-   # -> gc-unity-public-deploy-key  (private)  and  .pub  (public)
-   ```
-
-3. **Add the PUBLIC key to the PUBLIC repo, with write access:**
-   `deadsetbit/gaming-couch-unity-public` → Settings → Deploy keys → Add deploy key →
-   paste `gc-unity-public-deploy-key.pub` → **check "Allow write access"**.
-   (Scoping to this repo means the key can never touch the private source.)
-
-4. **Add the PRIVATE key to the PRIVATE repo as an Actions secret:**
-   `deadsetbit/gaming-couch-unity` → Settings → Secrets and variables → Actions →
-   New repository secret → Name: `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` →
-   Value: full contents of `gc-unity-public-deploy-key` (incl. BEGIN/END lines).
-
-5. **Delete the local key files:**
-   ```bash
-   rm gc-unity-public-deploy-key gc-unity-public-deploy-key.pub
-   ```
-
-That's all for today — no code changes, nothing goes public yet. It just puts the
-credential plumbing in place so Phase 4's workflow has somewhere to push.
+- **Compile gate depth:** static-only (Phase 3) now; GameCI or a local `unity test` gate later.
+- **Docs versioning timing:** `latest/` only at cutover; per-version archives and a selector
+  around the beta transition.
+- **Whether the install URL moves into the component-version map** instead of being a code
+  constant, so a future repoint is config rather than a DevApp release plus a backend deploy.
+  Tracked with the rest of the monorepo side in
+  https://github.com/deadsetbit/gaming-couch/issues/587.
