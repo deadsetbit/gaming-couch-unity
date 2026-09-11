@@ -73,7 +73,7 @@ _(None currently open — C1 completed, see Done above.)_
     separated, while keeping the public mirror installable as a Unity package (UPM git URL) — same
     `package.json`/layout constraints, splash/logo removal, docs-site generation.
   - **Open questions:** mirror mechanism (CI on tag → filtered push); what exactly is "public" vs
-    "internal" (README + generated API reference + template/runtime vs `docs/contracts`, `docs/adr`,
+    "internal" (README + generated API reference + template/runtime vs the contract docs, `docs/adr`,
     `docs/architecture`, `CONTEXT.md`, `AGENTS*`); does the docs-site pipeline move to the mirror; how do
     cross-repo contract links (client/SDK, DevApp) resolve once internal docs are private.
   - **Interim option (no restructure):** trim or collapse the README's internal/decisions subsections

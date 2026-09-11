@@ -278,7 +278,18 @@ Example message: `0|{"a0":-1.0,"a1":0.0,"b0":1,"b1":0,"b2":0}`
 ## 7. `runtime_messages` envelope, records, and payloads
 
 Runtime state and diagnostics flow out through `window.gamingCouchRuntimeMessages` as batched
-envelopes. Builder:
+envelopes.
+
+**Transition records are an ordered history and are never coalesced.** Every accepted player
+state change is queued as its own transition record in occurrence order, so an eliminate-then-
+respawn cannot collapse into "nothing changed". Only latest-state projections — state snapshots
+and HUD output — coalesce to the current value at a flush. Batch caps may change *when* a flush
+happens but never remove or merge a transition record. A consumer needing history reads the
+transition records; one needing current truth reads snapshots, **and must not infer from a single
+snapshot that no intermediate changes occurred**. Duplicate-value requests are rejected as no-ops
+at the transition gate, so the stream carries only real changes.
+
+Builder:
 `Runtime/RuntimeMessages/GCRuntimeMessages.cs`.
 
 **Envelope** (`BuildEnvelopeJson`, L787-817):
@@ -339,11 +350,23 @@ placement (first = 1st place):
 ```json
 { "playersByPlacement": [2, 0, 1] }
 ```
+**The result is an object, never a bare array.** Legacy builds ended a game by emitting a bare
+array that receivers read as platform player IDs, so a bare array of zero-based player indices
+would be shape-identical and ambiguous — `playerIndex: 0` cannot be told apart from an old
+positive platform ID. The wrapper keeps new results structurally distinct from that bridge and
+leaves room for further result fields without a version field. A receiver must not accept a bare
+array as a current result; the legacy bare array stays a client/SDK migration bridge interpreted
+as platform IDs and never gains new result semantics.
+
+The payload must be a permutation of all active player indices; an invalid placement is rejected
+with a diagnostic rather than emitted.
+
 **First-accepted-wins:** once accepted, later submissions are rejected with a
-`gc.runtime.invalid_game_over_placement` diagnostic and ignored
-(`TrySubmitGameOverPlacement`, L129-201; guard `gameOverPlacementAccepted` at L155/193). A final state
-snapshot is flushed immediately before the `game_over` record. Ordered transitions are never
-coalesced.
+`gc.runtime.invalid_game_over_placement` diagnostic and ignored — even byte-identical ones, and
+even re-entrant ones during the accept callback. A rejected submission before any acceptance does
+not consume the slot (`TrySubmitGameOverPlacement`, L129-201; guard `gameOverPlacementAccepted` at
+L155/193). Pending transitions and a final state snapshot are flushed immediately before the
+`game_over` record, in one envelope.
 
 ---
 
@@ -470,7 +493,7 @@ serializer L16-36):
 
 The same payload is baked into the runtime resource `Runtime/Resources/GamingCouchRuntimeInfo.json`
 and forwarded before splash via `window.gamingCouchRegisterRuntimeInfo` (kept in sync with
-`package.json` by the manual guard `Tools/check-runtime-package-info.py`).
+`package.json` by a release-time guard in the package repository).
 
 ### `gc.unity-build-info.json` — non-gating build diagnostics
 

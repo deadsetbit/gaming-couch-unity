@@ -75,7 +75,7 @@ These decisions are recorded as ADRs; this plan only points to them:
 ## Release automation
 - CI: `.github/workflows/docfx-unitypackage.yml` builds the DocFX site, and is `workflow_dispatch` only — the action reads the package from the repository root, which no longer holds one. `docs/architecture/public-mirror-plan.md` rebuilds it to stage `public/package/` and deploy to the public repo.
 - Version bumps are manual via `Tools/bump-version.py` (see "Bumping the version" above), which produces `unity-<version>` tags.
-- `unity-<version>` is the only tag scheme. semantic-release is not wired in and its `.releaserc.json` — which named a second, unused `Development-v${version}` scheme — is deleted.
+- `unity-<version>` is the only tag scheme. semantic-release is not wired in.
 - No nightly workflow exists yet; if nightlies are added, CI should build, version, and tag them as clearly labeled "unstable".
 
 ## Release channels
