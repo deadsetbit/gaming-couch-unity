@@ -110,7 +110,9 @@ package.json (dev scripts only)     │      publish ONLY that tag with a scoped
 | Actions secret (private repo) | `GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY` |
 | Bot identity | `gaming-couch-bot <bot@deadsetbit.com>` |
 | Docs site root | `https://deadsetbit.github.io/gaming-couch-unity-public/` |
-| Docs deep-link base | `https://deadsetbit.github.io/gaming-couch-unity-public/latest/` |
+| Docs folder for a release | `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/` |
+| Docs version manifest | `https://deadsetbit.github.io/gaming-couch-unity-public/versions.json` |
+| Permanent link home baked into every page | `https://gamingcouch.com` |
 
 ---
 
@@ -186,7 +188,8 @@ them the release tooling points at the old paths and no release can be cut.
       `../docs/contracts/` relative link that escapes the package root and cannot resolve in
       the published tree at all. Move `docs/contracts/platform-runtime-contract.md` and
       `docs/contracts/devapp-local-play-contract.md` into `public/package/Documentation~/` and
-      link them there; repoint API links at the **`/latest/api/…`** deep-link base; drop the
+      link them there; repoint API links at this release's own **`/<version>/api/…`** folder,
+      which `Tools/bump-version.py` maintains from then on; drop the
       links to the ADRs, the backlog and `CONTEXT.md`.
 - [ ] **Rewrite the moved contract documents' own links.** They are not inert text: between
       them they carry around a dozen `../adr/…` links plus `../../README.md` and
@@ -395,10 +398,10 @@ in, which stops existing the moment that repo is private.
 - [ ] **Deploy** with `peaceiris/actions-gh-pages@v3`:
       `external_repository: deadsetbit/gaming-couch-unity-public`,
       `deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}`,
-      `publish_branch: gh-pages`, `publish_dir: _site`, `destination_dir: latest`;
-      `base_url` is the deep-link base,
-      `https://deadsetbit.github.io/gaming-couch-unity-public/latest/`. **Not `keep_files`** —
-      see the ordering note below.
+      `publish_branch: gh-pages`, `publish_dir: _site`,
+      `destination_dir: <version>`; `base_url` is that same folder. **Not `keep_files`** —
+      see the ordering note below. `site_root_url` is the root above it and `home_url` is
+      `https://gamingcouch.com`; both are baked into every page.
 - [ ] **Run the same gates as the release publish** before deploying — the identity guard and
       `check-dist-complete.py`. The action turns `README.md` and `CHANGELOG.md` into site
       pages, so without them a package the mirror workflow *refuses* to publish would have its
@@ -407,27 +410,36 @@ in, which stops existing the moment that repo is private.
 - [ ] Decide whether test classes belong in the public API reference. The metadata source is
       `**/*.cs` from the staged root, and `Tests/` now ships, so they will appear unless
       excluded. The action supports `Documentation~/manual/filter.yml` for exactly this.
-- [ ] **Order matters:** `gh-pages` does not exist until the first deploy, Pages cannot be
-      enabled on a branch that does not exist, and the hand-written root `index.html`
-      redirecting to `latest/` must be placed *after* that first deploy.
-      **`keep_files` is not what protects it.** The action's cleanup is a `git rm` run with the
-      working directory set to `destination_dir`, so with `destination_dir: latest` it can
-      never reach the `gh-pages` root — the root redirect is safe either way. All `keep_files`
-      would add is that pages deleted from the docs are never cleaned out of `latest/`, so
-      `latest/api/` would keep serving types the package no longer has. Leave it off.
+- [ ] **Point the site root at the latest stable release.** A second deploy in the same job
+      writes a root `index.html` redirecting to the release's folder, and runs only for a
+      stable version — a prerelease publishes its own folder and leaves the root alone, so a
+      stable reader is never sent to an alpha.
+- [ ] **`keep_files` differs between the two deploys, deliberately.** The action's cleanup is
+      a `git rm` run with the working directory set to `destination_dir`. For the per-version
+      deploy that reaches only this release's folder, which is what stops a type deleted from
+      the package keeping its API page inside that release: leave it **off**. The root deploy
+      has no `destination_dir`, so the same cleanup would reach every version folder already
+      published: it must be **on**.
+- [ ] **Order matters:** `gh-pages` does not exist until the first deploy, and Pages cannot be
+      enabled on a branch that does not exist, so Pages is enabled after it.
 - [ ] **Publish the landing page (Phase 5) before the first release tag.** The mirror workflow
       pushes only a tag and creates no branch, so if a docs deploy is the first thing to create
       a branch on the public repo, `gh-pages` becomes its default branch and the repository's
       landing view is raw DocFX output. Check with
       `gh api repos/deadsetbit/gaming-couch-unity-public --jq .default_branch` afterwards.
 - [ ] **Human:** enable Pages on `gaming-couch-unity-public` with `gh-pages` as the source,
-      then confirm the site root redirects and a deep link such as `/latest/api/` renders.
+      then confirm the site root redirects and a deep link such as `/<version>/api/` renders.
 
-Publishing into `latest/` from the first deploy is what keeps versioned docs additive later:
-the URL scheme is already versioned-shaped, so archives can be added without breaking a
-bookmark. **Versioned archives are deferred to the beta transition** — during `0.x` a folder
-per alpha is churn, and each archived version wants its own build because the base URL is
-absolute, so a release would build the docs twice.
+Every release publishes its own folder from the first deploy, and nothing overwrites it.
+A release's documentation URL is frozen into an immutable tag, so a URL naming a channel
+rather than a version would point a pinned consumer at a moving target for as long as that
+release exists. The cost is one folder per release, including per alpha; the alternative
+cannot be corrected after the fact.
+
+Each page carries the version it documents, a link home, and the address of a version
+manifest at the site root. Those three are baked into the HTML because a published page is
+never rewritten; everything the banner says is read from the manifest, which is the one
+mutable file and can change for pages published years earlier.
 
 ## Phase 7 — Go-private cutover · **human**
 
@@ -555,8 +567,6 @@ repointed. Sequence Phase 7 exactly as written so a rollback never breaks an ins
 ## Decisions still open
 
 - **Compile gate depth:** static-only (Phase 3) now; GameCI or a local `unity test` gate later.
-- **Docs versioning timing:** `latest/` only at cutover; per-version archives and a selector
-  around the beta transition.
 - **Whether the install URL moves into the component-version map** instead of being a code
   constant, so a future repoint is config rather than a DevApp release plus a backend deploy.
   Tracked with the rest of the monorepo side in

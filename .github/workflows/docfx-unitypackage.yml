@@ -29,10 +29,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Published under a version-named folder from the first deploy, with the site root
-  # redirecting there, so per-version archives can be added later without moving anyone's
-  # bookmark. This is also the deep-link base the shipped README and manifest point at.
-  DOCS_BASE_URL: https://deadsetbit.github.io/gaming-couch-unity-public/latest/
+  # Each release deploys into a folder named for its own version and nothing overwrites it,
+  # because the URL is frozen into an immutable tag and the plan forbids republishing. The
+  # site root redirects to the latest stable release; a prerelease publishes its folder and
+  # leaves the root where it is.
+  DOCS_SITE_ROOT: https://deadsetbit.github.io/gaming-couch-unity-public/
+  # A link, never a fetch, so it needs no CORS and no uptime from the docs host and still
+  # works from a page whose site has been retired.
+  DOCS_HOME_URL: https://gamingcouch.com
   PUBLIC_REPO: deadsetbit/gaming-couch-unity-public
 
 jobs:
@@ -55,6 +59,18 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          # The tag pattern above already limits this to one safe path segment: it must open
+          # with an alphanumeric, so it can be neither empty nor a traversal.
+          version="${tag#unity-}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "base_url=${DOCS_SITE_ROOT}${version}/" >> "$GITHUB_OUTPUT"
+
+          # Semver: anything after the first hyphen is a prerelease identifier.
+          case "$version" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: Check out the tag
         uses: actions/checkout@v4
@@ -108,23 +124,81 @@ jobs:
 
       # No github_token: the action reads it only to look up the running repository's Pages
       # configuration, which base_url replaces.
+      #
+      # base_url is this release's own folder; site_root_url is the root above it, which is
+      # what the version manifest is resolved against. They stopped being the same thing when
+      # the site started publishing one folder per release.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.1.0
+        uses: deadsetbit/docfx-unitypackage@v1.2.0
         with:
-          base_url: ${{ env.DOCS_BASE_URL }}
+          base_url: ${{ steps.release.outputs.base_url }}
+          site_root_url: ${{ env.DOCS_SITE_ROOT }}
+          home_url: ${{ env.DOCS_HOME_URL }}
 
-      - name: Assert the built site carries the public URL
+      # Checked here rather than after the deploy, because a page that ships without these is
+      # frozen without them: the tag is immutable and the plan forbids republishing.
+      - name: Assert the built site carries this release's URLs
+        env:
+          BASE_URL: ${{ steps.release.outputs.base_url }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          grep -qF "$DOCS_BASE_URL" _site/sitemap.xml || {
-            echo "::error::the built sitemap does not carry $DOCS_BASE_URL."
+          grep -qF "$BASE_URL" _site/sitemap.xml || {
+            echo "::error::the built sitemap does not carry $BASE_URL."
             exit 1
           }
 
-      - name: Deploy to the public repository
+          pages=$(find _site -name '*.html' -not -path '_site/public/*' -not -name 'toc.html')
+          test -n "$pages" || { echo "::error::no pages were built."; exit 1; }
+
+          status=0
+          for page in $pages; do
+            for needle in \
+              "data-docs-version=\"$VERSION\"" \
+              "data-docs-manifest=\"${DOCS_SITE_ROOT}versions.json\"" \
+              "href=\"$DOCS_HOME_URL\""; do
+              grep -qF "$needle" "$page" || {
+                echo "::error::$page is missing: $needle"
+                status=1
+              }
+            done
+          done
+          test "$status" -eq 0 || exit 1
+
+      # No keep_files: the action's cleanup is a `git rm` run with the working directory set
+      # to destination_dir, so it can reach only this version's folder. Leaving it off is what
+      # stops a type deleted from the package keeping its API page inside this release.
+      - name: Deploy this release's documentation
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: ${{ env.PUBLIC_REPO }}
           deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
           publish_branch: gh-pages
           publish_dir: _site
-          destination_dir: latest
+          destination_dir: ${{ steps.release.outputs.version }}
+
+      - name: Compose the site root redirect
+        if: steps.release.outputs.prerelease == 'false'
+        env:
+          BASE_URL: ${{ steps.release.outputs.base_url }}
+        run: |
+          mkdir -p _root
+          cat > _root/index.html <<HTML
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Gaming Couch for Unity</title>
+          <meta http-equiv="refresh" content="0;URL=$BASE_URL">
+          <link rel="canonical" href="$BASE_URL">
+          <p>Redirecting to <a href="$BASE_URL">the current documentation</a>.</p>
+          HTML
+
+      # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
+      # at the root, where the cleanup would reach every version folder already published.
+      - name: Point the site root at this release
+        if: steps.release.outputs.prerelease == 'false'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          external_repository: ${{ env.PUBLIC_REPO }}
+          deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
+          publish_branch: gh-pages
+          publish_dir: _root
+          keep_files: true

@@ -18,4 +18,4 @@ Platform (client/SDK) and DevApp maintainers: see the
 
 ## Reference
 
-- [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/latest/api)
+- [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api)
