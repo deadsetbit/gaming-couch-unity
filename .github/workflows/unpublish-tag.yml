@@ -29,8 +29,6 @@ concurrency:
 
 env:
   PUBLIC_REPO_SSH: git@github.com:deadsetbit/gaming-couch-unity-public.git
-  BOT_NAME: gaming-couch-bot
-  BOT_EMAIL: bot@deadsetbit.com
 
 jobs:
   unpublish:
@@ -39,13 +37,16 @@ jobs:
     steps:
       - name: Validate the tag
         id: release
+        shell: bash
         env:
           TAG: ${{ inputs.tag }}
         run: |
-          case "$TAG" in
-            unity-*) ;;
-            *) echo "::error::'$TAG' is not a unity-<version> release tag."; exit 1 ;;
-          esac
+          # Free-form dispatch input that becomes a refspec, so it is checked against the
+          # whole tag format. `[[ =~ ]]` matches the entire string, so a newline fails it.
+          if [[ ! "$TAG" =~ ^unity-[A-Za-z0-9][A-Za-z0-9.+-]*$ ]]; then
+            echo "::error::'$TAG' is not a unity-<version> release tag."
+            exit 1
+          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Install the deploy key
@@ -60,7 +61,12 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/mirror_key
           chmod 600 ~/.ssh/mirror_key
-          ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          if ! ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /tmp/known_hosts 2>/dev/null \
+              || [ ! -s /tmp/known_hosts ]; then
+            echo "::error::could not read github.com's host keys, so the delete cannot be verified."
+            exit 1
+          fi
+          cat /tmp/known_hosts >> ~/.ssh/known_hosts
           echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
 
       - name: Delete the tag from the mirror
@@ -69,17 +75,28 @@ jobs:
         run: |
           work="$(mktemp -d)"
           cd "$work"
-          git init --initial-branch=release --quiet
+          git init --quiet
           git remote add public "$PUBLIC_REPO_SSH"
 
-          if [ -z "$(git ls-remote --tags public "refs/tags/$TAG")" ]; then
+          # A failing ls-remote prints nothing either, and `-e` does not fire for a command
+          # substitution inside `[ ]`. Take the status separately, or an unreachable mirror
+          # reads first as "not there" and then as "successfully gone".
+          before="$(git ls-remote --tags public "refs/tags/$TAG")" || {
+            echo "::error::could not reach the mirror to look for $TAG."
+            exit 1
+          }
+          if [ -z "$before" ]; then
             echo "::error::$TAG is not on the mirror; nothing to delete."
             exit 1
           fi
 
           git push public ":refs/tags/$TAG"
 
-          if [ -n "$(git ls-remote --tags public "refs/tags/$TAG")" ]; then
+          after="$(git ls-remote --tags public "refs/tags/$TAG")" || {
+            echo "::error::could not reach the mirror to confirm $TAG was deleted."
+            exit 1
+          }
+          if [ -n "$after" ]; then
             echo "::error::$TAG is still on the mirror after the delete."
             exit 1
           fi
