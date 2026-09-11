@@ -249,7 +249,7 @@ def read_current_version():
     return match.group(1), text
 
 
-def write_package_version(text, current, new):
+def write_package_manifest(text, current, new):
     updated, count = re.subn(
         r'("version"\s*:\s*")' + re.escape(current) + r'(")',
         lambda m: m.group(1) + new + m.group(2),
@@ -262,8 +262,12 @@ def write_package_version(text, current, new):
     PACKAGE_JSON_PATH.write_text(updated, encoding="utf-8")
 
 
+def docs_folder_url(new_version):
+    return "{0}{1}/".format(DOCS_SITE_ROOT, new_version)
+
+
 def docs_url(new_version, suffix):
-    return "{0}{1}/{2}".format(DOCS_SITE_ROOT, new_version, suffix)
+    return docs_folder_url(new_version) + suffix
 
 
 def rewrite_docs_urls(text, new_version):
@@ -297,9 +301,7 @@ def rewrite_docs_deep_links(new_version, originals):
     """
     for path in shipped_markdown_paths():
         text = path.read_text(encoding="utf-8")
-        updated = DOCS_DEEP_LINK_RE.sub(
-            "{0}{1}/".format(DOCS_SITE_ROOT, new_version), text
-        )
+        updated = DOCS_DEEP_LINK_RE.sub(docs_folder_url(new_version), text)
         if updated != text:
             originals[path] = text
             path.write_text(updated, encoding="utf-8")
@@ -405,7 +407,7 @@ def main():
             print("Aborted.")
             return 1
 
-    print("Docs folder:     {0}{1}/".format(DOCS_SITE_ROOT, new_version))
+    print("Docs folder:     {0}".format(docs_folder_url(new_version)))
 
     if args.dry_run:
         for field, suffix in DOCS_URL_FIELDS.items():
@@ -445,7 +447,7 @@ def main():
             path.write_text(original, encoding="utf-8")
 
     try:
-        write_package_version(package_text, current, new_version)
+        write_package_manifest(package_text, current, new_version)
         bake_runtime_info(name, new_version)
         rewrite_docs_deep_links(new_version, markdown_originals)
     except BumpError as exc:

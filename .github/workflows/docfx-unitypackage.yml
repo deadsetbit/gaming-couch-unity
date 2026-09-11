@@ -125,9 +125,8 @@ jobs:
       # No github_token: the action reads it only to look up the running repository's Pages
       # configuration, which base_url replaces.
       #
-      # base_url is this release's own folder; site_root_url is the root above it, which is
-      # what the version manifest is resolved against. They stopped being the same thing when
-      # the site started publishing one folder per release.
+      # base_url is this release's own folder; site_root_url is the root above it, shared by
+      # every release, and is what the version manifest is resolved against.
       - name: Build
         uses: deadsetbit/docfx-unitypackage@v1.2.0
         with:
@@ -138,6 +137,7 @@ jobs:
       # Checked here rather than after the deploy, because a page that ships without these is
       # frozen without them: the tag is immutable and the plan forbids republishing.
       - name: Assert the built site carries this release's URLs
+        shell: bash
         env:
           BASE_URL: ${{ steps.release.outputs.base_url }}
           VERSION: ${{ steps.release.outputs.version }}
@@ -147,22 +147,26 @@ jobs:
             exit 1
           }
 
-          pages=$(find _site -name '*.html' -not -path '_site/public/*' -not -name 'toc.html')
-          test -n "$pages" || { echo "::error::no pages were built."; exit 1; }
-
-          status=0
-          for page in $pages; do
+          # Null-delimited: the action turns 'Third Party Notices.md' into a page, so a built
+          # path can carry spaces. toc.html files are navigation fragments, not pages.
+          checked=0
+          missing=0
+          while IFS= read -r -d '' page; do
+            checked=$((checked + 1))
             for needle in \
               "data-docs-version=\"$VERSION\"" \
               "data-docs-manifest=\"${DOCS_SITE_ROOT}versions.json\"" \
               "href=\"$DOCS_HOME_URL\""; do
               grep -qF "$needle" "$page" || {
                 echo "::error::$page is missing: $needle"
-                status=1
+                missing=1
               }
             done
-          done
-          test "$status" -eq 0 || exit 1
+          done < <(find _site -name '*.html' -not -path '_site/public/*' -not -name 'toc.html' -print0)
+
+          test "$checked" -gt 0 || { echo "::error::no pages were built."; exit 1; }
+          test "$missing" -eq 0 || exit 1
+          echo "$checked pages carry this release's version, manifest URL and link home."
 
       # No keep_files: the action's cleanup is a `git rm` run with the working directory set
       # to destination_dir, so it can reach only this version's folder. Leaving it off is what
@@ -176,8 +180,58 @@ jobs:
           publish_dir: _site
           destination_dir: ${{ steps.release.outputs.version }}
 
-      - name: Compose the site root redirect
+      # Publishing is not the same as being newest. A tag push can cut a patch on an older
+      # line, and this workflow also takes a tag by dispatch, so a release reaching this point
+      # is not necessarily ahead of whatever the root already names.
+      - name: Decide whether this release takes the site root
+        id: root
         if: steps.release.outputs.prerelease == 'false'
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          # Read gh-pages directly rather than the served site: this has to be right on the
+          # first deploy, which happens before Pages is enabled by hand.
+          published=$(mktemp)
+          code=$(curl -sS -o "$published" -w '%{http_code}' \
+            "https://raw.githubusercontent.com/${PUBLIC_REPO}/gh-pages/index.html")
+
+          case "$code" in
+            404)
+              echo "No site root published yet; this release takes it."
+              echo "take=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            200) ;;
+            *)
+              echo "::error::could not read the published site root (HTTP $code)."
+              exit 1
+              ;;
+          esac
+
+          current=$(grep -o '<link rel="canonical" href="[^"]*"' "$published" \
+            | head -1 | sed 's|.*href="||; s|"$||')
+          current="${current#"$DOCS_SITE_ROOT"}"
+          current="${current%/}"
+          if [ -z "$current" ]; then
+            echo "::error::the published site root names no version; refusing to guess."
+            exit 1
+          fi
+
+          # Only a stable release ever holds the root, and this step runs only for a stable
+          # release, so both sides are plain X.Y.Z and a version sort settles it. Build
+          # metadata is dropped, semver excluding it from precedence.
+          newest=$(printf '%s\n%s\n' "${current%%+*}" "${VERSION%%+*}" | sort -V | tail -1)
+          if [ "$newest" = "${VERSION%%+*}" ] && [ "$current" != "$VERSION" ]; then
+            echo "Site root moves from $current to $VERSION."
+            echo "take=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Site root stays at $current; $VERSION is not ahead of it."
+            echo "take=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compose the site root redirect
+        if: steps.root.outputs.take == 'true'
         env:
           BASE_URL: ${{ steps.release.outputs.base_url }}
         run: |
@@ -194,7 +248,7 @@ jobs:
       # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
       # at the root, where the cleanup would reach every version folder already published.
       - name: Point the site root at this release
-        if: steps.release.outputs.prerelease == 'false'
+        if: steps.root.outputs.take == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: ${{ env.PUBLIC_REPO }}

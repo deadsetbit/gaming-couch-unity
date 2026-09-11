@@ -8,9 +8,8 @@
 
 ### Changed
 
-- Documentation, changelog and licence links in the package manifest, and every API reference link in the README, now point at `https://deadsetbit.github.io/gaming-couch-unity-public/`.
-- Each release's documentation is published under its own version and the links shipped with that release point there, so a pinned install reads the documentation for the version it has rather than for whatever shipped most recently.
-- Every documentation page states the version it documents and carries a link to <https://gamingcouch.com>, and tells you when it could not check whether a newer release exists.
+- Documentation, changelog and licence links in the package manifest, and every API reference link in the README, now point into this release's own folder under `https://deadsetbit.github.io/gaming-couch-unity-public/`. Each release's documentation is published separately and is never overwritten, so a pinned install reads the documentation for the version it actually has rather than for whatever shipped most recently.
+- Every documentation page states the version it documents and carries a link to <https://gamingcouch.com>.
 
 ## [0.1.0-alpha.7] - 2026-09-10
 
