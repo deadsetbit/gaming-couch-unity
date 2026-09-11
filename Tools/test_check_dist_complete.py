@@ -36,6 +36,7 @@ gate = load_gate()
 PACKAGE_NAME = "com.dsb.gamingcouch"
 VERSION = "0.1.0-alpha.9"
 TAG = "unity-" + VERSION
+DOCS_FOLDER = "https://deadsetbit.github.io/gaming-couch-unity-public/" + VERSION + "/"
 
 
 class PackageTreeTestCase(unittest.TestCase):
@@ -57,7 +58,15 @@ class PackageTreeTestCase(unittest.TestCase):
         (self.root / "Documentation~" / "README.md").write_text("# manual\n", encoding="utf-8")
 
     def write_manifest(self, **overrides):
-        manifest = {"name": PACKAGE_NAME, "version": VERSION}
+        # A releasable manifest names where its own documentation is published; the gate
+        # refuses one that does not, so the known-good fixture has to carry them.
+        manifest = {
+            "name": PACKAGE_NAME,
+            "version": VERSION,
+            "documentationUrl": DOCS_FOLDER,
+            "changelogUrl": DOCS_FOLDER + "changelog/CHANGELOG.html",
+            "licensesUrl": DOCS_FOLDER + "license/LICENSE.html",
+        }
         manifest.update(overrides)
         self.write_asset("package.json", json.dumps(manifest, indent=2) + "\n")
 
@@ -125,6 +134,43 @@ class ManifestIdentity(PackageTreeTestCase):
     def test_tag_without_the_unity_prefix_fails(self):
         failures = self.check(tag="v0.1.0-alpha.9")
         self.assertTrue(any("unity-" in failure for failure in failures), failures)
+
+
+class DocumentationUrls(PackageTreeTestCase):
+    """The URLs freeze into the tag, so the gate is the last place to catch a wrong one."""
+
+    def test_a_url_naming_another_release_fails(self):
+        self.write_manifest(
+            documentationUrl="https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/"
+        )
+        self.assertFailsWith("documentationUrl", "0.1.0-alpha.8")
+
+    def test_a_channel_name_in_place_of_a_version_fails(self):
+        self.write_manifest(
+            documentationUrl="https://deadsetbit.github.io/gaming-couch-unity-public/latest/"
+        )
+        self.assertFailsWith("documentationUrl")
+
+    def test_a_manifest_without_the_urls_fails(self):
+        self.write_asset(
+            "package.json",
+            json.dumps({"name": PACKAGE_NAME, "version": VERSION}, indent=2) + "\n",
+        )
+        self.assertFailsWith("documentationUrl", "changelogUrl", "licensesUrl")
+
+    def test_the_changelog_and_licence_urls_are_checked_too(self):
+        self.write_manifest(
+            changelogUrl="https://example.invalid/changelog.html",
+            licensesUrl="https://example.invalid/licence.html",
+        )
+        self.assertFailsWith("changelogUrl", "licensesUrl")
+
+    def test_the_urls_follow_the_tag_rather_than_the_manifest_version(self):
+        """A cherry-pick lands the right files under the wrong tag; both must be caught."""
+        failures = self.check(tag="unity-0.9.9")
+        joined = "\n".join(failures)
+        for field in ("documentationUrl", "changelogUrl", "licensesUrl"):
+            self.assertIn(field, joined)
 
 
 class MetaPairing(PackageTreeTestCase):

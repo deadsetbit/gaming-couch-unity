@@ -62,12 +62,18 @@ DOCS_URL_FIELDS = {
     "licensesUrl": "license/LICENSE.html",
 }
 
-# Deep links into the API reference carry the same folder, and for the same reason. The
-# changelog is excluded because its entries describe releases that have already shipped, and
-# what they said at the time is not ours to rewrite.
-DOCS_DEEP_LINK_RE = re.compile(
-    re.escape(DOCS_SITE_ROOT) + r"[^/\s)\"]+/(?=api\b)"
-)
+# Links into the docs site carry the same folder, and for the same reason. Matched on the
+# folder alone rather than on what follows it: a link to the manual or the changelog of a
+# superseded release resolves to a real page describing the wrong version, which is worse
+# than a dead link because nothing about it looks wrong.
+#
+# The segment must be version-shaped, so the site's own root-level files — the version
+# manifest among them — are left alone.
+DOCS_VERSION_SEGMENT = r"(?:latest|\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"
+DOCS_DEEP_LINK_RE = re.compile(re.escape(DOCS_SITE_ROOT) + DOCS_VERSION_SEGMENT + r"/")
+
+# The changelog is excluded because its entries describe releases that have already shipped,
+# and what they said at the time is not ours to rewrite.
 DOCS_LINK_EXCLUDED = {"CHANGELOG.md"}
 
 PLATFORM = "unity"
@@ -294,7 +300,7 @@ def shipped_markdown_paths():
 
 
 def rewrite_docs_deep_links(new_version, originals):
-    """Repoint every shipped API deep link at this release's own docs folder.
+    """Repoint every shipped docs-site link at this release's own folder.
 
     Each file's previous contents are recorded in `originals` before it is written, so a
     failure part-way through the sweep still leaves every touched file restorable.
@@ -418,7 +424,7 @@ def main():
             if DOCS_DEEP_LINK_RE.search(path.read_text(encoding="utf-8"))
         ]
         if deep_linked:
-            print("  API deep links repointed in: {0}".format(", ".join(deep_linked)))
+            print("  docs links repointed in: {0}".format(", ".join(deep_linked)))
         print("\nDRY RUN — would edit package.json + baked runtime info, then commit "
               "'chore(release): {0}' and tag {1}. No changes made.".format(new_version, tag_name))
         return 0
@@ -450,7 +456,10 @@ def main():
         write_package_manifest(package_text, current, new_version)
         bake_runtime_info(name, new_version)
         rewrite_docs_deep_links(new_version, markdown_originals)
-    except BumpError as exc:
+    except (BumpError, OSError, UnicodeDecodeError) as exc:
+        # OSError and UnicodeDecodeError reach here from the markdown sweep, which touches
+        # files this script does not otherwise own. Letting either escape would leave the
+        # tree half-rewritten with nothing to restore it.
         restore()
         print("error: {0} Files restored.".format(exc), file=sys.stderr)
         return 1

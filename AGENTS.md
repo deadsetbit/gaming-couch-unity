@@ -57,11 +57,14 @@
   `public/package/package.json`, re-bakes the runtime info to match, verifies them, commits and
   tags `unity-<version>`. Pushing that tag is what publishes.
 - The same command writes every documentation URL the release ships: the three manifest fields,
-  and every API deep link in the shipped markdown outside `CHANGELOG.md`, which is left alone
-  because its entries describe releases that have already gone out. Each release's docs live at
-  `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/`, so these are never edited
-  by hand — a release that ships the wrong folder cannot be corrected, the tag being immutable.
-  `Tools/test_bump_version.py` covers the rewriting.
+  and every link into the docs site in the shipped markdown outside `CHANGELOG.md`, which is
+  left alone because its entries describe releases that have already gone out. Each release's
+  docs live at `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/`, so these
+  are never edited by hand — a release that ships the wrong folder cannot be corrected, the tag
+  being immutable. A link to a superseded release is worse than a dead one, because it resolves
+  to a real page describing the wrong version. `Tools/test_bump_version.py` covers the
+  rewriting, and `check-dist-complete.py` refuses a release whose manifest URLs do not name its
+  own tag.
 - **Never pass `--yes`.** It auto-confirms every prompt, including "also run the monorepo's DevApp
   release helper?" — the step that registers a release downstream. That path stops only because
   stdin happens to be closed in a non-interactive shell, which is not a guarantee. Answer the

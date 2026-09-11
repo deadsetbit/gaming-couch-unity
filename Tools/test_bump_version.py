@@ -139,6 +139,31 @@ class DeepLinksFollowTheReleaseFolder(unittest.TestCase):
         self.assertEqual(written["README.md"], root)
         self.assertEqual(touched, set())
 
+    def test_links_that_are_not_the_api_reference_follow_too(self):
+        """A superseded manual or changelog page still renders, describing the wrong release.
+
+        That is worse than a dead link: nothing about the page looks wrong to a reader.
+        """
+        for path in ("changelog/CHANGELOG.html", "license/LICENSE.html", "manual/index.html"):
+            with self.subTest(path=path):
+                written, _ = self.sweep(
+                    {"README.md": "https://deadsetbit.github.io/gaming-couch-unity-public/0.1.9/" + path}
+                )
+                self.assertIn("gaming-couch-unity-public/0.2.0/" + path, written["README.md"])
+
+    def test_a_bare_release_folder_link_follows(self):
+        written, _ = self.sweep(
+            {"README.md": "[docs](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.9/)"}
+        )
+        self.assertIn("gaming-couch-unity-public/0.2.0/)", written["README.md"])
+
+    def test_a_file_at_the_site_root_is_not_a_release_folder(self):
+        """The version manifest lives at the root and belongs to no release."""
+        manifest = "https://deadsetbit.github.io/gaming-couch-unity-public/versions.json\n"
+        written, touched = self.sweep({"README.md": manifest})
+        self.assertEqual(written["README.md"], manifest)
+        self.assertEqual(touched, set())
+
     def test_the_previous_contents_are_recorded_before_the_file_is_written(self):
         before = "https://deadsetbit.github.io/gaming-couch-unity-public/latest/api\n"
         with tempfile.TemporaryDirectory() as tmp:

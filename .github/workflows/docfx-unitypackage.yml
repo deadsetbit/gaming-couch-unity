@@ -147,6 +147,15 @@ jobs:
             exit 1
           }
 
+          # The folder's own entry point. It is the only page whose link out is absolute, so
+          # it is the one place a stale base URL would strand a reader inside a release that
+          # can never be rebuilt.
+          grep -qF "content=\"0;URL=${BASE_URL}manual/\"" _site/index.html || {
+            echo "::error::the built index does not redirect into ${BASE_URL}manual/."
+            grep -i refresh _site/index.html || true
+            exit 1
+          }
+
           # Null-delimited: the action turns 'Third Party Notices.md' into a page, so a built
           # path can carry spaces. toc.html files are navigation fragments, not pages.
           checked=0
@@ -189,12 +198,17 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          # Read gh-pages directly rather than the served site: this has to be right on the
-          # first deploy, which happens before Pages is enabled by hand.
+          # Read gh-pages through the API rather than raw.githubusercontent, whose CDN can
+          # serve a stale copy for minutes — long enough to misread the root when two stable
+          # releases go out close together. This has to be right on the first deploy too,
+          # before Pages is enabled by hand.
           published=$(mktemp)
           code=$(curl -sS -o "$published" -w '%{http_code}' \
-            "https://raw.githubusercontent.com/${PUBLIC_REPO}/gh-pages/index.html")
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${PUBLIC_REPO}/contents/index.html?ref=gh-pages")
 
           case "$code" in
             404)
@@ -209,12 +223,23 @@ jobs:
               ;;
           esac
 
-          current=$(grep -o '<link rel="canonical" href="[^"]*"' "$published" \
-            | head -1 | sed 's|.*href="||; s|"$||')
-          current="${current#"$DOCS_SITE_ROOT"}"
-          current="${current%/}"
-          if [ -z "$current" ]; then
-            echo "::error::the published site root names no version; refusing to guess."
+          # grep's own failure has to be caught here rather than left to errexit, which would
+          # abort the step with no indication of which of these two things went wrong.
+          canonical=$(grep -o '<link rel="canonical" href="[^"]*"' "$published" | head -1) || true
+          current=${canonical#*href=\"}
+          current=${current%\"}
+          current=${current#"$DOCS_SITE_ROOT"}
+          current=${current%/}
+
+          if [ -z "$canonical" ]; then
+            echo "::error::the published site root carries no canonical link, so what it points at cannot be read."
+            exit 1
+          fi
+
+          # A root written by hand, or pointing off-site, sorts unpredictably against a
+          # version and would pin the root wherever it is. Refuse rather than guess.
+          if ! printf '%s' "$current" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)*$'; then
+            echo "::error::the published site root names '$current', which is not a release version."
             exit 1
           fi
 
