@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 EXPECTED_PACKAGE_NAME = "com.dsb.gamingcouch"
@@ -32,9 +33,24 @@ EXTERNAL_ASSEMBLY_ALLOWLIST = {
     "Unity.Netcode.Runtime": "NGO, referenced by an assembly gated behind a define constraint",
 }
 
+# What a complete package is. Meta pairing only catches half of a loss — the asset or its meta —
+# so a move that drops a whole folder, metas included, leaves nothing behind to be unpaired and
+# nothing left referencing it. Only naming the parts can catch that.
+REQUIRED_FILES = ["package.json", "README.md", "CHANGELOG.md", "LICENSE.md"]
+REQUIRED_DIRECTORIES = [
+    "Runtime",
+    "Editor",
+    "Plugins",
+    "Tests",
+    "Documentation~",
+    "ContractFixtures/LocalPlay",
+]
+
 # The shipped tests reach the Contract Fixtures by string path, so no assembly-reference check
-# can see them and they need an assertion of their own.
+# can see them and they need an assertion of their own. Each case is a directory holding the
+# project file the fixture tests replay.
 CONTRACT_FIXTURES_DIR = "ContractFixtures/LocalPlay"
+CONTRACT_FIXTURE_CASE_FILE = "gc.dev.json"
 
 # Untracked on developer machines and never present in a CI checkout. Ignored defensively so a
 # local run agrees with the CI run; it is not why the meta rule needs an exception.
@@ -55,6 +71,8 @@ SECRET_SCAN_LEAK_EXIT_CODE = 2
 # very folder being scanned. A config there replaces the entire ruleset, so the scan passes
 # while detecting nothing. The published folder carries no ignore-list by design, so the gate
 # refuses these outright rather than trying to scan around them.
+# Compared case-folded: on a case-insensitive filesystem `.GITLEAKS.TOML` is the same file to
+# the scanner and a different string to us.
 SCANNER_CONFIG_FILENAMES = {".gitleaks.toml", "gitleaks.toml", ".gitleaksignore"}
 
 GUID_REFERENCE_RE = re.compile(r"^GUID:([0-9a-fA-F]{32})$")
@@ -94,6 +112,9 @@ def check_manifest(package_dir, tag):
     except json.JSONDecodeError as exc:
         return ["package.json: not valid JSON ({0})".format(exc)]
 
+    if not isinstance(manifest, dict):
+        return ["package.json: valid JSON but not an object, so it declares no package"]
+
     name = manifest.get("name")
     if name != EXPECTED_PACKAGE_NAME:
         failures.append(
@@ -120,6 +141,37 @@ def check_manifest(package_dir, tag):
     return failures
 
 
+def check_required_contents(package_dir):
+    failures = []
+    for relative in REQUIRED_FILES:
+        path = package_dir / relative
+        if not path.is_file():
+            failures.append("{0}: required file is missing".format(relative))
+        elif path.stat().st_size == 0:
+            failures.append("{0}: required file is empty".format(relative))
+    for relative in REQUIRED_DIRECTORIES:
+        path = package_dir / relative
+        if not path.is_dir():
+            failures.append("{0}: required directory is missing".format(relative))
+        elif not any(path.iterdir()):
+            failures.append("{0}: required directory is empty".format(relative))
+    return failures
+
+
+def check_no_symlinks(package_dir):
+    """A symlink reads as an ordinary file to the walk while its content lives elsewhere, so it
+    slips meta pairing, the scanner config check and — unless told otherwise — the secret scan.
+    Nothing in a published Unity package needs one."""
+    failures = []
+    for path in sorted(package_dir.rglob("*")):
+        if path.is_symlink():
+            failures.append(
+                "{0}: symlink in the published folder; its target is not part of the "
+                "package".format(path.relative_to(package_dir))
+            )
+    return failures
+
+
 def check_meta_pairing(package_dir):
     failures = []
     present = {relative for _, relative in iter_package_paths(package_dir)}
@@ -141,6 +193,8 @@ def read_asmdefs(package_dir):
         if path.is_file() and relative.suffix == ".asmdef":
             try:
                 body = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(body, dict):
+                    body = None
             except json.JSONDecodeError:
                 body = None
             meta_path = path.with_name(path.name + ".meta")
@@ -166,7 +220,7 @@ def review_asmdef_references(package_dir):
 
     for relative, body, _ in entries:
         if body is None:
-            failures.append("{0}: not valid JSON".format(relative))
+            failures.append("{0}: not a valid assembly definition object".format(relative))
             continue
         for reference in body.get("references", []) or []:
             guid_match = GUID_REFERENCE_RE.match(str(reference))
@@ -209,13 +263,24 @@ def check_contract_fixtures(package_dir):
             "{0}: empty, so the shipped Contract Fixture tests have nothing to "
             "replay".format(CONTRACT_FIXTURES_DIR)
         ]
-    return []
+
+    failures = []
+    for case in sorted(cases):
+        relative = "{0}/{1}".format(CONTRACT_FIXTURES_DIR, case.name)
+        if not case.is_dir():
+            failures.append("{0}: not a fixture case directory".format(relative))
+        elif not (case / CONTRACT_FIXTURE_CASE_FILE).is_file():
+            failures.append(
+                "{0}: fixture case has no {1}, so the test replaying it cannot "
+                "run".format(relative, CONTRACT_FIXTURE_CASE_FILE)
+            )
+    return failures
 
 
 def check_no_scanner_config_inside(package_dir):
     failures = []
     for _, relative in iter_package_paths(package_dir):
-        if relative.name in SCANNER_CONFIG_FILENAMES:
+        if relative.name.lower() in SCANNER_CONFIG_FILENAMES:
             failures.append(
                 "{0}: secret-scanner configuration inside the published folder would "
                 "suppress the scan of that same folder".format(relative)
@@ -233,11 +298,13 @@ def read_scanner_version(scanner):
     return tuple(int(part) for part in match.groups())
 
 
-def build_secret_scan_command(package_dir, scanner=SECRET_SCANNER):
+def build_secret_scan_command(package_dir, scanner=SECRET_SCANNER, ignore_path=None):
     """Directory mode: gitleaks otherwise scans git history, and a published tree has none.
 
-    `--ignore-gitleaks-allow` and an ignore path pinned to the scanned folder close the two
-    ways a file inside the package could exempt itself from the scan.
+    The ignore path is deliberately somewhere other than the package: pointed at the scanned
+    folder it would honour a `.gitleaksignore` sitting inside it, which is the suppression this
+    is meant to prevent. `--ignore-gitleaks-allow` closes the comment form, and
+    `--follow-symlinks` stops a link standing in for a file whose content is never read.
     """
     return [
         scanner,
@@ -248,8 +315,9 @@ def build_secret_scan_command(package_dir, scanner=SECRET_SCANNER):
         "--exit-code",
         str(SECRET_SCAN_LEAK_EXIT_CODE),
         "--ignore-gitleaks-allow",
+        "--follow-symlinks",
         "--gitleaks-ignore-path",
-        str(package_dir),
+        str(ignore_path if ignore_path is not None else Path(tempfile.gettempdir())),
     ]
 
 
@@ -276,7 +344,12 @@ def scan_for_secrets(package_dir, scanner=SECRET_SCANNER):
             )
         ]
 
-    result = subprocess.run(build_secret_scan_command(package_dir, scanner), capture_output=True, text=True)
+    with tempfile.TemporaryDirectory() as ignore_dir:
+        result = subprocess.run(
+            build_secret_scan_command(package_dir, scanner, ignore_dir),
+            capture_output=True,
+            text=True,
+        )
     detail = (result.stdout + result.stderr).strip()
 
     if result.returncode == 0:
@@ -301,6 +374,8 @@ def run_checks(package_dir, tag):
 
     failures = []
     failures.extend(check_manifest(package_dir, tag))
+    failures.extend(check_required_contents(package_dir))
+    failures.extend(check_no_symlinks(package_dir))
     failures.extend(check_meta_pairing(package_dir))
     failures.extend(asmdef_failures)
     failures.extend(check_contract_fixtures(package_dir))
@@ -335,7 +410,7 @@ def main(argv):
     print("Publish completeness gate passed.")
     print("- package: {0}".format(package_dir))
     print("- tag: {0}".format(tag))
-    print("- meta pairing, assembly references, Contract Fixtures, secret scan: clean")
+    print("- contents, meta pairing, assembly references, Contract Fixtures, secret scan: clean")
     return 0
 
 

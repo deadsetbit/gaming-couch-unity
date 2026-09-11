@@ -11,7 +11,9 @@ what shape is refused, rather than restating today's file list.
 
 Run: python3 Tools/test_check_dist_complete.py
 """
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -44,8 +46,13 @@ class PackageTreeTestCase(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
         self.write_manifest()
         self.write_asset("README.md", "# readme\n")
+        self.write_asset("CHANGELOG.md", "# changelog\n")
+        self.write_asset("LICENSE.md", "Apache-2.0\n")
         self.write_asset("ContractFixtures/LocalPlay/valid-case/gc.dev.json", "{}\n")
         self.write_asmdef("Runtime/gc.runtime.asmdef", "GamingCouch", [], guid="a" * 32)
+        self.write_asset("Editor/GCEditor.cs", "// editor\n")
+        self.write_asset("Plugins/GamingCouch.jslib", "// bridge\n")
+        self.write_asset("Tests/Editor/GCTests.cs", "// tests\n")
         (self.root / "Documentation~").mkdir()
         (self.root / "Documentation~" / "README.md").write_text("# manual\n", encoding="utf-8")
 
@@ -139,8 +146,15 @@ class MetaPairing(PackageTreeTestCase):
         (self.root / "ContractFixtures.meta").unlink()
         self.assertFailsWith("ContractFixtures", "no .meta")
 
+    def test_a_nested_folder_without_a_meta_fails(self):
+        (self.root / "Tests" / "Editor.meta").unlink()
+        self.assertFailsWith("Tests/Editor", "no .meta")
+
     def test_a_tilde_folder_needs_no_metas(self):
-        # Unity hides a path with a `~` segment, so Documentation~ has no metas by design.
+        # Unity hides a path with a `~` segment, so Documentation~ has no metas by design —
+        # and the fixture deliberately gives it none.
+        self.assertFalse((self.root / "Documentation~.meta").exists())
+        self.assertFalse((self.root / "Documentation~" / "README.md.meta").exists())
         self.assertPasses()
 
     def test_a_file_inside_a_tilde_folder_needs_no_meta(self):
@@ -185,7 +199,7 @@ class AsmdefReferences(PackageTreeTestCase):
 
     def test_an_unparseable_asmdef_fails(self):
         self.write_asset("Editor/gc.editor.asmdef", "{not json", guid="b" * 32)
-        self.assertFailsWith("gc.editor.asmdef", "not valid JSON")
+        self.assertFailsWith("gc.editor.asmdef", "not a valid assembly definition object")
 
     def test_the_allowlist_is_consulted_by_an_allowed_reference(self):
         self.write_asmdef(
@@ -267,14 +281,144 @@ class SecretScan(unittest.TestCase):
         self.assertNotEqual(gate.SECRET_SCAN_LEAK_EXIT_CODE, 1)
 
     def test_in_tree_suppression_is_disabled(self):
-        # A `gitleaks:allow` comment in a shipped file, or an ignore file beside it, would
-        # otherwise exempt that file from the only leak backstop the publish has.
+        # A `gitleaks:allow` comment in a shipped file would otherwise exempt that file from
+        # the only leak backstop the publish has, and a symlink would hide its content.
         argv = gate.build_secret_scan_command(Path("/tmp/pkg"))
         self.assertIn("--ignore-gitleaks-allow", argv)
-        self.assertEqual(argv[argv.index("--gitleaks-ignore-path") + 1], "/tmp/pkg")
+        self.assertIn("--follow-symlinks", argv)
+
+    def test_the_ignore_path_is_not_the_scanned_folder(self):
+        # Pointed at the package, the ignore-file loader honours a `.gitleaksignore` sitting
+        # inside it — which is the suppression this is supposed to prevent.
+        argv = gate.build_secret_scan_command(Path("/tmp/pkg"))
+        self.assertNotEqual(argv[argv.index("--gitleaks-ignore-path") + 1], "/tmp/pkg")
 
     def test_the_required_scanner_version_is_where_directory_mode_appeared(self):
         self.assertGreaterEqual(gate.MINIMUM_SCANNER_VERSION, (8, 19, 0))
+
+
+class RequiredContents(PackageTreeTestCase):
+    """Meta pairing sees only half a loss, so a whole folder going missing needs its own rule."""
+
+    def test_a_missing_required_directory_fails(self):
+        shutil.rmtree(self.root / "Runtime")
+        (self.root / "Runtime.meta").unlink()
+        self.assertFailsWith("Runtime", "required directory is missing")
+
+    def test_an_empty_required_directory_fails(self):
+        for child in list((self.root / "Plugins").iterdir()):
+            child.unlink()
+        self.assertFailsWith("Plugins", "required directory is empty")
+
+    def test_a_missing_required_file_fails(self):
+        (self.root / "CHANGELOG.md").unlink()
+        (self.root / "CHANGELOG.md.meta").unlink()
+        self.assertFailsWith("CHANGELOG.md", "required file is missing")
+
+    def test_an_empty_required_file_fails(self):
+        (self.root / "LICENSE.md").write_text("", encoding="utf-8")
+        self.assertFailsWith("LICENSE.md", "required file is empty")
+
+    def test_a_package_stripped_of_everything_but_the_manifest_fails(self):
+        for name in ("Runtime", "Editor", "Plugins", "Tests", "Documentation~"):
+            shutil.rmtree(self.root / name)
+        self.assertFailsWith("required directory is missing")
+
+    def test_a_manifest_that_is_valid_json_but_not_an_object_fails(self):
+        (self.root / "package.json").write_text("[]\n", encoding="utf-8")
+        self.assertFailsWith("package.json", "not an object")
+
+
+class Symlinks(PackageTreeTestCase):
+    def test_a_symlink_in_the_package_fails(self):
+        # It reads as an ordinary file to the walk while its content lives outside the package.
+        target = self.root.parent / "outside.cs"
+        target.write_text("// outside\n", encoding="utf-8")
+        self.addCleanup(target.unlink)
+        link = self.root / "Runtime" / "Linked.cs"
+        link.symlink_to(target)
+        self.write_meta("Runtime/Linked.cs", None)
+        self.assertFailsWith("Runtime/Linked.cs", "symlink")
+
+
+class ContractFixtureCases(PackageTreeTestCase):
+    def test_a_case_without_the_project_file_fails(self):
+        (self.root / "ContractFixtures" / "LocalPlay" / "valid-case" / "gc.dev.json").unlink()
+        self.assertFailsWith("valid-case", "no gc.dev.json")
+
+    def test_a_stray_file_where_a_case_should_be_fails(self):
+        self.write_asset("ContractFixtures/LocalPlay/stray.txt", "x\n")
+        self.assertFailsWith("stray.txt", "not a fixture case directory")
+
+
+class SecretScanBehaviour(unittest.TestCase):
+    """The exit-code mapping is the part that decides whether a leak stops a release."""
+
+    def stub_scanner(self, exit_code, version="8.30.1"):
+        directory = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, directory, ignore_errors=True)
+        script = directory / "stub-scanner"
+        script.write_text(
+            "#!/bin/sh\n"
+            'if [ "$1" = "version" ]; then echo {0}; exit 0; fi\n'
+            "echo stub output\nexit {1}\n".format(version, exit_code),
+            encoding="utf-8",
+        )
+        script.chmod(0o755)
+        original_path = os.environ["PATH"]
+        self.addCleanup(os.environ.__setitem__, "PATH", original_path)
+        os.environ["PATH"] = str(directory) + os.pathsep + original_path
+        return "stub-scanner"
+
+    def test_a_clean_scan_reports_nothing(self):
+        self.assertEqual(gate.scan_for_secrets(Path("/tmp"), self.stub_scanner(0)), [])
+
+    def test_the_findings_exit_code_reports_a_leak(self):
+        failures = gate.scan_for_secrets(Path("/tmp"), self.stub_scanner(2))
+        self.assertIn("rotate", "\n".join(failures))
+
+    def test_any_other_failure_reports_that_nothing_was_scanned(self):
+        # gitleaks exits 1 on its own usage and IO errors. Reporting that as a leak would
+        # trigger a needless credential rotation.
+        failures = gate.scan_for_secrets(Path("/tmp"), self.stub_scanner(1))
+        joined = "\n".join(failures)
+        self.assertIn("never", joined)
+        self.assertNotIn("rotate", joined)
+
+    def test_a_scanner_too_old_for_directory_mode_is_refused(self):
+        failures = gate.scan_for_secrets(Path("/tmp"), self.stub_scanner(0, version="8.18.4"))
+        self.assertIn("older than", "\n".join(failures))
+
+
+class CommandLine(PackageTreeTestCase):
+    """The exit code is the whole contract: the publish workflow reads nothing else."""
+
+    def run_main(self):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = gate.main(["check-dist-complete.py", str(self.root), TAG])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_wrong_argument_count_exits_two(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(gate.main(["check-dist-complete.py"]), 2)
+
+    def test_a_failure_exits_one_and_prints_every_reason_to_stderr(self):
+        (self.root / "CHANGELOG.md").unlink()
+        (self.root / "CHANGELOG.md.meta").unlink()
+        code, _, err = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("CHANGELOG.md: required file is missing", err)
+        self.assertIn("Nothing is published.", err)
+
+    def test_the_allowlist_prints_even_when_a_reference_fails_against_it(self):
+        self.write_asmdef(
+            "Editor/gc.editor.asmdef", "GamingCouch.Editor", ["Some.Other.Package"], guid="b" * 32
+        )
+        code, out, err = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("Unity.Newtonsoft.Json", out)
+        self.assertIn("not on the external allowlist", err)
 
 
 if __name__ == "__main__":
