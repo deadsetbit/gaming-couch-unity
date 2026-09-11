@@ -395,17 +395,31 @@ in, which stops existing the moment that repo is private.
 - [ ] **Deploy** with `peaceiris/actions-gh-pages@v3`:
       `external_repository: deadsetbit/gaming-couch-unity-public`,
       `deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}`,
-      `publish_branch: gh-pages`, `publish_dir: _site`, `destination_dir: latest`,
-      `keep_files: true`; `base_url` is the deep-link base,
-      `https://deadsetbit.github.io/gaming-couch-unity-public/latest/`.
+      `publish_branch: gh-pages`, `publish_dir: _site`, `destination_dir: latest`;
+      `base_url` is the deep-link base,
+      `https://deadsetbit.github.io/gaming-couch-unity-public/latest/`. **Not `keep_files`** —
+      see the ordering note below.
+- [ ] **Run the same gates as the release publish** before deploying — the identity guard and
+      `check-dist-complete.py`. The action turns `README.md` and `CHANGELOG.md` into site
+      pages, so without them a package the mirror workflow *refuses* to publish would have its
+      contents published here as HTML instead. Gate before staging, because staging deletes
+      the folder the gate scripts live in.
 - [ ] Decide whether test classes belong in the public API reference. The metadata source is
       `**/*.cs` from the staged root, and `Tests/` now ships, so they will appear unless
       excluded. The action supports `Documentation~/manual/filter.yml` for exactly this.
 - [ ] **Order matters:** `gh-pages` does not exist until the first deploy, Pages cannot be
       enabled on a branch that does not exist, and the hand-written root `index.html`
-      redirecting to `latest/` must be placed *after* that first deploy — it survives later
-      deploys only because of `keep_files: true`. That same flag means pages deleted from the
-      docs are never cleaned out of `latest/`.
+      redirecting to `latest/` must be placed *after* that first deploy.
+      **`keep_files` is not what protects it.** The action's cleanup is a `git rm` run with the
+      working directory set to `destination_dir`, so with `destination_dir: latest` it can
+      never reach the `gh-pages` root — the root redirect is safe either way. All `keep_files`
+      would add is that pages deleted from the docs are never cleaned out of `latest/`, so
+      `latest/api/` would keep serving types the package no longer has. Leave it off.
+- [ ] **Publish the landing page (Phase 5) before the first release tag.** The mirror workflow
+      pushes only a tag and creates no branch, so if a docs deploy is the first thing to create
+      a branch on the public repo, `gh-pages` becomes its default branch and the repository's
+      landing view is raw DocFX output. Check with
+      `gh api repos/deadsetbit/gaming-couch-unity-public --jq .default_branch` afterwards.
 - [ ] **Human:** enable Pages on `gaming-couch-unity-public` with `gh-pages` as the source,
       then confirm the site root redirects and a deep link such as `/latest/api/` renders.
 

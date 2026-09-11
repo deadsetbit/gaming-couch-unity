@@ -1,33 +1,130 @@
 name: docfx-unitypackage
 
-# Manual only. The action reads the package from the repository root, and the package lives in
-# public/package/, so every one of its file guards takes the not-found branch: a run succeeds
-# and deploys a gutted site over the docs URL baked into every published tag. Do not restore an
-# automatic trigger until this workflow stages public/package/ as its root and deploys to the
-# public repo.
+# Builds the package's documentation site and deploys it to the PUBLIC repository.
+#
+# The build stays here because the site is generated from the package's sources, and the
+# deploy goes elsewhere because a private repository on our plan cannot serve Pages at all.
+# Only rendered HTML crosses the boundary.
+#
+# The action assembles a site out of package conventions read from the workspace root and
+# takes no path input, so the workspace root is made into the package rather than the action
+# being taught about subfolders.
+
 on:
+  push:
+    tags:
+      - 'unity-*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag whose documentation to publish, e.g. unity-0.1.0-alpha.8'
+        required: true
+
+# The deploy authenticates with the scoped deploy key, not GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: false
+
+env:
+  # Published under a version-named folder from the first deploy, with the site root
+  # redirecting there, so per-version archives can be added later without moving anyone's
+  # bookmark. This is also the deep-link base the shipped README and manifest point at.
+  DOCS_BASE_URL: https://deadsetbit.github.io/gaming-couch-unity-public/latest/
+  PUBLIC_REPO: deadsetbit/gaming-couch-unity-public
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout
+      - name: Resolve the release tag
+        id: release
+        shell: bash
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${DISPATCH_TAG:-${GITHUB_REF#refs/tags/}}"
+          # Checked against the whole tag format, not a prefix: this value reaches a shell
+          # and $GITHUB_OUTPUT, and `[[ =~ ]]` anchors across the entire string so an
+          # embedded newline fails it.
+          if [[ ! "$tag" =~ ^unity-[A-Za-z0-9][A-Za-z0-9.+-]*$ ]]; then
+            echo "::error::'$tag' is not a unity-<version> release tag."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the tag
         uses: actions/checkout@v4
         with:
-          submodules: true
+          ref: ${{ steps.release.outputs.tag }}
+          fetch-depth: 1
+          path: src
 
+      - name: Refuse a tag from before the restructure
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ]; then
+            echo "::error::$TAG predates the public/package/ restructure."
+            exit 1
+          fi
+
+      # The same gates the release publish runs, for the same reason. The docs site renders
+      # README.md and CHANGELOG.md as pages, so a package this refuses to mirror must not have
+      # its contents published here as HTML instead. Gated before staging, because staging
+      # deletes the folder the gate scripts live in.
+      - name: Install the secret scanner
+        uses: ./src/.github/actions/install-secret-scanner
+
+      - name: Gate — runtime identity
+        working-directory: src
+        run: python3 Tools/check-runtime-package-info.py
+
+      - name: Gate — publish completeness
+        working-directory: src
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: python3 Tools/check-dist-complete.py public/package "$TAG"
+
+      - name: Stage the package as the workspace root
+        shell: bash
+        run: |
+          shopt -s dotglob
+          mv src/public/package/* .
+          rm -rf src
+          # The API reference is generated from every .cs file under this root, and the tests
+          # ship with the package. They are not API a game author calls, and there are more
+          # test types than real ones in the global namespace, so they are staged out here
+          # rather than published. This affects the site only: the package the mirror
+          # publishes is built by publish-mirror.yml from an untouched tree.
+          if [ ! -d Tests ]; then
+            echo "::error::no Tests/ to stage out — the API reference would publish test types."
+            exit 1
+          fi
+          rm -rf Tests Tests.meta
+
+      # No github_token: the action reads it only to look up the running repository's Pages
+      # configuration, which base_url replaces.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.0.2
+        uses: deadsetbit/docfx-unitypackage@v1.1.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          base_url: ${{ env.DOCS_BASE_URL }}
 
-      - name: Deploy
+      - name: Assert the built site carries the public URL
+        run: |
+          grep -qF "$DOCS_BASE_URL" _site/sitemap.xml || {
+            echo "::error::the built sitemap does not carry $DOCS_BASE_URL."
+            exit 1
+          }
+
+      - name: Deploy to the public repository
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          external_repository: ${{ env.PUBLIC_REPO }}
+          deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
           publish_branch: gh-pages
           publish_dir: _site
+          destination_dir: latest
