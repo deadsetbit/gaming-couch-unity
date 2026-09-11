@@ -2,15 +2,16 @@
 """Bump the Gaming Couch Unity package version and (optionally) the DevApp side.
 
 This is the documented, one-command protocol for releasing a new package version.
-It keeps package.json (the single source of name/version) and the baked
-Runtime/Resources/GamingCouchRuntimeInfo.json in lockstep, verifies them with
-Tools/check-runtime-package-info.py, commits + tags, and can hand off to the
-monorepo's DevApp release helper to register the new unity tag downstream.
+It keeps public/package/package.json (the single source of name/version) and the
+baked public/package/Runtime/Resources/GamingCouchRuntimeInfo.json in lockstep,
+verifies them with Tools/check-runtime-package-info.py, commits + tags, and can
+hand off to the monorepo's DevApp release helper to register the new unity tag
+downstream.
 
 Flow:
   1. Warn (y/N) if not on 'main'.
-  2. Semver-bump package.json (npm-style bump keyword or an explicit X.Y.Z).
-  3. Re-bake Runtime/Resources/GamingCouchRuntimeInfo.json to match.
+  2. Semver-bump public/package/package.json (npm-style bump keyword or an explicit X.Y.Z).
+  3. Re-bake public/package/Runtime/Resources/GamingCouchRuntimeInfo.json to match.
   4. Verify with Tools/check-runtime-package-info.py (restores files on failure).
   5. Commit 'chore(release): <version>' + create the 'unity-<version>' tag.
   6. Prompt (y/N) to push branch + tag.
@@ -19,14 +20,13 @@ Flow:
 
 Usage:
   Tools/bump-version.py <bump> [--preid=<id>] [--dry-run] [--yes]
-                        [--force-tag] [--monorepo-dir=<path>]
+                        [--monorepo-dir=<path>]
 
   <bump>            patch | minor | major | prerelease | prepatch | preminor
                    | premajor | X.Y.Z[-pre]
   --preid=<id>      prerelease identifier for pre* bumps: alpha | beta | rc
   --dry-run         print the computed version + planned actions, then stop
   --yes             skip confirmation prompts (non-interactive)
-  --force-tag       move 'unity-<version>' if the tag already exists
   --monorepo-dir=<path>
                     path to the gaming-couch-client monorepo. Defaults to
                     $GC_MONOREPO_DIR, else ../gamingcouch/client next to this repo.
@@ -46,8 +46,9 @@ import sys
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-PACKAGE_JSON_PATH = ROOT_DIR / "package.json"
-BAKED_RUNTIME_INFO_PATH = ROOT_DIR / "Runtime" / "Resources" / "GamingCouchRuntimeInfo.json"
+PACKAGE_DIR = ROOT_DIR / "public" / "package"
+PACKAGE_JSON_PATH = PACKAGE_DIR / "package.json"
+BAKED_RUNTIME_INFO_PATH = PACKAGE_DIR / "Runtime" / "Resources" / "GamingCouchRuntimeInfo.json"
 CHECK_SCRIPT_PATH = ROOT_DIR / "Tools" / "check-runtime-package-info.py"
 
 PLATFORM = "unity"
@@ -309,7 +310,6 @@ def main():
     parser.add_argument("--preid", default="", help="prerelease id for pre* bumps")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--yes", action="store_true", help="skip confirmation prompts")
-    parser.add_argument("--force-tag", action="store_true")
     parser.add_argument("--monorepo-dir", default="")
     args = parser.parse_args()
 
@@ -347,8 +347,11 @@ def main():
               "'chore(release): {0}' and tag {1}. No changes made.".format(new_version, tag_name))
         return 0
 
-    if git("tag", "--list", tag_name, capture=True) and not args.force_tag:
-        print("error: tag {0} already exists (pass --force-tag to move it).".format(tag_name), file=sys.stderr)
+    if git("tag", "--list", tag_name, capture=True):
+        print("error: tag {0} already exists. Published tags are immutable — the mirror "
+              "publishes one orphan snapshot per tag and would reject a moved tag as a "
+              "non-fast-forward, leaving the public repo serving the old commit. Cut the next "
+              "version instead.".format(tag_name), file=sys.stderr)
         return 2
 
     if not confirm("Apply the bump to {0}?".format(new_version), args.yes):
@@ -390,12 +393,10 @@ def main():
 
     # --- commit + tag ---
     # Commit only these two paths (pathspec) so any other staged work is left untouched.
+    package_rel = str(PACKAGE_JSON_PATH.relative_to(ROOT_DIR))
     baked_rel = str(BAKED_RUNTIME_INFO_PATH.relative_to(ROOT_DIR))
-    git("commit", "-m", "chore(release): {0}".format(new_version), "--", "package.json", baked_rel)
-    if args.force_tag:
-        git("tag", "-f", tag_name)
-    else:
-        git("tag", tag_name)
+    git("commit", "-m", "chore(release): {0}".format(new_version), "--", package_rel, baked_rel)
+    git("tag", tag_name)
     print("Committed and tagged {0}.".format(tag_name))
 
     # --- push ---
@@ -403,10 +404,7 @@ def main():
     if confirm("Push branch '{0}' and tag {1} to origin?".format(branch, tag_name), args.yes):
         try:
             git("push", "origin", branch)
-            if args.force_tag:
-                git("push", "--force", "origin", tag_name)
-            else:
-                git("push", "origin", tag_name)
+            git("push", "origin", tag_name)
             print("Pushed.")
         except subprocess.CalledProcessError:
             print("Push failed. The commit + tag are local only. Later: " + manual_push, file=sys.stderr)

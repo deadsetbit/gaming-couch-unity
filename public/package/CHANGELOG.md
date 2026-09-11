@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- The platform runtime contract and the DevApp / local-play contract now ship with the package, under `Documentation~/`, and are linked from the README. They are the JS-to-Unity wire spec and the `gc.dev.json` / `gc.platform.json` spec; previously they were readable only in the package's own repository.
+
+### Changed
+
+- Documentation, changelog and licence links in the package manifest, and every API reference link in the README, now point at `https://deadsetbit.github.io/gaming-couch-unity-public/`. API links are versioned deep links under `latest/api/`.
+
 ## [0.1.0-alpha.7] - 2026-09-10
 
 ### Changed

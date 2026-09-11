@@ -3,7 +3,7 @@
 Status: Draft for grilling — **do not implement yet**
 Owner: Gaming Couch Unity package team
 Created: 2026-07-11
-Related: CONTEXT.md (`:138` portability doctrine), `docs/contracts/platform-runtime-contract.md`,
+Related: CONTEXT.md (`:138` portability doctrine), `public/package/Documentation~/platform-runtime-contract.md`,
 ADR 0008 (`gameProtocolVersion` stays 1), ADR 0009 (two-sidecar identity), `VERSIONING_PLAN.md`,
 `example-adapter-refactor-plan.md` (sibling — **landed COMPLETE**, two self-contained example scripts), `ContractFixtures/` + `GCDevJsonContractFixtureTests`.
 
@@ -205,7 +205,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped. I
 ### Phase 3 — Portable state contract doc
 | ID | Task | Artifact / acceptance | Status |
 |----|------|-----------------------|--------|
-| P3-T1 | Author `docs/contracts/runtime-state-contract.md`: state shape, **player transition table** (from/to/outcome/reason), **lifecycle state machine** + guards, envelope + message schema, diagnostic codes, versioning | Doc reviewed; matches core 1:1 | [ ] |
+| P3-T1 | Author `public/package/Documentation~/runtime-state-contract.md`: state shape, **player transition table** (from/to/outcome/reason), **lifecycle state machine** + guards, envelope + message schema, diagnostic codes, versioning | Doc reviewed; matches core 1:1 | [ ] |
 | P3-T2 | Tag the contract with protocol version; state the "stays 1" rationale (ADR 0008) and how a future v2 would add — not mutate — vectors | Versioning section complete | [ ] |
 | P3-T3 | Reconcile with CONTEXT.md vocabulary; add terms (*Runtime State Kernel*, *Game Lifecycle*, *State View*) via the domain-model flow | CONTEXT.md updated, no term collisions | [ ] |
 

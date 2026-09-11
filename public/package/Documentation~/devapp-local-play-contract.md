@@ -1,15 +1,15 @@
 # DevApp / local-play contract
 
 > **Internal: Gaming Couch DevApp maintainers — game developers do not need this.**
-> "Internal" is an audience label, not secrecy — this repository is public. Third-party game
-> developers should read the [root README](../../README.md); nothing here is required to build a
-> game. This document is the local-development contract between the Gaming Couch DevApp and this Unity
+> "Internal" is an audience label, not secrecy — this document ships with the package.
+> Third-party game developers should read the package [README](../README.md); nothing here is
+> required to build a game. This document is the local-development contract between the Gaming Couch DevApp and this Unity
 > package: the on-disk `gc.dev.json` / `gc.platform.json` schemas, how seats become players, and the
 > DevApp WebSocket protocol as this package implements it.
 
 Living contract reference. Every schema carries `file:line` provenance (the named type/method is the
-durable anchor; line numbers drift). Rationale lives in the [ADRs](../adr/); terminology in
-[CONTEXT.md](../../CONTEXT.md). The **received-at-boot** side of these payloads (`GCPlayOptions`,
+durable anchor; line numbers drift). Rationale lives in the package repository's architecture
+decision records, which are internal and do not ship with the package. The **received-at-boot** side of these payloads (`GCPlayOptions`,
 `platformData` as Unity sees them) is owned by the
 [platform runtime contract](platform-runtime-contract.md); this document owns the **producer/capture**
 side and links across per the overlap rule (capture/schema → here; wire/received → platform doc).
@@ -34,8 +34,8 @@ copied into documentation.
 ## 1. `gc.dev.json` schema
 
 Root project file (`gc.dev.json`) that drives Unity editor local play. **Unity never creates,
-bootstraps, or repairs it** — create/update it through the DevApp (ADR
-[0010](../adr/0010-gc-dev-json-canonical.md)). Model: `Editor/GCDevJsonFile.cs:6-70`; parse/validate:
+bootstraps, or repairs it** — create/update it through the DevApp, which owns the canonical file.
+Model: `Editor/GCDevJsonFile.cs:6-70`; parse/validate:
 `Editor/GCDevJsonValidation.cs`.
 
 | Field | Type | Rule | Provenance |
@@ -54,8 +54,7 @@ Seat record (`GCDevJsonSeat`, `GCDevJsonFile.cs:82-99`; fields at `:84-86`):
 | `isBot` | bool | Bot seat marker |
 
 The Unity inspector edits only `entryKey`, `seed`, `seats` and **preserves unknown top-level fields**
-on write (unknown-field-preserving writes, `Editor/GCDevJsonStore.cs`; ADR
-[0010](../adr/0010-gc-dev-json-canonical.md)).
+on write (unknown-field-preserving writes, `Editor/GCDevJsonStore.cs`).
 
 ```json
 {
@@ -146,8 +145,8 @@ available for structurally valid files.
 ## 4. Fallback platform view
 
 When `gc.platform.json` is missing/invalid, runtime code receives a read-only fallback
-`GCPlatformRuntimeView` (ADR [0007](../adr/0007-readonly-platform-metadata-notdefined.md); shape owned
-by the [platform contract §5](platform-runtime-contract.md#5-platformdata--gcplatformruntimeview)).
+`GCPlatformRuntimeView` (shape owned by the
+[platform contract §5](platform-runtime-contract.md#5-platformdata--gcplatformruntimeview)).
 Fallback values (`Runtime/GCPlayOptions.cs:83-112, 302-311`):
 
 - `validationState` `missing` (or `invalid`), `fallbackActive: true`.
@@ -192,8 +191,8 @@ Capture stability: the captured roster holds until restart or the next Play Mode
 
 ## 6. Deterministic player-index shuffle
 
-The captured roster is shuffled into game-facing `playerIndex` order deterministically (ADR
-[0002](../adr/0002-deterministic-player-index-shuffle.md); `Runtime/GCPlayerIndexMapping.cs:42-101`):
+The captured roster is shuffled into game-facing `playerIndex` order deterministically
+(`Runtime/GCPlayerIndexMapping.cs:42-101`):
 
 1. For each captured participant, compute `Hash = FNV-1a32("{seed}:{stableKey}")`
    (`:74`; `GCFnv1A32.Compute`).
@@ -307,7 +306,7 @@ delivers over the WebGL input wire (see [platform contract §6](platform-runtime
 ## 9. ContractFixtures — executable spec
 
 `ContractFixtures/LocalPlay/` holds the executable specification for local play, replayed by
-`Tests/Editor/GCDevJsonContractFixtureTests.cs` (ADR [0012](../adr/0012-defer-cross-engine-extraction.md)).
+`Tests/Editor/GCDevJsonContractFixtureTests.cs`.
 The seven cases:
 
 | Fixture | Covers |
