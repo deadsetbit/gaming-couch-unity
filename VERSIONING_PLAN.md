@@ -75,6 +75,8 @@ These decisions are recorded as ADRs; this plan only points to them:
 ## Release automation
 - CI: `.github/workflows/docfx-unitypackage.yml` builds the DocFX site, and is `workflow_dispatch` only — the action reads the package from the repository root, which no longer holds one. `docs/architecture/public-mirror-plan.md` rebuilds it to stage `public/package/` and deploy to the public repo.
 - Version bumps are manual via `Tools/bump-version.py` (see "Bumping the version" above), which produces `unity-<version>` tags.
+- Pushing a `unity-<version>` tag runs `.github/workflows/publish-mirror.yml`, which gates the package and publishes that one tag to `deadsetbit/gaming-couch-unity-public` as an orphan snapshot of `public/package/`. Publishing is not promoting: a version becomes installable, and nothing serves it to anyone until the DevApp component-version map names it.
+- Published tags are immutable. Re-running the publish for a tag already on the mirror is rejected as `already exists`, which is the guardrail working — that is not a non-fast-forward, so no force option makes it go through. To replace a release, run `.github/workflows/unpublish-tag.yml` for that tag first — it is a workflow rather than a local command because the deploy key exists only as an Actions secret.
 - `unity-<version>` is the only tag scheme. semantic-release is not wired in.
 - No nightly workflow exists yet; if nightlies are added, CI should build, version, and tag them as clearly labeled "unstable".
 

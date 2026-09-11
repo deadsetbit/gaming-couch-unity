@@ -1,0 +1,160 @@
+name: publish-mirror
+
+# Publishes one release tag to the public mirror as an orphan snapshot of public/package/.
+#
+# Releases share no ancestry: each is a single commit reachable only from its own tag, so
+# deleting a tag makes its commit unreachable without touching any other release. Nothing
+# here writes to the public repo's main, which is the hand-written landing page.
+
+on:
+  push:
+    tags:
+      - 'unity-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish, e.g. unity-0.1.0-alpha.8'
+        required: true
+
+# The publish authenticates with the scoped deploy key. GITHUB_TOKEN needs no write access
+# anywhere, and this workflow only ever reads the private repository.
+permissions:
+  contents: read
+
+# Never two publishes at once, and never a publish racing an unpublish of the same mirror.
+concurrency:
+  group: publish-mirror
+  cancel-in-progress: false
+
+env:
+  PUBLIC_REPO_SSH: git@github.com:deadsetbit/gaming-couch-unity-public.git
+  PUBLIC_REPO: deadsetbit/gaming-couch-unity-public
+  BOT_NAME: gaming-couch-bot
+  BOT_EMAIL: bot@deadsetbit.com
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve the release tag
+        id: release
+        shell: bash
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${DISPATCH_TAG:-${GITHUB_REF#refs/tags/}}"
+          # A workflow_dispatch input is free-form and a git ref may legally contain quotes,
+          # `$`, `;` and newlines. This value reaches a shell, a refspec and $GITHUB_OUTPUT,
+          # so it is checked against the whole tag format rather than a prefix. `[[ =~ ]]`
+          # matches the entire string, so an embedded newline fails it.
+          if [[ ! "$tag" =~ ^unity-[A-Za-z0-9][A-Za-z0-9.+-]*$ ]]; then
+            echo "::error::'$tag' is not a unity-<version> release tag."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#unity-}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          fetch-depth: 1
+
+      # A tag cut before the restructure has neither public/package/ nor the gate, and saying
+      # so is clearer than letting the gate report a missing directory.
+      - name: Refuse a tag from before the restructure
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if [ ! -d public/package ] || [ ! -f Tools/check-dist-complete.py ]; then
+            echo "::error::$TAG predates the public/package/ restructure and cannot be mirrored."
+            exit 1
+          fi
+
+      - name: Install the secret scanner
+        uses: ./.github/actions/install-secret-scanner
+
+      - name: Gate — runtime identity
+        run: python3 Tools/check-runtime-package-info.py
+
+      - name: Gate — publish completeness
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: python3 Tools/check-dist-complete.py public/package "$TAG"
+
+      - name: Install the deploy key
+        env:
+          DEPLOY_KEY: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY is not set on this repository."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/mirror_key
+          chmod 600 ~/.ssh/mirror_key
+          if ! ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /tmp/known_hosts 2>/dev/null \
+              || [ ! -s /tmp/known_hosts ]; then
+            echo "::error::could not read github.com's host keys, so the push cannot be verified."
+            exit 1
+          fi
+          cat /tmp/known_hosts >> ~/.ssh/known_hosts
+          # IdentitiesOnly stops ssh offering any other key the runner happens to have.
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+
+      - name: Publish the orphan snapshot
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          # The expected-file list is built through a pipe and is then the thing the snapshot
+          # is judged against, so a failure anywhere in it must not read as "nothing tracked".
+          set -o pipefail
+          snapshot="$(mktemp -d)"
+          git ls-files public/package | sed 's|^public/package/||' | sort > /tmp/expected-files
+          cp -R public/package/. "$snapshot/"
+          cd "$snapshot"
+          git init --initial-branch=release --quiet
+          # The repository's own .gitignore stays outside public/package/, so this tree has no
+          # ignore rules of its own — but ambient ones still apply, and a global `*~` rule
+          # silently drops Documentation~ and everything under it. Neutralise the ambient
+          # config and add unconditionally: this tree is published whole, by definition.
+          git -c core.excludesFile=/dev/null add -A -f
+          git -c user.name="$BOT_NAME" -c user.email="$BOT_EMAIL" \
+            commit --quiet -m "gaming-couch $VERSION"
+          git tag "$TAG"
+
+          # Whatever the cause, a snapshot missing a tracked file must not reach the mirror.
+          git ls-files | sort > /tmp/snapshot-files
+          if ! diff -u /tmp/expected-files /tmp/snapshot-files; then
+            echo "::error::the snapshot does not match the package tracked at $TAG."
+            exit 1
+          fi
+          git remote add public "$PUBLIC_REPO_SSH"
+          # Only this tag ref. A tag already on the mirror is rejected as `already exists`,
+          # which is the guardrail working: published tags are immutable. That is not a
+          # non-fast-forward, so no force-with-lease makes it go through — to republish, run
+          # unpublish-tag.yml first, and never force this push.
+          git push public "refs/tags/$TAG"
+
+      - name: Confirm the package is at the mirror's root
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          # The tag is already published by now, and a re-run would hit the immutability
+          # rejection, so a read that is merely lagging must not fail the run. Retry, then
+          # fail only if the mirror really does not serve the package.
+          for attempt in 1 2 3 4 5; do
+            if names="$(gh api "repos/${PUBLIC_REPO}/contents?ref=${TAG}" --jq '.[].name' 2>/dev/null)" \
+                && printf '%s\n' "$names" | grep -qx 'package.json'; then
+              printf '%s\n' "$names"
+              exit 0
+            fi
+            echo "attempt $attempt: the mirror does not serve $TAG yet."
+            sleep 10
+          done
+          echo "::error::$TAG published but package.json is not at the mirror's root."
+          exit 1
