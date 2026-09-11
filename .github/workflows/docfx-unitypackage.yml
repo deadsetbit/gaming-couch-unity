@@ -42,14 +42,18 @@ jobs:
     steps:
       - name: Resolve the release tag
         id: release
+        shell: bash
         env:
           DISPATCH_TAG: ${{ inputs.tag }}
         run: |
           tag="${DISPATCH_TAG:-${GITHUB_REF#refs/tags/}}"
-          case "$tag" in
-            unity-*) ;;
-            *) echo "::error::'$tag' is not a unity-<version> release tag."; exit 1 ;;
-          esac
+          # Checked against the whole tag format, not a prefix: this value reaches a shell
+          # and $GITHUB_OUTPUT, and `[[ =~ ]]` anchors across the entire string so an
+          # embedded newline fails it.
+          if [[ ! "$tag" =~ ^unity-[A-Za-z0-9][A-Za-z0-9.+-]*$ ]]; then
+            echo "::error::'$tag' is not a unity-<version> release tag."
+            exit 1
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Check out the tag
@@ -59,12 +63,35 @@ jobs:
           fetch-depth: 1
           path: src
 
-      - name: Stage the package as the workspace root
+      - name: Refuse a tag from before the restructure
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if [ ! -d src/public/package ]; then
-            echo "::error::${{ steps.release.outputs.tag }} predates the public/package/ restructure."
+          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ]; then
+            echo "::error::$TAG predates the public/package/ restructure."
             exit 1
           fi
+
+      # The same gates the release publish runs, for the same reason. The docs site renders
+      # README.md and CHANGELOG.md as pages, so a package this refuses to mirror must not have
+      # its contents published here as HTML instead. Gated before staging, because staging
+      # deletes the folder the gate scripts live in.
+      - name: Install the secret scanner
+        uses: ./src/.github/actions/install-secret-scanner
+
+      - name: Gate — runtime identity
+        working-directory: src
+        run: python3 Tools/check-runtime-package-info.py
+
+      - name: Gate — publish completeness
+        working-directory: src
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: python3 Tools/check-dist-complete.py public/package "$TAG"
+
+      - name: Stage the package as the workspace root
+        shell: bash
+        run: |
           shopt -s dotglob
           mv src/public/package/* .
           rm -rf src
@@ -73,12 +100,17 @@ jobs:
           # test types than real ones in the global namespace, so they are staged out here
           # rather than published. This affects the site only: the package the mirror
           # publishes is built by publish-mirror.yml from an untouched tree.
+          if [ ! -d Tests ]; then
+            echo "::error::no Tests/ to stage out — the API reference would publish test types."
+            exit 1
+          fi
           rm -rf Tests Tests.meta
 
+      # No github_token: the action reads it only to look up the running repository's Pages
+      # configuration, which base_url replaces.
       - name: Build
         uses: deadsetbit/docfx-unitypackage@v1.1.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           base_url: ${{ env.DOCS_BASE_URL }}
 
       - name: Assert the built site carries the public URL
@@ -96,6 +128,3 @@ jobs:
           publish_branch: gh-pages
           publish_dir: _site
           destination_dir: latest
-          # Keeps the hand-placed root index.html that redirects to latest/. It also means
-          # pages deleted from the docs are never cleaned out of latest/.
-          keep_files: true
