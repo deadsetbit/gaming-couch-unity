@@ -50,3 +50,34 @@
 - Read the exit code, not the log: `0` all passed, `8` the run finished and reported failures, anything else (commonly `6`) means it never produced a verdict — a compile error, an unavailable license, an Editor crash, or `--timeout`. Under `--format json` the same split appears as `errors[0].code`.
 - `unity test` spawns its own Editor in batch mode, so it cannot run while an Editor holds the host project's lock. Close that Editor or point the run at a separate host-project clone.
 - Driving an already-open Editor is possible via the `com.unity.pipeline` package (`unity pipeline install`, then `unity command` / `unity list`, also exposed to agents through `unity mcp`), which round-trips in a warm session with no domain reload. The package ships no test-run command, so this is not a test path today. If warm test runs become worth it, register a `[CliCommand]` in the **host project** rather than here — a `[CliCommand]` in this package would force a `com.unity.pipeline` dependency on every consumer.
+
+## Releasing and publishing
+
+- `Tools/bump-version.py <version>` is the one command that cuts a release: it bumps
+  `public/package/package.json`, re-bakes the runtime info to match, verifies them, commits and
+  tags `unity-<version>`. Pushing that tag is what publishes.
+- **Never pass `--yes`.** It auto-confirms every prompt, including "also run the monorepo's DevApp
+  release helper?" — the step that registers a release downstream. That path stops only because
+  stdin happens to be closed in a non-interactive shell, which is not a guarantee. Answer the
+  prompts explicitly instead.
+- `gitleaks` is required by the publish completeness gate and is not installed by default. The gate
+  fails closed without it. CI installs it from the pinned composite action at
+  `.github/actions/install-secret-scanner/`; a local run of `Tools/check-dist-complete.py` needs it
+  on `PATH` first.
+- A tag push runs the workflow definition at *that tag's commit*, not the one on `main`, and
+  `on: push: tags:` does not care which branch contains the commit. That is what makes the pipeline
+  rehearsable from an unmerged branch.
+- `unpublish-tag.yml` is `workflow_dispatch`-only, and GitHub will not register or dispatch such a
+  workflow unless it is on the default branch. It cannot be run from a feature branch, so it cannot
+  be rehearsed before merging.
+- Published tags are immutable. Fix a broken release by cutting the next version. Republishing the
+  same version means running `unpublish-tag.yml` first; never force-push a mirror tag.
+- Enabling GitHub Pages on the mirror is a human step in repository settings. No workflow does it,
+  it cannot be done before the first docs deploy creates `gh-pages`, and deleting that branch
+  removes the Pages configuration entirely rather than just the site — so it has to be re-enabled
+  after any teardown.
+- A global `*~` gitignore rule silently drops `Documentation~` from any tree built outside this
+  repository's own `.gitignore`, which carries a `!*~` override. That reached a published snapshot
+  once. `publish-mirror.yml` now neutralises the ambient config and asserts the snapshot matches
+  the tracked package, but anything else assembling a tree outside the repo is exposed to the same
+  rule.
