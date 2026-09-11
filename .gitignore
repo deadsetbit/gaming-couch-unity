@@ -64,6 +64,7 @@ crashlytics-build.properties
 # Local machine-specific agent bridge
 AGENTS.local.md
 AGENTS.local.md.meta
+CLAUDE.local.md
 
 # Python
 **/__pycache__/
