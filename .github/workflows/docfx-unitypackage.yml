@@ -346,6 +346,14 @@ jobs:
             > _root/versions.json
           cat _root/versions.json
 
+      # actions-gh-pages starts its ssh-agent on a fixed socket path, so the agent the
+      # per-version deploy left behind holds the path this one needs. Two deploys in one job
+      # is the shape that hits it, and every release that takes the root is that shape.
+      - name: Free the ssh-agent socket the per-version deploy left bound
+        run: |
+          pkill -f 'ssh-agent -a /tmp/ssh-auth.sock' || true
+          rm -f /tmp/ssh-auth.sock
+
       # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
       # at the root, where the cleanup would reach every version folder already published.
       - name: Publish the site root
