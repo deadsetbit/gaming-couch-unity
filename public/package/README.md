@@ -179,7 +179,7 @@ public class Player : GCPlayer
 }
 ```
 
-Key player properties (see the full list in the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api/DSB.GC.GCPlayer.html)):
+Key player properties (see the full list in the [API documentation for GCPlayer](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/api/DSB.GC.GCPlayer.html)):
 
 | Member                                                              | Type            | Notes                                                                                                                                                        |
 | ------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -204,7 +204,7 @@ player.ColorOffWhite
 them; convenience collections narrow by bot/non-bot and by eliminated/finished (permanent vs
 revokable) state — e.g. `PlayersUneliminated`, `PlayersBot`, `PlayersFinishedPermanent`. Look one up by
 index with `playerStore.GetPlayerByIndex(index)` (returns `null` if there is no such player). See the
-[API documentation for GCPlayerStore](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api/DSB.GC.GCPlayerStore-1.html)
+[API documentation for GCPlayerStore](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/api/DSB.GC.GCPlayerStore-1.html)
 for the complete set.
 
 `GCPlayer` also exposes change events (`OnScoreChanged`, `OnLivesChanged`, `OnMeterChanged`,
@@ -337,7 +337,7 @@ also pauses/resumes your game on its own; you do not draw the pause UI.
 `GamingCouch.Instance` exposes the run-level helpers you need along the way — for example `SetupPlayers`
 (with an optional spawn-position/rotation overload via `GCPlayerSpawnProperties`), `SetGameMaxScore`,
 `GameSeed`, and `Restart`. See the
-[API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api/DSB.GC.GamingCouch.html) for the
+[API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/api/DSB.GC.GamingCouch.html) for the
 full surface.
 
 ## Build and upload
@@ -370,7 +370,7 @@ This is planned for the near future to be able to visualize the HUD in the edito
 ## What next?
 
 - Grow the generated example: after [Quick Setup](#quick-setup), read and extend `GCExampleTemplate` under `Assets/GamingCouch/GCExample` (or run `Wire Example Game` for the fuller `GCExampleGame` + `GCExamplePlayer`).
-- Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api).
+- Browse the full [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/api).
 
 ## Creating a Unity project from scratch
 
@@ -384,7 +384,7 @@ To set up a new project from scratch:
 **For game developers**
 
 - This README — the integration guide.
-- [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.7/api) — generated per-member reference.
+- [API documentation](https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.8/api) — generated per-member reference.
 - Example project — generate one inside the Unity editor with `GamingCouch → Create New Example Scene`; it creates an editable `GCExampleTemplate` under `Assets/GamingCouch/GCExample` (run `GamingCouch → Wire Example Game` for the full `GCExampleGame` + `GCExamplePlayer`).
 
 **Internal (platform & DevApp maintainers)**
