@@ -17,8 +17,10 @@ publish time, so the package we test is the package consumers install.
   and anything under `https://github.com/deadsetbit/gaming-couch-unity/` resolve to files that
   stay private. Where an internal document is load-bearing for a reader, fold its point into
   the shipped text instead of linking to it.
-- **API and docs links** point at the published docs site,
-  `https://deadsetbit.github.io/gaming-couch-unity-public/latest/`.
+- **API and docs links** point into the release's own folder on the published docs site,
+  `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/`. Do not write the
+  version by hand: `Tools/bump-version.py` rewrites every one of these when a release is cut,
+  so any placeholder version in a link is corrected at that point.
 
 ## Files in `public/` itself
 

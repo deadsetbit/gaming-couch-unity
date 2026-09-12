@@ -24,6 +24,17 @@ from pathlib import Path
 EXPECTED_PACKAGE_NAME = "com.dsb.gamingcouch"
 TAG_PREFIX = "unity-"
 
+# Where this release's documentation is published. Checked here because the tag is immutable:
+# a release that goes out naming another release's folder sends every pinned consumer to the
+# wrong documentation, and there is no correcting it afterwards. Tools/bump-version.py writes
+# these, so a mismatch means the manifest was edited by hand, cherry-picked, or rebased.
+DOCS_SITE_ROOT = "https://deadsetbit.github.io/gaming-couch-unity-public/"
+DOCS_URL_FIELDS = {
+    "documentationUrl": "",
+    "changelogUrl": "changelog/CHANGELOG.html",
+    "licensesUrl": "license/LICENSE.html",
+}
+
 # Assemblies that legitimately live outside the package. Every by-name reference must resolve
 # to an assembly inside the folder or appear here, and the gate prints this list whenever it
 # is consulted so that growth is visible in the publish log rather than silent.
@@ -137,6 +148,14 @@ def check_manifest(package_dir, tag):
                 version, tag, expected_version
             )
         )
+
+    for field, suffix in DOCS_URL_FIELDS.items():
+        expected_url = "{0}{1}/{2}".format(DOCS_SITE_ROOT, expected_version, suffix)
+        if manifest.get(field) != expected_url:
+            failures.append(
+                "package.json: {0} is {1!r}, but tag {2} publishes its documentation at "
+                "{3!r}".format(field, manifest.get(field), tag, expected_url)
+            )
 
     return failures
 

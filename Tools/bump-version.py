@@ -51,6 +51,31 @@ PACKAGE_JSON_PATH = PACKAGE_DIR / "package.json"
 BAKED_RUNTIME_INFO_PATH = PACKAGE_DIR / "Runtime" / "Resources" / "GamingCouchRuntimeInfo.json"
 CHECK_SCRIPT_PATH = ROOT_DIR / "Tools" / "check-runtime-package-info.py"
 
+DOCS_SITE_ROOT = "https://deadsetbit.github.io/gaming-couch-unity-public/"
+
+# Manifest fields that must name the folder this release's docs are deployed to. They are
+# frozen the moment the tag is pushed, so a release that ships a channel name like "latest"
+# points a pinned consumer at a moving target for good.
+DOCS_URL_FIELDS = {
+    "documentationUrl": "",
+    "changelogUrl": "changelog/CHANGELOG.html",
+    "licensesUrl": "license/LICENSE.html",
+}
+
+# Links into the docs site carry the same folder, and for the same reason. Matched on the
+# folder alone rather than on what follows it: a link to the manual or the changelog of a
+# superseded release resolves to a real page describing the wrong version, which is worse
+# than a dead link because nothing about it looks wrong.
+#
+# The segment must be version-shaped, so the site's own root-level files — the version
+# manifest among them — are left alone.
+DOCS_VERSION_SEGMENT = r"(?:latest|\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"
+DOCS_DEEP_LINK_RE = re.compile(re.escape(DOCS_SITE_ROOT) + DOCS_VERSION_SEGMENT + r"/")
+
+# The changelog is excluded because its entries describe releases that have already shipped,
+# and what they said at the time is not ours to rewrite.
+DOCS_LINK_EXCLUDED = {"CHANGELOG.md"}
+
 PLATFORM = "unity"
 GAME_PROTOCOL_VERSION = 1
 TAG_PREFIX = "unity-"
@@ -230,7 +255,7 @@ def read_current_version():
     return match.group(1), text
 
 
-def write_package_version(text, current, new):
+def write_package_manifest(text, current, new):
     updated, count = re.subn(
         r'("version"\s*:\s*")' + re.escape(current) + r'(")',
         lambda m: m.group(1) + new + m.group(2),
@@ -239,7 +264,53 @@ def write_package_version(text, current, new):
     )
     if count != 1:
         raise BumpError("Could not rewrite the version field in package.json.")
+    updated = rewrite_docs_urls(updated, new)
     PACKAGE_JSON_PATH.write_text(updated, encoding="utf-8")
+
+
+def docs_folder_url(new_version):
+    return "{0}{1}/".format(DOCS_SITE_ROOT, new_version)
+
+
+def docs_url(new_version, suffix):
+    return docs_folder_url(new_version) + suffix
+
+
+def rewrite_docs_urls(text, new_version):
+    # Rewritten by value rather than matched against the old one: the previous release's
+    # folder, a channel name, and a hand-typed URL all have to end up at the same place.
+    for field, suffix in DOCS_URL_FIELDS.items():
+        text, count = re.subn(
+            r'("' + field + r'"\s*:\s*")[^"]*(")',
+            lambda m: m.group(1) + docs_url(new_version, suffix) + m.group(2),
+            text,
+            count=1,
+        )
+        if count != 1:
+            raise BumpError("Could not rewrite the {0} field in package.json.".format(field))
+    return text
+
+
+def shipped_markdown_paths():
+    return sorted(
+        path
+        for path in PACKAGE_DIR.rglob("*.md")
+        if path.name not in DOCS_LINK_EXCLUDED
+    )
+
+
+def rewrite_docs_deep_links(new_version, originals):
+    """Repoint every shipped docs-site link at this release's own folder.
+
+    Each file's previous contents are recorded in `originals` before it is written, so a
+    failure part-way through the sweep still leaves every touched file restorable.
+    """
+    for path in shipped_markdown_paths():
+        text = path.read_text(encoding="utf-8")
+        updated = DOCS_DEEP_LINK_RE.sub(docs_folder_url(new_version), text)
+        if updated != text:
+            originals[path] = text
+            path.write_text(updated, encoding="utf-8")
 
 
 def canonical_runtime_info(name, version):
@@ -342,7 +413,18 @@ def main():
             print("Aborted.")
             return 1
 
+    print("Docs folder:     {0}".format(docs_folder_url(new_version)))
+
     if args.dry_run:
+        for field, suffix in DOCS_URL_FIELDS.items():
+            print("  {0}: {1}".format(field, docs_url(new_version, suffix)))
+        deep_linked = [
+            str(path.relative_to(ROOT_DIR))
+            for path in shipped_markdown_paths()
+            if DOCS_DEEP_LINK_RE.search(path.read_text(encoding="utf-8"))
+        ]
+        if deep_linked:
+            print("  docs links repointed in: {0}".format(", ".join(deep_linked)))
         print("\nDRY RUN — would edit package.json + baked runtime info, then commit "
               "'chore(release): {0}' and tag {1}. No changes made.".format(new_version, tag_name))
         return 0
@@ -362,14 +444,22 @@ def main():
     original_baked = BAKED_RUNTIME_INFO_PATH.read_text(encoding="utf-8")
     name = read_package_name()
 
+    markdown_originals = {}
+
     def restore():
         PACKAGE_JSON_PATH.write_text(package_text, encoding="utf-8")
         BAKED_RUNTIME_INFO_PATH.write_text(original_baked, encoding="utf-8")
+        for path, original in markdown_originals.items():
+            path.write_text(original, encoding="utf-8")
 
     try:
-        write_package_version(package_text, current, new_version)
+        write_package_manifest(package_text, current, new_version)
         bake_runtime_info(name, new_version)
-    except BumpError as exc:
+        rewrite_docs_deep_links(new_version, markdown_originals)
+    except (BumpError, OSError, UnicodeDecodeError) as exc:
+        # OSError and UnicodeDecodeError reach here from the markdown sweep, which touches
+        # files this script does not otherwise own. Letting either escape would leave the
+        # tree half-rewritten with nothing to restore it.
         restore()
         print("error: {0} Files restored.".format(exc), file=sys.stderr)
         return 1
@@ -392,10 +482,13 @@ def main():
             return 1
 
     # --- commit + tag ---
-    # Commit only these two paths (pathspec) so any other staged work is left untouched.
+    # Commit only the paths this script rewrote (pathspec) so any other staged work is
+    # left untouched.
     package_rel = str(PACKAGE_JSON_PATH.relative_to(ROOT_DIR))
     baked_rel = str(BAKED_RUNTIME_INFO_PATH.relative_to(ROOT_DIR))
-    git("commit", "-m", "chore(release): {0}".format(new_version), "--", package_rel, baked_rel)
+    markdown_rel = [str(path.relative_to(ROOT_DIR)) for path in sorted(markdown_originals)]
+    git("commit", "-m", "chore(release): {0}".format(new_version), "--",
+        package_rel, baked_rel, *markdown_rel)
     git("tag", tag_name)
     print("Committed and tagged {0}.".format(tag_name))
 

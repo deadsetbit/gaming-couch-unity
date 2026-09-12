@@ -29,10 +29,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Published under a version-named folder from the first deploy, with the site root
-  # redirecting there, so per-version archives can be added later without moving anyone's
-  # bookmark. This is also the deep-link base the shipped README and manifest point at.
-  DOCS_BASE_URL: https://deadsetbit.github.io/gaming-couch-unity-public/latest/
+  # Each release deploys into a folder named for its own version and nothing overwrites it,
+  # because the URL is frozen into an immutable tag and the plan forbids republishing. The
+  # site root redirects to the newest release, except that once a stable release has held it
+  # a prerelease never takes it back — see the decision step for why.
+  DOCS_SITE_ROOT: https://deadsetbit.github.io/gaming-couch-unity-public/
+  # A link, never a fetch, so it needs no CORS and no uptime from the docs host and still
+  # works from a page whose site has been retired.
+  DOCS_HOME_URL: https://gamingcouch.com
   PUBLIC_REPO: deadsetbit/gaming-couch-unity-public
 
 jobs:
@@ -55,6 +59,12 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          # The tag pattern above already limits this to one safe path segment: it must open
+          # with an alphanumeric, so it can be neither empty nor a traversal.
+          version="${tag#unity-}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "base_url=${DOCS_SITE_ROOT}${version}/" >> "$GITHUB_OUTPUT"
 
       - name: Check out the tag
         uses: actions/checkout@v4
@@ -93,6 +103,9 @@ jobs:
         shell: bash
         run: |
           shopt -s dotglob
+          # Kept before src/ goes: the site-root decision below orders two versions by semver
+          # precedence, and this is the repository's one implementation of that.
+          cp src/Tools/bump-version.py "$RUNNER_TEMP/bump-version.py"
           mv src/public/package/* .
           rm -rf src
           # The API reference is generated from every .cs file under this root, and the tests
@@ -108,23 +121,188 @@ jobs:
 
       # No github_token: the action reads it only to look up the running repository's Pages
       # configuration, which base_url replaces.
+      #
+      # base_url is this release's own folder; site_root_url is the root above it, shared by
+      # every release, and is what the version manifest is resolved against.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.1.0
+        uses: deadsetbit/docfx-unitypackage@v1.2.0
         with:
-          base_url: ${{ env.DOCS_BASE_URL }}
+          base_url: ${{ steps.release.outputs.base_url }}
+          site_root_url: ${{ env.DOCS_SITE_ROOT }}
+          home_url: ${{ env.DOCS_HOME_URL }}
 
-      - name: Assert the built site carries the public URL
+      # Checked here rather than after the deploy, because a page that ships without these is
+      # frozen without them: the tag is immutable and the plan forbids republishing.
+      - name: Assert the built site carries this release's URLs
+        shell: bash
+        env:
+          BASE_URL: ${{ steps.release.outputs.base_url }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          grep -qF "$DOCS_BASE_URL" _site/sitemap.xml || {
-            echo "::error::the built sitemap does not carry $DOCS_BASE_URL."
+          grep -qF "$BASE_URL" _site/sitemap.xml || {
+            echo "::error::the built sitemap does not carry $BASE_URL."
             exit 1
           }
 
-      - name: Deploy to the public repository
+          # The folder's own entry point. It is the only page whose link out is absolute, so
+          # it is the one place a stale base URL would strand a reader inside a release that
+          # can never be rebuilt.
+          grep -qF "content=\"0;URL=${BASE_URL}manual/\"" _site/index.html || {
+            echo "::error::the built index does not redirect into ${BASE_URL}manual/."
+            grep -i refresh _site/index.html || true
+            exit 1
+          }
+
+          # Null-delimited: the action turns 'Third Party Notices.md' into a page, so a built
+          # path can carry spaces. toc.html files are navigation fragments, not pages.
+          checked=0
+          missing=0
+          while IFS= read -r -d '' page; do
+            checked=$((checked + 1))
+            for needle in \
+              "data-docs-version=\"$VERSION\"" \
+              "data-docs-manifest=\"${DOCS_SITE_ROOT}versions.json\"" \
+              "href=\"$DOCS_HOME_URL\""; do
+              grep -qF "$needle" "$page" || {
+                echo "::error::$page is missing: $needle"
+                missing=1
+              }
+            done
+          done < <(find _site -name '*.html' -not -path '_site/public/*' -not -name 'toc.html' -print0)
+
+          test "$checked" -gt 0 || { echo "::error::no pages were built."; exit 1; }
+          test "$missing" -eq 0 || exit 1
+          echo "$checked pages carry this release's version, manifest URL and link home."
+
+      # No keep_files: the action's cleanup is a `git rm` run with the working directory set
+      # to destination_dir, so it can reach only this version's folder. Leaving it off is what
+      # stops a type deleted from the package keeping its API page inside this release.
+      - name: Deploy this release's documentation
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: ${{ env.PUBLIC_REPO }}
           deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
           publish_branch: gh-pages
           publish_dir: _site
-          destination_dir: latest
+          destination_dir: ${{ steps.release.outputs.version }}
+
+      # Publishing is not the same as being newest. A tag push can cut a patch on an older
+      # line, and this workflow also takes a tag by dispatch, so a release reaching this point
+      # is not necessarily ahead of whatever the root already names.
+      - name: Decide whether this release takes the site root
+        id: root
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Read gh-pages through the API rather than raw.githubusercontent, whose CDN can
+          # serve a stale copy for minutes — long enough to misread the root when two stable
+          # releases go out close together. This has to be right on the first deploy too,
+          # before Pages is enabled by hand.
+          published=$(mktemp)
+          code=$(curl -sS -o "$published" -w '%{http_code}' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${PUBLIC_REPO}/contents/index.html?ref=gh-pages")
+
+          case "$code" in
+            404)
+              echo "No site root published yet; this release takes it."
+              echo "take=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            200) ;;
+            *)
+              echo "::error::could not read the published site root (HTTP $code)."
+              exit 1
+              ;;
+          esac
+
+          # grep's own failure has to be caught here rather than left to errexit, which would
+          # abort the step with no indication of which of these two things went wrong.
+          canonical=$(grep -o '<link rel="canonical" href="[^"]*"' "$published" | head -1) || true
+          current=${canonical#*href=\"}
+          current=${current%\"}
+          current=${current#"$DOCS_SITE_ROOT"}
+          current=${current%/}
+
+          if [ -z "$canonical" ]; then
+            echo "::error::the published site root carries no canonical link, so what it points at cannot be read."
+            exit 1
+          fi
+
+          # `sort -V` cannot do this: it orders 1.0.0-rc.1 above 1.0.0, so an rc at the root
+          # would report "not ahead of it" for every stable release that followed and pin the
+          # root there while exiting 0. compare_semver is the repository's own implementation
+          # of semver precedence, already used to order releases when cutting one.
+          CURRENT="$current" python3 - <<'PY'
+          import importlib.util
+          import os
+          import sys
+
+          spec = importlib.util.spec_from_file_location(
+              "bump_version", os.path.join(os.environ["RUNNER_TEMP"], "bump-version.py")
+          )
+          bump = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(bump)
+
+          # Build metadata is dropped on both sides, semver excluding it from precedence.
+          version = os.environ["VERSION"].split("+", 1)[0]
+          current = os.environ["CURRENT"].split("+", 1)[0]
+
+          def decide(take, message):
+              print(message)
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+                  handle.write("take={0}\n".format("true" if take else "false"))
+              sys.exit(0)
+
+          # A root written by hand, or pointing off-site, has no defined order against a
+          # version and would pin the root wherever it is. Refuse rather than guess.
+          try:
+              current_parts = bump.parse_semver(current)
+          except bump.BumpError:
+              print(
+                  "::error::the published site root names '{0}', which is not a release version.".format(current)
+              )
+              sys.exit(1)
+
+          # A prerelease may hold the root, but only until a stable release has ever held it.
+          # The rule exists to stop sending a stable reader to an alpha, and while no stable
+          # release exists there are no stable readers — so through 0.x the newest release
+          # takes the root whatever kind it is, and a beta is reachable without knowing its
+          # version. Once a stable release holds it, a prerelease never takes it back.
+          if not current_parts[3] and bump.parse_semver(version)[3]:
+              decide(False, "Site root stays at {0}; a prerelease does not displace a stable release.".format(current))
+
+          if bump.compare_semver(version, current) > 0:
+              decide(True, "Site root moves from {0} to {1}.".format(current, version))
+          decide(False, "Site root stays at {0}; {1} is not ahead of it.".format(current, version))
+          PY
+
+      - name: Compose the site root redirect
+        if: steps.root.outputs.take == 'true'
+        env:
+          BASE_URL: ${{ steps.release.outputs.base_url }}
+        run: |
+          mkdir -p _root
+          cat > _root/index.html <<HTML
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Gaming Couch for Unity</title>
+          <meta http-equiv="refresh" content="0;URL=$BASE_URL">
+          <link rel="canonical" href="$BASE_URL">
+          <p>Redirecting to <a href="$BASE_URL">the current documentation</a>.</p>
+          HTML
+
+      # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
+      # at the root, where the cleanup would reach every version folder already published.
+      - name: Point the site root at this release
+        if: steps.root.outputs.take == 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          external_repository: ${{ env.PUBLIC_REPO }}
+          deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
+          publish_branch: gh-pages
+          publish_dir: _root
+          keep_files: true
