@@ -48,8 +48,23 @@ The rest of this guide shows how to do each step.
 
 ## Install
 
-Import this package with Unity's _Package Manager_ → _Add package from git URL_, then follow
-[Quick Setup](#quick-setup).
+**Recommended — through DevApp.** DevApp installs this package into your project and keeps it on the
+version the platform expects. Sign in at [devspace.gamingcouch.com](https://devspace.gamingcouch.com)
+and bootstrap your game, download DevApp from the **Downloads** page, then add your Unity project
+folder in DevApp and link it to the game. No account yet? Ask for one on
+[Discord](https://discord.gg/UqSX9ZGz5u).
+
+**Manual.** Unity's _Package Manager_ → _Add package from git URL_, with a release tag:
+
+```
+https://github.com/deadsetbit/gaming-couch-unity-public.git#unity-<version>
+```
+
+Pick a version from the [tags](https://github.com/deadsetbit/gaming-couch-unity-public/tags).
+Installed this way the version is pinned — Unity offers no update for a git URL, so you move to a
+newer release by editing the tag.
+
+Either way, follow [Quick Setup](#quick-setup) once the package is in the project.
 
 **Requirements:**
 
