@@ -238,14 +238,20 @@ jobs:
 
           # A root written by hand, or pointing off-site, sorts unpredictably against a
           # version and would pin the root wherever it is. Refuse rather than guess.
-          if ! printf '%s' "$current" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)*$'; then
-            echo "::error::the published site root names '$current', which is not a release version."
+          #
+          # A prerelease is refused for the same reason and not because it is unexpected:
+          # `sort -V` orders 1.0.0-rc.1 above 1.0.0, so a prerelease root would report
+          # "not ahead of it" for every stable release that followed and pin the root there
+          # while exiting 0. Only a stable release writes the root today, so this is
+          # unreachable — it is enforced here so that it stays that way loudly.
+          if ! printf '%s' "$current" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(\+[0-9A-Za-z.-]+)?$'; then
+            echo "::error::the published site root names '$current', which is not a stable release version."
             exit 1
           fi
 
-          # Only a stable release ever holds the root, and this step runs only for a stable
-          # release, so both sides are plain X.Y.Z and a version sort settles it. Build
-          # metadata is dropped, semver excluding it from precedence.
+          # Both sides are now plain X.Y.Z — this step runs only for a stable release, and the
+          # check above holds the published root to the same shape — so a version sort settles
+          # it. Build metadata is dropped, semver excluding it from precedence.
           newest=$(printf '%s\n%s\n' "${current%%+*}" "${VERSION%%+*}" | sort -V | tail -1)
           if [ "$newest" = "${VERSION%%+*}" ] && [ "$current" != "$VERSION" ]; then
             echo "Site root moves from $current to $VERSION."

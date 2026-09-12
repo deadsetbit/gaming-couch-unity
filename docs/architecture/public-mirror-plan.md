@@ -179,8 +179,11 @@ them the release tooling points at the old paths and no release can be cut.
       the DocFX action builds its site title from `displayName`, so dropping it retitles every
       page `" | <version>"`. Only `scripts` moves, into a **new private root `package.json`**
       carrying `"private": true`, which never ships.
-- [ ] In `public/package/package.json`, repoint `documentationUrl` at the docs site root and
-      `changelogUrl`/`licensesUrl` into the public repo.
+- [ ] In `public/package/package.json`, repoint `documentationUrl`, `changelogUrl` and
+      `licensesUrl` into this release's own docs folder,
+      `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/`. `Tools/bump-version.py`
+      writes all three at release time, and `check-dist-complete.py` refuses a tag whose
+      manifest names any other folder.
 - [ ] **Sweep every shipped link that dies at the flip.** Not just the five
       `…/gaming-couch-unity/blob/main/…` and `tree/main/docs/adr` links in `README.md`: there
       are five `https://deadsetbit.github.io/gaming-couch-unity/api…` links in `README.md`

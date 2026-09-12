@@ -482,7 +482,8 @@ def main():
             return 1
 
     # --- commit + tag ---
-    # Commit only these two paths (pathspec) so any other staged work is left untouched.
+    # Commit only the paths this script rewrote (pathspec) so any other staged work is
+    # left untouched.
     package_rel = str(PACKAGE_JSON_PATH.relative_to(ROOT_DIR))
     baked_rel = str(BAKED_RUNTIME_INFO_PATH.relative_to(ROOT_DIR))
     markdown_rel = [str(path.relative_to(ROOT_DIR)) for path in sorted(markdown_originals)]

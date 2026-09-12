@@ -164,6 +164,19 @@ class DeepLinksFollowTheReleaseFolder(unittest.TestCase):
         self.assertEqual(written["README.md"], manifest)
         self.assertEqual(touched, set())
 
+    def test_a_root_level_folder_is_not_a_release_folder(self):
+        """Only a version-shaped segment is a release. A sibling folder at the root is not.
+
+        The manifest case above is excluded by the trailing slash alone, so it passes whatever
+        shape the segment is held to. This one pins the shape itself.
+        """
+        for segment in ("assets", "versions", "0.1", "latest-draft"):
+            with self.subTest(segment=segment):
+                link = "https://deadsetbit.github.io/gaming-couch-unity-public/{0}/api\n".format(segment)
+                written, touched = self.sweep({"README.md": link})
+                self.assertEqual(written["README.md"], link)
+                self.assertEqual(touched, set())
+
     def test_the_previous_contents_are_recorded_before_the_file_is_written(self):
         before = "https://deadsetbit.github.io/gaming-couch-unity-public/latest/api\n"
         with tempfile.TemporaryDirectory() as tmp:
