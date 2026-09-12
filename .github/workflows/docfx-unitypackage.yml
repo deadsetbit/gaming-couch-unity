@@ -77,7 +77,8 @@ jobs:
         env:
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ]; then
+          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ] \
+             || [ ! -f src/Tools/build-versions-manifest.py ]; then
             echo "::error::$TAG predates the public/package/ restructure."
             exit 1
           fi
@@ -103,9 +104,9 @@ jobs:
         shell: bash
         run: |
           shopt -s dotglob
-          # Kept before src/ goes: the site-root decision below orders two versions by semver
-          # precedence, and this is the repository's one implementation of that.
-          cp src/Tools/bump-version.py "$RUNNER_TEMP/bump-version.py"
+          # Kept before src/ goes: the site-root decision and the version manifest below both
+          # order versions by semver precedence, and Tools holds the one implementation of it.
+          cp -R src/Tools "$RUNNER_TEMP/tools"
           mv src/public/package/* .
           rm -rf src
           # The API reference is generated from every .cs file under this root, and the tests
@@ -125,7 +126,7 @@ jobs:
       # base_url is this release's own folder; site_root_url is the root above it, shared by
       # every release, and is what the version manifest is resolved against.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.2.0
+        uses: deadsetbit/docfx-unitypackage@v1.3.0
         with:
           base_url: ${{ steps.release.outputs.base_url }}
           site_root_url: ${{ env.DOCS_SITE_ROOT }}
@@ -242,7 +243,7 @@ jobs:
           import sys
 
           spec = importlib.util.spec_from_file_location(
-              "bump_version", os.path.join(os.environ["RUNNER_TEMP"], "bump-version.py")
+              "bump_version", os.path.join(os.environ["RUNNER_TEMP"], "tools", "bump-version.py")
           )
           bump = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(bump)
@@ -295,10 +296,59 @@ jobs:
           <p>Redirecting to <a href="$BASE_URL">the current documentation</a>.</p>
           HTML
 
+      # Every published page fetches this one file, and those pages are frozen, so it is the
+      # only thing that can still tell a reader on an old release that a newer one exists.
+      # Written on every deploy, which is why the publish below is no longer conditional.
+      - name: Build the version manifest
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _root
+
+          # gh-pages exists by now — the deploy above created it — so a 404 here is not "first
+          # release", it is the root being unreadable. Publishing a manifest built from an
+          # empty listing would overwrite the real one with a single entry and tell every
+          # other release's readers that nothing newer exists.
+          listing=$(mktemp)
+          code=$(curl -sS -o "$listing" -w '%{http_code}' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${PUBLIC_REPO}/contents/?ref=gh-pages")
+          if [ "$code" != "200" ]; then
+            echo "::error::could not list the published site root (HTTP $code)."
+            exit 1
+          fi
+          # A folder per release, so the directories at the root are the published versions.
+          published=$(mktemp)
+          jq -r '.[] | select(.type == "dir") | .name' "$listing" > "$published"
+
+          # The manifest already published is authoritative for releases the listing may not
+          # return, and carries any notice someone added by hand. Absent is normal: this
+          # release is then the first to write one.
+          previous=$(mktemp)
+          code=$(curl -sS -o "$previous" -w '%{http_code}' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${PUBLIC_REPO}/contents/versions.json?ref=gh-pages")
+          case "$code" in
+            200) ;;
+            404) : > "$previous" ;;
+            *)
+              echo "::error::could not read the published version manifest (HTTP $code)."
+              exit 1
+              ;;
+          esac
+
+          python3 "$RUNNER_TEMP/tools/build-versions-manifest.py" \
+            --version "$VERSION" --published-from "$published" --previous-from "$previous" \
+            > _root/versions.json
+          cat _root/versions.json
+
       # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
       # at the root, where the cleanup would reach every version folder already published.
-      - name: Point the site root at this release
-        if: steps.root.outputs.take == 'true'
+      - name: Publish the site root
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: ${{ env.PUBLIC_REPO }}

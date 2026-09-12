@@ -413,6 +413,12 @@ in, which stops existing the moment that repo is private.
 - [ ] Decide whether test classes belong in the public API reference. The metadata source is
       `**/*.cs` from the staged root, and `Tests/` now ships, so they will appear unless
       excluded. The action supports `Documentation~/manual/filter.yml` for exactly this.
+- [ ] **Write the version manifest at the site root on every deploy.**
+      `Tools/build-versions-manifest.py` lists the release folders already published, adds the
+      one being published, and writes `versions.json`. Every published page fetches this one
+      file, and those pages are frozen, so it is the only thing that can still tell a reader on
+      an old release that a newer one exists. It carries no notice; a relocation or retirement
+      notice is added deliberately, as the last thing written to a site being left behind.
 - [ ] **Point the site root at the newest release.** A second deploy in the same job writes
       a root `index.html` redirecting to that release's folder. A prerelease may hold the root,
       but only until a stable release has ever held it: the rule exists to stop sending a
