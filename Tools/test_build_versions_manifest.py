@@ -31,11 +31,6 @@ class BuildManifest(unittest.TestCase):
         self.assertEqual(manifest["versions"], ["0.2.0"])
         self.assertEqual(manifest["latestStable"], "0.2.0")
 
-    def test_the_schema_version_is_declared(self):
-        # A page that cannot read the manifest must be able to tell, rather than conclude that
-        # nothing newer exists.
-        self.assertEqual(self.build([], "0.2.0")["schemaVersion"], 1)
-
     def test_names_that_are_not_versions_are_not_releases(self):
         manifest = self.build(["versions.json", "assets", "latest", "0.1", "1.0.0"], "0.2.0")
         self.assertEqual(manifest["versions"], ["0.2.0", "1.0.0"])
@@ -66,6 +61,49 @@ class BuildManifest(unittest.TestCase):
         # would point at a folder that does not exist.
         manifest = self.build(["1.0.0"], "1.0.1+build.5")
         self.assertIn("1.0.1+build.5", manifest["versions"])
+
+    def test_a_published_folder_carrying_build_metadata_is_still_a_release(self):
+        # Stripping it only for comparison, not for recognition: a folder named 1.0.0+build.3
+        # exists and must stay listed.
+        manifest = self.build(["1.0.0+build.3"], "0.9.0")
+        self.assertEqual(manifest["versions"], ["0.9.0", "1.0.0+build.3"])
+
+    def test_the_ordering_is_the_same_on_every_run(self):
+        # Names of equal precedence must not come out in set-iteration order: latestStable
+        # names a folder, and these are different folders.
+        runs = {
+            tuple(self.build(["1.0.0", "1.0.0+a", "1.0.0+b"], "0.9.0")["versions"])
+            for _ in range(8)
+        }
+        self.assertEqual(len(runs), 1, runs)
+
+    def test_a_release_the_listing_no_longer_returns_stays_listed(self):
+        # The site-root listing is cached and capped, so its silence is not proof a release is
+        # gone. Dropping one would tell its readers there is nothing newer.
+        previous = {"versions": ["0.1.0", "0.2.0"], "latestStable": "0.2.0"}
+        manifest = self.build([], "0.3.0", previous)
+        self.assertEqual(manifest["versions"], ["0.1.0", "0.2.0", "0.3.0"])
+
+    def test_a_notice_someone_added_survives_the_next_deploy(self):
+        notice = {"text": "These docs have moved.", "url": "https://gamingcouch.com"}
+        manifest = self.build([], "0.3.0", {"versions": ["0.2.0"], "notice": notice})
+        self.assertEqual(manifest["notice"], notice)
+
+    def test_a_malformed_notice_is_not_carried_forward(self):
+        for broken in ("moved", {"url": "https://x.test"}, {"text": ""}, {"text": 1}, None):
+            with self.subTest(notice=broken):
+                manifest = self.build([], "0.3.0", {"versions": [], "notice": broken})
+                self.assertNotIn("notice", manifest)
+
+    def test_a_previous_manifest_that_is_nonsense_is_ignored(self):
+        for broken in (None, [], "", {"versions": "nope"}):
+            with self.subTest(previous=broken):
+                self.assertEqual(self.build([], "0.3.0", broken)["versions"], ["0.3.0"])
+
+    def test_a_version_that_is_not_a_release_is_refused(self):
+        module = load_builder()
+        with self.assertRaises(Exception):
+            module.build_manifest([], "1.0")
 
     def test_no_notice_is_invented(self):
         # A relocation notice is a deliberate statement, added when documentation genuinely

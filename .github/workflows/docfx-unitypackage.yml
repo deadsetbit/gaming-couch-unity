@@ -77,7 +77,8 @@ jobs:
         env:
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ]; then
+          if [ ! -d src/public/package ] || [ ! -f src/Tools/check-dist-complete.py ] \
+             || [ ! -f src/Tools/build-versions-manifest.py ]; then
             echo "::error::$TAG predates the public/package/ restructure."
             exit 1
           fi
@@ -306,26 +307,43 @@ jobs:
         run: |
           mkdir -p _root
 
+          # gh-pages exists by now — the deploy above created it — so a 404 here is not "first
+          # release", it is the root being unreadable. Publishing a manifest built from an
+          # empty listing would overwrite the real one with a single entry and tell every
+          # other release's readers that nothing newer exists.
           listing=$(mktemp)
           code=$(curl -sS -o "$listing" -w '%{http_code}' \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${PUBLIC_REPO}/contents/?ref=gh-pages")
-
+          if [ "$code" != "200" ]; then
+            echo "::error::could not list the published site root (HTTP $code)."
+            exit 1
+          fi
+          # A folder per release, so the directories at the root are the published versions.
           published=$(mktemp)
+          jq -r '.[] | select(.type == "dir") | .name' "$listing" > "$published"
+
+          # The manifest already published is authoritative for releases the listing may not
+          # return, and carries any notice someone added by hand. Absent is normal: this
+          # release is then the first to write one.
+          previous=$(mktemp)
+          code=$(curl -sS -o "$previous" -w '%{http_code}' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${PUBLIC_REPO}/contents/versions.json?ref=gh-pages")
           case "$code" in
-            # A folder per release, so the directories at the root are the published versions.
-            200) jq -r '.[] | select(.type == "dir") | .name' "$listing" > "$published" ;;
-            # No branch yet: this release is the first, and the builder adds it regardless.
-            404) : > "$published" ;;
+            200) ;;
+            404) : > "$previous" ;;
             *)
-              echo "::error::could not list the published site root (HTTP $code)."
+              echo "::error::could not read the published version manifest (HTTP $code)."
               exit 1
               ;;
           esac
 
           python3 "$RUNNER_TEMP/tools/build-versions-manifest.py" \
-            --version "$VERSION" --published-from "$published" > _root/versions.json
+            --version "$VERSION" --published-from "$published" --previous-from "$previous" \
+            > _root/versions.json
           cat _root/versions.json
 
       # keep_files, unlike the deploy above, and for the opposite reason: this one publishes
