@@ -126,7 +126,7 @@ jobs:
       # base_url is this release's own folder; site_root_url is the root above it, shared by
       # every release, and is what the version manifest is resolved against.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.3.0
+        uses: deadsetbit/docfx-unitypackage@v1.4.0
         with:
           base_url: ${{ steps.release.outputs.base_url }}
           site_root_url: ${{ env.DOCS_SITE_ROOT }}
