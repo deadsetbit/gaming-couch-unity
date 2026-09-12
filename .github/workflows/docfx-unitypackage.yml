@@ -31,8 +31,8 @@ concurrency:
 env:
   # Each release deploys into a folder named for its own version and nothing overwrites it,
   # because the URL is frozen into an immutable tag and the plan forbids republishing. The
-  # site root redirects to the latest stable release; a prerelease publishes its folder and
-  # leaves the root where it is.
+  # site root redirects to the newest release, except that once a stable release has held it
+  # a prerelease never takes it back — see the decision step for why.
   DOCS_SITE_ROOT: https://deadsetbit.github.io/gaming-couch-unity-public/
   # A link, never a fetch, so it needs no CORS and no uptime from the docs host and still
   # works from a page whose site has been retired.
@@ -65,12 +65,6 @@ jobs:
           version="${tag#unity-}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "base_url=${DOCS_SITE_ROOT}${version}/" >> "$GITHUB_OUTPUT"
-
-          # Semver: anything after the first hyphen is a prerelease identifier.
-          case "$version" in
-            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
-            *)   echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
-          esac
 
       - name: Check out the tag
         uses: actions/checkout@v4
@@ -109,6 +103,9 @@ jobs:
         shell: bash
         run: |
           shopt -s dotglob
+          # Kept before src/ goes: the site-root decision below orders two versions by semver
+          # precedence, and this is the repository's one implementation of that.
+          cp src/Tools/bump-version.py "$RUNNER_TEMP/bump-version.py"
           mv src/public/package/* .
           rm -rf src
           # The API reference is generated from every .cs file under this root, and the tests
@@ -194,7 +191,6 @@ jobs:
       # is not necessarily ahead of whatever the root already names.
       - name: Decide whether this release takes the site root
         id: root
-        if: steps.release.outputs.prerelease == 'false'
         shell: bash
         env:
           VERSION: ${{ steps.release.outputs.version }}
@@ -236,30 +232,53 @@ jobs:
             exit 1
           fi
 
-          # A root written by hand, or pointing off-site, sorts unpredictably against a
-          # version and would pin the root wherever it is. Refuse rather than guess.
-          #
-          # A prerelease is refused for the same reason and not because it is unexpected:
-          # `sort -V` orders 1.0.0-rc.1 above 1.0.0, so a prerelease root would report
-          # "not ahead of it" for every stable release that followed and pin the root there
-          # while exiting 0. Only a stable release writes the root today, so this is
-          # unreachable — it is enforced here so that it stays that way loudly.
-          if ! printf '%s' "$current" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(\+[0-9A-Za-z.-]+)?$'; then
-            echo "::error::the published site root names '$current', which is not a stable release version."
-            exit 1
-          fi
+          # `sort -V` cannot do this: it orders 1.0.0-rc.1 above 1.0.0, so an rc at the root
+          # would report "not ahead of it" for every stable release that followed and pin the
+          # root there while exiting 0. compare_semver is the repository's own implementation
+          # of semver precedence, already used to order releases when cutting one.
+          CURRENT="$current" python3 - <<'PY'
+          import importlib.util
+          import os
+          import sys
 
-          # Both sides are now plain X.Y.Z — this step runs only for a stable release, and the
-          # check above holds the published root to the same shape — so a version sort settles
-          # it. Build metadata is dropped, semver excluding it from precedence.
-          newest=$(printf '%s\n%s\n' "${current%%+*}" "${VERSION%%+*}" | sort -V | tail -1)
-          if [ "$newest" = "${VERSION%%+*}" ] && [ "$current" != "$VERSION" ]; then
-            echo "Site root moves from $current to $VERSION."
-            echo "take=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Site root stays at $current; $VERSION is not ahead of it."
-            echo "take=false" >> "$GITHUB_OUTPUT"
-          fi
+          spec = importlib.util.spec_from_file_location(
+              "bump_version", os.path.join(os.environ["RUNNER_TEMP"], "bump-version.py")
+          )
+          bump = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(bump)
+
+          # Build metadata is dropped on both sides, semver excluding it from precedence.
+          version = os.environ["VERSION"].split("+", 1)[0]
+          current = os.environ["CURRENT"].split("+", 1)[0]
+
+          def decide(take, message):
+              print(message)
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+                  handle.write("take={0}\n".format("true" if take else "false"))
+              sys.exit(0)
+
+          # A root written by hand, or pointing off-site, has no defined order against a
+          # version and would pin the root wherever it is. Refuse rather than guess.
+          try:
+              current_parts = bump.parse_semver(current)
+          except bump.BumpError:
+              print(
+                  "::error::the published site root names '{0}', which is not a release version.".format(current)
+              )
+              sys.exit(1)
+
+          # A prerelease may hold the root, but only until a stable release has ever held it.
+          # The rule exists to stop sending a stable reader to an alpha, and while no stable
+          # release exists there are no stable readers — so through 0.x the newest release
+          # takes the root whatever kind it is, and a beta is reachable without knowing its
+          # version. Once a stable release holds it, a prerelease never takes it back.
+          if not current_parts[3] and bump.parse_semver(version)[3]:
+              decide(False, "Site root stays at {0}; a prerelease does not displace a stable release.".format(current))
+
+          if bump.compare_semver(version, current) > 0:
+              decide(True, "Site root moves from {0} to {1}.".format(current, version))
+          decide(False, "Site root stays at {0}; {1} is not ahead of it.".format(current, version))
+          PY
 
       - name: Compose the site root redirect
         if: steps.root.outputs.take == 'true'

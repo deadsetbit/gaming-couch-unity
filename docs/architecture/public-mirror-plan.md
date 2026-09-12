@@ -413,10 +413,14 @@ in, which stops existing the moment that repo is private.
 - [ ] Decide whether test classes belong in the public API reference. The metadata source is
       `**/*.cs` from the staged root, and `Tests/` now ships, so they will appear unless
       excluded. The action supports `Documentation~/manual/filter.yml` for exactly this.
-- [ ] **Point the site root at the latest stable release.** A second deploy in the same job
-      writes a root `index.html` redirecting to the release's folder, and runs only for a
-      stable version — a prerelease publishes its own folder and leaves the root alone, so a
-      stable reader is never sent to an alpha.
+- [ ] **Point the site root at the newest release.** A second deploy in the same job writes
+      a root `index.html` redirecting to that release's folder. A prerelease may hold the root,
+      but only until a stable release has ever held it: the rule exists to stop sending a
+      stable reader to an alpha, and until there is a stable release there are no stable
+      readers. Through `0.x` — where betas are what gets validated — that keeps the site's
+      front door reachable instead of a 404. Once a stable release holds the root, a
+      prerelease never takes it back. Ordering is `Tools/bump-version.py`'s `compare_semver`,
+      not `sort -V`, which ranks `1.0.0-rc.1` above `1.0.0`.
 - [ ] **`keep_files` differs between the two deploys, deliberately.** The action's cleanup is
       a `git rm` run with the working directory set to `destination_dir`. For the per-version
       deploy that reaches only this release's folder, which is what stops a type deleted from
