@@ -8,7 +8,7 @@
 
 ### Changed
 
-- The README's install section now leads with DevApp, which installs the package and keeps it on the version the platform expects; the git-URL install stays as the manual alternative. A git-URL install is pinned and Unity offers no update affordance for one, so the recommended path is the one that stays current.
+- The README's install section now leads with DevApp, which installs the package and keeps it on the version the platform expects. The git-URL install stays as the manual alternative, and is pinned: Unity offers no update affordance for one.
 - Documentation, changelog and licence links in the package manifest, and every API reference link in the README, now point into this release's own folder under `https://deadsetbit.github.io/gaming-couch-unity-public/`. Each release's documentation is published separately and is never overwritten, so a pinned install reads the documentation for the version it actually has rather than for whatever shipped most recently.
 - Every documentation page states the version it documents and carries a link to <https://gamingcouch.com>.
 
