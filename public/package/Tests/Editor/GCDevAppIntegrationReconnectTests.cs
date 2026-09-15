@@ -188,6 +188,75 @@ public sealed class GCDevAppIntegrationReconnectTests
         }
     }
 
+    [Test]
+    public void SnapshotPublishingWaitsForTheRegisterToBeQueued()
+    {
+        // An Update that observes the freshly opened socket must not queue a snapshot ahead of
+        // runtime_register: the DevApp discards a snapshot from a runtime it has not registered,
+        // and the snapshot dedupe gate then suppresses every later one.
+        Assert.That(
+            GCDevAppIntegration.CanPublishRuntimeSnapshot(
+                isSocketOpen: true,
+                hasQueuedRuntimeRegister: false,
+                isSnapshotSendPending: false
+            ),
+            Is.False
+        );
+
+        Assert.That(
+            GCDevAppIntegration.CanPublishRuntimeSnapshot(
+                isSocketOpen: true,
+                hasQueuedRuntimeRegister: true,
+                isSnapshotSendPending: false
+            ),
+            Is.True
+        );
+    }
+
+    [Test]
+    public void SnapshotPublishingStaysShutWithoutAnOpenSocketOrWhileASendIsPending()
+    {
+        Assert.That(
+            GCDevAppIntegration.CanPublishRuntimeSnapshot(
+                isSocketOpen: false,
+                hasQueuedRuntimeRegister: true,
+                isSnapshotSendPending: false
+            ),
+            Is.False
+        );
+
+        Assert.That(
+            GCDevAppIntegration.CanPublishRuntimeSnapshot(
+                isSocketOpen: true,
+                hasQueuedRuntimeRegister: true,
+                isSnapshotSendPending: true
+            ),
+            Is.False
+        );
+    }
+
+    [Test]
+    public void ClosingTheSocketReArmsTheRegisterInterlock()
+    {
+        var gameObject = new GameObject("GCDevAppIntegration register interlock test");
+        gameObject.SetActive(false);
+        var integration = gameObject.AddComponent<GCDevAppIntegration>();
+
+        try
+        {
+            SetHasQueuedRuntimeRegister(integration, true);
+
+            InvokePrivateMethod(integration, "CloseWebSocket");
+
+            // Every connection queues its own register, so the gate cannot stay open across one.
+            Assert.That(GetHasQueuedRuntimeRegister(integration), Is.False);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(gameObject);
+        }
+    }
+
     private static GCPlayOptions CreateSinglePlayerPlayOptions()
     {
         return new GCPlayOptions
@@ -271,6 +340,16 @@ public sealed class GCDevAppIntegrationReconnectTests
                 handler => $"{handler.Target?.GetType().FullName ?? "<static>"}.{handler.Method.Name}"
             )
         );
+    }
+
+    private static bool GetHasQueuedRuntimeRegister(GCDevAppIntegration integration)
+    {
+        return (bool)GetPrivateField("hasQueuedRuntimeRegister").GetValue(integration);
+    }
+
+    private static void SetHasQueuedRuntimeRegister(GCDevAppIntegration integration, bool value)
+    {
+        GetPrivateField("hasQueuedRuntimeRegister").SetValue(integration, value);
     }
 
     private static FieldInfo GetPrivateField(string fieldName)

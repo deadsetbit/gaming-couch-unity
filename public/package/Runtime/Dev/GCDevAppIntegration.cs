@@ -39,6 +39,7 @@ namespace DSB.GC.Dev
         private bool isConnecting = false;
         private bool shouldReconnect = true;
         private bool isSnapshotSendPending = false;
+        private bool hasQueuedRuntimeRegister = false;
         private string lastSentSnapshotSignature;
         private RuntimeSnapshotScalars lastSentSnapshotScalars;
         private readonly Queue<OutboundMessage> outboundQueue = new Queue<OutboundMessage>();
@@ -154,14 +155,15 @@ namespace DSB.GC.Dev
             );
         }
 
-        void EnqueueOutboundMessage(OutboundMessage message)
+        bool EnqueueOutboundMessage(OutboundMessage message)
         {
             if (websocket == null || websocket.State != WebSocketState.Open)
             {
-                return;
+                return false;
             }
 
             outboundQueue.Enqueue(message);
+            return true;
         }
 
         IEnumerator PumpOutboundMessages(int epoch)
@@ -271,9 +273,23 @@ namespace DSB.GC.Dev
             EnqueueOutboundMessage(OutboundMessage.Json(runtimeOutputJson));
         }
 
+        // Update() publishes every frame and the socket opens on a background thread, so queue order
+        // alone cannot keep runtime_register first -- an Update that observes the open socket before
+        // ConnectWebSocket resumes would queue a snapshot ahead of it. The DevApp discards a snapshot
+        // from a runtime it has not registered, so the publisher stays shut until the register is queued.
+        internal static bool CanPublishRuntimeSnapshot(
+            bool isSocketOpen,
+            bool hasQueuedRuntimeRegister,
+            bool isSnapshotSendPending
+        )
+        {
+            return isSocketOpen && hasQueuedRuntimeRegister && !isSnapshotSendPending;
+        }
+
         void TryPublishRuntimeSnapshot()
         {
-            if (websocket == null || websocket.State != WebSocketState.Open || isSnapshotSendPending)
+            var isSocketOpen = websocket != null && websocket.State == WebSocketState.Open;
+            if (!CanPublishRuntimeSnapshot(isSocketOpen, hasQueuedRuntimeRegister, isSnapshotSendPending))
             {
                 return;
             }
@@ -367,9 +383,14 @@ namespace DSB.GC.Dev
                 LogWebSocket("Connected.");
                 lastSentSnapshotSignature = null;
                 runtimeInbound.ResetInputSequences();
-                // The queue is FIFO, so registering first keeps the DevApp's ordering contract:
-                // runtime_register before any snapshot.
-                EnqueueOutboundMessage(OutboundMessage.Json(JsonUtility.ToJson(BuildRuntimeRegisterMessage())));
+                // The queue is FIFO, so registering before the gate opens keeps the DevApp's ordering
+                // contract: runtime_register before any snapshot.
+                // Assigned from the enqueue rather than set beside it: the socket can close while the
+                // register is being built, and a gate opened over a dropped register would let the next
+                // connection's first snapshot through alone.
+                hasQueuedRuntimeRegister = EnqueueOutboundMessage(
+                    OutboundMessage.Json(JsonUtility.ToJson(BuildRuntimeRegisterMessage()))
+                );
                 TryPublishRuntimeSnapshot();
                 StartCoroutine(PumpOutboundMessages(epoch));
                 StartCoroutine(ReceiveMessages(epoch));
@@ -661,6 +682,7 @@ namespace DSB.GC.Dev
             // alone: it identifies the run, which outlives a reconnect.
             connectionEpoch += 1;
             lastSentSnapshotSignature = null;
+            hasQueuedRuntimeRegister = false;
             isSnapshotSendPending = false;
             // Queued messages are discarded rather than drained: the socket is going away, the
             // epoch bump has already retired the pump that would send them, and the DevApp drops
