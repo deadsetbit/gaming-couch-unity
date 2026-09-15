@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A game played in the Unity Editor could connect to DevApp and then never become the running game: DevApp stayed on its idle view and phones kept showing "No game running", while scoring and game-over events still arrived in DevApp's runtime console. On a fresh connection the package could send its first runtime snapshot ahead of the `runtime_register` that introduces the runtime, and DevApp discards a snapshot from a runtime it does not yet know. The package's own change detection then saw nothing new to report, so no later snapshot was sent and the runtime stayed connected but unusable for the rest of the session. Snapshots now wait until the register is queued.
+
 ### Added
 
 - The platform runtime contract and the DevApp / local-play contract now ship with the package, under `Documentation~/`, and are linked from the README. They are the JS-to-Unity wire spec and the `gc.dev.json` / `gc.platform.json` spec; previously they were readable only in the package's own repository.
