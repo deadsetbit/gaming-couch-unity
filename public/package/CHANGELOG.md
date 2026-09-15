@@ -2,10 +2,6 @@
 
 ## [Unreleased]
 
-### Fixed
-
-- A game played in the Unity Editor could connect to DevApp and then never become the running game: DevApp stayed on its idle view and phones kept showing "No game running", while scoring and game-over events still arrived in DevApp's runtime console. On a fresh connection the package could send its first runtime snapshot ahead of the `runtime_register` that introduces the runtime, and DevApp discards a snapshot from a runtime it does not yet know. The package's own change detection then saw nothing new to report, so no later snapshot was sent and the runtime stayed connected but unusable for the rest of the session. Snapshots now wait until the register is queued.
-
 ### Added
 
 - The platform runtime contract and the DevApp / local-play contract now ship with the package, under `Documentation~/`, and are linked from the README. They are the JS-to-Unity wire spec and the `gc.dev.json` / `gc.platform.json` spec; previously they were readable only in the package's own repository.
@@ -15,6 +11,10 @@
 - The README's install section now leads with DevApp, which installs the package and keeps it on the version the platform expects. The git-URL install stays as the manual alternative, and is pinned: Unity offers no update affordance for one.
 - Documentation, changelog and licence links in the package manifest, and every API reference link in the README, now point into this release's own folder under `https://deadsetbit.github.io/gaming-couch-unity-public/`. Each release's documentation is published separately and is never overwritten, so a pinned install reads the documentation for the version it actually has rather than for whatever shipped most recently.
 - Every documentation page states the version it documents and carries a link to <https://gamingcouch.com>.
+
+### Fixed
+
+- Fixed a game played in the Unity Editor connecting to DevApp and then never becoming the running game: DevApp stayed on its idle view and phones kept showing "No game running", while scoring and game-over events still arrived in DevApp's runtime console. On a fresh connection the package could send its first runtime snapshot ahead of the `runtime_register` that introduces the runtime, and DevApp discards a snapshot from a runtime it does not yet know. The package's own change detection then saw nothing new to report, so no later snapshot was sent and the runtime stayed connected but unusable for the rest of the session. Snapshots now wait until the register is queued.
 
 ## [0.1.0-alpha.7] - 2026-09-10
 
