@@ -22,10 +22,13 @@ Installed that way the version is pinned, and you move to a newer release by edi
 
 ## Documentation
 
-The manual for the newest release is at
-https://deadsetbit.github.io/gaming-couch-unity-public/latest/. Every release also keeps its
-own folder, named by version without the tag's `unity-` prefix, for example
-https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.11/.
+The manual for the newest release:
+
+https://deadsetbit.github.io/gaming-couch-unity-public/latest/
+
+Every release also keeps its own folder, named by version without the tag's `unity-` prefix:
+
+https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.11/
 
 ## What is in this repository
 
