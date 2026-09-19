@@ -111,6 +111,7 @@ package.json (dev scripts only)     │      publish ONLY that tag with a scoped
 | Bot identity | `gaming-couch-bot <bot@deadsetbit.com>` |
 | Docs site root | `https://deadsetbit.github.io/gaming-couch-unity-public/` |
 | Docs folder for a release | `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/` |
+| Docs folder for the newest release | `https://deadsetbit.github.io/gaming-couch-unity-public/latest/` |
 | Docs version manifest | `https://deadsetbit.github.io/gaming-couch-unity-public/versions.json` |
 | Permanent link home baked into every page | `https://gamingcouch.com` |
 
@@ -448,6 +449,14 @@ A release's documentation URL is frozen into an immutable tag, so a URL naming a
 rather than a version would point a pinned consumer at a moving target for as long as that
 release exists. The cost is one folder per release, including per alpha; the alternative
 cannot be corrected after the fact.
+
+Beside those folders, `latest/` is a copy of whichever release currently holds the site root,
+re-addressed to its own path. It is for links people share: a version folder's URL ages out
+with the release, and the site root cannot stand in for it, a meta refresh dropping the
+fragment and landing the reader at the top of the page. Nothing a release ships points at it.
+The copy costs almost nothing to store: everything in it but the re-addressed files is
+byte-identical to the versioned path, so the deploy writes new tree objects and reuses those
+blobs.
 
 Each page carries the version it documents, a link home, and the address of a version
 manifest at the site root. Those three are baked into the HTML because a published page is
