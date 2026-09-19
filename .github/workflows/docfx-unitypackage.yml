@@ -33,6 +33,11 @@ env:
   # because the URL is frozen into an immutable tag and the plan forbids republishing. The
   # site root redirects to the newest release, except that once a stable release has held it
   # a prerelease never takes it back — see the decision step for why.
+  #
+  # The same release is copied to latest/, which is the address a link shared in a ticket or
+  # a chat should use: a version folder's URL ages out with the release, and the site root
+  # cannot stand in for it because a meta refresh drops the fragment and lands the reader at
+  # the top of the page instead of the section they were sent to.
   DOCS_SITE_ROOT: https://deadsetbit.github.io/gaming-couch-unity-public/
   # A link, never a fetch, so it needs no CORS and no uptime from the docs host and still
   # works from a page whose site has been retired.
@@ -63,6 +68,15 @@ jobs:
           # The tag pattern above already limits this to one safe path segment: it must open
           # with an alphanumeric, so it can be neither empty nor a traversal.
           version="${tag#unity-}"
+
+          # It must also not be the alias folder's name. The per-version deploy below writes
+          # to a folder named for the version and sweeps it first, so `unity-latest` would
+          # take out the alias before anything here parses a version. bump-version.py already
+          # treats `latest` as a channel name rather than a release.
+          if [ "$version" = "latest" ]; then
+            echo "::error::'$tag' names the documentation alias, not a release."
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "base_url=${DOCS_SITE_ROOT}${version}/" >> "$GITHUB_OUTPUT"
 
@@ -126,7 +140,7 @@ jobs:
       # base_url is this release's own folder; site_root_url is the root above it, shared by
       # every release, and is what the version manifest is resolved against.
       - name: Build
-        uses: deadsetbit/docfx-unitypackage@v1.3.0
+        uses: deadsetbit/docfx-unitypackage@v1.5.0
         with:
           base_url: ${{ steps.release.outputs.base_url }}
           site_root_url: ${{ env.DOCS_SITE_ROOT }}
@@ -174,6 +188,52 @@ jobs:
           test "$checked" -gt 0 || { echo "::error::no pages were built."; exit 1; }
           test "$missing" -eq 0 || exit 1
           echo "$checked pages carry this release's version, manifest URL and link home."
+
+      # The canonical is the one address in the build that deliberately does not name this
+      # release. It names latest/, because that is what still resolves once this release is
+      # superseded, and this page will never be rebuilt to say so.
+      - name: Assert every page's canonical names the moving alias
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          import sys
+          import urllib.parse
+
+          alias = os.environ["DOCS_SITE_ROOT"] + "latest/"
+          # Unquoting is the exact inverse of what the action writes, so this needs no copy of
+          # its encoding rules to check a path that carries a character needing them.
+          canonical = re.compile(r'<link rel="canonical" href="([^"]*)">')
+
+          checked = 0
+          wrong = 0
+          for page in sorted(pathlib.Path("_site").rglob("*.html")):
+              relative = page.relative_to("_site").as_posix()
+              text = page.read_text(encoding="utf-8")
+              # The same test the action writes by, so the two cannot disagree about which
+              # files should carry a canonical. A toc.html is a navigation fragment, has no
+              # head, and gets none.
+              if "</head>" not in text:
+                  continue
+              checked += 1
+              found = canonical.findall(text)
+              if len(found) != 1:
+                  print("::error::{0} carries {1} canonical links.".format(relative, len(found)))
+                  wrong += 1
+                  continue
+              if urllib.parse.unquote(found[0]) != alias + relative:
+                  print("::error::{0} names {1}.".format(relative, found[0]))
+                  wrong += 1
+
+          if checked == 0:
+              print("::error::no pages were built.")
+              sys.exit(1)
+          if wrong:
+              sys.exit(1)
+          print("{0} pages name their own path under {1}".format(checked, alias))
+          PY
 
       # No keep_files: the action's cleanup is a `git rm` run with the working directory set
       # to destination_dir, so it can reach only this version's folder. Leaving it off is what
@@ -281,6 +341,87 @@ jobs:
           decide(False, "Site root stays at {0}; {1} is not ahead of it.".format(current, version))
           PY
 
+      # Which release holds the alias is the root decision, not a second rule of its own: the
+      # two answer the same question, and two answers that could disagree is one more way for
+      # a reader to be sent somewhere wrong.
+      - name: Stage this release as the latest alias
+        shell: bash
+        if: steps.root.outputs.take == 'true'
+        env:
+          BASE_URL: ${{ steps.release.outputs.base_url }}
+        run: |
+          rm -rf _latest
+          cp -R _site _latest
+
+          # Most of the build is relative and copies unchanged. What is not is everything
+          # naming this release's own folder outright: the sitemap's entries, the folder's
+          # entry-point redirect, and the API-reference links bump-version.py bakes into the
+          # shipped markdown, which become the manual page. Left alone, opening /latest/ or
+          # following a link from its manual drops the reader into the pinned folder.
+          #
+          # Rewritten by content rather than file by file, so a later build that bakes the
+          # base URL somewhere new is covered without this step being taught where. Bytes,
+          # not text: the copy carries fonts and images as well as pages.
+          ALIAS_URL="${DOCS_SITE_ROOT}latest/" python3 - <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          base = os.environ["BASE_URL"].encode()
+          alias = os.environ["ALIAS_URL"].encode()
+
+          rewritten = []
+          leaked = []
+          for path in sorted(pathlib.Path("_latest").rglob("*")):
+              if not path.is_file():
+                  continue
+              name = path.relative_to("_latest").as_posix()
+              raw = path.read_bytes()
+              if base in raw:
+                  raw = raw.replace(base, alias)
+                  path.write_bytes(raw)
+                  rewritten.append(name)
+              # Searching for the plain form again could only confirm itself, the replace
+              # above being total. What it cannot reach is the same URL written with escapes,
+              # which is how a JSON string carries one, and which would ship for good.
+              if base in raw.replace(b"\\", b""):
+                  leaked.append(name)
+
+          # The build is refused before it is deployed unless both of these name this
+          # release's folder, so a run where either did not change is a run where the rewrite
+          # matched something other than what it was aimed at.
+          for required in ("sitemap.xml", "index.html"):
+              if required not in rewritten:
+                  print("::error::{0} did not name this release's folder.".format(required))
+                  sys.exit(1)
+
+          if leaked:
+              print("::error::the alias still names this release's folder in: {0}".format(", ".join(leaked)))
+              sys.exit(1)
+
+          print("re-addressed to {0}: {1}".format(os.environ["ALIAS_URL"], ", ".join(rewritten)))
+          PY
+
+      # Same reason as before the site-root publish below.
+      - name: Free the ssh-agent socket before the alias deploy
+        if: steps.root.outputs.take == 'true'
+        run: |
+          pkill -f 'ssh-agent -a /tmp/ssh-auth.sock' || true
+          rm -f /tmp/ssh-auth.sock
+
+      # No keep_files, for the reason the per-version deploy gives above: the cleanup reaches
+      # only destination_dir. That is what makes the alias the previous release swept away and
+      # replaced, rather than this release's pages laid over it.
+      - name: Deploy the latest alias
+        if: steps.root.outputs.take == 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          external_repository: ${{ env.PUBLIC_REPO }}
+          deploy_key: ${{ secrets.GAMING_COUCH_UNITY_PUBLIC_DEPLOY_KEY }}
+          publish_branch: gh-pages
+          publish_dir: _latest
+          destination_dir: latest
+
       - name: Compose the site root redirect
         if: steps.root.outputs.take == 'true'
         env:
@@ -320,7 +461,8 @@ jobs:
             echo "::error::could not list the published site root (HTTP $code)."
             exit 1
           fi
-          # A folder per release, so the directories at the root are the published versions.
+          # A folder per release, so the directories at the root are the published versions,
+          # plus the latest/ alias, which build-versions-manifest.py drops as not a version.
           published=$(mktemp)
           jq -r '.[] | select(.type == "dir") | .name' "$listing" > "$published"
 
@@ -346,10 +488,10 @@ jobs:
             > _root/versions.json
           cat _root/versions.json
 
-      # actions-gh-pages starts its ssh-agent on a fixed socket path, so the agent the
-      # per-version deploy left behind holds the path this one needs. Two deploys in one job
-      # is the shape that hits it, and every release that takes the root is that shape.
-      - name: Free the ssh-agent socket the per-version deploy left bound
+      # actions-gh-pages starts its ssh-agent on a fixed socket path, so the agent the deploy
+      # before this one left behind holds the path it needs. More than one deploy in a job is
+      # the shape that hits it, and every release is that shape.
+      - name: Free the ssh-agent socket before the site-root publish
         run: |
           pkill -f 'ssh-agent -a /tmp/ssh-auth.sock' || true
           rm -f /tmp/ssh-auth.sock

@@ -111,6 +111,7 @@ package.json (dev scripts only)     │      publish ONLY that tag with a scoped
 | Bot identity | `gaming-couch-bot <bot@deadsetbit.com>` |
 | Docs site root | `https://deadsetbit.github.io/gaming-couch-unity-public/` |
 | Docs folder for a release | `https://deadsetbit.github.io/gaming-couch-unity-public/<version>/` |
+| Docs folder for the newest release | `https://deadsetbit.github.io/gaming-couch-unity-public/latest/` |
 | Docs version manifest | `https://deadsetbit.github.io/gaming-couch-unity-public/versions.json` |
 | Permanent link home baked into every page | `https://gamingcouch.com` |
 
@@ -449,10 +450,19 @@ rather than a version would point a pinned consumer at a moving target for as lo
 release exists. The cost is one folder per release, including per alpha; the alternative
 cannot be corrected after the fact.
 
-Each page carries the version it documents, a link home, and the address of a version
-manifest at the site root. Those three are baked into the HTML because a published page is
-never rewritten; everything the banner says is read from the manifest, which is the one
-mutable file and can change for pages published years earlier.
+Beside those folders, `latest/` is a copy of whichever release currently holds the site root,
+re-addressed to its own path. It is for links people share: a version folder's URL ages out
+with the release, and the site root cannot stand in for it, a meta refresh dropping the
+fragment and landing the reader at the top of the page. No URL frozen into a release's
+manifest names it; a moving target is the one thing those must not be.
+The copy costs almost nothing to store: everything in it but the re-addressed files is
+byte-identical to the versioned path, so the deploy writes new tree objects and reuses those
+blobs.
+
+Each page carries the version it documents, a link home, the address of a version manifest at
+the site root, and a canonical naming its own path under `latest/`. Those four are baked into
+the HTML because a published page is never rewritten; everything the banner says is read from
+the manifest, which is the one mutable file and can change for pages published years earlier.
 
 ## Phase 7 — Go-private cutover · **human**
 
