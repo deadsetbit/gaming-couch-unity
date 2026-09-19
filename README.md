@@ -6,15 +6,21 @@ you install the package from.
 ## Where the package comes from
 
 Every release is published to the public mirror,
-https://github.com/deadsetbit/gaming-couch-unity-public, as a standalone snapshot with the
-package contents at the repository root. That is the git URL Unity installs:
+https://github.com/deadsetbit/gaming-couch-unity-public, as a standalone snapshot tagged
+`unity-<version>`, with the package contents at the repository root. The releases are the
+tags. The mirror's `main` branch holds a landing page and no package manifest, so an install
+URL without a tag fails rather than tracking whatever shipped last.
+
+Unity installs one tag, picked from the
+[mirror's tag list](https://github.com/deadsetbit/gaming-couch-unity-public/tags):
 
 ```
 https://github.com/deadsetbit/gaming-couch-unity-public.git#unity-<version>
 ```
 
-DevApp installs the package for you and keeps it on the version the platform expects. The
-manual covers that path and the manual install.
+Installed that way the version is pinned, and you move to a newer release by editing the tag.
+DevApp does all of this for you and keeps the package on the version the platform expects. The
+manual covers both paths.
 
 ## Documentation
 
