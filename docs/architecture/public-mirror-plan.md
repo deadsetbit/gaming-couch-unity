@@ -451,7 +451,7 @@ release exists. The cost is one folder per release, including per alpha; the alt
 cannot be corrected after the fact.
 
 Beside those folders, `latest/` is a copy of whichever release currently holds the site root,
-re-addressed to its own path. It is for links people share: a version folder's URL ages out
+re-addressed to its own path, rewritten whenever that release is published or republished. It is for links people share: a version folder's URL ages out
 with the release, and the site root cannot stand in for it, a meta refresh dropping the
 fragment and landing the reader at the top of the page. No URL frozen into a release's
 manifest names it; a moving target is the one thing those must not be.

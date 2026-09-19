@@ -336,8 +336,17 @@ jobs:
           if not current_parts[3] and bump.parse_semver(version)[3]:
               decide(False, "Site root stays at {0}; a prerelease does not displace a stable release.".format(current))
 
-          if bump.compare_semver(version, current) > 0:
+          order = bump.compare_semver(version, current)
+          if order > 0:
               decide(True, "Site root moves from {0} to {1}.".format(current, version))
+
+          # Equal counts. Rebuilding the release that already holds the root is how a bad docs
+          # build is repaired, and the alias is what most needs the repair: skipping it there
+          # leaves latest/ on the build being replaced. The root redirect it also gates is
+          # rewritten to the address it already names, which changes nothing.
+          if order == 0:
+              decide(True, "Site root stays at {0}, republished.".format(current))
+
           decide(False, "Site root stays at {0}; {1} is not ahead of it.".format(current, version))
           PY
 
