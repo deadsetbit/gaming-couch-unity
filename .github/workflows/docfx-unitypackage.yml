@@ -68,6 +68,15 @@ jobs:
           # The tag pattern above already limits this to one safe path segment: it must open
           # with an alphanumeric, so it can be neither empty nor a traversal.
           version="${tag#unity-}"
+
+          # It must also not be the alias folder's name. The per-version deploy below writes
+          # to a folder named for the version and sweeps it first, so `unity-latest` would
+          # take out the alias before anything here parses a version. bump-version.py already
+          # treats `latest` as a channel name rather than a release.
+          if [ "$version" = "latest" ]; then
+            echo "::error::'$tag' names the documentation alias, not a release."
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "base_url=${DOCS_SITE_ROOT}${version}/" >> "$GITHUB_OUTPUT"
 
@@ -186,7 +195,6 @@ jobs:
       - name: Assert every page's canonical names the moving alias
         shell: bash
         run: |
-          set -euo pipefail
           python3 - <<'PY'
           import os
           import pathlib
@@ -204,9 +212,9 @@ jobs:
           for page in sorted(pathlib.Path("_site").rglob("*.html")):
               relative = page.relative_to("_site").as_posix()
               text = page.read_text(encoding="utf-8")
-              # Having a head is what makes a file a page, and it is the same test the action
-              # writes by. A toc.html is a navigation fragment and has none. Two rules for the
-              # same question could disagree and leave a page unchecked.
+              # The same test the action writes by, so the two cannot disagree about which
+              # files should carry a canonical. A toc.html is a navigation fragment, has no
+              # head, and gets none.
               if "</head>" not in text:
                   continue
               checked += 1
@@ -337,23 +345,23 @@ jobs:
       # two answer the same question, and two answers that could disagree is one more way for
       # a reader to be sent somewhere wrong.
       - name: Stage this release as the latest alias
-        if: steps.root.outputs.take == 'true'
         shell: bash
+        if: steps.root.outputs.take == 'true'
         env:
           BASE_URL: ${{ steps.release.outputs.base_url }}
         run: |
-          set -euo pipefail
           rm -rf _latest
           cp -R _site _latest
 
-          # Every link inside the build is relative and copies unchanged. What does not is
-          # whatever names this release's own folder outright: the sitemap's <loc> entries,
-          # and the folder's entry-point redirect, which would otherwise bounce anyone opening
-          # /latest/ straight into the pinned version they were trying not to link to.
+          # Most of the build is relative and copies unchanged. What is not is everything
+          # naming this release's own folder outright: the sitemap's entries, the folder's
+          # entry-point redirect, and the API-reference links bump-version.py bakes into the
+          # shipped markdown, which become the manual page. Left alone, opening /latest/ or
+          # following a link from its manual drops the reader into the pinned folder.
           #
           # Rewritten by content rather than file by file, so a later build that bakes the
-          # base URL somewhere new is covered without this step being taught where. Bytes, not
-          # text: the copy carries fonts and images as well as pages.
+          # base URL somewhere new is covered without this step being taught where. Bytes,
+          # not text: the copy carries fonts and images as well as pages.
           ALIAS_URL="${DOCS_SITE_ROOT}latest/" python3 - <<'PY'
           import os
           import pathlib
@@ -363,50 +371,47 @@ jobs:
           alias = os.environ["ALIAS_URL"].encode()
 
           rewritten = []
+          leaked = []
           for path in sorted(pathlib.Path("_latest").rglob("*")):
               if not path.is_file():
                   continue
+              name = path.relative_to("_latest").as_posix()
               raw = path.read_bytes()
-              if base not in raw:
-                  continue
-              path.write_bytes(raw.replace(base, alias))
-              rewritten.append(path.relative_to("_latest").as_posix())
+              if base in raw:
+                  raw = raw.replace(base, alias)
+                  path.write_bytes(raw)
+                  rewritten.append(name)
+              # Searching for the plain form again could only confirm itself, the replace
+              # above being total. What it cannot reach is the same URL written with escapes,
+              # which is how a JSON string carries one, and which would ship for good.
+              if base in raw.replace(b"\\", b""):
+                  leaked.append(name)
 
-          # The sitemap is the one file that must have changed. Nothing else in the build is
-          # guaranteed to name the release's folder, so it is the only reliable proof the
-          # rewrite ran against the right string at all.
-          if "sitemap.xml" not in rewritten:
-              print("::error::the copied sitemap does not name this release's folder, so nothing was re-addressed.")
+          # The build is refused before it is deployed unless both of these name this
+          # release's folder, so a run where either did not change is a run where the rewrite
+          # matched something other than what it was aimed at.
+          for required in ("sitemap.xml", "index.html"):
+              if required not in rewritten:
+                  print("::error::{0} did not name this release's folder.".format(required))
+                  sys.exit(1)
+
+          if leaked:
+              print("::error::the alias still names this release's folder in: {0}".format(", ".join(leaked)))
               sys.exit(1)
 
           print("re-addressed to {0}: {1}".format(os.environ["ALIAS_URL"], ", ".join(rewritten)))
           PY
 
-          # Nothing may name the version folder afterwards: a single missed absolute URL drops
-          # the reader out of the alias and back into a release that ages out.
-          if grep -rqF "$BASE_URL" _latest; then
-            echo "::error::the latest alias still names $BASE_URL:"
-            grep -rlF "$BASE_URL" _latest
-            exit 1
-          fi
-
-          grep -qF "${DOCS_SITE_ROOT}latest/" _latest/sitemap.xml || {
-            echo "::error::the copied sitemap does not list latest/ URLs."
-            exit 1
-          }
-
-      # Freed for the same reason as before the site-root publish below: actions-gh-pages
-      # starts its ssh-agent on a fixed socket path, and the per-version deploy left one bound.
+      # Same reason as before the site-root publish below.
       - name: Free the ssh-agent socket before the alias deploy
         if: steps.root.outputs.take == 'true'
         run: |
           pkill -f 'ssh-agent -a /tmp/ssh-auth.sock' || true
           rm -f /tmp/ssh-auth.sock
 
-      # No keep_files, like the per-version deploy and for the same reason: the cleanup runs
-      # with the working directory set to destination_dir, so it can reach only latest/. That
-      # is what makes the alias the previous release's folder swept away and replaced, rather
-      # than this release's pages laid on top of it.
+      # No keep_files, for the reason the per-version deploy gives above: the cleanup reaches
+      # only destination_dir. That is what makes the alias the previous release swept away and
+      # replaced, rather than this release's pages laid over it.
       - name: Deploy the latest alias
         if: steps.root.outputs.take == 'true'
         uses: peaceiris/actions-gh-pages@v3
