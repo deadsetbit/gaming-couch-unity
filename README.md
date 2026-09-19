@@ -22,10 +22,8 @@ Installed that way the version is pinned, and you move to a newer release by edi
 
 ## Documentation
 
-[The manual](https://deadsetbit.github.io/gaming-couch-unity-public/latest/) takes a game
-developer from install and setup through players, inputs, the HUD, game flow, and building and
-uploading, with the generated API reference beside it. It documents the newest release, and
-every page can switch to the documentation for an older one.
+The manual for the newest release is at
+https://deadsetbit.github.io/gaming-couch-unity-public/latest/.
 
 ## What is in this repository
 
