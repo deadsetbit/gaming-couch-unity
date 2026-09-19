@@ -37,10 +37,15 @@ Requires Unity 6000.0 or newer.
 
 ## Documentation
 
-[The manual](https://deadsetbit.github.io/gaming-couch-unity-public/) is the guide for game
-developers, from install and quick setup through players, inputs, the HUD, game flow, and
-building and uploading. It carries the generated API reference alongside it, and every page
-lets you switch to the documentation for an older release.
+The manual for the newest release is at
+<https://deadsetbit.github.io/gaming-couch-unity-public/latest/>. It is the guide for game
+developers, covering install, quick setup, players, inputs, the HUD, game flow, and building
+and uploading, with the generated API reference alongside it.
+
+Each release also keeps its own copy under its version number, so a pinned install reads the
+documentation for the version it actually has:
+<https://deadsetbit.github.io/gaming-couch-unity-public/0.1.0-alpha.11/>. Those addresses are
+never rewritten, and every page has a picker for switching between releases.
 
 ## License
 
