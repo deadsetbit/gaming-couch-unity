@@ -19,8 +19,6 @@ https://github.com/deadsetbit/gaming-couch-unity-public.git#unity-<version>
 ```
 
 Installed that way the version is pinned, and you move to a newer release by editing the tag.
-DevApp does all of this for you and keeps the package on the version the platform expects. The
-manual covers both paths.
 
 ## Documentation
 
