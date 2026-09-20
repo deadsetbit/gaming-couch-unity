@@ -240,10 +240,12 @@ namespace DSB.GC
 #endif
         }
 
+#if UNITY_EDITOR
         private void Update()
         {
             HandleEditorInputs();
         }
+#endif
 
         private void LateUpdate()
         {
@@ -1083,30 +1085,34 @@ namespace DSB.GC
 #pragma warning restore 0169, 0414
         #endregion
 
-        [Header("Editor keyboard controls (Unity Input System map)")]
+        [Header("Editor keyboard controls (Input Manager axis names)")]
 
         #region Editor keyboard controls
+        // The fields stay serialized in every build so scenes keep their values, but only the
+        // editor-only reader below consumes them.
+#pragma warning disable 0414
         [SerializeField]
         private bool useKeyboardControls = true;
         [SerializeField]
         [FormerlySerializedAs("a0")]
-        [Tooltip("Left stick X-axis for editor testing. Default: 'Horizontal'")]
+        [Tooltip("Input Manager axis for the left stick X-axis in editor testing. Ignored when the project reads the Input System package. Default: 'Horizontal'")]
         private string axisX = "Horizontal";
         [SerializeField]
         [FormerlySerializedAs("a1")]
-        [Tooltip("Left stick Y-axis for editor testing. Default: 'Vertical'")]
+        [Tooltip("Input Manager axis for the left stick Y-axis in editor testing. Ignored when the project reads the Input System package. Default: 'Vertical'")]
         private string axisY = "Vertical";
         [SerializeField]
         [FormerlySerializedAs("b0")]
-        [Tooltip("Unity Input keyboard input 'primary' action button (A on Xbox controller). Default: 'Jump'")]
+        [Tooltip("Input Manager button for the 'primary' action (A on Xbox controller). Ignored when the project reads the Input System package. Default: 'Jump'")]
         private string buttonPrimary = "Jump";
         [SerializeField]
         [FormerlySerializedAs("b1")]
-        [Tooltip("Unity Input keyboard input 'secondary' action button (B on Xbox controller). Default: 'Fire1'")]
+        [Tooltip("Input Manager button for the 'secondary' action (B on Xbox controller). Ignored when the project reads the Input System package. Default: 'Fire1'")]
         private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
         private int editorControlPlayerIndex = 0;
+#pragma warning restore 0414
 
         private static bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
         {
@@ -1173,9 +1179,10 @@ namespace DSB.GC
             gameFacingInputsByPlayerIndex[playerIndex] = new GCControllerInputs(finalInputsData);
         }
 
+#if UNITY_EDITOR
         private void HandleEditorInputs()
         {
-            if (!Application.isEditor || !Application.isPlaying)
+            if (!Application.isPlaying)
             {
                 return;
             }
@@ -1185,7 +1192,7 @@ namespace DSB.GC
 
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
-                if (Input.GetKeyDown((i + 1).ToString()))
+                if (GCEditorKeyboard.IsPlayerSelectKeyDown(i))
                 {
                     editorControlPlayerIndex = i;
                 }
@@ -1199,13 +1206,7 @@ namespace DSB.GC
             GCControllerInputsData keyboardInputsData = null;
             if (useKeyboardControls)
             {
-                keyboardInputsData = new GCControllerInputsData
-                {
-                    a0 = Input.GetAxis(axisX),
-                    a1 = Input.GetAxis(axisY),
-                    b0 = Input.GetButton(buttonPrimary) ? 1 : 0,
-                    b1 = Input.GetButton(buttonSecondary) ? 1 : 0,
-                };
+                keyboardInputsData = GCEditorKeyboard.Read(axisX, axisY, buttonPrimary, buttonSecondary);
             }
 
             if (keyboardInputsData == null && !externalInputsByPlayerIndex.ContainsKey(player.Index))
@@ -1221,6 +1222,7 @@ namespace DSB.GC
                 axisDeadzone: INPUT_AXIS_INNER_DEADZONE
             );
         }
+#endif
         #endregion
 
         #region Other public methods

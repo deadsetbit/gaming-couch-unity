@@ -259,6 +259,25 @@ private void Update()
 > occasional actions like "reset player" when stuck. It also has **no keyboard mapping in the editor**,
 > so you cannot exercise it during local editor play — design your game to work without it.
 
+### The editor playtest keyboard
+
+Your game never reads Unity input for players. The platform and the DevApp deliver it as data, and the
+only keyboard the package itself reads is the one that drives a player during editor play. Number keys
+`1`–`8` choose which player it drives.
+
+Which keys that keyboard uses follows your project's **Active Input Handling**, and the setting is yours
+to pick. The package compiles and playtests under Old, New, and Both, and nothing in Quick Setup reads
+or writes it.
+
+- With `com.unity.inputsystem` installed and Active Input Handling set to New or Both, the keyboard is
+  WASD and the arrow keys, `Space` for primary and `Left Ctrl` for secondary.
+- Otherwise it reads the Input Manager, using the axis and button names set on the `GamingCouch`
+  component. Those default to `Horizontal`, `Vertical`, `Jump` and `Fire1`.
+
+Set Active Input Handling to New without installing `com.unity.inputsystem` and there is no keyboard to
+read. The editor keyboard is then unavailable, and the package logs why the first time you enter play
+mode. DevApp controllers still work.
+
 ## Player placement
 
 You do not sort players yourself. Define the ranking in `SetupGameVersus` via `placementCriteria`, then
@@ -375,6 +394,9 @@ When you are ready to build for Gaming Couch:
 Online multiplayer is not currently supported.
 
 To test online it can be feasible over screen sharing in discord, google meet, etc. for this, you can share the mobile controller from the Gaming Couch DevApp or upload the build to gaming couch.
+
+**Which Active Input Handling should my project use?**
+Any of the three. See [The editor playtest keyboard](#the-editor-playtest-keyboard) for what changes.
 
 **Can I test the HUD in the editor?**
 Currently no. The HUD is rendered by the hosted platform, so it only appears when your game runs inside Gaming

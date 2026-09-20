@@ -60,19 +60,33 @@ namespace DSB.GC.Dev
         private void Update()
         {
             HandleFluctuateFps();
-            HandlePlayModeRestart();
         }
 
+        // Every shortcut reads the IMGUI key event rather than UnityEngine.Input, so the package
+        // compiles and playtests under any Active Input Handling setting.
         void OnGUI()
         {
 #if UNITY_EDITOR
             Event e = Event.current;
             if (e.isKey && e.type == EventType.KeyDown)
             {
-                HandleTimeScale(e.keyCode);
+                HandleShortcut(e.keyCode, e.shift);
             }
 #endif
         }
+
+#if UNITY_EDITOR
+        private void HandleShortcut(KeyCode keyCode, bool shiftHeld)
+        {
+            if (keyCode == KeyCode.F7)
+            {
+                enableFluctuateFps = (FluctuateFpsMode)(((int)enableFluctuateFps + 1) % 3);
+            }
+
+            HandleTimeScale(keyCode, shiftHeld);
+            HandlePlayModeRestart(keyCode);
+        }
+#endif
 
         private bool ShouldFluctuateFps()
         {
@@ -91,13 +105,6 @@ namespace DSB.GC.Dev
 
         private void HandleFluctuateFps()
         {
-#if UNITY_EDITOR
-            if (Input.GetKeyDown(KeyCode.F7))
-            {
-                enableFluctuateFps = (FluctuateFpsMode)(((int)enableFluctuateFps + 1) % 3);
-            }
-#endif
-
             bool shouldFluctuate = ShouldFluctuateFps();
 
             if (shouldFluctuate && fluctuateMaxMsPerFrame > 0)
@@ -160,7 +167,7 @@ namespace DSB.GC.Dev
             Time.timeScale = nextPaused ? 0.0f : Mathf.Max(previouslySetTimescale, 0.1f);
         }
 
-        private void HandleTimeScale(KeyCode keyCode)
+        private void HandleTimeScale(KeyCode keyCode, bool shiftHeld)
         {
 #if UNITY_EDITOR
             if (!enableTimeScaleShortcuts)
@@ -183,7 +190,7 @@ namespace DSB.GC.Dev
             if (keyCode == togglePausePrimary || keyCode == togglePauseAlternative)
             {
                 var isPaused = IsPaused();
-                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                if (shiftHeld)
                 {
                     if (isPaused)
                     {
@@ -213,9 +220,9 @@ namespace DSB.GC.Dev
 #endif
         }
 
-        private void HandlePlayModeRestart()
+        private void HandlePlayModeRestart(KeyCode keyCode)
         {
-            if (Input.GetKeyDown(playModeRestartKey) && GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
+            if (keyCode == playModeRestartKey && GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
             {
                 if (enablePlayModeRestart)
                 {
