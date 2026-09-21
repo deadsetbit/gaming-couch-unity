@@ -11,14 +11,16 @@ namespace DSB.GC.Dev
     /// </summary>
     internal static class GCSeatNumbering
     {
+        /// <summary>The seat the editor keyboard drives unless the developer picks another.</summary>
+        internal const int PreferredDefaultSeatNumber = 1;
+
         /// <summary>
         /// The seat number for a player index. A run that carries no local seat identity, which is
         /// how a hosted-shaped payload arrives, is numbered by position instead.
         /// </summary>
-        internal static int GetSeatNumber(GCSeatIdentity[] mappedSeatIdentities, int playerIndex)
+        internal static int GetSeatNumber(GCSeatIdentity seatIdentity, int playerIndex)
         {
-            var sourceSeatIndex = mappedSeatIdentities[playerIndex].sourceSeatIndex;
-            return sourceSeatIndex > 0 ? sourceSeatIndex : playerIndex + 1;
+            return seatIdentity.sourceSeatIndex > 0 ? seatIdentity.sourceSeatIndex : playerIndex + 1;
         }
 
         /// <summary>
@@ -30,20 +32,39 @@ namespace DSB.GC.Dev
             out int playerIndex
         )
         {
-            if (mappedSeatIdentities != null)
+            for (var index = 0; index < mappedSeatIdentities.Length; index++)
             {
-                for (var index = 0; index < mappedSeatIdentities.Length; index++)
+                if (GetSeatNumber(mappedSeatIdentities[index], index) == seatNumber)
                 {
-                    if (GetSeatNumber(mappedSeatIdentities, index) == seatNumber)
-                    {
-                        playerIndex = index;
-                        return true;
-                    }
+                    playerIndex = index;
+                    return true;
                 }
             }
 
             playerIndex = -1;
             return false;
+        }
+
+        /// <summary>
+        /// Seat 1, or the lowest seat number the run does have. A seat keeps its number when it is
+        /// disabled in DevApp, so a run can start at seat 2 and have no seat 1 at all.
+        /// </summary>
+        internal static int ResolveDefaultSeatNumber(GCSeatIdentity[] mappedSeatIdentities)
+        {
+            var lowestSeatNumber = PreferredDefaultSeatNumber;
+            var hasSeat = false;
+
+            for (var index = 0; index < mappedSeatIdentities.Length; index++)
+            {
+                var seatNumber = GetSeatNumber(mappedSeatIdentities[index], index);
+                if (!hasSeat || seatNumber < lowestSeatNumber)
+                {
+                    lowestSeatNumber = seatNumber;
+                    hasSeat = true;
+                }
+            }
+
+            return hasSeat ? lowestSeatNumber : PreferredDefaultSeatNumber;
         }
     }
 }

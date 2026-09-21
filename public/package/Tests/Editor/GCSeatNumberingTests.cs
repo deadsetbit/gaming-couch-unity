@@ -21,6 +21,7 @@ public sealed class GCSeatNumberingTests
     [TearDown]
     public void TearDown()
     {
+        GCDevAppRuntimeOutputSettings.ResetForTests();
         GCRuntimeMessageOutput.ResetForTests(null);
         GCLog.logLevel = LogLevel.None;
     }
@@ -35,11 +36,12 @@ public sealed class GCSeatNumberingTests
             var seatIdentities = CreateRun(SeedsThatShuffleDifferently[index]);
 
             Assert.That(
-                GCSeatNumbering.TryGetPlayerIndex(
-                    seatIdentities,
-                    GamingCouch.DefaultEditorControlSeatNumber,
-                    out var playerIndex
-                ),
+                GCSeatNumbering.ResolveDefaultSeatNumber(seatIdentities),
+                Is.EqualTo(1),
+                "the default seat moved under seed " + SeedsThatShuffleDifferently[index]
+            );
+            Assert.That(
+                GCSeatNumbering.TryGetPlayerIndex(seatIdentities, 1, out var playerIndex),
                 Is.True,
                 "seat 1 did not resolve under seed " + SeedsThatShuffleDifferently[index]
             );
@@ -96,6 +98,25 @@ public sealed class GCSeatNumberingTests
 
         Assert.That(GCSeatNumbering.TryGetPlayerIndex(seatIdentities, 4, out _), Is.False);
         Assert.That(GCSeatNumbering.TryGetPlayerIndex(seatIdentities, 0, out _), Is.False);
+    }
+
+    // A seat keeps its number when it is disabled in DevApp, so a run need not contain seat 1. The
+    // keyboard has to land on a live seat anyway, or it drives nothing and says nothing.
+    [Test]
+    public void TheDefaultSeatFallsToTheLowestSeatTheRunHas()
+    {
+        var seatIdentities = GCActiveRunProjection.Create(
+            CreatePlayOptions(111, GCPlayerType.player, GCPlayerType.bot),
+            CreateSeatIdentities(
+                (3, GCPlayerType.player, GCPlayerColor.brown),
+                (5, GCPlayerType.bot, GCPlayerColor.green)
+            )
+        ).MappedSeatIdentities;
+
+        var defaultSeatNumber = GCSeatNumbering.ResolveDefaultSeatNumber(seatIdentities);
+
+        Assert.That(defaultSeatNumber, Is.EqualTo(3));
+        Assert.That(GCSeatNumbering.TryGetPlayerIndex(seatIdentities, defaultSeatNumber, out _), Is.True);
     }
 
     // A hosted-shaped run carries no local seat index, and DevApp numbers those seats by position.

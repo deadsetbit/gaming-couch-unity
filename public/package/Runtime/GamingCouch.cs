@@ -451,9 +451,9 @@ namespace DSB.GC
             playOptions = activeRunProjection.GameFacingPlayOptions;
             playSeatIdentities = activeRunProjection.MappedSeatIdentities;
 #if UNITY_EDITOR
-            // Seat selection is per run: a seat number from a previous run may not exist in this
-            // one, and the ticket asks for seat 1 by default in every run.
-            editorControlSeatNumber = DefaultEditorControlSeatNumber;
+            // A seat number from a previous run need not exist in this one, so every run starts on
+            // its own default seat.
+            editorControlSeatNumber = GCSeatNumbering.ResolveDefaultSeatNumber(playSeatIdentities);
 #endif
             GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
             EmitPlatformMetadataDiagnostics(playOptions.platformData);
@@ -1116,8 +1116,11 @@ namespace DSB.GC
         private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
-        internal const int DefaultEditorControlSeatNumber = 1;
-        private int editorControlSeatNumber = DefaultEditorControlSeatNumber;
+#if UNITY_EDITOR
+        // Not serialized, unlike the fields above: which seat the keyboard drives is per session
+        // and per run, and the reader that consumes it is editor-only.
+        private int editorControlSeatNumber = GCSeatNumbering.PreferredDefaultSeatNumber;
+#endif
 #pragma warning restore 0414
 
         private static bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
@@ -1234,10 +1237,7 @@ namespace DSB.GC
             );
         }
 
-        // The number keys pick the seat as DevApp numbers and colours it, not the game-facing
-        // player index, which is a seed-dependent permutation of the seats and so lands somewhere
-        // else on every run. A bot seat is taken over like any other; a seat this run does not have
-        // is reported rather than leaving the keyboard silently where it was.
+        // A bot seat is taken over like any other.
         private void SelectEditorControlSeat(int seatNumber)
         {
             if (!GCSeatNumbering.TryGetPlayerIndex(playSeatIdentities, seatNumber, out var playerIndex))

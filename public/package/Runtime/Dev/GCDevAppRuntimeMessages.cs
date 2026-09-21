@@ -98,7 +98,7 @@ namespace DSB.GC.Dev
             for (var index = 0; index < seatIdentities.Length; index++)
             {
                 var seatIdentity = seatIdentities[index];
-                var seatNumber = GCSeatNumbering.GetSeatNumber(seatIdentities, index);
+                var seatNumber = GCSeatNumbering.GetSeatNumber(seatIdentity, index);
                 seats[index] = new RuntimeSeatMessage
                 {
                     playerIndex = index,
