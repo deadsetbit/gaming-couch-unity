@@ -347,9 +347,12 @@ internal static class GamingCouchStartScreenSetupActions
         );
     }
 
+    // Every result a setup action produces is drawn. Dropping informational ones was what made a
+    // completed action look like nothing happened: the developer pressed a button, the work ran,
+    // and the only trace was a Console line they were not looking at.
     internal static bool ShouldDisplayActionResult(MessageType messageType)
     {
-        return messageType == MessageType.Warning || messageType == MessageType.Error;
+        return messageType != MessageType.None;
     }
 
     internal static string FormatActionMessage(string message, string[] details)
