@@ -787,6 +787,11 @@ internal static class GamingCouchActiveSceneSetup
     // scene a build boots into. The user can still opt in later via "Set up missing pieces".
     internal static GCActiveSceneSetupResult EnsureActiveSceneSetup(bool setFirstBuildSettingsScene)
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return BlockedForPlayMode("Exit Play Mode before setting up the active scene.");
+        }
+
         var details = new List<string>();
         var gamingCouchResult = GamingCouchSceneWiring.EnsureActiveSceneGamingCouch();
         details.Add(gamingCouchResult.message);
@@ -911,6 +916,11 @@ internal static class GamingCouchActiveSceneSetup
 
     internal static GCActiveSceneSetupResult EnsureActiveScenePlayerPrefabReference()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return BlockedForPlayMode("Exit Play Mode before setting up the player prefab.");
+        }
+
         var details = new List<string>();
         var gamingCouch = GetSingleActiveSceneGamingCouch(details);
         if (gamingCouch == null)
@@ -964,6 +974,11 @@ internal static class GamingCouchActiveSceneSetup
 
     internal static GCActiveSceneSetupResult EnsureActiveSceneGameListenerReference()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return BlockedForPlayMode("Exit Play Mode before setting up the Game script.");
+        }
+
         var details = new List<string>();
         var gamingCouch = GetSingleActiveSceneGamingCouch(details);
         if (gamingCouch == null)
@@ -1025,6 +1040,19 @@ internal static class GamingCouchActiveSceneSetup
             createdAssetPaths.ToArray(),
             reusedAssetPaths.ToArray(),
             blockedReasons.ToArray()
+        );
+    }
+
+    // Setup writes to the scene, and Play Mode discards scene changes when it ends. Refusing here
+    // rather than in the window keeps every entry point covered, and the refusal reaches the
+    // Start Screen as a result it draws instead of a Console-only log.
+    private static GCActiveSceneSetupResult BlockedForPlayMode(string message)
+    {
+        return CreateActiveSceneResult(
+            GCActiveSceneSetupStatus.Blocked,
+            false,
+            message,
+            new List<string>()
         );
     }
 
