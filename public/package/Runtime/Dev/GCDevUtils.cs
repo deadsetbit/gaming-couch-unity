@@ -62,15 +62,31 @@ namespace DSB.GC.Dev
             HandleFluctuateFps();
         }
 
+#if UNITY_EDITOR
+        private KeyCode heldShortcutKey = KeyCode.None;
+#endif
+
         // Every shortcut reads the IMGUI key event rather than UnityEngine.Input, so the package
         // compiles and playtests under any Active Input Handling setting.
         void OnGUI()
         {
 #if UNITY_EDITOR
             Event e = Event.current;
-            if (e.isKey && e.type == EventType.KeyDown)
+            if (!e.isKey || e.keyCode == KeyCode.None)
             {
+                return;
+            }
+
+            // IMGUI repeats a held key at the operating system's repeat rate. Tracking the held
+            // key keeps each shortcut to one action per press.
+            if (e.type == EventType.KeyDown && e.keyCode != heldShortcutKey)
+            {
+                heldShortcutKey = e.keyCode;
                 HandleShortcut(e.keyCode, e.shift);
+            }
+            else if (e.type == EventType.KeyUp && e.keyCode == heldShortcutKey)
+            {
+                heldShortcutKey = KeyCode.None;
             }
 #endif
         }
@@ -78,15 +94,21 @@ namespace DSB.GC.Dev
 #if UNITY_EDITOR
         private void HandleShortcut(KeyCode keyCode, bool shiftHeld)
         {
-            if (keyCode == KeyCode.F7)
-            {
-                enableFluctuateFps = (FluctuateFpsMode)(((int)enableFluctuateFps + 1) % 3);
-            }
-
+            HandleFluctuateFpsToggle(keyCode);
             HandleTimeScale(keyCode, shiftHeld);
             HandlePlayModeRestart(keyCode);
         }
 #endif
+
+        private void HandleFluctuateFpsToggle(KeyCode keyCode)
+        {
+            if (keyCode != KeyCode.F7)
+            {
+                return;
+            }
+
+            enableFluctuateFps = (FluctuateFpsMode)(((int)enableFluctuateFps + 1) % 3);
+        }
 
         private bool ShouldFluctuateFps()
         {

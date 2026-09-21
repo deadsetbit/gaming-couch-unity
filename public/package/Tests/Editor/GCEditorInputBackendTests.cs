@@ -27,8 +27,9 @@ public sealed class GCEditorInputBackendTests
         Assert.That(
             offenders,
             Is.Empty,
-            "UnityEngine.Input reads outside " + KeyboardReaderFileName + " compile into a player build, " +
-            "which fails when Active Input Handling is set to Input System Package."
+            "Legacy UnityEngine.Input is unavailable when Active Input Handling is set to Input System " +
+            "Package: a player build fails to compile against it and the editor throws on every read. " +
+            "Reads belong in " + KeyboardReaderFileName + ", which branches on the backend."
         );
     }
 
