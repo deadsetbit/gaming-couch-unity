@@ -263,20 +263,22 @@ private void Update()
 
 Your game never reads Unity input for players. The platform and the DevApp deliver it as data, and the
 only keyboard the package itself reads is the one that drives a player during editor play. Number keys
-`1`–`8` choose which player it drives.
+`1` to `8` choose which seat it drives, using the seat numbers DevApp shows.
 
-Which keys that keyboard uses follows your project's **Active Input Handling**, and the setting is yours
-to pick. The package compiles and playtests under Old, New, and Both, and nothing in Quick Setup reads
-or writes it.
+Which keys that keyboard uses follows your project's **Active Input Handling**. You choose that setting.
+The package compiles and playtests under Old, New, and Both, and nothing in Quick Setup reads or writes
+it.
 
 - With `com.unity.inputsystem` installed and Active Input Handling set to New or Both, the keyboard is
-  WASD and the arrow keys, `Space` for primary and `Left Ctrl` for secondary.
+  WASD and the arrow keys, `Space` for primary and `Left Ctrl` for secondary. Its axes read -1, 0 or 1
+  with no ramp.
 - Otherwise it reads the Input Manager, using the axis and button names set on the `GamingCouch`
-  component. Those default to `Horizontal`, `Vertical`, `Jump` and `Fire1`.
+  component. Those default to `Horizontal`, `Vertical`, `Jump` and `Fire1`, and the Input Manager ramps
+  a key axis up to full over a few frames rather than snapping.
 
 Set Active Input Handling to New without installing `com.unity.inputsystem` and there is no keyboard to
-read. The editor keyboard is then unavailable, and the package logs why the first time you enter play
-mode. DevApp controllers still work.
+read. The editor keyboard is then unavailable, and the package logs why once the first game starts.
+DevApp controllers still work.
 
 ## Player placement
 

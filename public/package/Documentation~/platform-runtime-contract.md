@@ -264,12 +264,12 @@ deserializes to `GCControllerInputsData` (`Runtime/GCControllerInputsData.cs:13-
 **Buttons are integers `0/1` on the wire, not booleans** — the package compares `== 1`. Axes are
 floats, `-1.0`–`1.0`.
 
-`b2`/`alt` is present on the wire but is **never originated by this package in the editor** — there is
-no keyboard binding for it in local play (editor input mapping at `GamingCouch.cs`, `ApplyDevAppInput`
-path). The physical/touch mapping of `b2` (which button, on which controller) is owned by the client
-repo, not this package. Game-facing semantics for `alt` (an accessibility button, not for core
-mechanics) live in the package [README](../README.md#player-inputs) and the `GCControllerInputs.alt`
-XML docs.
+`b2`/`alt` is present on the wire but is **never originated by this package in the editor** — there
+is no keyboard binding for it in local play (editor keyboard mapping in `GCEditorKeyboard.cs`,
+external input applied by `GamingCouch.ApplyExternalPlayerInput`). The physical/touch mapping of
+`b2` (which button, on which controller) is owned by the client repo, not this package. Game-facing
+semantics for `alt` (an accessibility button, not for core mechanics) live in the package
+[README](../README.md#player-inputs) and the `GCControllerInputs.alt` XML docs.
 
 Example message: `0|{"a0":-1.0,"a1":0.0,"b0":1,"b1":0,"b2":0}`
 

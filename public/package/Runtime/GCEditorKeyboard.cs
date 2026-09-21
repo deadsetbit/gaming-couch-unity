@@ -8,8 +8,8 @@ namespace DSB.GC
 {
     /// <summary>
     /// The keyboard behind editor playtesting, read from whichever input backend the project's
-    /// Active Input Handling selects. The branch is resolved at compile time so the package
-    /// compiles under Input Manager (Old), Input System Package (New), and Both.
+    /// Active Input Handling selects. Compile-time branches keep the package building under
+    /// Input Manager (Old), Input System Package (New), and Both.
     /// </summary>
     internal static class GCEditorKeyboard
     {
@@ -17,6 +17,7 @@ namespace DSB.GC
         internal static bool IsSeatSelectKeyDown(int seatNumber)
         {
             var keyboard = Keyboard.current;
+            // Digit1 through Digit9 are consecutive, so a seat number maps straight onto them.
             if (keyboard == null || seatNumber < 1 || seatNumber > 9)
             {
                 return false;
@@ -70,7 +71,6 @@ namespace DSB.GC
 
         internal static bool IsSeatSelectKeyDown(int seatNumber)
         {
-            ReportUnavailableOnce();
             return false;
         }
 

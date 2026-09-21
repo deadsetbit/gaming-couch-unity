@@ -42,6 +42,7 @@ EXTERNAL_ASSEMBLY_ALLOWLIST = {
     "Unity.Newtonsoft.Json": "Unity's Newtonsoft JSON package, a declared package dependency",
     "UnityEngine.UI": "uGUI, referenced by the editor assembly behind a version define",
     "Unity.Netcode.Runtime": "NGO, referenced by an assembly gated behind a define constraint",
+    "Unity.InputSystem": "Input System, referenced by the runtime assembly behind a version define",
 }
 
 # What a complete package is. Meta pairing only catches half of a loss — the asset or its meta —
