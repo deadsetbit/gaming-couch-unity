@@ -14,15 +14,15 @@ namespace DSB.GC
     internal static class GCEditorKeyboard
     {
 #if ENABLE_INPUT_SYSTEM && GC_INPUT_SYSTEM
-        internal static bool IsPlayerSelectKeyDown(int playerIndex)
+        internal static bool IsSeatSelectKeyDown(int seatNumber)
         {
             var keyboard = Keyboard.current;
-            if (keyboard == null || playerIndex < 0 || playerIndex > 8)
+            if (keyboard == null || seatNumber < 1 || seatNumber > 9)
             {
                 return false;
             }
 
-            return keyboard[(Key)((int)Key.Digit1 + playerIndex)].wasPressedThisFrame;
+            return keyboard[(Key)((int)Key.Digit1 + seatNumber - 1)].wasPressedThisFrame;
         }
 
         internal static GCControllerInputsData Read(string axisX, string axisY, string buttonPrimary, string buttonSecondary)
@@ -50,9 +50,9 @@ namespace DSB.GC
             return value;
         }
 #elif ENABLE_LEGACY_INPUT_MANAGER || !ENABLE_INPUT_SYSTEM
-        internal static bool IsPlayerSelectKeyDown(int playerIndex)
+        internal static bool IsSeatSelectKeyDown(int seatNumber)
         {
-            return Input.GetKeyDown((playerIndex + 1).ToString());
+            return Input.GetKeyDown(seatNumber.ToString());
         }
 
         internal static GCControllerInputsData Read(string axisX, string axisY, string buttonPrimary, string buttonSecondary)
@@ -68,7 +68,7 @@ namespace DSB.GC
 #else
         private static bool unavailabilityReported;
 
-        internal static bool IsPlayerSelectKeyDown(int playerIndex)
+        internal static bool IsSeatSelectKeyDown(int seatNumber)
         {
             ReportUnavailableOnce();
             return false;

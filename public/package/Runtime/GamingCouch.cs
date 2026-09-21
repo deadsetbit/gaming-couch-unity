@@ -450,6 +450,11 @@ namespace DSB.GC
             playerIndexMapping = activeRunProjection.PlayerIndexMapping;
             playOptions = activeRunProjection.GameFacingPlayOptions;
             playSeatIdentities = activeRunProjection.MappedSeatIdentities;
+#if UNITY_EDITOR
+            // Seat selection is per run: a seat number from a previous run may not exist in this
+            // one, and the ticket asks for seat 1 by default in every run.
+            editorControlSeatNumber = DefaultEditorControlSeatNumber;
+#endif
             GCRuntimeOutput.BeginActiveRun(playOptions.runtimeOutput);
             EmitPlatformMetadataDiagnostics(playOptions.platformData);
             listener.SendMessage("GamingCouchPlay", playOptions, SendMessageOptions.RequireReceiver);
@@ -1111,7 +1116,8 @@ namespace DSB.GC
         private string buttonSecondary = "Fire1";
         private static float INPUT_AXIS_INNER_DEADZONE = 0.15f;
 
-        private int editorControlPlayerIndex = 0;
+        internal const int DefaultEditorControlSeatNumber = 1;
+        private int editorControlSeatNumber = DefaultEditorControlSeatNumber;
 #pragma warning restore 0414
 
         private static bool HasNonZeroInput(GCControllerInputsData inputs, float axisDeadzone)
@@ -1190,15 +1196,20 @@ namespace DSB.GC
             if (internalPlayerStore == null) return;
             if (internalPlayerStore.Players.Count == 0) return;
 
-            for (int i = 0; i < MAX_PLAYERS; i++)
+            for (int seatNumber = 1; seatNumber <= MAX_PLAYERS; seatNumber++)
             {
-                if (GCEditorKeyboard.IsPlayerSelectKeyDown(i))
+                if (GCEditorKeyboard.IsSeatSelectKeyDown(seatNumber))
                 {
-                    editorControlPlayerIndex = i;
+                    SelectEditorControlSeat(seatNumber);
                 }
             }
 
-            var player = internalPlayerStore.GetPlayerByIndex(editorControlPlayerIndex);
+            if (!GCSeatNumbering.TryGetPlayerIndex(playSeatIdentities, editorControlSeatNumber, out var playerIndex))
+            {
+                return;
+            }
+
+            var player = internalPlayerStore.GetPlayerByIndex(playerIndex);
 
             if (player == null) return;
 
@@ -1220,6 +1231,29 @@ namespace DSB.GC
                 gameFacingInputsByPlayerIndex: inputsByPlayerIndex,
                 externalInputsByPlayerIndex: externalInputsByPlayerIndex,
                 axisDeadzone: INPUT_AXIS_INNER_DEADZONE
+            );
+        }
+
+        // The number keys pick the seat as DevApp numbers and colours it, not the game-facing
+        // player index, which is a seed-dependent permutation of the seats and so lands somewhere
+        // else on every run. A bot seat is taken over like any other; a seat this run does not have
+        // is reported rather than leaving the keyboard silently where it was.
+        private void SelectEditorControlSeat(int seatNumber)
+        {
+            if (!GCSeatNumbering.TryGetPlayerIndex(playSeatIdentities, seatNumber, out var playerIndex))
+            {
+                GCLog.LogWarning(
+                    "Seat " + seatNumber + " is not in this run, so the editor keyboard stays on seat " +
+                    editorControlSeatNumber + "."
+                );
+                return;
+            }
+
+            editorControlSeatNumber = seatNumber;
+            var seat = playSeatIdentities[playerIndex];
+            GCLog.LogDebug(
+                "Editor keyboard now drives seat " + seatNumber + " (" + seat.playerColor + " " +
+                seat.playerType + ")."
             );
         }
 #endif
