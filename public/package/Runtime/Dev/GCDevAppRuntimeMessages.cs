@@ -98,12 +98,12 @@ namespace DSB.GC.Dev
             for (var index = 0; index < seatIdentities.Length; index++)
             {
                 var seatIdentity = seatIdentities[index];
-                var sourceSeatIndex = seatIdentity.sourceSeatIndex > 0 ? seatIdentity.sourceSeatIndex : index + 1;
+                var seatNumber = GCSeatNumbering.GetSeatNumber(seatIdentity, index);
                 seats[index] = new RuntimeSeatMessage
                 {
                     playerIndex = index,
-                    seatIndex = sourceSeatIndex,
-                    label = string.IsNullOrWhiteSpace(seatIdentity.label) ? "Seat " + sourceSeatIndex : seatIdentity.label,
+                    seatIndex = seatNumber,
+                    label = string.IsNullOrWhiteSpace(seatIdentity.label) ? "Seat " + seatNumber : seatIdentity.label,
                     type = ResolveSeatType(seatIdentity.playerType),
                 };
             }
