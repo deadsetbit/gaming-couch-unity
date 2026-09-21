@@ -271,7 +271,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
     }
 
     [Test]
-    public void ReadySetupActionResultsRemainSilentForWindowDisplay()
+    public void ReadySetupActionResultsReachTheWindow()
     {
         var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
         var listener = GamingCouchEditorTestSupport.CreateCompatibleListener("Existing Game");
@@ -282,7 +282,7 @@ public sealed class GamingCouchStartScreenSetupActionsTests
         );
 
         Assert.That(result.messageType, Is.EqualTo(MessageType.Info));
-        Assert.That(GamingCouchStartScreenSetupActions.ShouldDisplayActionResult(result.messageType), Is.False);
+        Assert.That(GamingCouchStartScreenSetupActions.ShouldDisplayActionResult(result.messageType), Is.True);
         Assert.That(result.message, Does.Contain("already complete"));
         Assert.That(result.shouldRefreshAndRepaint, Is.True);
     }

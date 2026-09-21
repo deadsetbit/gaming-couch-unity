@@ -72,6 +72,14 @@ internal static class GamingCouchSceneWiring
 
     internal static GamingCouchSceneWiringResult EnsureActiveSceneGamingCouch()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return GamingCouchSceneWiringResult.BlockedResult(
+                null,
+                "Exit Play Mode before creating a GamingCouch object."
+            );
+        }
+
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded)
         {
@@ -151,6 +159,105 @@ internal static class GamingCouchSceneWiring
     internal static GamingCouch[] FindActiveSceneGamingCouches()
     {
         return FindGamingCouchesInScene(SceneManager.GetActiveScene());
+    }
+
+    // What the Start Screen inspects, as opposed to what setup may edit. Entering Play Mode runs
+    // GamingCouch.Awake, which marks the object DontDestroyOnLoad and so moves it into a scene
+    // SceneManager does not enumerate. Setup paths keep using FindActiveSceneGamingCouches,
+    // because an edit made to a moved object cannot outlive the play session.
+    //
+    // The predicate is isPlaying rather than the isPlayingOrWillChangePlaymode the setup guards
+    // use, and the difference is deliberate. Awake returns before DontDestroyOnLoad while
+    // Application.isPlaying is false, so until play is actually running the object is still in the
+    // active scene's roots and the strict finder is the correct answer. A setup guard has to fire
+    // earlier, because the imminent transition would discard the edit it is about to make.
+    internal static GamingCouch[] FindActiveSceneGamingCouchesForInspection()
+    {
+        var activeSceneGamingCouches = FindGamingCouchesInScene(SceneManager.GetActiveScene());
+        if (!EditorApplication.isPlaying)
+        {
+            return activeSceneGamingCouches;
+        }
+
+        return SelectGamingCouchesForInspection(
+            activeSceneGamingCouches,
+            FindGamingCouchesOutsidePreviewScenes(),
+            GetEnumeratedScenes()
+        );
+    }
+
+    // Counts, on top of the active scene's own, every candidate alive outside all the scenes
+    // SceneManager enumerates. That is wider than "came from the active scene", which cannot be
+    // asked once the object has moved: DontDestroyOnLoad does not record where the object was.
+    // It is the right signal while a scene plays anyway, because GamingCouch.Awake destroys every
+    // duplicate, so at most one such object is ever alive and it is the one the session runs on.
+    internal static GamingCouch[] SelectGamingCouchesForInspection(
+        GamingCouch[] activeSceneGamingCouches,
+        GamingCouch[] candidates,
+        Scene[] enumeratedScenes
+    )
+    {
+        var selected = new List<GamingCouch>(activeSceneGamingCouches);
+        for (var index = 0; index < candidates.Length; index++)
+        {
+            var candidate = candidates[index];
+            if (candidate == null || selected.Contains(candidate))
+            {
+                continue;
+            }
+
+            if (!IsEnumeratedScene(candidate.gameObject.scene, enumeratedScenes))
+            {
+                selected.Add(candidate);
+            }
+        }
+
+        return selected.ToArray();
+    }
+
+    private static bool IsEnumeratedScene(Scene scene, Scene[] enumeratedScenes)
+    {
+        for (var index = 0; enumeratedScenes != null && index < enumeratedScenes.Length; index++)
+        {
+            if (enumeratedScenes[index].handle == scene.handle)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A prefab stage also lives in a scene SceneManager does not enumerate. Its objects are being
+    // edited rather than played, so they are never Play Mode survivors.
+    private static GamingCouch[] FindGamingCouchesOutsidePreviewScenes()
+    {
+        var found = UnityEngine.Object.FindObjectsByType<GamingCouch>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        );
+        var candidates = new List<GamingCouch>(found.Length);
+        for (var index = 0; index < found.Length; index++)
+        {
+            var candidate = found[index];
+            if (candidate != null && !EditorSceneManager.IsPreviewScene(candidate.gameObject.scene))
+            {
+                candidates.Add(candidate);
+            }
+        }
+
+        return candidates.ToArray();
+    }
+
+    private static Scene[] GetEnumeratedScenes()
+    {
+        var scenes = new Scene[SceneManager.sceneCount];
+        for (var index = 0; index < scenes.Length; index++)
+        {
+            scenes[index] = SceneManager.GetSceneAt(index);
+        }
+
+        return scenes;
     }
 
     internal static GamingCouch[] FindGamingCouchesInScene(Scene scene)

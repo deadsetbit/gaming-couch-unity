@@ -1313,7 +1313,7 @@ internal static class GCStartScreenReadinessService
     internal static GCStartScreenReadiness InspectActiveScene()
     {
         var scene = SceneManager.GetActiveScene();
-        var gamingCouches = GamingCouchSceneWiring.FindGamingCouchesInScene(scene);
+        var gamingCouches = GamingCouchSceneWiring.FindActiveSceneGamingCouchesForInspection();
         var gamingCouch = gamingCouches.Length == 1 ? gamingCouches[0] : null;
         var listener = GamingCouchSceneWiring.ReadObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
         var hasSerializedListenerReference = GamingCouchSceneWiring.HasObjectReference(gamingCouch, GamingCouchSceneWiring.ListenerPropertyName);
