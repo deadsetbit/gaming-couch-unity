@@ -163,9 +163,14 @@ internal static class GamingCouchSceneWiring
 
     // What the Start Screen inspects, as opposed to what setup may edit. Entering Play Mode runs
     // GamingCouch.Awake, which marks the object DontDestroyOnLoad and so moves it into a scene
-    // SceneManager does not enumerate: it leaves the active scene's roots while still being the
-    // GamingCouch of the scene being played. Setup paths keep using FindActiveSceneGamingCouches,
-    // because an edit made to such an object cannot outlive the play session.
+    // SceneManager does not enumerate. Setup paths keep using FindActiveSceneGamingCouches,
+    // because an edit made to a moved object cannot outlive the play session.
+    //
+    // The predicate is isPlaying rather than the isPlayingOrWillChangePlaymode the setup guards
+    // use, and the difference is deliberate. Awake returns before DontDestroyOnLoad while
+    // Application.isPlaying is false, so until play is actually running the object is still in the
+    // active scene's roots and the strict finder is the correct answer. A setup guard has to fire
+    // earlier, because the imminent transition would discard the edit it is about to make.
     internal static GamingCouch[] FindActiveSceneGamingCouchesForInspection()
     {
         var activeSceneGamingCouches = FindGamingCouchesInScene(SceneManager.GetActiveScene());
@@ -177,24 +182,22 @@ internal static class GamingCouchSceneWiring
         return SelectGamingCouchesForInspection(
             activeSceneGamingCouches,
             FindGamingCouchesOutsidePreviewScenes(),
-            GetEnumeratedScenes(),
-            true
+            GetEnumeratedScenes()
         );
     }
 
+    // Counts, on top of the active scene's own, every candidate alive outside all the scenes
+    // SceneManager enumerates. That is wider than "came from the active scene", which cannot be
+    // asked once the object has moved: DontDestroyOnLoad does not record where the object was.
+    // It is the right signal while a scene plays anyway, because GamingCouch.Awake destroys every
+    // duplicate, so at most one such object is ever alive and it is the one the session runs on.
     internal static GamingCouch[] SelectGamingCouchesForInspection(
         GamingCouch[] activeSceneGamingCouches,
         GamingCouch[] candidates,
-        Scene[] enumeratedScenes,
-        bool isPlaying
+        Scene[] enumeratedScenes
     )
     {
-        var selected = new List<GamingCouch>(activeSceneGamingCouches ?? new GamingCouch[0]);
-        if (!isPlaying || candidates == null)
-        {
-            return selected.ToArray();
-        }
-
+        var selected = new List<GamingCouch>(activeSceneGamingCouches);
         for (var index = 0; index < candidates.Length; index++)
         {
             var candidate = candidates[index];

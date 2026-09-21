@@ -20,6 +20,9 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
     private bool previousEnterPlayModeOptionsEnabled;
     private EnterPlayModeOptions previousEnterPlayModeOptions;
     private EditorBuildSettingsScene[] previousBuildSettingsScenes;
+    private Scene previousActiveScene;
+    private Scene testScene;
+    private bool testSceneWasCreatedAdditively;
 
     [SetUp]
     public void SetUp()
@@ -29,6 +32,37 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
         previousBuildSettingsScenes = EditorBuildSettings.scenes;
         EditorSettings.enterPlayModeOptionsEnabled = true;
         EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+
+        // Never discard a saved scene the developer has open: reuse an untitled active scene, and
+        // otherwise add one alongside theirs. Mirrors GamingCouchStartScreenReadinessTests.
+        previousActiveScene = SceneManager.GetActiveScene();
+        if (previousActiveScene.IsValid() &&
+            previousActiveScene.isLoaded &&
+            string.IsNullOrEmpty(previousActiveScene.path))
+        {
+            testScene = previousActiveScene;
+            testSceneWasCreatedAdditively = false;
+        }
+        else
+        {
+            testScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            testSceneWasCreatedAdditively = true;
+        }
+
+        ClearSceneRootObjects(testScene);
+        EnsureSceneIsActive(testScene);
+    }
+
+    // SetActiveScene returns false for the scene that is already active, so ask first.
+    private static void EnsureSceneIsActive(Scene scene)
+    {
+        var activeScene = SceneManager.GetActiveScene();
+        if (activeScene.IsValid() && activeScene.handle == scene.handle)
+        {
+            return;
+        }
+
+        Assert.That(SceneManager.SetActiveScene(scene), Is.True);
     }
 
     [UnityTearDown]
@@ -43,7 +77,38 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
         EditorBuildSettings.scenes = previousBuildSettingsScenes ?? Array.Empty<EditorBuildSettingsScene>();
         EditorSettings.enterPlayModeOptionsEnabled = previousEnterPlayModeOptionsEnabled;
         EditorSettings.enterPlayModeOptions = previousEnterPlayModeOptions;
-        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        if (testScene.IsValid() && testScene.isLoaded)
+        {
+            ClearSceneRootObjects(testScene);
+        }
+
+        if (!testSceneWasCreatedAdditively)
+        {
+            yield break;
+        }
+
+        if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+        {
+            SceneManager.SetActiveScene(previousActiveScene);
+        }
+
+        if (testScene.IsValid() && testScene.isLoaded)
+        {
+            EditorSceneManager.CloseScene(testScene, true);
+        }
+    }
+
+    private static void ClearSceneRootObjects(Scene scene)
+    {
+        var roots = scene.GetRootGameObjects();
+        for (var index = 0; index < roots.Length; index++)
+        {
+            if (roots[index] != null)
+            {
+                UnityEngine.Object.DestroyImmediate(roots[index]);
+            }
+        }
     }
 
     [UnityTest]
@@ -51,8 +116,19 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
     {
         CreateWiredActiveScene();
         AssertGamingCouchChecksPass("before entering Play Mode");
+        var setupActionsBeforePlay = GCStartScreenReadinessService
+            .InspectActiveScene()
+            .SafeAutomatableSetupActionCount;
 
         yield return EnterPlayMode();
+
+        // The bug only exists because Play Mode empties the active scene's roots of the object. If
+        // Unity ever stopped moving it, the rest of this test would pass while covering nothing.
+        Assert.That(
+            GamingCouchSceneWiring.FindActiveSceneGamingCouches(),
+            Is.Empty,
+            "Play Mode did not move the GamingCouch out of the active scene, so this test proves nothing"
+        );
 
         AssertGamingCouchChecksPass("during Play Mode");
         var instanceCheck = InspectGamingCouchInstanceCheck();
@@ -61,6 +137,15 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
             Is.Not.EqualTo(GCStartScreenReadinessActionId.CreateGamingCouch),
             "the Start Screen offered to create a GamingCouch that the playing scene already has"
         );
+        Assert.That(
+            GCStartScreenReadinessService.InspectActiveScene().SafeAutomatableSetupActionCount,
+            Is.EqualTo(setupActionsBeforePlay),
+            "entering Play Mode added work to \"Set up missing pieces\""
+        );
+
+        yield return ExitPlayMode();
+
+        AssertGamingCouchChecksPass("after leaving Play Mode");
     }
 
     [UnityTest]
@@ -122,10 +207,9 @@ public sealed class GamingCouchStartScreenPlayModeReadinessTests
             .Length;
     }
 
+    // Builds into the active scene, which SetUp has already made the fixture's own.
     private static void CreateWiredActiveScene()
     {
-        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
         var gamingCouchObject = new GameObject("GamingCouch");
         gamingCouchObject.SetActive(false);
         var gamingCouch = gamingCouchObject.AddComponent<GamingCouch>();

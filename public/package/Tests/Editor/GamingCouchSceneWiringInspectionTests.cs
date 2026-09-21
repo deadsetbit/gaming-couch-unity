@@ -1,39 +1,32 @@
+using System.Collections.Generic;
 using DSB.GC;
 using NUnit.Framework;
-using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
 // The boundaries of what the Start Screen counts as the active scene's GamingCouch objects.
-// SelectGamingCouchesForInspection decides on one property alone: whether the object's scene is one
-// SceneManager enumerates. A DontDestroyOnLoad scene is not, an additively loaded scene is, and
-// these tests drive both through the enumerated-scene set. The real Play Mode move is driven for
-// real in GamingCouchStartScreenPlayModeReadinessTests.
+// SelectGamingCouchesForInspection turns on one property: whether the object's scene is one
+// SceneManager enumerates. The DontDestroyOnLoad scene is not, an additively loaded scene is, and
+// both are driven here through the enumerated-scene set. The real Play Mode move is driven for real
+// in GamingCouchStartScreenPlayModeReadinessTests.
 public sealed class GamingCouchSceneWiringInspectionTests
 {
-    private Scene scene;
-
-    [SetUp]
-    public void SetUp()
-    {
-        scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-    }
+    private readonly List<UnityEngine.Object> objectsToDestroy = new List<UnityEngine.Object>();
 
     [TearDown]
     public void TearDown()
     {
-        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        GamingCouchEditorTestSupport.DestroyTrackedObjects(objectsToDestroy);
     }
 
     [Test]
     public void InspectionCountsAGamingCouchOutsideEveryEnumeratedScene()
     {
-        var survivor = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var survivor = CreateGamingCouch();
 
         var selected = GamingCouchSceneWiring.SelectGamingCouchesForInspection(
             new GamingCouch[0],
             new[] { survivor },
-            new Scene[0],
-            true
+            new Scene[0]
         );
 
         Assert.That(selected, Is.EqualTo(new[] { survivor }));
@@ -42,13 +35,12 @@ public sealed class GamingCouchSceneWiringInspectionTests
     [Test]
     public void InspectionIgnoresAGamingCouchInAnEnumeratedSceneOtherThanTheActiveOne()
     {
-        var elsewhere = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var elsewhere = CreateGamingCouch();
 
         var selected = GamingCouchSceneWiring.SelectGamingCouchesForInspection(
             new GamingCouch[0],
             new[] { elsewhere },
-            new[] { scene },
-            true
+            new[] { elsewhere.gameObject.scene }
         );
 
         Assert.That(selected, Is.Empty);
@@ -57,30 +49,21 @@ public sealed class GamingCouchSceneWiringInspectionTests
     [Test]
     public void InspectionKeepsTheActiveSceneObjectsOnceEach()
     {
-        var inActiveScene = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        var inActiveScene = CreateGamingCouch();
 
         var selected = GamingCouchSceneWiring.SelectGamingCouchesForInspection(
             new[] { inActiveScene },
             new[] { inActiveScene },
-            new Scene[0],
-            true
+            new Scene[0]
         );
 
         Assert.That(selected, Is.EqualTo(new[] { inActiveScene }));
     }
 
-    [Test]
-    public void InspectionOutsidePlayModeStaysWithTheActiveScene()
+    private GamingCouch CreateGamingCouch()
     {
-        var elsewhere = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
-
-        var selected = GamingCouchSceneWiring.SelectGamingCouchesForInspection(
-            new GamingCouch[0],
-            new[] { elsewhere },
-            new Scene[0],
-            false
-        );
-
-        Assert.That(selected, Is.Empty);
+        var gamingCouch = GamingCouchEditorTestSupport.CreateGamingCouch("GamingCouch");
+        objectsToDestroy.Add(gamingCouch.gameObject);
+        return gamingCouch;
     }
 }
