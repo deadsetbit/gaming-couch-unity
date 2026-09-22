@@ -18,6 +18,7 @@ namespace DSB.GC.Dev
         internal readonly int platformDataVersion;
         internal readonly Dictionary<string, GCPlatformDataEntry> entries;
         internal readonly Dictionary<string, GCPlatformDataColorVariants> playerColors;
+        internal readonly GCPlayerColor[] seatColorOrder;
 
         internal GCPlatformDataFile(
             int platformDataVersion,
@@ -25,7 +26,8 @@ namespace DSB.GC.Dev
             string gameName,
             string platformId,
             Dictionary<string, GCPlatformDataEntry> entries,
-            Dictionary<string, GCPlatformDataColorVariants> playerColors
+            Dictionary<string, GCPlatformDataColorVariants> playerColors,
+            GCPlayerColor[] seatColorOrder
         )
         {
             this.platformDataVersion = platformDataVersion;
@@ -34,6 +36,9 @@ namespace DSB.GC.Dev
             this.platformId = platformId;
             this.entries = CloneEntries(entries);
             this.playerColors = ClonePlayerColors(playerColors);
+            this.seatColorOrder = seatColorOrder != null
+                ? (GCPlayerColor[])seatColorOrder.Clone()
+                : new GCPlayerColor[0];
         }
 
         internal bool TryGetEntry(string entryKey, out GCPlatformDataEntry entry)

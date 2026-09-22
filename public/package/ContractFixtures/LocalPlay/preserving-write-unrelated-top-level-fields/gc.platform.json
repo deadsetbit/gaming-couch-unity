@@ -1,5 +1,5 @@
 {
-  "platformDataVersion": 1,
+  "platformDataVersion": 2,
   "game": {
     "key": "contract-game",
     "name": "Contract Game",
@@ -23,7 +23,17 @@
   },
   "properties": {
     "colors": {
-      "players": {}
+      "players": {},
+      "seatOrder": [
+        "blue",
+        "red",
+        "green",
+        "cyan",
+        "yellow",
+        "purple",
+        "pink",
+        "brown"
+      ]
     }
   }
 }

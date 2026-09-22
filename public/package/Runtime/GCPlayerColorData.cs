@@ -20,6 +20,21 @@ public struct GCPlayerColorVariants
 
 public static class GCPlayerColorData
 {
+    // Seat 1 takes the first color, seat 8 the last. gc.platform.json carries the platform's own
+    // order in properties.colors.seatOrder and wins whenever the file is there; this list only
+    // covers a run with no platform file, where nothing else names a color for a seat.
+    public static readonly GCPlayerColor[] SeatOrder =
+    {
+        GCPlayerColor.blue,
+        GCPlayerColor.red,
+        GCPlayerColor.green,
+        GCPlayerColor.cyan,
+        GCPlayerColor.yellow,
+        GCPlayerColor.purple,
+        GCPlayerColor.pink,
+        GCPlayerColor.brown,
+    };
+
     public static readonly Dictionary<GCPlayerColor, GCPlayerColorVariants> Variants = new()
     {
         { GCPlayerColor.blue, new GCPlayerColorVariants(

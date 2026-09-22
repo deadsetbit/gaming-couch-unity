@@ -8,17 +8,6 @@ using UnityEngine;
 internal sealed class GCDevJsonInspectorView
 {
     private static readonly string[] SeedModeLabels = { "Random", "Fixed" };
-    private static readonly string[] SeatColorKeys =
-    {
-        GCPlayerColor.blue.ToString(),
-        GCPlayerColor.red.ToString(),
-        GCPlayerColor.green.ToString(),
-        GCPlayerColor.yellow.ToString(),
-        GCPlayerColor.purple.ToString(),
-        GCPlayerColor.pink.ToString(),
-        GCPlayerColor.cyan.ToString(),
-        GCPlayerColor.brown.ToString(),
-    };
 
     internal void Draw(GCDevJsonInspectorState state)
     {
@@ -211,13 +200,13 @@ internal sealed class GCDevJsonInspectorView
     {
         color = default(Color);
         var platformData = state.PlatformDataReadResult != null ? state.PlatformDataReadResult.data : null;
-        if (!state.HasValidPlatformData || platformData == null || seatIndex < 0 || seatIndex >= SeatColorKeys.Length)
+        if (!state.HasValidPlatformData || platformData == null || seatIndex < 0 || seatIndex >= platformData.seatColorOrder.Length)
         {
             return false;
         }
 
         GCPlatformDataColorVariants variants;
-        if (!platformData.playerColors.TryGetValue(SeatColorKeys[seatIndex], out variants) || variants == null)
+        if (!platformData.playerColors.TryGetValue(platformData.seatColorOrder[seatIndex].ToString(), out variants) || variants == null)
         {
             return false;
         }

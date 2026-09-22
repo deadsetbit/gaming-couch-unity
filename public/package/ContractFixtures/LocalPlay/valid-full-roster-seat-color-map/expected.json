@@ -11,22 +11,22 @@
       {
         "playerIndex": 0,
         "type": "player",
-        "color": "pink"
+        "color": "purple"
       },
       {
         "playerIndex": 1,
         "type": "player",
-        "color": "cyan"
+        "color": "pink"
       },
       {
         "playerIndex": 2,
         "type": "player",
-        "color": "yellow"
+        "color": "cyan"
       },
       {
         "playerIndex": 3,
         "type": "player",
-        "color": "purple"
+        "color": "yellow"
       },
       {
         "playerIndex": 4,
@@ -76,28 +76,28 @@
         "stableKey": "4",
         "label": "Seat 4",
         "playerType": "player",
-        "playerColor": "yellow"
+        "playerColor": "cyan"
       },
       {
         "sourceSeatIndex": 5,
         "stableKey": "5",
         "label": "Seat 5",
         "playerType": "player",
-        "playerColor": "purple"
+        "playerColor": "yellow"
       },
       {
         "sourceSeatIndex": 6,
         "stableKey": "6",
         "label": "Seat 6",
         "playerType": "player",
-        "playerColor": "pink"
+        "playerColor": "purple"
       },
       {
         "sourceSeatIndex": 7,
         "stableKey": "7",
         "label": "Seat 7",
         "playerType": "player",
-        "playerColor": "cyan"
+        "playerColor": "pink"
       },
       {
         "sourceSeatIndex": 8,
