@@ -11,6 +11,9 @@ namespace DSB.GC.Dev
 
     public class GCDevUtils : MonoBehaviour
     {
+        // The time scale and play mode restart shortcuts run in the editor only, so their
+        // settings compile out of a player build along with the code that reads them.
+#if UNITY_EDITOR
         [Header("Time Scale Shortcuts")]
         [SerializeField]
         private bool enableTimeScaleShortcuts = true;
@@ -32,6 +35,7 @@ namespace DSB.GC.Dev
 
         [SerializeField, Tooltip("Alternative key to toggle pause. Hold Shift to restore previous time scale instead of 1.0")]
         private KeyCode togglePauseAlternative = KeyCode.Minus;
+#endif
 
         [Header("Fluctuate FPS")]
         [SerializeField]
@@ -40,12 +44,14 @@ namespace DSB.GC.Dev
         [SerializeField]
         private int fluctuateMaxMsPerFrame = 16;
 
+#if UNITY_EDITOR
         [Header("Play Mode Restart")]
         [SerializeField]
         private bool enablePlayModeRestart = true;
 
         [SerializeField]
         private KeyCode playModeRestartKey = KeyCode.Tab;
+#endif
 
         private void OnEnable()
         {
@@ -244,6 +250,7 @@ namespace DSB.GC.Dev
 
         private void HandlePlayModeRestart(KeyCode keyCode)
         {
+#if UNITY_EDITOR
             if (keyCode == playModeRestartKey && GamingCouch.Instance != null && !GamingCouch.Instance.IsRestarting)
             {
                 if (enablePlayModeRestart)
@@ -251,6 +258,7 @@ namespace DSB.GC.Dev
                     GamingCouch.Instance._InternalHandleGamePlayModeRestart();
                 }
             }
+#endif
         }
     }
 }
