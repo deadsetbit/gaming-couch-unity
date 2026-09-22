@@ -5,18 +5,6 @@ using System.Globalization;
 
 internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionProvider
 {
-    private static readonly GCPlayerColor[] SeatColors =
-    {
-        GCPlayerColor.blue,
-        GCPlayerColor.red,
-        GCPlayerColor.green,
-        GCPlayerColor.yellow,
-        GCPlayerColor.purple,
-        GCPlayerColor.pink,
-        GCPlayerColor.cyan,
-        GCPlayerColor.brown,
-    };
-
     private readonly GCDevJsonStore devStore;
 
     internal GCDevJsonLocalPlaySessionProvider()
@@ -114,6 +102,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
             data,
             seed,
             GCPlatformRuntimeViewBuilder.Build(readResult.platformDataReadResult, data.entryKey),
+            ResolveSeatColorOrder(readResult.platformDataReadResult),
             out var seatIdentities
         );
         return GCLocalPlaySessionCaptureResult.Succeeded(
@@ -194,10 +183,21 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
         };
     }
 
+    // gc.platform.json names the color of every seat, so DevApp's seat list and the run agree.
+    // A run with no platform file has nothing to agree with and falls back to the built-in order.
+    private static GCPlayerColor[] ResolveSeatColorOrder(GCPlatformDataReadResult platformDataReadResult)
+    {
+        var platformData = platformDataReadResult != null ? platformDataReadResult.data : null;
+        return platformData != null && platformData.seatColorOrder.Length > 0
+            ? platformData.seatColorOrder
+            : GCPlayerColorData.SeatOrder;
+    }
+
     private static GCPlayOptions CreatePlayOptions(
         GCDevJsonFile data,
         int seed,
         GCPlatformRuntimeView platformData,
+        GCPlayerColor[] seatColorOrder,
         out GCSeatIdentity[] seatIdentities
     )
     {
@@ -220,7 +220,7 @@ internal sealed class GCDevJsonLocalPlaySessionProvider : IGCLocalPlaySessionPro
             }
 
             var playerType = seat.isBot ? GCPlayerType.bot : GCPlayerType.player;
-            var playerColor = SeatColors[sourceSeatIndex];
+            var playerColor = seatColorOrder[sourceSeatIndex];
             var oneBasedSourceSeatIndex = sourceSeatIndex + 1;
 
             options.players[playerIndex] = new GCPlayerOptions

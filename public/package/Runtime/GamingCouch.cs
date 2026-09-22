@@ -26,6 +26,8 @@ namespace DSB.GC
 
     public enum GCStatus { PendingSetup, SetupDone, Playing, GameOver }
 
+    // Declaration order is not seat order, and reordering these would change every value a game
+    // has serialized. GCPlayerColorData.SeatOrder holds the seat order.
     public enum GCPlayerColor { blue, red, green, yellow, purple, pink, cyan, brown }
 
     public enum GCPlayerType { unset = 0, player = 1, bot = 2 }

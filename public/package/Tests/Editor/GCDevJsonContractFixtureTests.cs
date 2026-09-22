@@ -143,7 +143,7 @@ public sealed class GCDevJsonContractFixtureTests
     {
         var view = BuildPlatformRuntimeView(
             @"{
-  ""platformDataVersion"": 1,
+  ""platformDataVersion"": 2,
   ""game"": {
     ""key"": ""contract-game"",
     ""name"": ""Contract Game"",
@@ -157,7 +157,8 @@ public sealed class GCDevJsonContractFixtureTests
     ""colors"": {
       ""players"": {
         ""blue"": { ""base"": [1, 2, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
-      }
+      },
+      ""seatOrder"": [""blue"", ""red"", ""green"", ""cyan"", ""yellow"", ""purple"", ""pink"", ""brown""]
     }
   }
 }",
@@ -168,7 +169,7 @@ public sealed class GCDevJsonContractFixtureTests
         Assert.That(view.validationState, Is.EqualTo(GCPlatformRuntimeValidationState.Valid));
         Assert.That(view.fallbackActive, Is.False);
         Assert.That(view.source.fileName, Is.EqualTo(GCPlatformDataFile.FileName));
-        Assert.That(view.source.platformDataVersion, Is.EqualTo(1));
+        Assert.That(view.source.platformDataVersion, Is.EqualTo(2));
         Assert.That(view.game.key, Is.EqualTo("contract-game"));
         Assert.That(view.game.name, Is.EqualTo("Contract Game"));
         Assert.That(view.platform.id, Is.EqualTo(GCPlatformDataFile.UnityPlatformId));
@@ -223,7 +224,12 @@ public sealed class GCDevJsonContractFixtureTests
     }
   },
   ""platform"": { ""id"": ""web"" },
-  ""properties"": { ""colors"": { ""players"": {} } }
+  ""properties"": {
+    ""colors"": {
+      ""players"": {},
+      ""seatOrder"": [""blue"", ""red"", ""green"", ""cyan"", ""yellow"", ""purple"", ""pink"", ""brown""]
+    }
+  }
 }",
             "duel"
         );
@@ -251,7 +257,8 @@ public sealed class GCDevJsonContractFixtureTests
     ""colors"": {
       ""players"": {
         ""blue"": { ""base"": [1, 2, 3], ""muted"": [4, 5, 6], ""mutedDarker"": [7, 8, 9] }
-      }
+      },
+      ""seatOrder"": [""blue"", ""red"", ""green"", ""cyan"", ""yellow"", ""purple"", ""pink"", ""brown""]
     }
   }
 }",
@@ -293,6 +300,82 @@ public sealed class GCDevJsonContractFixtureTests
         AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Invalid);
         Assert.That(view.source.fieldName, Is.EqualTo("properties.colors.players.blue"));
         Assert.That(view.source.platformDataVersion, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SeatColorsFollowTheOrderThePlatformFileNames()
+    {
+        var reversedOrder = new[] { "brown", "pink", "purple", "yellow", "cyan", "green", "red", "blue" };
+
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(ResolveCasePath("valid-full-roster-seat-color-map"));
+            File.WriteAllText(fixture.PlatformDataJsonPath, PlatformDataJson(reversedOrder), Encoding.UTF8);
+
+            var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
+            var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
+
+            Assert.That(capture.success, Is.True);
+            Assert.That(SeatColorNames(capture.seatIdentities), Is.EqualTo(reversedOrder));
+        }
+    }
+
+    [Test]
+    public void PlatformDataWithoutASeatOrderStillPlaysOnTheBuiltInOrder()
+    {
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(ResolveCasePath("valid-full-roster-seat-color-map"));
+            File.WriteAllText(fixture.PlatformDataJsonPath, PlatformDataJson(null), Encoding.UTF8);
+
+            var readResult = fixture.DevStore.Read(fixture.PlatformDataStore.Read());
+            var capture = new GCDevJsonLocalPlaySessionProvider(fixture.DevStore).Capture(readResult);
+
+            Assert.That(readResult.IsValid, Is.True);
+            Assert.That(capture.success, Is.True);
+            Assert.That(SeatColorNames(capture.seatIdentities), Is.EqualTo(BuiltInSeatColorNames()));
+        }
+    }
+
+    [Test]
+    public void BuiltInSeatOrderMatchesTheOrderThePlatformFileCarries()
+    {
+        using (var fixture = new ContractFixture())
+        {
+            fixture.CopyCorpusFiles(ResolveCasePath("valid-full-roster-seat-color-map"));
+
+            var platformData = fixture.PlatformDataStore.Read().data;
+
+            Assert.That(platformData, Is.Not.Null);
+            Assert.That(platformData.seatColorOrder, Is.EqualTo(GCPlayerColorData.SeatOrder));
+        }
+    }
+
+    [Test]
+    public void PlatformDataWithoutASeatOrderUsesInvalidFallback()
+    {
+        var view = BuildPlatformRuntimeView(PlatformDataJson(null), "duel");
+
+        AssertFallbackPlatformView(view, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(view.source.fieldName, Is.EqualTo("properties.colors.seatOrder"));
+    }
+
+    [Test]
+    public void PlatformDataSeatOrderMustNameKnownColorsOnce()
+    {
+        var unknownColor = BuildPlatformRuntimeView(
+            PlatformDataJson(new[] { "blue", "red", "green", "turquoise", "yellow", "purple", "pink", "brown" }),
+            "duel"
+        );
+        var duplicateColor = BuildPlatformRuntimeView(
+            PlatformDataJson(new[] { "blue", "red", "green", "blue", "yellow", "purple", "pink", "brown" }),
+            "duel"
+        );
+
+        AssertFallbackPlatformView(unknownColor, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(unknownColor.source.fieldName, Is.EqualTo("properties.colors.seatOrder"));
+        AssertFallbackPlatformView(duplicateColor, GCPlatformRuntimeValidationState.Invalid);
+        Assert.That(duplicateColor.source.fieldName, Is.EqualTo("properties.colors.seatOrder"));
     }
 
     [Test]
@@ -496,6 +579,52 @@ public sealed class GCDevJsonContractFixtureTests
         }
 
         return new GCDevJsonFile("duel", "12345", seats);
+    }
+
+    private static string PlatformDataJson(string[] seatOrder)
+    {
+        var seatOrderField = seatOrder == null
+            ? string.Empty
+            : ",\n      \"seatOrder\": [\"" + string.Join("\", \"", seatOrder) + "\"]";
+
+        return "{\n" +
+               "  \"platformDataVersion\": 2,\n" +
+               "  \"game\": {\n" +
+               "    \"key\": \"contract-game\",\n" +
+               "    \"name\": \"Contract Game\",\n" +
+               "    \"entries\": {\n" +
+               "      \"duel\": { \"name\": \"Contract Entry\", \"minPlayers\": 1, \"maxPlayers\": 8, \"botSupport\": true }\n" +
+               "    }\n" +
+               "  },\n" +
+               "  \"platform\": { \"id\": \"unity\" },\n" +
+               "  \"properties\": {\n" +
+               "    \"colors\": {\n" +
+               "      \"players\": {}" + seatOrderField + "\n" +
+               "    }\n" +
+               "  }\n" +
+               "}\n";
+    }
+
+    private static string[] BuiltInSeatColorNames()
+    {
+        var names = new string[GCPlayerColorData.SeatOrder.Length];
+        for (var index = 0; index < names.Length; index++)
+        {
+            names[index] = GCPlayerColorData.SeatOrder[index].ToString();
+        }
+
+        return names;
+    }
+
+    private static string[] SeatColorNames(GCSeatIdentity[] seatIdentities)
+    {
+        var names = new string[seatIdentities.Length];
+        for (var index = 0; index < seatIdentities.Length; index++)
+        {
+            names[index] = seatIdentities[index].playerColor.ToString();
+        }
+
+        return names;
     }
 
     private static GCPlatformRuntimeView BuildPlatformRuntimeView(string json, string selectedEntryKey)

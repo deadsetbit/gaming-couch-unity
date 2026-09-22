@@ -93,6 +93,7 @@ blocking raw `gc.dev.json` editing (`InvalidFieldsReadResult`, `:751-762`).
 | `properties.colors.players.<color>.base` | int[3] | RGB `0–255` | `:869` |
 | `properties.colors.players.<color>.muted` | int[3] | RGB `0–255` | `:870` |
 | `properties.colors.players.<color>.mutedDarker` | int[3] | RGB `0–255` | `:871` |
+| `properties.colors.seatOrder` | string[] | Seat 1 first, at least 8 known color names, no repeats | `TryReadSeatColorOrder` |
 
 ```json
 {
@@ -106,7 +107,10 @@ blocking raw `gc.dev.json` editing (`InvalidFieldsReadResult`, `:751-762`).
   },
   "platform": { "id": "unity" },
   "properties": {
-    "colors": { "players": { "blue": { "base": [0,0,0], "muted": [0,0,0], "mutedDarker": [0,0,0] } } }
+    "colors": {
+      "players": { "blue": { "base": [0,0,0], "muted": [0,0,0], "mutedDarker": [0,0,0] } },
+      "seatOrder": ["blue", "red", "green", "cyan", "yellow", "purple", "pink", "brown"]
+    }
   }
 }
 ```
@@ -155,7 +159,7 @@ Fallback values (`Runtime/GCPlayOptions.cs:83-112, 302-311`):
 - `source.platformDataVersion`: the version the file declared, when `platformDataVersion` itself
   parsed (`BuildFallback`, `Editor/GCPlatformDataFile.cs`) — so an `invalid` fallback typically
   carries a real version; `-1` (unavailable) only when no version could be read at all, as with a
-  missing file. Default player colors.
+  missing file. Default player colors, and the built-in seat order of §5.
 
 Unity emits `gc.metadata.*` diagnostics for the fallback and never writes or repairs
 `gc.platform.json`.
@@ -169,9 +173,12 @@ capture at `:455-501`):
 
 - **Skip disabled seats.** Iterate seats in order; enabled seats get a dense **zero-based**
   `playerIndex` (capture order).
-- **Fixed seat → color map by seat position** (`SeatColors`, `:262-272`): seat 1 → `blue`, 2 → `red`,
-  3 → `green`, 4 → `yellow`, 5 → `purple`, 6 → `pink`, 7 → `cyan`, 8 → `brown`
-  (fixture `valid-full-roster-seat-color-map`).
+- **Seat → color by seat position, in the order the platform names.**
+  `properties.colors.seatOrder` gives seat 1 the first color and seat 8 the eighth, so a seat is the
+  color DevApp's seat list paints it. With no `gc.platform.json` there is no order to read and
+  `GCPlayerColorData.SeatOrder` stands in: `blue`, `red`, `green`, `cyan`, `yellow`, `purple`,
+  `pink`, `brown` (fixture `valid-full-roster-seat-color-map`). `GCPlayerColor`'s declaration order
+  is not this order and never was.
 - `playerSeed` is derived from the normalized seat name — FNV-1a32 of the name mapped into the
   `1`–`999999` seed range (`GCPlayerSeed.FromPlayerName` → `ToSeed`, `Runtime/GCPlayerSeed.cs:11, 34-36`).
 - Each captured player gets a parallel **`GCSeatIdentity`** carrying **1-based** seat provenance
@@ -312,7 +319,7 @@ The seven cases:
 | Fixture | Covers |
 |---|---|
 | `valid-sparse-roster-capture` | Skip-disabled capture + shuffle + the §7 ordering trap |
-| `valid-full-roster-seat-color-map` | All eight seats enabled: the whole §7 seat → color map |
+| `valid-full-roster-seat-color-map` | All eight seats enabled: the whole §7 seat → color map, taken from `seatOrder` |
 | `missing-platform-data-warning-only` | Warning-only degrade to fallback |
 | `platform-data-max-player-gate-failure` | `> maxPlayers` gate Error (§3) |
 | `unsupported-dev-version-failure` | `devVersion != 2` Error |

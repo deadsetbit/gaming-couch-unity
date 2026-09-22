@@ -24,7 +24,7 @@ public sealed class GCDevJsonInspectorReadErrorConflictTests
 
     private const string ValidPlatformJson =
         "{\n" +
-        "  \"platformDataVersion\": 1,\n" +
+        "  \"platformDataVersion\": 2,\n" +
         "  \"game\": {\n" +
         "    \"key\": \"contract-game\",\n" +
         "    \"name\": \"Contract Game\",\n" +
@@ -33,7 +33,7 @@ public sealed class GCDevJsonInspectorReadErrorConflictTests
         "    }\n" +
         "  },\n" +
         "  \"platform\": { \"id\": \"unity\" },\n" +
-        "  \"properties\": { \"colors\": { \"players\": {} } }\n" +
+        "  \"properties\": { \"colors\": { \"players\": {}, \"seatOrder\": [\"blue\", \"red\", \"green\", \"cyan\", \"yellow\", \"purple\", \"pink\", \"brown\"] } }\n" +
         "}\n";
 
     private string rootPath;

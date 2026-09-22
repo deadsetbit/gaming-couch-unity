@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -735,10 +736,21 @@ namespace DSB.GC.Dev
                 );
             }
 
+            GCPlayerColor[] seatColorOrder;
+            if (!TryReadSeatColorOrder(jsonObject["properties"], parsedFile, out seatColorOrder, out var seatOrderIssue))
+            {
+                return new GCPlatformDataReadResult(
+                    parsedFile,
+                    GCDevJsonValidationResult.FromIssue(seatOrderIssue),
+                    null,
+                    platformDataVersion
+                );
+            }
+
             return new GCPlatformDataReadResult(
                 parsedFile,
                 GCDevJsonValidationResult.Valid(),
-                new GCPlatformDataFile(platformDataVersion, gameKey, gameName, platformId, entries, playerColors)
+                new GCPlatformDataFile(platformDataVersion, gameKey, gameName, platformId, entries, playerColors, seatColorOrder)
             );
         }
 
@@ -881,6 +893,79 @@ namespace DSB.GC.Dev
             }
 
             return true;
+        }
+
+        private static bool TryReadSeatColorOrder(
+            JToken propertiesToken,
+            GCPlatformDataParsedFile parsedFile,
+            out GCPlayerColor[] seatColorOrder,
+            out GCDevJsonIssue issue
+        )
+        {
+            seatColorOrder = null;
+            issue = null;
+
+            var propertiesObject = propertiesToken as JObject;
+            var colorsObject = propertiesObject != null ? propertiesObject["colors"] as JObject : null;
+            var seatOrderArray = colorsObject != null ? colorsObject["seatOrder"] as JArray : null;
+            if (seatOrderArray == null || seatOrderArray.Count < GCDevJsonFile.SeatCount)
+            {
+                issue = InvalidPlatformDataFieldsIssue(
+                    parsedFile,
+                    "gc.platform.json properties.colors.seatOrder must be an array of at least " +
+                    GCDevJsonFile.SeatCount + " player color names. Pull platform data again from DevApp to get one.",
+                    "properties.colors.seatOrder"
+                );
+                return false;
+            }
+
+            var order = new GCPlayerColor[seatOrderArray.Count];
+            var seen = new HashSet<GCPlayerColor>();
+            for (var index = 0; index < seatOrderArray.Count; index++)
+            {
+                string colorName;
+                GCPlayerColor color;
+                if (!TryReadNonEmptyString(seatOrderArray[index], out colorName) ||
+                    !TryParsePlayerColorName(colorName, out color))
+                {
+                    issue = InvalidPlatformDataFieldsIssue(
+                        parsedFile,
+                        "gc.platform.json properties.colors.seatOrder[" + index + "] must name a player color this package knows.",
+                        "properties.colors.seatOrder"
+                    );
+                    return false;
+                }
+
+                if (!seen.Add(color))
+                {
+                    issue = InvalidPlatformDataFieldsIssue(
+                        parsedFile,
+                        "gc.platform.json properties.colors.seatOrder names " + color + " more than once, so two seats would share a color.",
+                        "properties.colors.seatOrder"
+                    );
+                    return false;
+                }
+
+                order[index] = color;
+            }
+
+            seatColorOrder = order;
+            return true;
+        }
+
+        private static bool TryParsePlayerColorName(string colorName, out GCPlayerColor color)
+        {
+            color = default(GCPlayerColor);
+            foreach (GCPlayerColor candidate in Enum.GetValues(typeof(GCPlayerColor)))
+            {
+                if (candidate.ToString() == colorName)
+                {
+                    color = candidate;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static GCDevJsonIssue InvalidPlatformDataFieldsIssue(GCPlatformDataParsedFile parsedFile, string message, string fieldName, string entryKey = null)
